@@ -34,17 +34,26 @@ const publicPath = path.join(__dirname, "../public");
 app.use(express.static(publicPath));
 
 // Serve production frontend static build files if available
-const frontendDistPath = path.join(process.cwd(), "frontend", "dist");
-const relativeFrontendDist = path.join(__dirname, "../../frontend/dist");
-const activeFrontendDist = fs.existsSync(frontendDistPath)
-  ? frontendDistPath
-  : fs.existsSync(relativeFrontendDist)
-    ? relativeFrontendDist
-    : null;
+const candidatePaths = [
+  path.resolve(process.cwd(), "frontend", "dist"),
+  path.resolve(__dirname, "../../frontend/dist"),
+  path.resolve(__dirname, "../frontend/dist"),
+  path.resolve(__dirname, "../../../frontend/dist"),
+];
+
+let activeFrontendDist: string | null = null;
+for (const candidate of candidatePaths) {
+  if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, "index.html"))) {
+    activeFrontendDist = candidate;
+    break;
+  }
+}
 
 if (activeFrontendDist) {
   console.log(`[Static] Serving frontend static build from: ${activeFrontendDist}`);
   app.use(express.static(activeFrontendDist));
+} else {
+  console.warn(`[Static] Warning: frontend dist folder not found in any candidate path.`);
 }
 
 app.get(["/favicon.ico", "/favicon.png"], (_req, res) => {
