@@ -40,13 +40,13 @@ export function Navbar() {
       <nav className="container-x flex items-center justify-between gap-4">
         <Link
           to="/"
-          className="flex min-w-0 shrink-0 items-center rounded-full bg-slate-900 px-3.5 py-1.5 shadow-sm transition-transform hover:scale-[1.02]"
+          className="flex min-w-0 shrink-0 items-center rounded-full bg-white border border-slate-200/80 px-3.5 py-1.5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md hover:scale-[1.02]"
           onClick={() => setOpen(false)}
         >
           <img
             src={logo}
             alt="ET Media Business Intelligence"
-            className="h-7 w-auto object-contain sm:h-8"
+            className="h-7 w-auto object-contain sm:h-8 rounded-sm"
             width={320}
             height={150}
           />
