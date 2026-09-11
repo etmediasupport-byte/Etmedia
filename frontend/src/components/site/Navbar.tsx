@@ -26,39 +26,55 @@ export function Navbar() {
   }, []);
 
   const linkClass =
-    "relative py-2 text-sm font-medium transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-bottom-right after:scale-x-0 after:bg-[image:var(--gradient-brand)] after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100";
+    "relative py-2 text-sm font-medium text-white/80 transition-colors hover:text-white after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-bottom-right after:scale-x-0 after:bg-[image:var(--gradient-brand)] after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100";
 
   return (
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-        scrolled ? "glass-card border-x-0 border-t-0 py-2 shadow-none" : "py-4",
+        scrolled
+          ? "bg-slate-950/85 border-b border-white/10 py-3 backdrop-blur-xl shadow-2xl"
+          : "bg-slate-950/40 border-b border-white/5 py-4 backdrop-blur-md",
       )}
     >
       <nav className="container-x flex items-center justify-between gap-4">
-        <Link to="/" className="flex min-w-0 shrink-0 items-center" onClick={() => setOpen(false)}>
+        <Link
+          to="/"
+          className="flex min-w-0 shrink-0 items-center rounded-full bg-white px-3.5 py-1.5 shadow-sm transition-transform hover:scale-[1.02]"
+          onClick={() => setOpen(false)}
+        >
           <img
             src={logo}
             alt="ET Media Business Intelligence"
-            className="h-9 w-auto rounded-lg sm:h-11"
+            className="h-7 w-auto object-contain sm:h-8"
             width={320}
             height={150}
           />
         </Link>
 
-        <div
-          className={cn(
-            "hidden items-center gap-8 lg:flex",
-            scrolled ? "text-foreground" : "text-foreground",
-          )}
-        >
-          <NavLink to="/" className={({ isActive }) => cn(linkClass, isActive && "text-primary")}>
+        <div className="hidden items-center gap-8 lg:flex">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+            }
+          >
             Home
           </NavLink>
-          <NavLink to="/about" className={({ isActive }) => cn(linkClass, isActive && "text-primary")}>
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+            }
+          >
             About Us
           </NavLink>
-          <NavLink to="/magazine" className={({ isActive }) => cn(linkClass, isActive && "text-primary")}>
+          <NavLink
+            to="/magazine"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+            }
+          >
             Executive Talks Magazine
           </NavLink>
 
@@ -67,7 +83,16 @@ export function Navbar() {
             onMouseEnter={() => setEventsOpen(true)}
             onMouseLeave={() => setEventsOpen(false)}
           >
-            <NavLink to="/events" className={({ isActive }) => cn(linkClass, "inline-flex items-center gap-1", isActive && "text-primary")}>
+            <NavLink
+              to="/events"
+              className={({ isActive }) =>
+                cn(
+                  linkClass,
+                  "inline-flex items-center gap-1",
+                  isActive ? "text-sky-400 font-semibold after:scale-x-100" : "",
+                )
+              }
+            >
               Events
               <ChevronDown className="h-4 w-4" />
             </NavLink>
@@ -78,16 +103,16 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="glass-card absolute top-full left-1/2 w-[26rem] -translate-x-1/2 rounded-3xl p-3"
+                  className="absolute top-full left-1/2 w-[26rem] -translate-x-1/2 rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl backdrop-blur-xl text-white"
                 >
                   {eventLinks.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
-                      className="hover:bg-accent/70 block rounded-2xl px-4 py-3 transition-colors"
+                      className="block rounded-2xl px-4 py-3 transition-colors hover:bg-white/10"
                     >
-                      <span className="block text-sm font-semibold">{item.label}</span>
-                      <span className="text-muted-foreground block text-xs">{item.desc}</span>
+                      <span className="block text-sm font-semibold text-white">{item.label}</span>
+                      <span className="block text-xs text-white/70">{item.desc}</span>
                     </Link>
                   ))}
                 </motion.div>
@@ -95,38 +120,43 @@ export function Navbar() {
             </AnimatePresence>
           </div>
 
-          <NavLink to="/contact" className={({ isActive }) => cn(linkClass, isActive && "text-primary")}>
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+            }
+          >
             Contact Us
           </NavLink>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="text-muted-foreground hidden items-center gap-1 xl:flex">
+          <div className="hidden items-center gap-1 text-white/70 xl:flex">
             <a
               href={contact.whatsapp}
               aria-label="WhatsApp"
-              className="hover:text-primary rounded-full p-2 transition-colors"
+              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
               <MessageCircle className="h-4 w-4" />
             </a>
             <a
               href={contact.linkedin}
               aria-label="LinkedIn"
-              className="hover:text-primary rounded-full p-2 transition-colors"
+              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Linkedin className="h-4 w-4" />
             </a>
             <a
               href={contact.instagram}
               aria-label="Instagram"
-              className="hover:text-primary rounded-full p-2 transition-colors"
+              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
               href={contact.youtube}
               aria-label="YouTube"
-              className="hover:text-primary rounded-full p-2 transition-colors"
+              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Youtube className="h-4 w-4" />
             </a>
@@ -141,7 +171,7 @@ export function Navbar() {
             type="button"
             aria-label="Toggle navigation"
             onClick={() => setOpen((v) => !v)}
-            className="glass-card rounded-full p-2.5 lg:hidden"
+            className="rounded-full border border-white/10 bg-white/10 p-2.5 text-white hover:bg-white/20 lg:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -156,7 +186,7 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="container-x overflow-hidden lg:hidden"
           >
-            <div className="glass-card mt-3 space-y-1 rounded-3xl p-4">
+            <div className="mt-3 space-y-1 rounded-3xl border border-white/10 bg-slate-900/95 p-4 text-white backdrop-blur-xl shadow-2xl">
               {[
                 { to: "/", label: "Home" },
                 { to: "/about", label: "About Us" },
@@ -169,7 +199,7 @@ export function Navbar() {
                   key={item.label}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className="hover:bg-accent/70 block rounded-2xl px-4 py-2.5 text-sm font-medium"
+                  className="block rounded-2xl px-4 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
                 >
                   {item.label}
                 </Link>
