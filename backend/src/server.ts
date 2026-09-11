@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -31,6 +32,20 @@ app.use(express.json());
 // Serve static assets from public folder
 const publicPath = path.join(__dirname, "../public");
 app.use(express.static(publicPath));
+
+// Serve production frontend static build files if available
+const frontendDistPath = path.join(process.cwd(), "frontend", "dist");
+const relativeFrontendDist = path.join(__dirname, "../../frontend/dist");
+const activeFrontendDist = fs.existsSync(frontendDistPath)
+  ? frontendDistPath
+  : fs.existsSync(relativeFrontendDist)
+    ? relativeFrontendDist
+    : null;
+
+if (activeFrontendDist) {
+  console.log(`[Static] Serving frontend static build from: ${activeFrontendDist}`);
+  app.use(express.static(activeFrontendDist));
+}
 
 app.get(["/favicon.ico", "/favicon.png"], (_req, res) => {
   res.sendFile(path.join(publicPath, "favicon.ico"));
@@ -368,6 +383,20 @@ app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
     console.error("Fetch Contacts Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch contacts." });
   }
+});
+
+// SPA Wildcard Route Fallback
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return next();
+  }
+  if (activeFrontendDist) {
+    const indexPath = path.join(activeFrontendDist, "index.html");
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+  }
+  return res.send("ET Media Business Intelligence Backend Server Running!");
 });
 
 // Initialize DB and start HTTP server
