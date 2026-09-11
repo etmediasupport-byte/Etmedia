@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  build: {
+    outDir: "../backend/public",
+    emptyOutDir: false,
+  },
   server: {
     proxy: {
       "/api": {
