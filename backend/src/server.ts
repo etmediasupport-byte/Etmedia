@@ -3,9 +3,11 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
-
 import path from "path";
 import { fileURLToPath } from "url";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { initDatabase, pool } from "./db.js";
 
 dotenv.config();
 
@@ -15,6 +17,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || "et_media_super_secret_jwt_key_2026";
 
 // Enable CORS for Express and Socket.IO
 app.use(
@@ -25,7 +28,7 @@ app.use(
 );
 app.use(express.json());
 
-// Serve static assets from public folder (including favicon)
+// Serve static assets from public folder
 const publicPath = path.join(__dirname, "../public");
 app.use(express.static(publicPath));
 
@@ -40,9 +43,6 @@ const io = new Server(server, {
   },
 });
 
-// In-memory data store for real-time demonstration
-const mockRegistrations: any[] = [];
-const mockContactSubmissions: any[] = [];
 let liveActiveUsers = 0;
 
 // Socket.IO real-time event handlers
@@ -50,7 +50,6 @@ io.on("connection", (socket) => {
   liveActiveUsers++;
   console.log(`[Socket.IO] Client connected: ${socket.id} (Active Users: ${liveActiveUsers})`);
 
-  // Broadcast updated live user count to all connected clients
   io.emit("live_users_update", { activeUsers: liveActiveUsers });
 
   socket.on("disconnect", () => {
@@ -59,17 +58,48 @@ io.on("connection", (socket) => {
     io.emit("live_users_update", { activeUsers: liveActiveUsers });
   });
 
-  // Client requests initial state
-  socket.on("get_initial_data", () => {
-    socket.emit("initial_data", {
-      activeUsers: liveActiveUsers,
-      totalRegistrations: mockRegistrations.length,
-      recentRegistrations: mockRegistrations.slice(-5),
-    });
+  socket.on("get_initial_data", async () => {
+    try {
+      let totalRegistrations = 0;
+      let recentRegistrations: any[] = [];
+
+      if (pool) {
+        const [regCount]: any = await pool.query("SELECT COUNT(*) as count FROM registrations");
+        totalRegistrations = regCount[0]?.count || 0;
+
+        const [recent]: any = await pool.query("SELECT * FROM registrations ORDER BY created_at DESC LIMIT 5");
+        recentRegistrations = recent;
+      }
+
+      socket.emit("initial_data", {
+        activeUsers: liveActiveUsers,
+        totalRegistrations,
+        recentRegistrations,
+      });
+    } catch (err) {
+      console.error("[Socket.IO] Error fetching initial data:", err);
+    }
   });
 });
 
-// REST API Endpoints
+// Middleware: Authenticate Admin Token
+const authenticateAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ success: false, message: "Unauthorized access. No token provided." });
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    (req as any).admin = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: "Invalid or expired session token." });
+  }
+};
+
+// --- PUBLIC REST API ENDPOINTS ---
 
 // 1. Health check
 app.get("/api/health", (_req, res) => {
@@ -78,6 +108,7 @@ app.get("/api/health", (_req, res) => {
     service: "ET Media Business Intelligence Backend",
     timestamp: new Date().toISOString(),
     activeSockets: liveActiveUsers,
+    database: pool ? "connected" : "disconnected",
   });
 });
 
@@ -126,8 +157,8 @@ app.get("/api/events", (_req, res) => {
   });
 });
 
-// 3. Event registration endpoint with real-time broadcast
-app.post("/api/events/register", (req, res) => {
+// 3. Event registration endpoint
+app.post("/api/events/register", async (req, res) => {
   const { name, email, phone, organization, designation, eventId } = req.body;
 
   if (!name || !email || !eventId) {
@@ -137,8 +168,9 @@ app.post("/api/events/register", (req, res) => {
     });
   }
 
+  const regId = `REG-${Date.now()}`;
   const newRegistration = {
-    id: `REG-${Date.now()}`,
+    id: regId,
     name,
     email,
     phone: phone || "N/A",
@@ -148,24 +180,41 @@ app.post("/api/events/register", (req, res) => {
     registeredAt: new Date().toISOString(),
   };
 
-  mockRegistrations.push(newRegistration);
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO registrations (id, name, email, phone, organization, designation, event_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [regId, name, email, newRegistration.phone, newRegistration.organization, newRegistration.designation, eventId]
+      );
+    }
 
-  // REALTIME SOCKET BROADCAST: Notify all connected clients of new registration!
-  io.emit("new_registration", {
-    registration: newRegistration,
-    totalRegistrations: mockRegistrations.length,
-    message: `🎉 ${name} from ${newRegistration.organization} just registered!`,
-  });
+    // Get total count
+    let totalCount = 1;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM registrations");
+      totalCount = rows[0]?.count || 1;
+    }
 
-  return res.status(201).json({
-    success: true,
-    message: "Registration successful!",
-    data: newRegistration,
-  });
+    // REALTIME BROADCAST
+    io.emit("new_registration", {
+      registration: newRegistration,
+      totalRegistrations: totalCount,
+      message: `🎉 ${name} from ${newRegistration.organization} just registered!`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Registration successful!",
+      data: newRegistration,
+    });
+  } catch (err) {
+    console.error("Registration DB Error:", err);
+    return res.status(500).json({ success: false, message: "Database registration error." });
+  }
 });
 
-// 4. Contact form submission with real-time notification
-app.post("/api/contact", (req, res) => {
+// 4. Contact form submission
+app.post("/api/contact", async (req, res) => {
   const { name, email, phone, enquiryType, message } = req.body;
 
   if (!name || !email || !message) {
@@ -175,8 +224,9 @@ app.post("/api/contact", (req, res) => {
     });
   }
 
+  const enqId = `ENQ-${Date.now()}`;
   const newEnquiry = {
-    id: `ENQ-${Date.now()}`,
+    id: enqId,
     name,
     email,
     phone: phone || "N/A",
@@ -185,39 +235,149 @@ app.post("/api/contact", (req, res) => {
     submittedAt: new Date().toISOString(),
   };
 
-  mockContactSubmissions.push(newEnquiry);
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO contacts (id, name, email, phone, enquiry_type, message) VALUES (?, ?, ?, ?, ?, ?)",
+        [enqId, name, email, newEnquiry.phone, newEnquiry.enquiryType, message]
+      );
+    }
 
-  // REALTIME SOCKET BROADCAST: Broadcast new enquiry to live dashboard
-  io.emit("new_contact_enquiry", {
-    enquiry: newEnquiry,
-    totalEnquiries: mockContactSubmissions.length,
-    notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
-  });
+    // REALTIME BROADCAST
+    io.emit("new_contact_enquiry", {
+      enquiry: newEnquiry,
+      notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
+    });
 
-  return res.status(201).json({
-    success: true,
-    message: "Your message has been received! Our team will get back to you shortly.",
-    data: newEnquiry,
-  });
+    return res.status(201).json({
+      success: true,
+      message: "Your message has been received! Our team will get back to you shortly.",
+      data: newEnquiry,
+    });
+  } catch (err) {
+    console.error("Contact DB Error:", err);
+    return res.status(500).json({ success: false, message: "Database enquiry error." });
+  }
 });
 
-// 5. Real-time statistics endpoint
-app.get("/api/stats", (_req, res) => {
-  res.json({
-    success: true,
-    data: {
-      activeSockets: liveActiveUsers,
-      totalRegistrations: mockRegistrations.length,
-      totalContactEnquiries: mockContactSubmissions.length,
-      uptimeSeconds: process.uptime(),
-    },
-  });
+// --- ADMIN AUTH & DASHBOARD ENDPOINTS ---
+
+// Admin Login Route
+app.post("/api/admin/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: "Email and password are required." });
+  }
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database not connected." });
+    }
+
+    const [rows]: any = await pool.query("SELECT * FROM admins WHERE email = ?", [email.toLowerCase().trim()]);
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, message: "Invalid admin email or password." });
+    }
+
+    const admin = rows[0];
+    const passwordValid = await bcrypt.compare(password, admin.password);
+
+    if (!passwordValid) {
+      return res.status(401).json({ success: false, message: "Invalid admin email or password." });
+    }
+
+    // Generate JWT Token
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
+      JWT_SECRET,
+      { expiresIn: "12h" }
+    );
+
+    return res.json({
+      success: true,
+      message: "Admin login successful!",
+      token,
+      admin: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (err) {
+    console.error("Admin Login Error:", err);
+    return res.status(500).json({ success: false, message: "Internal server authentication error." });
+  }
 });
 
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 ET Media Business Intelligence Realtime Server Running!`);
-  console.log(`📡 HTTP API: http://localhost:${PORT}/api/health`);
-  console.log(`⚡ WebSocket Server (Socket.IO): ws://localhost:${PORT}`);
-  console.log(`=======================================================`);
+// Admin Me Route
+app.get("/api/admin/me", authenticateAdmin, (req, res) => {
+  res.json({ success: true, admin: (req as any).admin });
+});
+
+// Admin Stats Route
+app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
+  try {
+    let totalRegistrations = 0;
+    let totalContacts = 0;
+
+    if (pool) {
+      const [regRows]: any = await pool.query("SELECT COUNT(*) as count FROM registrations");
+      totalRegistrations = regRows[0]?.count || 0;
+
+      const [conRows]: any = await pool.query("SELECT COUNT(*) as count FROM contacts");
+      totalContacts = conRows[0]?.count || 0;
+    }
+
+    res.json({
+      success: true,
+      stats: {
+        totalRegistrations,
+        totalContacts,
+        activeLiveUsers: liveActiveUsers,
+        serverUptime: Math.floor(process.uptime()),
+        databaseStatus: "Connected (Laragon MySQL)",
+      },
+    });
+  } catch (err) {
+    console.error("Admin Stats Error:", err);
+    res.status(500).json({ success: false, message: "Failed to load dashboard stats." });
+  }
+});
+
+// Admin Get All Registrations
+app.get("/api/admin/registrations", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, registrations: [] });
+    const [rows]: any = await pool.query("SELECT * FROM registrations ORDER BY created_at DESC");
+    res.json({ success: true, registrations: rows });
+  } catch (err) {
+    console.error("Fetch Registrations Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch registrations." });
+  }
+});
+
+// Admin Get All Contacts
+app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, contacts: [] });
+    const [rows]: any = await pool.query("SELECT * FROM contacts ORDER BY created_at DESC");
+    res.json({ success: true, contacts: rows });
+  } catch (err) {
+    console.error("Fetch Contacts Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch contacts." });
+  }
+});
+
+// Initialize DB and start HTTP server
+initDatabase().then(() => {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🚀 ET Media Business Intelligence Realtime Server Running!`);
+    console.log(`📡 HTTP API: http://localhost:${PORT}/api/health`);
+    console.log(`⚡ WebSocket Server (Socket.IO): ws://localhost:${PORT}`);
+    console.log(`🔑 Admin Login API: http://localhost:${PORT}/api/admin/login`);
+    console.log(`=======================================================`);
+  });
 });
