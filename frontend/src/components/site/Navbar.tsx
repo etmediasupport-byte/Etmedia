@@ -26,21 +26,21 @@ export function Navbar() {
   }, []);
 
   const linkClass =
-    "relative py-2 text-sm font-medium text-white/80 transition-colors hover:text-white after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-bottom-right after:scale-x-0 after:bg-[image:var(--gradient-brand)] after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100";
+    "relative py-2 text-sm font-semibold text-slate-800 transition-colors hover:text-cyan-600 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-bottom-right after:scale-x-0 after:bg-[image:var(--gradient-brand)] after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100";
 
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-500",
+        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-slate-950/85 border-b border-white/10 py-3 backdrop-blur-xl shadow-2xl"
-          : "bg-slate-950/40 border-b border-white/5 py-4 backdrop-blur-md",
+          ? "bg-white/95 border-b border-slate-200/90 py-2.5 backdrop-blur-md shadow-md"
+          : "bg-white/90 border-b border-slate-200/60 py-3.5 backdrop-blur-md shadow-sm",
       )}
     >
       <nav className="container-x flex items-center justify-between gap-4">
         <Link
           to="/"
-          className="flex min-w-0 shrink-0 items-center rounded-full bg-white px-3.5 py-1.5 shadow-sm transition-transform hover:scale-[1.02]"
+          className="flex min-w-0 shrink-0 items-center rounded-full bg-slate-900 px-3.5 py-1.5 shadow-sm transition-transform hover:scale-[1.02]"
           onClick={() => setOpen(false)}
         >
           <img
@@ -52,11 +52,12 @@ export function Navbar() {
           />
         </Link>
 
+        {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 lg:flex">
           <NavLink
             to="/"
             className={({ isActive }) =>
-              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
             }
           >
             Home
@@ -64,7 +65,7 @@ export function Navbar() {
           <NavLink
             to="/about"
             className={({ isActive }) =>
-              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
             }
           >
             About Us
@@ -72,7 +73,7 @@ export function Navbar() {
           <NavLink
             to="/magazine"
             className={({ isActive }) =>
-              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
             }
           >
             Executive Talks Magazine
@@ -89,7 +90,7 @@ export function Navbar() {
                 cn(
                   linkClass,
                   "inline-flex items-center gap-1",
-                  isActive ? "text-sky-400 font-semibold after:scale-x-100" : "",
+                  isActive ? "text-cyan-600 font-bold after:scale-x-100" : "",
                 )
               }
             >
@@ -103,16 +104,16 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute top-full left-1/2 w-[26rem] -translate-x-1/2 rounded-3xl border border-white/10 bg-slate-900/95 p-3 shadow-2xl backdrop-blur-xl text-white"
+                  className="absolute top-full left-1/2 w-[26rem] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl backdrop-blur-xl text-slate-900"
                 >
                   {eventLinks.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
-                      className="block rounded-2xl px-4 py-3 transition-colors hover:bg-white/10"
+                      className="block rounded-2xl px-4 py-3 transition-colors hover:bg-slate-100"
                     >
-                      <span className="block text-sm font-semibold text-white">{item.label}</span>
-                      <span className="block text-xs text-white/70">{item.desc}</span>
+                      <span className="block text-sm font-bold text-slate-900">{item.label}</span>
+                      <span className="block text-xs text-slate-500">{item.desc}</span>
                     </Link>
                   ))}
                 </motion.div>
@@ -123,61 +124,66 @@ export function Navbar() {
           <NavLink
             to="/contact"
             className={({ isActive }) =>
-              cn(linkClass, isActive ? "text-sky-400 font-semibold after:scale-x-100" : "")
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
             }
           >
             Contact Us
           </NavLink>
         </div>
 
+        {/* Right Action Icons & Buttons */}
         <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-1 text-white/70 xl:flex">
+          <div className="hidden items-center gap-1 text-slate-600 xl:flex">
             <a
               href={contact.whatsapp}
               aria-label="WhatsApp"
-              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full p-2 transition-colors hover:bg-slate-100 hover:text-cyan-600"
             >
               <MessageCircle className="h-4 w-4" />
             </a>
             <a
               href={contact.linkedin}
               aria-label="LinkedIn"
-              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full p-2 transition-colors hover:bg-slate-100 hover:text-cyan-600"
             >
               <Linkedin className="h-4 w-4" />
             </a>
             <a
               href={contact.instagram}
               aria-label="Instagram"
-              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full p-2 transition-colors hover:bg-slate-100 hover:text-cyan-600"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
               href={contact.youtube}
               aria-label="YouTube"
-              className="rounded-full p-2 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full p-2 transition-colors hover:bg-slate-100 hover:text-cyan-600"
             >
               <Youtube className="h-4 w-4" />
             </a>
           </div>
+
           <Link
             to="/events/register"
-            className="gradient-brand hidden rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-luxe transition-transform hover:scale-[1.04] sm:inline-flex"
+            className="gradient-brand hidden rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.04] sm:inline-flex"
           >
             Register
           </Link>
+
+          {/* Mobile Menu Toggle Button */}
           <button
             type="button"
             aria-label="Toggle navigation"
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border border-white/10 bg-white/10 p-2.5 text-white hover:bg-white/20 lg:hidden"
+            className="rounded-full border border-slate-200 bg-slate-100 p-2.5 text-slate-800 transition-colors hover:bg-slate-200 lg:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </nav>
 
+      {/* Mobile Navigation Drawer */}
       <AnimatePresence>
         {open ? (
           <motion.div
@@ -186,7 +192,7 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="container-x overflow-hidden lg:hidden"
           >
-            <div className="mt-3 space-y-1 rounded-3xl border border-white/10 bg-slate-900/95 p-4 text-white backdrop-blur-xl shadow-2xl">
+            <div className="mt-3 space-y-1 rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl backdrop-blur-xl">
               {[
                 { to: "/", label: "Home" },
                 { to: "/about", label: "About Us" },
@@ -199,7 +205,7 @@ export function Navbar() {
                   key={item.label}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className="block rounded-2xl px-4 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                  className="block rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 hover:text-cyan-600"
                 >
                   {item.label}
                 </Link>
@@ -207,7 +213,7 @@ export function Navbar() {
               <Link
                 to="/events/register"
                 onClick={() => setOpen(false)}
-                className="gradient-brand mt-2 block rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white"
+                className="gradient-brand mt-3 block rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white shadow-md"
               >
                 Register Now
               </Link>
