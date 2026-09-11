@@ -44,7 +44,7 @@ export function Navbar() {
           <img
             src={logo}
             alt="ET Media Business Intelligence"
-            className="h-10 w-auto object-contain sm:h-12 md:h-13"
+            className="h-14 w-auto object-contain sm:h-18 lg:h-22"
             width={320}
             height={150}
           />
