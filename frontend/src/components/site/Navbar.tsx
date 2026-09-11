@@ -51,7 +51,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden items-center gap-8 lg:flex">
+        <div className="hidden items-center gap-4 xl:gap-5 lg:flex">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -60,6 +60,7 @@ export function Navbar() {
           >
             Home
           </NavLink>
+
           <NavLink
             to="/about"
             className={({ isActive }) =>
@@ -67,14 +68,6 @@ export function Navbar() {
             }
           >
             About Us
-          </NavLink>
-          <NavLink
-            to="/magazine"
-            className={({ isActive }) =>
-              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
-            }
-          >
-            Executive Talks Magazine
           </NavLink>
 
           <div
@@ -93,7 +86,7 @@ export function Navbar() {
               }
             >
               Events
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
             </NavLink>
             <AnimatePresence>
               {eventsOpen ? (
@@ -102,7 +95,7 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute top-full left-1/2 w-[26rem] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl backdrop-blur-xl text-slate-900"
+                  className="absolute top-full left-1/2 w-[24rem] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl backdrop-blur-xl text-slate-900"
                 >
                   {eventLinks.map((item) => (
                     <Link
@@ -120,6 +113,42 @@ export function Navbar() {
           </div>
 
           <NavLink
+            to="/events/partner"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
+            }
+          >
+            Partner With Us
+          </NavLink>
+
+          <NavLink
+            to="/magazine"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
+            }
+          >
+            Executive Talks Magazine
+          </NavLink>
+
+          <NavLink
+            to="/events/register"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
+            }
+          >
+            Delegate Registration
+          </NavLink>
+
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
+            }
+          >
+            Careers
+          </NavLink>
+
+          <NavLink
             to="/contact"
             className={({ isActive }) =>
               cn(linkClass, isActive ? "text-cyan-600 font-bold after:scale-x-100" : "")
@@ -131,7 +160,7 @@ export function Navbar() {
 
         {/* Right Action Icons & Buttons */}
         <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-1 text-slate-600 xl:flex">
+          <div className="hidden items-center gap-1 text-slate-600 2xl:flex">
             <a
               href={contact.whatsapp}
               aria-label="WhatsApp"
@@ -164,7 +193,7 @@ export function Navbar() {
 
           <Link
             to="/events/register"
-            className="gradient-brand hidden rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.04] sm:inline-flex"
+            className="gradient-brand hidden rounded-full px-4 py-2 text-xs font-semibold text-white shadow-md transition-transform hover:scale-[1.04] sm:inline-flex"
           >
             Register
           </Link>
@@ -194,16 +223,18 @@ export function Navbar() {
               {[
                 { to: "/", label: "Home" },
                 { to: "/about", label: "About Us" },
-                { to: "/magazine", label: "Executive Talks Magazine" },
                 { to: "/events", label: "Events" },
-                ...eventLinks.map((e) => ({ to: e.to, label: `— ${e.label}` })),
+                { to: "/events/partner", label: "Partner With Us" },
+                { to: "/magazine", label: "Executive Talks Magazine" },
+                { to: "/events/register", label: "Delegate Registration" },
+                { to: "/contact", label: "Careers" },
                 { to: "/contact", label: "Contact Us" },
               ].map((item) => (
                 <Link
                   key={item.label}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className="block rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 hover:text-cyan-600"
+                  className="block rounded-2xl px-4 py-2 text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-100 hover:text-cyan-600"
                 >
                   {item.label}
                 </Link>
@@ -211,7 +242,7 @@ export function Navbar() {
               <Link
                 to="/events/register"
                 onClick={() => setOpen(false)}
-                className="gradient-brand mt-3 block rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white shadow-md"
+                className="gradient-brand mt-3 block rounded-2xl px-4 py-2.5 text-center text-xs font-semibold text-white shadow-md"
               >
                 Register Now
               </Link>
