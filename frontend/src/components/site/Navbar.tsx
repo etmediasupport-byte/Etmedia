@@ -31,10 +31,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-        scrolled
-          ? "bg-white/95 border-b border-slate-200/90 py-2.5 backdrop-blur-md shadow-md"
-          : "bg-white/90 border-b border-slate-200/60 py-3.5 backdrop-blur-md shadow-sm",
+        "fixed inset-x-0 top-0 z-50 bg-white border-b border-slate-200/80 transition-all duration-300 shadow-sm",
+        scrolled ? "py-2.5 shadow-md" : "py-3.5",
       )}
     >
       <nav className="container-x flex items-center justify-between gap-4">
