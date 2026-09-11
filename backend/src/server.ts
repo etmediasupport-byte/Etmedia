@@ -360,7 +360,7 @@ app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
         totalContacts,
         activeLiveUsers: liveActiveUsers,
         serverUptime: Math.floor(process.uptime()),
-        databaseStatus: "Connected (Laragon MySQL)",
+        databaseStatus: "Connected (Hostinger MySQL u409108324_ETMedia)",
       },
     });
   } catch (err) {
