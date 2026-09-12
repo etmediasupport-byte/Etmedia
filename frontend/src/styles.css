@@ -18,8 +18,9 @@
   --radius-2xl: calc(var(--radius) + 12px);
   --radius-3xl: calc(var(--radius) + 18px);
   --radius-4xl: calc(var(--radius) + 26px);
-  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-btn: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -155,11 +156,75 @@
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
+    font-weight: 700;
     letter-spacing: -0.025em;
     color: var(--color-ink);
   }
+
+  button,
+  .btn,
+  .btn-brand,
+  .font-btn {
+    font-family: var(--font-btn);
+    font-weight: 600;
+  }
+}
+
+/* --- ANIMATED GRADIENT BACKGROUND --- */
+@keyframes gradient-mesh-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-mesh {
+  background: linear-gradient(-45deg, #00aeef, #4b1fa7, #14c6f8, #0a0e27);
+  background-size: 400% 400%;
+  animation: gradient-mesh-flow 15s ease infinite;
+}
+
+/* --- FLOATING SHAPES --- */
+@keyframes float-shape-1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  50% { transform: translateY(-24px) rotate(8deg) scale(1.05); }
+}
+
+@keyframes float-shape-2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  50% { transform: translateY(-32px) rotate(-10deg) scale(1.08); }
+}
+
+.float-shape-slow {
+  animation: float-shape-1 12s ease-in-out infinite;
+}
+
+.float-shape-medium {
+  animation: float-shape-2 9s ease-in-out infinite;
+}
+
+/* --- IMAGE ZOOM HOVER --- */
+.image-zoom-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.image-zoom-container img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s ease;
+}
+
+.image-zoom-container:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.05);
 }
 
 @utility glass-card {

@@ -8,7 +8,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { initDatabase, pool } from "./db.js";
+import { initDatabase, pool, ensureEventsTable } from "./db.js";
 
 dotenv.config();
 
@@ -27,7 +27,8 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static assets from public folder (including compiled frontend build)
 const publicPath = path.join(__dirname, "../public");
@@ -135,11 +136,29 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// 2. Events listing
-app.get("/api/events", (_req, res) => {
-  res.json({
-    success: true,
-    data: [
+// 2. Events listing (Public API with DB query & static fallback)
+app.get("/api/events", async (req, res) => {
+  try {
+    const { status, featured } = req.query;
+    if (pool) {
+      let query = "SELECT * FROM events WHERE status != 'draft'";
+      const params: any[] = [];
+
+      if (featured === "true" || featured === "1") {
+        query += " AND is_featured = 1";
+      }
+      if (status) {
+        query += " AND status = ?";
+        params.push(status);
+      }
+
+      query += " ORDER BY created_at DESC";
+      const [rows]: any = await pool.query(query, params);
+      return res.json({ success: true, data: rows });
+    }
+
+    // Static fallback
+    const fallbackData = [
       {
         id: "cfo-leadership-summit",
         slug: "cfo-leadership-summit-2026",
@@ -147,10 +166,13 @@ app.get("/api/events", (_req, res) => {
         category: "Conference & Leadership",
         date: "October 24, 2026",
         city: "Mumbai",
+        venue: "The St. Regis, Lower Parel",
         time: "09:00 AM — 06:00 PM",
         speakers: 28,
-        status: "upcoming",
-        description: "Reinventing capital allocation, enterprise risk and AI-driven financial strategies.",
+        status: "published",
+        is_featured: 1,
+        image: "/assets/event-cfo-BjslOJNi.jpg",
+        description: "Reinventing capital allocation, enterprise risk, treasury compliance & AI-driven financial strategies.",
       },
       {
         id: "hr-excellence-awards",
@@ -159,9 +181,12 @@ app.get("/api/events", (_req, res) => {
         category: "Awards & Recognition",
         date: "November 18, 2026",
         city: "Bengaluru",
+        venue: "JW Marriott Hotel, UB City",
         time: "05:00 PM — 10:00 PM",
         speakers: 16,
-        status: "upcoming",
+        status: "published",
+        is_featured: 1,
+        image: "/assets/event-hr-Cswpuq5H.jpg",
         description: "Honouring chief human resource officers and organisations building elite work cultures.",
       },
       {
@@ -171,13 +196,21 @@ app.get("/api/events", (_req, res) => {
         category: "Summit & Tech",
         date: "December 05, 2026",
         city: "Hyderabad",
+        venue: "HICC Novotel, Hitec City",
         time: "09:30 AM — 05:30 PM",
         speakers: 34,
-        status: "upcoming",
-        description: "Connecting CIOs, CTOs, and tech leaders deploying generative AI and cloud infrastructure.",
+        status: "published",
+        is_featured: 1,
+        image: "/assets/hero-summit-ClCGVqfO.jpg",
+        description: "Connecting CIOs, CTOs, and tech leaders deploying generative AI, cloud infrastructure & cybersecurity.",
       },
-    ],
-  });
+    ];
+
+    res.json({ success: true, data: fallbackData });
+  } catch (err) {
+    console.error("Fetch Public Events Error:", err);
+    res.status(500).json({ success: false, message: "Failed to load events." });
+  }
 });
 
 // 3. Event registration endpoint
@@ -390,6 +423,170 @@ app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Fetch Contacts Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch contacts." });
+  }
+});
+
+// 0. Image File Upload Handler (saves uploaded image to /public/uploads/)
+app.post("/api/admin/upload", authenticateAdmin, async (req, res) => {
+  const { imageBase64, filename } = req.body;
+  if (!imageBase64) {
+    return res.status(400).json({ success: false, message: "No image data provided." });
+  }
+
+  try {
+    const uploadsDir = path.join(publicPath, "uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    const ext = matches && matches[1] ? matches[1].split("/")[1] : "jpg";
+    const cleanFilename = `banner_${Date.now()}.${ext}`;
+    const filePath = path.join(uploadsDir, cleanFilename);
+    const base64Data = matches ? matches[2] : imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    fs.writeFileSync(filePath, buffer);
+
+    const imageUrl = `/uploads/${cleanFilename}`;
+    return res.json({ success: true, url: imageUrl, message: "Image banner uploaded successfully!" });
+  } catch (err: any) {
+    console.error("Upload error:", err);
+    return res.status(500).json({ success: false, message: "Failed to upload image file." });
+  }
+});
+
+// 1. Get all events for admin (including drafts & published)
+app.get("/api/admin/events", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, events: [] });
+    await ensureEventsTable();
+    const [rows]: any = await pool.query("SELECT * FROM events ORDER BY created_at DESC");
+    res.json({ success: true, events: rows });
+  } catch (err) {
+    console.error("Admin Fetch Events Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch events." });
+  }
+});
+
+// 2. Create new event
+app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
+  const { title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured } = req.body;
+
+  if (!title || !category || !date || !city || !description) {
+    return res.status(400).json({ success: false, message: "Title, category, date, city, and description are required." });
+  }
+
+  const id = `EVT-${Date.now()}`;
+  const rawSlug = req.body.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const slug = `${rawSlug}-${Date.now().toString().slice(-4)}`;
+  const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
+
+  try {
+    if (pool) {
+      await ensureEventsTable();
+      await pool.query(
+        "INSERT INTO events (id, slug, title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          id,
+          slug,
+          title,
+          category,
+          date,
+          time || "09:00 AM — 06:00 PM",
+          city,
+          venue || `${city} Main Convention Center`,
+          locationsStr,
+          description,
+          image || "/assets/event-cfo-BjslOJNi.jpg",
+          speakers || 20,
+          status || "published",
+          is_featured ? 1 : 0,
+        ]
+      );
+    }
+
+    const newEvent = { id, slug, title, category, date, time, city, venue, locations: locationsStr, description, image, speakers, status, is_featured };
+    io.emit("event_created", newEvent);
+
+    return res.status(201).json({ success: true, message: "Event created successfully!", data: newEvent });
+  } catch (err: any) {
+    console.error("Create Event DB Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to create event." });
+  }
+});
+
+// 3. Update existing event
+app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured } = req.body;
+  const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
+
+  try {
+    if (pool) {
+      await pool.query(
+        "UPDATE events SET title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, image = ?, speakers = ?, status = ?, is_featured = ? WHERE id = ?",
+        [title, category, date, time, city, venue, locationsStr, description, image, speakers, status, is_featured ? 1 : 0, id]
+      );
+    }
+
+    const updatedEvent = { id, title, category, date, time, city, venue, locations: locationsStr, description, image, speakers, status, is_featured };
+    io.emit("event_updated", updatedEvent);
+
+    return res.json({ success: true, message: "Event updated successfully!", data: updatedEvent });
+  } catch (err: any) {
+    console.error("Update Event DB Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update event." });
+  }
+});
+
+// 4. Delete event
+app.delete("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM events WHERE id = ?", [id]);
+    }
+    io.emit("event_deleted", { id });
+    return res.json({ success: true, message: "Event deleted successfully!" });
+  } catch (err) {
+    console.error("Delete Event DB Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete event." });
+  }
+});
+
+// 5. Toggle Publish / Draft status
+app.patch("/api/admin/events/:id/status", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    if (pool) {
+      await pool.query("UPDATE events SET status = ? WHERE id = ?", [status, id]);
+    }
+    io.emit("event_status_changed", { id, status });
+    return res.json({ success: true, message: `Event status changed to ${status}!` });
+  } catch (err) {
+    console.error("Status Toggle Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to change status." });
+  }
+});
+
+// 6. Toggle Featured state
+app.patch("/api/admin/events/:id/featured", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { is_featured } = req.body;
+
+  try {
+    if (pool) {
+      await pool.query("UPDATE events SET is_featured = ? WHERE id = ?", [is_featured ? 1 : 0, id]);
+    }
+    io.emit("event_featured_changed", { id, is_featured });
+    return res.json({ success: true, message: `Event featured state updated!` });
+  } catch (err) {
+    console.error("Featured Toggle Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update featured state." });
   }
 });
 

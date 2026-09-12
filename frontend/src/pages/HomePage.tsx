@@ -14,7 +14,18 @@ import {
   TrendingUp,
   Download,
   BookOpen,
-  Library,
+  ArrowRight,
+  Sparkles,
+  Building2,
+  Compass,
+  Target,
+  X,
+  Mail,
+  CheckCircle2,
+  Cpu,
+  HeartPulse,
+  Factory,
+  Layers,
 } from "lucide-react";
 import {
   events,
@@ -26,10 +37,17 @@ import {
   stats,
   testimonials,
 } from "@/lib/site-data";
-import { Counter, GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
+import { GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
 import { EventCard } from "@/components/site/EventCard";
-
-
+import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
+import { MagneticButton } from "@/components/ui/MagneticButton";
+import { CountUpNumber } from "@/components/ui/CountUpNumber";
+import { FloatingShapes } from "@/components/ui/FloatingShapes";
+import { ImageZoomCard } from "@/components/ui/ImageZoomCard";
+import { HeroSection } from "@/components/site/HeroSection";
+import { InteractiveMapSection } from "@/components/site/InteractiveMapSection";
+import { StatisticsSection } from "@/components/site/StatisticsSection";
+import { toast } from "sonner";
 
 const iconMap = {
   Crown,
@@ -42,359 +60,155 @@ const iconMap = {
   Globe2,
 };
 
-function Hero() {
+const industries = [
+  { icon: TrendingUp, title: "Finance & CFO Ecosystem", desc: "Capital allocation, enterprise risk, compliance & treasury strategy." },
+  { icon: Crown, title: "HR & People Leadership", desc: "Talent strategy, AI in workforce, culture & executive retention." },
+  { icon: Cpu, title: "Enterprise Tech & AI", desc: "CIO/CTO conclaves, cloud migration, cybersecurity & generative AI." },
+  { icon: Factory, title: "Manufacturing & Operations", desc: "Industry 4.0, smart factories, supply chain resilience & logistics." },
+  { icon: HeartPulse, title: "Healthcare & Lifesciences", desc: "Pharma innovation, digital health ecosystems & medical technology." },
+  { icon: Globe2, title: "GCC & Global Capability Centers", desc: "India site expansion, capability scaling & talent acquisition." },
+];
+
+const galleryPreviewPhotos = [
+  images.heroLeadership,
+  images.heroAwards,
+  images.eventHr,
+  images.heroNetworking,
+  images.eventCfo,
+  images.heroSummit,
+];
+
+// SECTION 1: HERO CAROUSEL
+function HeroCarousel() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setIndex((i) => (i + 1) % heroSlides.length), 5000);
+    const id = setInterval(() => setIndex((i) => (i + 1) % heroSlides.length), 6000);
     return () => clearInterval(id);
   }, []);
 
   const slide = heroSlides[index]!;
 
   return (
-    <section className="relative h-[90vh] min-h-[560px] w-full overflow-hidden lg:h-screen">
+    <section className="relative h-[92vh] min-h-[620px] w-full overflow-hidden lg:h-screen">
+      {/* Background Image with Smooth Cross-Fade & Slow Zoom */}
       <AnimatePresence mode="sync">
         <motion.img
           key={index}
           src={slide.image}
           alt={slide.kicker}
-          initial={{ opacity: 0, scale: 1.12 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 1.15 }}
+          animate={{ opacity: 1, scale: 1.02 }}
           exit={{ opacity: 0 }}
-          transition={{ opacity: { duration: 1.2 }, scale: { duration: 6, ease: "linear" } }}
+          transition={{ opacity: { duration: 1.4 }, scale: { duration: 7, ease: "linear" } }}
           className="absolute inset-0 h-full w-full object-cover"
           width={1920}
           height={1080}
         />
       </AnimatePresence>
-      <div className="absolute inset-0 bg-[linear-gradient(110deg,oklch(0.13_0.02_265/0.92),oklch(0.36_0.198_291.5/0.55))]" />
-      <div className="bg-brand-blue/25 float-orb absolute top-1/4 -left-20 h-96 w-96 rounded-full" />
-      <div
-        className="bg-brand-purple/25 float-orb absolute -right-16 bottom-0 h-96 w-96 rounded-full"
-        style={{ animationDelay: "4s" }}
-      />
 
-      <div className="container-x relative flex h-full flex-col justify-center pt-24">
+      {/* Dark Mesh Overlay & Background Floating Shapes */}
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-900/75 to-indigo-950/65" />
+      <FloatingShapes />
+
+      <div className="container-x relative flex h-full flex-col justify-center pt-24 z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -30, filter: "blur(6px)" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-3xl"
           >
-            <span className="glass-dark inline-flex rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.22em] text-white uppercase">
-              {slide.kicker}
-            </span>
-            <h1 className="mt-6 text-4xl leading-[1.05] font-semibold text-white sm:text-5xl lg:text-6xl xl:text-7xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+              <span className="text-xs font-bold tracking-[0.2em] text-cyan-300 uppercase">
+                {slide.kicker}
+              </span>
+            </div>
+
+            <h1 className="mt-6 text-4xl leading-[1.08] font-extrabold text-white sm:text-6xl lg:text-7xl font-display tracking-tight">
               {slide.title}
             </h1>
-            <p className="mt-6 max-w-xl text-base text-white/80 sm:text-lg">{slide.description}</p>
-            <div className="mt-9 flex flex-wrap gap-4">
-              <Link
-                to="/events/register"
-                className="gradient-brand rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-luxe transition-transform hover:scale-[1.04]"
-              >
-                Register Now
-              </Link>
-              <Link
-                to="/events"
-                className="glass-dark rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"
-              >
-                Explore Events
-              </Link>
+
+            <p className="mt-6 max-w-xl text-base text-slate-200 sm:text-lg leading-relaxed">
+              {slide.description}
+            </p>
+
+            <div className="mt-10 flex flex-wrap gap-4 items-center">
+              <MagneticButton strength={20} className="gradient-brand rounded-full px-8 py-4 text-base font-semibold text-white shadow-luxe hover:brightness-110">
+                <Link to="/events/register" className="flex items-center gap-2">
+                  Register Now <ArrowRight className="h-4 w-4" />
+                </Link>
+              </MagneticButton>
+
+              <MagneticButton strength={15} className="glass-dark rounded-full px-8 py-4 text-base font-semibold text-white border border-white/20 hover:bg-white/20">
+                <Link to="/events">Explore Events</Link>
+              </MagneticButton>
             </div>
           </motion.div>
         </AnimatePresence>
 
-        <div className="mt-12 flex gap-2">
+        {/* Carousel Slide Progress Bar */}
+        <div className="mt-16 flex items-center gap-3 z-20">
           {heroSlides.map((s, i) => (
             <button
               key={s.kicker}
               type="button"
               aria-label={`Go to slide ${i + 1}`}
               onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                i === index ? "gradient-brand w-12" : "w-6 bg-white/35"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Stats() {
-  return (
-    <section className="section relative">
-      <GlowBackdrop />
-      <div className="container-x relative grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        {stats.map((s, i) => (
-          <Reveal key={s.label} delay={i * 0.08}>
-            <div className="glass-card gradient-ring lift h-full rounded-3xl p-7 text-center">
-              <p className="text-gradient text-4xl font-bold">
-                <Counter value={s.value} suffix={s.suffix} />
-              </p>
-              <p className="text-muted-foreground mt-2 text-sm font-medium">{s.label}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Empowering() {
-  return (
-    <section className="bg-surface section">
-      <div className="container-x">
-        <SectionHeading
-          kicker="Our Mission"
-          title="Empowering Businesses Through Innovation"
-          description="ET Media Business Intelligence connects enterprises, leaders and ideas through curated conferences, awards, media promotions and long-term networking ecosystems."
-        />
-        <div className="mt-14 grid items-start gap-10 lg:grid-cols-2">
-          <Reveal>
-            <div className="relative overflow-hidden rounded-4xl">
-              <img
-                src={images.aboutOffice}
-                alt="Executives collaborating in a corporate office"
-                loading="lazy"
-                width={1400}
-                height={1000}
-                className="h-full w-full object-cover"
-              />
-              <div className="gradient-soft absolute inset-0" />
-            </div>
-          </Reveal>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {services.map((s, i) => {
-              const Icon = iconMap[s.icon];
-              return (
-                <Reveal key={s.title} delay={i * 0.05}>
-                  <div className="glass-card lift h-full rounded-3xl p-5">
-                    <span className="gradient-brand inline-flex rounded-2xl p-2.5 text-white">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <h3 className="mt-4 text-base font-semibold">{s.title}</h3>
-                    <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-                      {s.description}
-                    </p>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Services() {
-  return (
-    <section className="section">
-      <div className="container-x">
-        <SectionHeading
-          kicker="What We Deliver"
-          title="Enterprise-Grade Business Platforms"
-          description="Eight service lines built to put your brand in front of the decision makers who matter."
-        />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((s, i) => {
-            const Icon = iconMap[s.icon];
-            return (
-              <Reveal key={s.title} delay={i * 0.05}>
-                <div className="glass-card gradient-ring lift group h-full rounded-3xl p-7">
-                  <span className="gradient-soft text-primary inline-flex rounded-2xl p-3 transition-transform duration-500 group-hover:scale-110">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                    {s.description}
-                  </p>
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeaturedConferences() {
-  const featured = events.filter((e) => e.status === "upcoming");
-  return (
-    <section className="bg-surface section">
-      <div className="container-x">
-        <SectionHeading
-          align="left"
-          kicker="Featured Conferences"
-          title="On Stage This Season"
-          description="Swipe through the conferences currently open for delegate registration."
-        />
-        <div className="mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6">
-          {featured.map((event) => (
-            <div key={event.slug} className="w-[85vw] shrink-0 snap-start sm:w-[24rem]">
-              <EventCard event={event} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Upcoming() {
-  return (
-    <section className="section">
-      <div className="container-x">
-        <SectionHeading
-          kicker="Upcoming Events"
-          title="Reserve Your Seat In The Room"
-          description="Limited delegate seats per conference to keep the quality of conversation high."
-        />
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events
-            .filter((e) => e.status === "upcoming")
-            .slice(0, 3)
-            .map((event, i) => (
-              <Reveal key={event.slug} delay={i * 0.08}>
-                <EventCard event={event} />
-              </Reveal>
-            ))}
-        </div>
-        <Reveal className="mt-10 text-center">
-          <Link
-            to="/events/upcoming"
-            className="hover:bg-accent inline-flex rounded-full border border-border px-7 py-3 text-sm font-semibold transition-colors"
-          >
-            View all events
-          </Link>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function MagazinePreview() {
-  return (
-    <section className="gradient-ink section relative overflow-hidden">
-      <div className="bg-brand-blue/25 float-orb absolute top-10 -left-24 h-80 w-80 rounded-full" />
-      <div className="container-x relative grid items-center gap-14 lg:grid-cols-2">
-        <Reveal>
-          <div className="[perspective:1600px]">
-            <motion.div
-              initial={{ rotateY: -28, rotateX: 6 }}
-              whileHover={{ rotateY: -8, scale: 1.03 }}
-              transition={{ type: "spring", stiffness: 120, damping: 16 }}
-              className="relative mx-auto w-64 sm:w-80 [transform-style:preserve-3d]"
+              className="relative h-2 rounded-full overflow-hidden transition-all duration-500 cursor-pointer"
+              style={{ width: i === index ? "4rem" : "1.5rem", backgroundColor: "rgba(255, 255, 255, 0.25)" }}
             >
-              <div className="absolute inset-y-3 -right-4 rounded-r-2xl bg-white/25 [transform:rotateY(-14deg)_translateZ(-24px)]" />
-              <div className="absolute inset-y-1.5 -right-2 rounded-r-2xl bg-white/50 [transform:rotateY(-8deg)_translateZ(-12px)]" />
-              <img
-                src={images.magazineCover}
-                alt="Executive Talks magazine cover"
-                loading="lazy"
-                width={912}
-                height={1200}
-                className="relative rounded-2xl shadow-[0_50px_90px_-40px_rgba(0,0,0,0.8)]"
-              />
-            </motion.div>
-          </div>
-        </Reveal>
-        <div>
-          <span className="glass-dark inline-flex rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.2em] text-white uppercase">
-            Executive Talks
-          </span>
-          <h2 className="mt-5 text-3xl font-semibold text-white sm:text-4xl">
-            The Magazine For India's Decision Makers
-          </h2>
-          <p className="mt-4 max-w-xl text-white/75">
-            Long-form interviews, sector intelligence and leadership perspectives — published for
-            the executives shaping industry.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              to="/magazine"
-              className="gradient-brand inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white"
-            >
-              <BookOpen className="h-4 w-4" /> Read Magazine
-            </Link>
-            <Link
-              to="/magazine"
-              className="glass-dark inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white"
-            >
-              <Download className="h-4 w-4" /> Download PDF
-            </Link>
-            <Link
-              to="/magazine"
-              className="glass-dark inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white"
-            >
-              <Library className="h-4 w-4" /> View Archive
-            </Link>
-          </div>
-          <div className="mt-10 flex gap-4 overflow-x-auto pb-4">
-            {magazines.slice(0, 4).map((m) => (
-              <div key={m.issue} className="w-32 shrink-0">
-                <img
-                  src={m.cover}
-                  alt={`${m.title} cover`}
-                  loading="lazy"
-                  width={400}
-                  height={520}
-                  className="h-40 w-full rounded-xl object-cover"
+              {i === index && (
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 6, ease: "linear" }}
+                  className="h-full gradient-brand rounded-full"
                 />
-                <p className="mt-2 text-xs text-white/70">{m.issue}</p>
-              </div>
-            ))}
-          </div>
+              )}
+            </button>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function Testimonials() {
+// SECTION 2: ET MEDIA EVENT NETWORK
+function EventNetwork() {
+  const formats = [
+    { icon: Crown, title: "Leadership Summits", desc: "Flagship national conclaves bringing together C-Suite leaders for strategic dialogue.", count: "12+ Summits / Year" },
+    { icon: Award, title: "Industry Awards", desc: "Prestigious recognition programs honoring benchmark organizations & benchmark executives.", count: "40+ Awardees / Event" },
+    { icon: Rocket, title: "Brand & Launch Conclaves", desc: "Curated launch platforms designed for enterprise product unveilings to decision makers.", count: "National Media Reach" },
+    { icon: Gem, title: "Executive Networking Dinners", desc: "Exclusive, closed-door dinners for senior leaders to foster long-term commercial ties.", count: "Strictly By Invitation" },
+  ];
+
   return (
-    <section className="section">
-      <div className="container-x">
+    <section className="bg-surface section relative overflow-hidden">
+      <div className="container-x relative z-10">
         <SectionHeading
-          kicker="Testimonials"
-          title="What Industry Leaders Are Saying About Us"
+          kicker="Platform Formats"
+          title="ET Media Event Network"
+          description="Four signature conference and event formats engineered to connect decision makers with high-value commercial outcomes."
         />
-        <div className="mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 md:grid md:grid-cols-3 md:overflow-visible">
-          {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 0.08} className="w-[85vw] shrink-0 snap-start md:w-auto">
-              <div className="glass-card lift h-full overflow-hidden rounded-3xl">
-                <div className="relative aspect-video">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${t.videoId}`}
-                    title={`${t.name} testimonial`}
-                    loading="lazy"
-                    allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0 h-full w-full"
-                  />
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {formats.map((f, i) => (
+            <Reveal key={f.title} delay={i * 0.08}>
+              <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80 flex flex-col justify-between">
+                <div>
+                  <span className="gradient-brand inline-flex rounded-2xl p-3.5 text-white shadow-md">
+                    <f.icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="mt-5 text-xl font-bold font-display text-foreground">{f.title}</h3>
+                  <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{f.desc}</p>
                 </div>
-                <div className="p-6">
-                  <Quote className="text-primary h-5 w-5" />
-                  <p className="mt-3 text-sm leading-relaxed">{t.quote}</p>
-                  <div className="mt-5 flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, s) => (
-                      <Star key={s} className="fill-brand-blue text-brand-blue h-4 w-4" />
-                    ))}
-                  </div>
-                  <p className="mt-4 font-semibold">{t.name}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {t.role}, {t.company}
-                  </p>
+                <div className="mt-6 pt-4 border-t border-border/60">
+                  <span className="text-xs font-bold text-brand-blue uppercase tracking-wider">{f.count}</span>
                 </div>
-              </div>
+              </MouseTiltCard>
             </Reveal>
           ))}
         </div>
@@ -403,20 +217,231 @@ function Testimonials() {
   );
 }
 
-function Partners() {
+// SECTION 3: ABOUT ET MEDIA SNAPSHOT
+function AboutSnapshot() {
+  return (
+    <section className="section relative overflow-hidden bg-background">
+      <FloatingShapes />
+      <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
+        <Reveal>
+          <ImageZoomCard src={images.aboutOffice} alt="ET Media Executive Office" className="aspect-[4/3] rounded-4xl shadow-2xl">
+            <div className="gradient-soft absolute inset-0 pointer-events-none" />
+          </ImageZoomCard>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <span className="text-brand-blue text-xs font-bold tracking-[0.24em] uppercase font-btn">
+            About ET Media
+          </span>
+          <h2 className="mt-4 text-3xl font-bold font-display sm:text-5xl leading-tight">
+            Building India's Premier Corporate Platforms
+          </h2>
+          <div className="text-muted-foreground mt-6 space-y-4 leading-relaxed text-base sm:text-lg">
+            <p>
+              ET Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
+            </p>
+            <p>
+              From CFO leadership summits to national HR excellence awards and GCC expansion conclaves, our events connect more than 50,000 corporate delegates each year.
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <MagneticButton strength={15} className="gradient-brand rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-md">
+              <Link to="/about">Learn Our Story</Link>
+            </MagneticButton>
+            <MagneticButton strength={15} className="hover:bg-accent rounded-full border border-border px-7 py-3.5 text-sm font-semibold transition-colors">
+              <Link to="/events/partner">Partner With Us</Link>
+            </MagneticButton>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 4: UPCOMING EVENTS (Dynamic API CMS)
+function UpcomingEvents() {
+  const [eventList, setEventList] = useState<any[]>(events);
+
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setEventList(data.data);
+        }
+      })
+      .catch((err) => console.warn("Using static events fallback:", err));
+  }, []);
+
+  return (
+    <section className="bg-surface section relative overflow-hidden">
+      <div className="container-x relative z-10">
+        <SectionHeading
+          kicker="Upcoming Events"
+          title="Reserve Your Delegate Seat"
+          description="Conferences currently open for senior executive registration across India's top business hubs."
+        />
+        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {eventList.slice(0, 3).map((evt, i) => (
+            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08}>
+              <EventCard event={evt} />
+            </Reveal>
+          ))}
+        </div>
+        <Reveal className="mt-12 text-center">
+          <MagneticButton strength={18} className="hover:bg-accent rounded-full border border-border px-8 py-3.5 text-sm font-semibold transition-colors">
+            <Link to="/events">View All Upcoming Events</Link>
+          </MagneticButton>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 5: WHY ET MEDIA
+function WhyEtMedia() {
+  const pillars = [
+    { icon: Building2, title: "Curated Leadership Audiences", desc: "Every delegate is verified. We ensure rooms are populated strictly by decision-making executives." },
+    { icon: Compass, title: "Verified C-Suite Speakers", desc: "Hear directly from practitioners, founders, and industry veterans who have built at scale." },
+    { icon: Sparkles, title: "5M+ Executive Media Reach", desc: "Amplified across digital channels and our Executive Talks Magazine for year-round visibility." },
+    { icon: Target, title: "Measurable Commercial Growth", desc: "Structured networking ecosystems engineered to convert initial introductions into commercial deals." },
+  ];
+
+  return (
+    <section className="section relative bg-background">
+      <div className="container-x relative z-10">
+        <SectionHeading
+          kicker="Why Choose Us"
+          title="Why Enterprises Partner With ET Media"
+          description="Four core pillars that set ET Media Business Intelligence apart in corporate event curation."
+        />
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {pillars.map((p, i) => (
+            <Reveal key={p.title} delay={i * 0.08}>
+              <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80">
+                <span className="gradient-soft text-brand-blue inline-flex rounded-2xl p-3.5 shadow-sm">
+                  <p.icon className="h-6 w-6" />
+                </span>
+                <h3 className="mt-6 text-lg font-bold font-display">{p.title}</h3>
+                <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{p.desc}</p>
+              </MouseTiltCard>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 6: INDUSTRIES WE SERVE
+function IndustriesWeServe() {
+  return (
+    <section className="bg-surface section relative overflow-hidden">
+      <FloatingShapes />
+      <div className="container-x relative z-10">
+        <SectionHeading
+          kicker="Sector Focus"
+          title="Industries We Serve"
+          description="Specialized leadership conclaves tailored for sector-specific enterprise challenges."
+        />
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {industries.map((ind, i) => (
+            <Reveal key={ind.title} delay={i * 0.06}>
+              <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-3xl p-7 border border-border flex items-start gap-4">
+                <span className="gradient-brand p-3 rounded-2xl text-white shrink-0 shadow-md">
+                  <ind.icon className="h-6 w-6" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold font-display text-foreground">{ind.title}</h3>
+                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{ind.desc}</p>
+                </div>
+              </MouseTiltCard>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 7: EXECUTIVE TALKS MAGAZINE
+function MagazineSection() {
+  return (
+    <section className="bg-slate-50 section relative overflow-hidden text-slate-900 border-y border-slate-200">
+      <FloatingShapes />
+      <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
+        <Reveal>
+          <div className="[perspective:1600px]">
+            <motion.div
+              initial={{ rotateY: -25, rotateX: 5 }}
+              whileHover={{ rotateY: -5, scale: 1.04 }}
+              transition={{ type: "spring", stiffness: 120, damping: 16 }}
+              className="relative mx-auto w-64 sm:w-80 [transform-style:preserve-3d]"
+            >
+              <div className="absolute inset-y-3 -right-4 rounded-r-2xl bg-slate-200/60 [transform:rotateY(-14deg)_translateZ(-24px)]" />
+              <div className="absolute inset-y-1.5 -right-2 rounded-r-2xl bg-slate-300/80 [transform:rotateY(-8deg)_translateZ(-12px)]" />
+              <img
+                src={images.magazineCover}
+                alt="Executive Talks magazine cover"
+                loading="lazy"
+                width={912}
+                height={1200}
+                className="relative rounded-2xl shadow-2xl border border-slate-200"
+              />
+            </motion.div>
+          </div>
+        </Reveal>
+        <div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-50 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-800 uppercase font-btn shadow-sm">
+            Executive Talks Magazine
+          </span>
+          <h2 className="mt-6 text-3xl font-bold font-display text-slate-900 sm:text-5xl leading-tight">
+            The Publication For India's Decision Makers
+          </h2>
+          <p className="mt-5 max-w-xl text-slate-700 text-base leading-relaxed">
+            In-depth interviews, sector intelligence reports and C-Suite perspectives — published quarterly for executive leaders across India.
+          </p>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <MagneticButton strength={15} className="gradient-brand rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-md">
+              <Link to="/magazine" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" /> Read Online
+              </Link>
+            </MagneticButton>
+            <MagneticButton strength={15} className="bg-white rounded-full px-7 py-3.5 text-sm font-semibold text-slate-800 border border-slate-300 shadow-sm hover:bg-slate-100">
+              <Link to="/magazine" className="flex items-center gap-2">
+                <Download className="h-4 w-4" /> Download PDF Edition
+              </Link>
+            </MagneticButton>
+          </div>
+          <div className="mt-12 flex gap-4 overflow-x-auto pb-4">
+            {magazines.slice(0, 4).map((m) => (
+              <ImageZoomCard key={m.issue} src={m.cover} alt={`${m.title} cover`} className="w-32 h-44 shrink-0 rounded-xl shadow-lg">
+                <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-md rounded-lg p-1.5 text-center">
+                  <p className="text-[10px] text-white/80 font-medium">{m.issue}</p>
+                </div>
+              </ImageZoomCard>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 8: OUR COLLABORATORS
+function CollaboratorsMarquee() {
   return (
     <section className="bg-surface py-16">
       <div className="container-x">
-        <p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.24em] uppercase">
-          Trusted by leading organisations
+        <p className="text-muted-foreground text-center text-xs font-bold tracking-[0.28em] uppercase font-btn">
+          Trusted By Industry Leaders & Corporate Sponsors
         </p>
       </div>
       <div className="mt-10 overflow-hidden">
-        <div className="marquee-track flex w-max gap-14">
+        <div className="marquee-track flex w-max gap-16">
           {[...partners, ...partners].map((p, i) => (
             <span
               key={`${p}-${i}`}
-              className="text-muted-foreground/60 hover:text-gradient text-xl font-semibold tracking-[0.2em] whitespace-nowrap grayscale transition-all duration-300 hover:grayscale-0"
+              className="text-muted-foreground/50 hover:text-gradient text-2xl font-bold font-display tracking-[0.2em] whitespace-nowrap grayscale transition-all duration-300 hover:grayscale-0 cursor-default"
             >
               {p}
             </span>
@@ -427,39 +452,160 @@ function Partners() {
   );
 }
 
-function CallToAction() {
+// SECTION 9: STATISTICS SECTION (Rendered via imported StatisticsSection component)
+
+// SECTION 10: TESTIMONIALS
+function TestimonialsSection() {
   return (
-    <section className="section">
+    <section className="section bg-surface">
+      <div className="container-x">
+        <SectionHeading
+          kicker="Testimonials"
+          title="What Industry Leaders Say"
+          description="Hear from C-Suite executives who participate in ET Media platforms."
+        />
+        <div className="mt-16 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 md:grid md:grid-cols-3 md:overflow-visible">
+          {testimonials.map((t, i) => (
+            <Reveal key={t.name} delay={i * 0.08} className="w-[88vw] shrink-0 snap-start md:w-auto">
+              <MouseTiltCard maxTilt={10} className="glass-card h-full overflow-hidden rounded-3xl border border-border/80">
+                <div className="relative aspect-video">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${t.videoId}`}
+                    title={`${t.name} testimonial`}
+                    loading="lazy"
+                    allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full"
+                  />
+                </div>
+                <div className="p-7">
+                  <Quote className="text-brand-blue h-6 w-6" />
+                  <p className="mt-3 text-sm leading-relaxed text-foreground/90">{t.quote}</p>
+                  <div className="mt-5 flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, s) => (
+                      <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
+                    ))}
+                  </div>
+                  <p className="mt-4 font-bold font-display text-foreground">{t.name}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {t.role}, {t.company}
+                  </p>
+                </div>
+              </MouseTiltCard>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// SECTION 11: GALLERY PREVIEW
+function GalleryPreview() {
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  return (
+    <section className="section bg-background">
+      <div className="container-x">
+        <SectionHeading kicker="Gallery Preview" title="Moments From Flagship Summits" />
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {galleryPreviewPhotos.map((src, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setLightbox(src)}
+              className="overflow-hidden rounded-3xl cursor-pointer group"
+            >
+              <ImageZoomCard src={src} alt="ET Media event highlight" className="h-64 w-full rounded-3xl" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6 backdrop-blur-md"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            aria-label="Close"
+            className="absolute top-6 right-6 rounded-full bg-white/20 p-3 text-white hover:bg-white/30"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img src={lightbox} alt="Enlarged gallery view" className="max-h-[85vh] w-auto rounded-3xl shadow-2xl" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+// SECTION 12: NEWSLETTER CTA
+function NewsletterCta() {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubscribed(true);
+    toast.success("Thank you for subscribing to ET Media Business Intelligence!");
+  };
+
+  return (
+    <section className="section bg-surface">
       <div className="container-x">
         <Reveal>
-          <div className="gradient-brand relative overflow-hidden rounded-4xl px-8 py-16 text-center text-white sm:px-16">
-            <div className="float-orb absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-white/25" />
-            <h2 className="relative text-3xl font-semibold text-white sm:text-4xl">
-              Speak. Sponsor. Participate.
-            </h2>
-            <p className="relative mx-auto mt-4 max-w-2xl text-white/85">
-              Join the ET Media ecosystem as a speaker, a sponsor or a delegate and get in front of
-              India's most relevant business audience.
-            </p>
-            <div className="relative mt-9 flex flex-wrap justify-center gap-4">
-              <Link
-                to="/contact"
-                className="rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[color:var(--brand-purple)] transition-transform hover:scale-105"
-              >
-                Become a Speaker
-              </Link>
-              <Link
-                to="/events/partner"
-                className="glass-dark rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-105"
-              >
-                Become a Sponsor
-              </Link>
-              <Link
-                to="/events/register"
-                className="glass-dark rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-105"
-              >
-                Register for Conference
-              </Link>
+          <div className="gradient-brand relative overflow-hidden rounded-4xl px-8 py-16 text-white sm:px-16 shadow-2xl">
+            <FloatingShapes />
+            <div className="relative z-10 max-w-3xl mx-auto text-center">
+              <span className="glass-dark inline-flex rounded-full px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-300 uppercase">
+                Stay Informed
+              </span>
+              <h2 className="mt-5 text-3xl font-extrabold font-display text-white sm:text-5xl leading-tight">
+                Subscribe To Enterprise Intelligence
+              </h2>
+              <p className="mt-4 text-white/90 text-base sm:text-lg leading-relaxed">
+                Receive weekly executive briefings, conference schedules, and leadership insights directly in your inbox.
+              </p>
+
+              {subscribed ? (
+                <div className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white/20 backdrop-blur-md px-6 py-3 text-white font-bold font-btn">
+                  <CheckCircle2 className="h-5 w-5 text-cyan-300" />
+                  <span>You are subscribed to ET Media Intelligence updates!</span>
+                </div>
+              ) : (
+                <form onSubmit={handleSubscribe} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto">
+                  <div className="relative w-full">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter your corporate email..."
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-full bg-white/10 backdrop-blur-md border border-white/30 pl-12 pr-4 py-3.5 text-sm text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                    />
+                  </div>
+                  <MagneticButton strength={15} type="submit" className="w-full sm:w-auto rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#4B1FA7] shadow-xl hover:bg-slate-100 shrink-0">
+                    Subscribe
+                  </MagneticButton>
+                </form>
+              )}
+
+              {/* Action Links */}
+              <div className="mt-10 flex flex-wrap justify-center gap-4 border-t border-white/20 pt-8">
+                <Link to="/contact" className="glass-dark rounded-full px-6 py-2.5 text-xs font-semibold text-white border border-white/20 hover:bg-white/20">
+                  Become a Speaker
+                </Link>
+                <Link to="/events/partner" className="glass-dark rounded-full px-6 py-2.5 text-xs font-semibold text-white border border-white/20 hover:bg-white/20">
+                  Become a Sponsor
+                </Link>
+                <Link to="/events/register" className="glass-dark rounded-full px-6 py-2.5 text-xs font-semibold text-white border border-white/20 hover:bg-white/20">
+                  Delegate Registration
+                </Link>
+              </div>
             </div>
           </div>
         </Reveal>
@@ -468,19 +614,50 @@ function CallToAction() {
   );
 }
 
+// MAIN HOME PAGE COMPONENT (EXACT 13-SECTION FLOW)
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <Stats />
-      <Empowering />
-      <Services />
-      <FeaturedConferences />
-      <Upcoming />
-      <MagazinePreview />
-      <Testimonials />
-      <Partners />
-      <CallToAction />
+      {/* 1. Hero Carousel (Premium Banners, 5s Auto Slide, 3D Globe) */}
+      <HeroSection />
+
+      {/* 2. ET Media Event Network */}
+      <EventNetwork />
+
+      {/* 3. About ET Media Snapshot */}
+      <AboutSnapshot />
+
+      {/* 4. Upcoming Events */}
+      <UpcomingEvents />
+
+      {/* 5. Why ET Media */}
+      <WhyEtMedia />
+
+      {/* 6. Industries We Serve */}
+      <IndustriesWeServe />
+
+      {/* Interactive Regional & International Event Map */}
+      <InteractiveMapSection />
+
+      {/* 7. Executive Talks Magazine */}
+      <MagazineSection />
+
+      {/* 8. Our Collaborators */}
+      <CollaboratorsMarquee />
+
+      {/* 9. Statistics Section */}
+      <StatisticsSection />
+
+      {/* 10. Testimonials */}
+      <TestimonialsSection />
+
+      {/* 11. Gallery Preview */}
+      <GalleryPreview />
+
+      {/* 12. Newsletter CTA */}
+      <NewsletterCta />
+
+      {/* 13. Footer is rendered automatically by Layout */}
     </>
   );
 }

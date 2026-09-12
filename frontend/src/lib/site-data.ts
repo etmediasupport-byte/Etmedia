@@ -74,11 +74,11 @@ export const heroSlides = [
 ];
 
 export const stats = [
-  { label: "Conferences", value: 10, suffix: "+" },
-  { label: "Industry Speakers", value: 100, suffix: "+" },
-  { label: "Business Leaders", value: 1500, suffix: "+" },
-  { label: "Industries Focused", value: 25, suffix: "" },
-  { label: "Digital Reach", value: 5, suffix: "M+" },
+  { label: "Conferences", value: 10, suffix: "+", desc: "National Conclaves & Summits" },
+  { label: "Industry Speakers", value: 100, suffix: "+", desc: "C-Suite Keynotes & Panellists" },
+  { label: "Business Leaders", value: 1500, suffix: "+", desc: "Executive Delegates Reached" },
+  { label: "Partner Brands", value: 200, suffix: "+", desc: "Sponsors & Corporate Partners" },
+  { label: "Countries", value: 5, suffix: "+", desc: "Global Footprint & Reach" },
 ];
 
 export const services = [
