@@ -33,40 +33,40 @@ export async function initDatabase() {
     (pool as any) = null;
     console.warn(`[MySQL] Direct connection to '${DB_NAME}' failed (${err.message}). Trying localhost root fallback...`);
 
-    // Strategy 2: Fallback for local Laragon/root environment
-    try {
-      const fallbackUser = "root";
-      const fallbackPass = "";
-      const fallbackDb = "etmedia_db";
+      // Strategy 2: Fallback for local Laragon/root environment
+      try {
+        const fallbackUser = "root";
+        const fallbackPass = "";
+        const fallbackDb = DB_NAME; // Always use u409108324_ETMedia
 
-      const rootConnection = await mysql.createConnection({
-        host: "127.0.0.1",
-        port: DB_PORT,
-        user: fallbackUser,
-        password: fallbackPass,
-      });
+        const rootConnection = await mysql.createConnection({
+          host: "127.0.0.1",
+          port: DB_PORT,
+          user: fallbackUser,
+          password: fallbackPass,
+        });
 
-      await rootConnection.query(`CREATE DATABASE IF NOT EXISTS \`${fallbackDb}\`;`);
-      await rootConnection.end();
+        await rootConnection.query(`CREATE DATABASE IF NOT EXISTS \`${fallbackDb}\`;`);
+        await rootConnection.end();
 
-      pool = mysql.createPool({
-        host: "127.0.0.1",
-        port: DB_PORT,
-        user: fallbackUser,
-        password: fallbackPass,
-        database: fallbackDb,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-      });
+        pool = mysql.createPool({
+          host: "127.0.0.1",
+          port: DB_PORT,
+          user: fallbackUser,
+          password: fallbackPass,
+          database: fallbackDb,
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0,
+        });
 
-      console.log(`[MySQL] Connected via root fallback to database '${fallbackDb}'`);
-    } catch (fallbackErr: any) {
-      console.error("[MySQL] Critical: Could not establish MySQL database connection:", fallbackErr.message);
-      (pool as any) = null;
-      return;
+        console.log(`[MySQL] Connected via local root fallback to database '${fallbackDb}'`);
+      } catch (fallbackErr: any) {
+        console.error("[MySQL] Critical: Could not establish MySQL database connection:", fallbackErr.message);
+        (pool as any) = null;
+        return;
+      }
     }
-  }
 
   // Ensure database tables exist and seed admin user
   try {

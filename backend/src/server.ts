@@ -524,6 +524,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
 
   try {
     if (pool) {
+      await ensureEventsTable();
       await pool.query(
         "UPDATE events SET title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, image = ?, speakers = ?, status = ?, is_featured = ? WHERE id = ?",
         [title, category, date, time, city, venue, locationsStr, description, image, speakers, status, is_featured ? 1 : 0, id]
@@ -546,6 +547,7 @@ app.delete("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
 
   try {
     if (pool) {
+      await ensureEventsTable();
       await pool.query("DELETE FROM events WHERE id = ?", [id]);
     }
     io.emit("event_deleted", { id });
@@ -563,6 +565,7 @@ app.patch("/api/admin/events/:id/status", authenticateAdmin, async (req, res) =>
 
   try {
     if (pool) {
+      await ensureEventsTable();
       await pool.query("UPDATE events SET status = ? WHERE id = ?", [status, id]);
     }
     io.emit("event_status_changed", { id, status });
@@ -580,6 +583,7 @@ app.patch("/api/admin/events/:id/featured", authenticateAdmin, async (req, res) 
 
   try {
     if (pool) {
+      await ensureEventsTable();
       await pool.query("UPDATE events SET is_featured = ? WHERE id = ?", [is_featured ? 1 : 0, id]);
     }
     io.emit("event_featured_changed", { id, is_featured });
