@@ -11,9 +11,20 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
+import crypto from "crypto";
+import Razorpay from "razorpay";
 import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable } from "./db.js";
 
 dotenv.config();
+
+// Razorpay SDK Credentials & Instance Initialization
+const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0").trim();
+const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || "xdW2Ry7T67sUK4zMKb3oOsZh").trim();
+
+const razorpayClient = new Razorpay({
+  key_id: razorpayKeyId,
+  key_secret: razorpayKeySecret,
+});
 
 // Nodemailer SMTP Transporter
 const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
@@ -481,6 +492,69 @@ app.get("/api/events/:slug", async (req, res) => {
 });
 
 
+// 2c. Create Razorpay Order Endpoint
+app.post("/api/payments/create-order", async (req, res) => {
+  try {
+    const { amount, currency = "INR", receipt } = req.body;
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid payment amount." });
+    }
+
+    const options = {
+      amount: Math.round(Number(amount) * 100), // Amount in paise
+      currency,
+      receipt: receipt || `rcpt_${Date.now()}`,
+      payment_capture: 1,
+    };
+
+    const order = await razorpayClient.orders.create(options);
+    console.log(`[Razorpay] Created order ${order.id} for amount ₹${amount}`);
+    return res.json({
+      success: true,
+      key: razorpayKeyId,
+      order,
+    });
+  } catch (err: any) {
+    console.error("[Razorpay] Order creation error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to create Razorpay order." });
+  }
+});
+
+// 2d. Verify Razorpay Payment Signature Endpoint
+app.post("/api/payments/verify-payment", async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
+    }
+
+    const generatedSignature = crypto
+      .createHmac("sha256", razorpayKeySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (generatedSignature === razorpay_signature) {
+      console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id}`);
+
+      if (pool && registrationId) {
+        await pool.query(
+          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
+          [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
+        );
+      }
+
+      return res.json({ success: true, message: "Payment verified successfully!", paymentId: razorpay_payment_id });
+    } else {
+      console.warn(`[Razorpay] Signature mismatch for payment ${razorpay_payment_id}`);
+      return res.status(400).json({ success: false, message: "Payment signature verification failed." });
+    }
+  } catch (err: any) {
+    console.error("[Razorpay] Verification error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Error verifying payment signature." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {
@@ -500,6 +574,11 @@ app.post("/api/events/register", async (req, res) => {
     referralSource,
     eventId,
     eventTitle,
+    paymentStatus,
+    paymentId,
+    razorpayOrderId,
+    paymentAmount,
+    couponApplied,
   } = req.body;
 
   const effectiveFirstName = firstName || (bodyName ? bodyName.split(" ")[0] : "Delegate");
@@ -511,6 +590,8 @@ app.post("/api/events/register", async (req, res) => {
   const effectiveCategory = registrationCategory || "Delegate";
   const effectiveEventTitle = eventTitle || "CISO Conclave & Awards 2026";
   const effectiveEventId = eventId || "ciso-conclave-2026";
+  const effectivePaymentStatus = paymentStatus || (paymentId ? "Paid" : (paymentAmount > 0 ? "Pending" : "Free"));
+  const effectiveAmount = Number(paymentAmount) || 0;
 
   if (!email) {
     return res.status(400).json({
@@ -538,7 +619,6 @@ app.post("/api/events/register", async (req, res) => {
     }
   }
 
-
   const regId = `REG-${Date.now()}`;
   const newRegistration = {
     id: regId,
@@ -556,6 +636,11 @@ app.post("/api/events/register", async (req, res) => {
     referral_source: referralSource || "Direct",
     event_id: effectiveEventId,
     event_title: effectiveEventTitle,
+    payment_status: effectivePaymentStatus,
+    payment_id: paymentId || null,
+    razorpay_order_id: razorpayOrderId || null,
+    payment_amount: effectiveAmount,
+    coupon_applied: couponApplied || null,
     created_at: new Date().toISOString(),
   };
 
@@ -563,8 +648,8 @@ app.post("/api/events/register", async (req, res) => {
     if (pool) {
       await pool.query(
         `INSERT INTO registrations (
-          id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           regId,
           fullName,
@@ -581,6 +666,11 @@ app.post("/api/events/register", async (req, res) => {
           referralSource || "Direct",
           effectiveEventId,
           effectiveEventTitle,
+          effectivePaymentStatus,
+          paymentId || null,
+          razorpayOrderId || null,
+          effectiveAmount,
+          couponApplied || null,
         ]
       );
     }

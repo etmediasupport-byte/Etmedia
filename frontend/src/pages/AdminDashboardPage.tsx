@@ -100,6 +100,11 @@ interface Registration {
   event_title: string;
   created_at: string;
   status?: string;
+  payment_status?: string;
+  payment_id?: string;
+  razorpay_order_id?: string;
+  payment_amount?: number;
+  coupon_applied?: string;
 }
 
 interface ContactSubmission {
@@ -8713,6 +8718,137 @@ export default function AdminDashboardPage() {
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* DELEGATE REGISTRATION DETAILS & RAZORPAY MODAL */}
+      {/* ========================================== */}
+      {selectedRegDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setSelectedRegDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+              <ShieldCheck className="h-4 w-4 text-cyan-600" />
+              <span>Executive Delegate & Payment Details</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedRegDetail.name || `${selectedRegDetail.first_name || ''} ${selectedRegDetail.last_name || ''}`}
+            </h3>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Registration ID: <span className="text-cyan-700 font-bold">{selectedRegDetail.id}</span>
+            </p>
+
+            <div className="mt-6 space-y-4 text-xs">
+              {/* Delegate Personal Details Card */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  Delegate Profile
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Email Address:</span>
+                    <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedRegDetail.email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Contact Number:</span>
+                    <strong className="text-slate-900 font-mono">{selectedRegDetail.phone || "N/A"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Designation:</span>
+                    <strong className="text-slate-900">{selectedRegDetail.designation || "Executive Delegate"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Company / Organization:</span>
+                    <strong className="text-slate-900">{selectedRegDetail.organization || "N/A"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Event Summit:</span>
+                    <strong className="text-cyan-800 font-bold">{selectedRegDetail.event_title || selectedRegDetail.event_id}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">City / Location:</span>
+                    <strong className="text-slate-900">{selectedRegDetail.city || selectedRegDetail.registering_city || "Pan-India"}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* RAZORPAY PAYMENT TRANSACTION DETAILS CARD */}
+              <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50/70 via-slate-50 to-cyan-50/40 p-4 space-y-3 shadow-inner">
+                <div className="flex items-center justify-between border-b border-cyan-200/80 pb-2">
+                  <span className="text-[11px] font-black uppercase text-cyan-900 tracking-wider flex items-center gap-1.5">
+                    <CreditCard className="h-4 w-4 text-cyan-600" /> Razorpay Payment Details
+                  </span>
+                  <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+                    selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : selectedRegDetail.payment_status === "Free"
+                      ? "bg-blue-100 text-blue-800 border border-blue-300"
+                      : "bg-amber-100 text-amber-800 border border-amber-300"
+                  }`}>
+                    {selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
+                      ? "💳 Paid via Razorpay"
+                      : selectedRegDetail.payment_status === "Free"
+                      ? "🎁 Free Pass"
+                      : "⏳ Payment Pending"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Razorpay Payment ID:</span>
+                    <strong className="font-mono text-cyan-800 text-xs block truncate">
+                      {selectedRegDetail.payment_id || "N/A"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Razorpay Order ID:</span>
+                    <strong className="font-mono text-slate-800 text-xs block truncate">
+                      {selectedRegDetail.razorpay_order_id || "N/A"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Amount Paid:</span>
+                    <strong className="text-emerald-700 font-mono text-sm block font-black">
+                      ₹{(Number(selectedRegDetail.payment_amount) || 0).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Coupon Applied:</span>
+                    <strong className="text-purple-700 font-mono text-xs block">
+                      {selectedRegDetail.coupon_applied ? `${selectedRegDetail.coupon_applied}` : "None"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-cyan-200/60 text-[10px] text-slate-500 font-mono flex justify-between">
+                  <span>Payment Gateway: Razorpay Test Mode</span>
+                  <span>{new Date(selectedRegDetail.created_at).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedRegDetail(null)}
+                className="rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Close Details
               </button>
             </div>
           </div>

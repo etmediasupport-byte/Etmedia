@@ -98,6 +98,13 @@ export async function initDatabase() {
         referral_source VARCHAR(100),
         event_id VARCHAR(255) NOT NULL,
         event_title VARCHAR(255),
+        payment_status VARCHAR(50) DEFAULT 'Pending',
+        payment_id VARCHAR(255),
+        razorpay_order_id VARCHAR(255),
+        payment_signature VARCHAR(255),
+        payment_amount DECIMAL(10,2) DEFAULT 0.00,
+        payment_method VARCHAR(100) DEFAULT 'Razorpay',
+        coupon_applied VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -109,6 +116,13 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN registering_city VARCHAR(255);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN referral_source VARCHAR(100);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN event_title VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Pending';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_id VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN razorpay_order_id VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_signature VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_method VARCHAR(100) DEFAULT 'Razorpay';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN coupon_applied VARCHAR(100);"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
 
 
