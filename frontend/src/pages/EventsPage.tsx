@@ -110,36 +110,36 @@ export default function EventsPage() {
         image={images.heroSummit}
       />
 
-      <section className="container-x relative mt-12">
+      <section className="container-x relative mt-6 sm:mt-12">
         <Reveal>
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 font-medium text-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-border bg-card/60 p-3.5 sm:p-4 backdrop-blur-md">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-foreground">
                 <Filter className="h-4 w-4 text-primary" />
                 <span>Filter Events</span>
               </div>
 
               {activeUsers !== null && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-emerald-500">
                   <Radio className="h-3 w-3 animate-pulse" />
-                  Live ({activeUsers} active)
+                  Live ({activeUsers})
                 </span>
               )}
 
               {liveRegistrations > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-primary">
                   <UserCheck className="h-3 w-3" />
-                  {liveRegistrations} Delegates Registered
+                  {liveRegistrations} Registered
                 </span>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
               {(["all", "upcoming", "past"] as const).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setStatusFilter(filter)}
-                  className={`rounded-full px-5 py-2 text-sm font-semibold capitalize transition-all ${
+                  className={`flex-1 sm:flex-none rounded-full px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold capitalize transition-all cursor-pointer ${
                     statusFilter === filter
                       ? "gradient-brand text-white shadow-md"
                       : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"

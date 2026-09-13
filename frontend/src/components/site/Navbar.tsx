@@ -241,10 +241,10 @@ export function Navbar() {
               aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
               className={cn(
-                "p-2.5 rounded-full border lg:hidden cursor-pointer",
+                "p-2 sm:p-2.5 rounded-full border lg:hidden cursor-pointer transition-colors",
                 scrolled
-                  ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  ? "border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
+                  : "border-slate-300/80 bg-white/90 text-slate-800 shadow-sm hover:bg-slate-100"
               )}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -262,7 +262,7 @@ export function Navbar() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="container-x overflow-hidden lg:hidden"
             >
-              <div className="mt-3 space-y-2 rounded-3xl border border-slate-200 bg-white/98 p-5 text-slate-900 shadow-2xl backdrop-blur-2xl">
+              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white/98 p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
                 {[
                   { to: "/", label: "Home" },
                   { to: "/about", label: "About Us" },

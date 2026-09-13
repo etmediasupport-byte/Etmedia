@@ -72,19 +72,19 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-btn"
+              className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] text-slate-500 font-btn"
             >
               <span>E T &nbsp; M E D I A &nbsp; — &nbsp; O U R &nbsp; E V E N T &nbsp; N E T W O R K</span>
             </motion.div>
 
-            {/* Main Headline (Strictly 2 Lines) */}
+            {/* Main Headline (Strictly 2 Lines on Desktop, Responsive on Mobile) */}
             <motion.h1
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-slate-900 font-display leading-[1.15]"
             >
-              <span className="block whitespace-nowrap">
+              <span className="block sm:whitespace-nowrap">
                 Connecting{" "}
                 <span className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Ideas. People.
@@ -108,21 +108,21 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-wrap items-center gap-3 pt-1 sm:pt-2"
+              className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2"
             >
               <MagneticButton
                 strength={20}
-                className="gradient-brand rounded-full px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_25px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
+                className="gradient-brand rounded-full px-5 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_25px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
               >
                 <Link to="/events" className="flex items-center gap-2 font-btn">
                   <span>Explore Events</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Link>
               </MagneticButton>
 
               <MagneticButton
                 strength={15}
-                className="rounded-full border border-slate-300/90 bg-white/90 hover:bg-white px-6 py-3 text-xs sm:text-sm font-extrabold text-slate-800 shadow-sm hover:border-cyan-500 hover:text-cyan-700 transition-all duration-200 cursor-pointer"
+                className="rounded-full border border-slate-300/90 bg-white/90 hover:bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold text-slate-800 shadow-sm hover:border-cyan-500 hover:text-cyan-700 transition-all duration-200 cursor-pointer"
               >
                 <Link to="/events/partner" className="font-btn">
                   Partner With Us
@@ -149,7 +149,7 @@ export function HeroSection() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="w-full max-w-[340px] sm:max-w-[380px] lg:max-w-[400px]"
+              className="w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[380px] lg:max-w-[400px]"
             >
               <AnimatedGlobe />
             </motion.div>
@@ -164,11 +164,11 @@ export function HeroSection() {
               <div className="relative">
                 <span
                   style={{ fontFamily: "'Dancing Script', 'Caveat', 'Brush Script MT', cursive" }}
-                  className="text-xl sm:text-2xl font-extrabold text-slate-700/85 tracking-wide transform -rotate-6 block drop-shadow-sm"
+                  className="text-lg sm:text-2xl font-extrabold text-slate-700/85 tracking-wide transform -rotate-6 block drop-shadow-sm"
                 >
                   A More Connected Tomorrow
                 </span>
-                <svg className="w-40 h-2.5 text-cyan-500/60 ml-auto -mt-0.5" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-32 sm:w-40 h-2 sm:h-2.5 text-cyan-500/60 ml-auto -mt-0.5" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M2 8C50 2 150 12 198 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               </div>
@@ -183,12 +183,12 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="relative z-20 mt-3 sm:mt-4 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white/95 p-3.5 sm:p-4 shadow-[0_15px_40px_-10px_rgba(0,174,239,0.18)] backdrop-blur-xl"
+          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white/95 p-2.5 sm:p-4 shadow-[0_15px_40px_-10px_rgba(0,174,239,0.18)] backdrop-blur-xl"
         >
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
             
             {/* 4 COUNTER STATISTICS GRID */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 flex-1">
               {statsList.map((st, idx) => {
                 const IconComp = st.icon;
                 const isActive = idx === activeStatIndex;
@@ -196,20 +196,20 @@ export function HeroSection() {
                   <div
                     key={st.label}
                     onClick={() => setActiveStatIndex(idx)}
-                    className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-300 cursor-pointer ${
+                    className={`flex items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-300 cursor-pointer ${
                       isActive
                         ? "bg-cyan-50/80 border-cyan-300 shadow-sm scale-[1.01]"
                         : "bg-slate-50/70 border-slate-200/80 hover:bg-slate-100/80"
                     }`}
                   >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border ${st.color}`}>
+                    <div className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border ${st.color}`}>
                       <IconComp className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <div>
-                      <div className="text-lg sm:text-2xl font-black font-display text-slate-900 leading-none">
+                    <div className="min-w-0">
+                      <div className="text-base sm:text-2xl font-black font-display text-slate-900 leading-none">
                         {st.value}
                       </div>
-                      <div className="text-[10px] sm:text-[11px] font-bold text-slate-600 mt-1 whitespace-nowrap">
+                      <div className="text-[10px] sm:text-[11px] font-bold text-slate-600 mt-0.5 sm:mt-1 truncate">
                         {st.label}
                       </div>
                     </div>
