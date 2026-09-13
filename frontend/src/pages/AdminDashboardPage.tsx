@@ -53,11 +53,19 @@ import { toast } from "sonner";
 interface Registration {
   id: string;
   name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   phone: string;
   organization: string;
   designation: string;
+  city?: string;
+  country?: string;
+  registration_category?: string;
+  registering_city?: string;
+  referral_source?: string;
   event_id: string;
+  event_title?: string;
   created_at: string;
 }
 
@@ -93,6 +101,8 @@ export default function AdminDashboardPage() {
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
+  const [selectedContactDetail, setSelectedContactDetail] = useState<ContactSubmission | null>(null);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<number | null>(null);
@@ -1096,6 +1106,7 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4">Designation</th>
                       <th className="py-3 px-4">Event ID</th>
                       <th className="py-3 px-4">Registered Date</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1139,12 +1150,21 @@ export default function AdminDashboardPage() {
                         <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
                           {new Date(reg.created_at).toLocaleString()}
                         </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => setSelectedRegDetail(reg)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                            <span>View Details</span>
+                          </button>
+                        </td>
                       </tr>
                     ))}
 
                     {filteredRegistrations.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-slate-400">
+                        <td colSpan={7} className="py-16 text-center text-slate-400">
                           No registrations found for "{searchQuery}".
                         </td>
                       </tr>
@@ -1180,6 +1200,7 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4">Category</th>
                       <th className="py-3 px-4">Message</th>
                       <th className="py-3 px-4">Submitted At</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1210,12 +1231,21 @@ export default function AdminDashboardPage() {
                         <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
                           {new Date(con.created_at).toLocaleString()}
                         </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => setSelectedContactDetail(con)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-800 transition-all hover:bg-purple-100 hover:scale-105 shadow-xs cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-purple-600" />
+                            <span>View Details</span>
+                          </button>
+                        </td>
                       </tr>
                     ))}
 
                     {filteredContacts.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-16 text-center text-slate-400">
+                        <td colSpan={6} className="py-16 text-center text-slate-400">
                           No contact form submissions found.
                         </td>
                       </tr>
@@ -2295,6 +2325,218 @@ export default function AdminDashboardPage() {
               </div>
             </form>
           </aside>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* DELEGATE REGISTRATION FULL DETAILS MODAL  */}
+      {/* ========================================== */}
+      {selectedRegDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedRegDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+              <Users className="h-4 w-4" />
+              <span>Delegate Registration Details</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedRegDetail.name}
+            </h3>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Registration ID: <span className="text-cyan-700 font-bold">{selectedRegDetail.id}</span>
+            </p>
+
+            {/* Details Grid */}
+            <div className="mt-6 space-y-4 text-xs">
+              {/* Personal & Corporate Info */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  Personal & Executive Info
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">First Name:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.first_name || selectedRegDetail.name.split(" ")[0]}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Last Name:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.last_name || selectedRegDetail.name.split(" ").slice(1).join(" ") || "N/A"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Designation:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.designation}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Organization / Company:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.organization}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact & Location Info */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  Contact & Location Info
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Work Email:</span>
+                    <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedRegDetail.email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Contact Number:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.phone}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">City:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.city || "N/A"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Country:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.country || "India"}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Participation Preferences */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  Category & Referral Preferences
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Registration Category:</span>
+                    <span className="inline-block rounded-md bg-cyan-100 px-2 py-0.5 text-cyan-800 font-bold text-[11px]">
+                      {selectedRegDetail.registration_category || "Delegate"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Registering City:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.registering_city || selectedRegDetail.city || "N/A"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Referral Source:</span>
+                    <strong className="text-slate-900 text-xs">{selectedRegDetail.referral_source || "Direct"}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Event Details Banner */}
+              <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-1">
+                <span className="text-[10px] font-black uppercase text-cyan-800 tracking-wider block">Registered Event</span>
+                <h4 className="text-sm font-bold text-slate-900">{selectedRegDetail.event_title || selectedRegDetail.event_id}</h4>
+                <p className="text-[11px] text-slate-500 font-mono">
+                  Timestamp: {new Date(selectedRegDetail.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(selectedRegDetail, null, 2));
+                  toast.success("Delegate registration data copied to clipboard!");
+                }}
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Copy JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRegDetail(null)}
+                className="flex-1 rounded-xl bg-cyan-600 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* CONTACT ENQUIRY FULL DETAILS MODAL         */}
+      {/* ========================================== */}
+      {selectedContactDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedContactDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-600">
+              <MessageSquare className="h-4 w-4" />
+              <span>Contact Enquiry Details</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedContactDetail.name}
+            </h3>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Enquiry ID: <span className="text-purple-700 font-bold">{selectedContactDetail.id}</span>
+            </p>
+
+            <div className="mt-6 space-y-4 text-xs">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Email Address:</span>
+                    <a href={`mailto:${selectedContactDetail.email}`} className="text-purple-700 font-bold hover:underline">{selectedContactDetail.email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Phone Number:</span>
+                    <strong className="text-slate-900">{selectedContactDetail.phone}</strong>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-slate-400 block text-[10px]">Category / Enquiry Type:</span>
+                  <span className="inline-block mt-0.5 rounded-full bg-purple-100 px-3 py-0.5 text-purple-800 font-bold text-xs">
+                    {selectedContactDetail.enquiry_type}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider block">Full Message Body</span>
+                <p className="text-slate-800 leading-relaxed font-sans text-xs whitespace-pre-wrap">
+                  {selectedContactDetail.message}
+                </p>
+                <p className="text-[11px] text-slate-400 font-mono pt-2 border-t border-slate-200">
+                  Submitted At: {new Date(selectedContactDetail.created_at).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <a
+                href={`mailto:${selectedContactDetail.email}?subject=RE: ${encodeURIComponent(selectedContactDetail.enquiry_type)} - ET Media Business Intelligence`}
+                className="flex-1 text-center rounded-xl bg-purple-600 py-3 text-xs font-bold text-white hover:bg-purple-700 transition-colors"
+              >
+                Reply via Email
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedContactDetail(null)}
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
