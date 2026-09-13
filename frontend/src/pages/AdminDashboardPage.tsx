@@ -126,10 +126,10 @@ export default function AdminDashboardPage() {
     is_featured: false,
     locations: [
       {
-        city: "Mumbai",
-        venue: "The St. Regis Mumbai",
-        date: new Date().toISOString().slice(0, 10),
-        time: "09:00 AM — 06:00 PM",
+        city: "",
+        venue: "",
+        date: "",
+        time: "",
       },
     ],
     speakers_list: getDefaultSpeakers(),
@@ -416,7 +416,7 @@ export default function AdminDashboardPage() {
       ...prev,
       locations: [
         ...prev.locations,
-        { city: "", venue: "", date: new Date().toISOString().slice(0, 10), time: "09:00 AM — 06:00 PM" },
+        { city: "", venue: "", date: "", time: "" },
       ],
     }));
   };
@@ -458,10 +458,10 @@ export default function AdminDashboardPage() {
       is_featured: false,
       locations: [
         {
-          city: "Mumbai",
-          venue: "The St. Regis Mumbai",
-          date: new Date().toISOString().slice(0, 10),
-          time: "09:00 AM — 06:00 PM",
+          city: "",
+          venue: "",
+          date: "",
+          time: "",
         },
       ],
       speakers_list: getDefaultSpeakers(),
@@ -486,10 +486,10 @@ export default function AdminDashboardPage() {
     if (!parsedLocations || parsedLocations.length === 0) {
       parsedLocations = [
         {
-          city: evt.city || "Mumbai",
+          city: evt.city || "",
           venue: evt.venue || "",
-          date: evt.date || new Date().toISOString().split("T")[0],
-          time: evt.time || "09:00 AM — 06:00 PM",
+          date: evt.date || "",
+          time: evt.time || "",
         },
       ];
     }
@@ -559,7 +559,7 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const primaryLoc = eventForm.locations[0] || { city: "Mumbai", venue: "The St. Regis Mumbai", date: new Date().toISOString().slice(0, 10), time: "09:00 AM — 06:00 PM" };
+    const primaryLoc = eventForm.locations[0] || { city: "", venue: "", date: "", time: "" };
 
     if (!primaryLoc.city.trim()) {
       toast.error("Please enter a City / Location for slot #1.");
@@ -1619,12 +1619,12 @@ export default function AdminDashboardPage() {
 
                     <div className="space-y-3">
                       {eventForm.locations.map((loc, idx) => (
-                        <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-3.5 shadow-2xs hover:border-slate-300 transition-all">
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
                             <span className="font-bold text-cyan-800 text-xs flex items-center gap-1.5">
                               <span>Slot #{idx + 1}</span>
                               {idx === 0 && (
-                                <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
+                                <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200/80">
                                   Primary
                                 </span>
                               )}
@@ -1634,55 +1634,67 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveLocationSlot(idx)}
-                                className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700"
+                                className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 transition-colors"
                               >
                                 <X className="h-3.5 w-3.5" /> Remove
                               </button>
                             )}
                           </div>
 
-                          <div className="grid gap-3 sm:grid-cols-3">
+                          <div className="grid gap-3.5 sm:grid-cols-3">
                             <div>
-                              <label className="block text-slate-700 font-bold mb-1">City *</label>
+                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-cyan-600" />
+                                <span>City *</span>
+                              </label>
                               <input
                                 type="text"
                                 required
                                 value={loc.city}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
-                                placeholder="e.g. Mumbai"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                placeholder="e.g. Mumbai / Delhi / Bengaluru"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
                               />
                             </div>
                             <div>
-                              <label className="block text-slate-700 font-bold mb-1">Date *</label>
+                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 text-cyan-600" />
+                                <span>Date *</span>
+                              </label>
                               <input
                                 type="date"
                                 required
                                 value={loc.date}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none font-mono"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all cursor-pointer font-sans"
                               />
                             </div>
                             <div>
-                              <label className="block text-slate-700 font-bold mb-1">Timing *</label>
+                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 text-cyan-600" />
+                                <span>Timing *</span>
+                              </label>
                               <input
                                 type="text"
                                 required
                                 value={loc.time}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "time", e.target.value)}
                                 placeholder="e.g. 09:00 AM — 06:00 PM"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
                               />
                             </div>
                             <div className="sm:col-span-3">
-                              <label className="block text-slate-700 font-bold mb-1">Venue Name / Hotel *</label>
+                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
+                                <Building className="h-3.5 w-3.5 text-cyan-600" />
+                                <span>Venue Name / Hotel *</span>
+                              </label>
                               <input
                                 type="text"
                                 required
                                 value={loc.venue}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
-                                placeholder="e.g. The St. Regis Mumbai, Lower Parel"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                placeholder="e.g. The St. Regis Mumbai, Lower Parel / Grand Hyatt"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
                               />
                             </div>
                           </div>
