@@ -4,7 +4,7 @@ import type { EventItem } from "@/lib/site-data";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 
-export function EventCard({ event }: { event: any }) {
+export function EventCard({ event, onRegister }: { event: any; onRegister?: (event: any) => void }) {
   let parsedLocations: any[] = [];
   try {
     if (typeof event.locations === "string") {
@@ -25,12 +25,22 @@ export function EventCard({ event }: { event: any }) {
   const speakersCount = event.speakers || 20;
   const citiesText = parsedLocations.map((l: any) => l.city).filter(Boolean).join(" • ");
 
+  const handleRegisterClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onRegister) {
+      onRegister(event);
+    } else {
+      window.dispatchEvent(new CustomEvent("open-register-modal", { detail: event }));
+    }
+  };
+
   return (
     <MouseTiltCard className="glass-card group relative overflow-hidden rounded-3xl h-full flex flex-col justify-between border border-slate-200/80 bg-white/90 shadow-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/15">
       {/* Shine Effect Overlay on Hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none z-20" />
 
-      <div>
+      <div onClick={handleRegisterClick} className="cursor-pointer">
         {/* Banner Image Container with Zoom Animation */}
         <div className="relative h-52 overflow-hidden bg-slate-100">
           <img
@@ -92,10 +102,14 @@ export function EventCard({ event }: { event: any }) {
 
       {/* Card Action Footer */}
       <div className="p-6 pt-0 flex items-center gap-3">
-        <MagneticButton strength={15} className="gradient-brand rounded-full px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 flex-1 text-center">
-          <Link to={`/events/register?eventId=${event.slug}`} className="w-full h-full block">
-            Register
-          </Link>
+        <MagneticButton strength={15} className="gradient-brand rounded-full px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 flex-1 text-center cursor-pointer">
+          <button
+            type="button"
+            onClick={handleRegisterClick}
+            className="w-full h-full block font-btn cursor-pointer bg-transparent border-none text-white text-xs font-bold"
+          >
+            Register Now
+          </button>
         </MagneticButton>
         <Link
           to={`/events/${event.slug || event.id}`}

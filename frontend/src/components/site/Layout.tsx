@@ -1,17 +1,34 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Lenis from "lenis";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { FloatingActions } from "@/components/site/FloatingActions";
+import { RegisterModal } from "@/components/site/RegisterModal";
+import { events as defaultEvents, EventItem } from "@/lib/site-data";
 import { Toaster } from "@/components/ui/sonner";
-
 import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 
 export function Layout() {
   const location = useLocation();
+  const [modalState, setModalState] = useState<{ isOpen: boolean; event: EventItem | null }>({
+    isOpen: false,
+    event: null,
+  });
 
+  // Global event listener to open RegisterModal from any card, button, or link
+  useEffect(() => {
+    const handleOpenRegisterModal = (e: any) => {
+      const selectedEvent = e.detail || defaultEvents[0];
+      setModalState({ isOpen: true, event: selectedEvent });
+    };
+
+    window.addEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+    return () => {
+      window.removeEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+    };
+  }, []);
 
   // Lenis Smooth Scrolling Setup
   useEffect(() => {
@@ -52,6 +69,13 @@ export function Layout() {
       <Footer />
       <FloatingActions />
       <Toaster position="top-center" richColors />
+
+      {/* Global Instant Register Now Modal */}
+      <RegisterModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState({ isOpen: false, event: null })}
+        event={modalState.event || (defaultEvents[0] as EventItem) || null}
+      />
     </div>
   );
 }

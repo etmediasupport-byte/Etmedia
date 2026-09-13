@@ -229,10 +229,14 @@ export function Navbar() {
               strength={18}
               className="relative gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_18px_rgba(0,174,239,0.4)] hover:shadow-[0_6px_25px_rgba(0,174,239,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
             >
-              <Link to="/events/register" className="flex items-center gap-1.5 font-btn">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-register-modal"))}
+                className="flex items-center gap-1.5 font-btn cursor-pointer bg-transparent border-none text-white text-xs sm:text-sm font-extrabold"
+              >
                 <span>Register Now</span>
                 <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              </button>
             </MagneticButton>
 
             {/* Mobile Hamburger Toggle Button */}
@@ -282,13 +286,16 @@ export function Navbar() {
                     {item.label}
                   </Link>
                 ))}
-                <Link
-                  to="/events/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="gradient-brand mt-4 block rounded-2xl px-4 py-3 text-center text-sm font-bold font-btn text-white shadow-lg"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent("open-register-modal"));
+                  }}
+                  className="gradient-brand mt-4 w-full block rounded-2xl px-4 py-3 text-center text-sm font-bold font-btn text-white shadow-lg cursor-pointer border-none"
                 >
                   Register Now
-                </Link>
+                </button>
               </div>
             </motion.div>
           )}
