@@ -79,7 +79,28 @@ interface ContactSubmission {
   created_at: string;
 }
 
-type TabType = "overview" | "registrations" | "contacts" | "events" | "database";
+interface CmsDelegateRegistration {
+  id: string;
+  full_name: string;
+  designation: string;
+  organization: string;
+  official_email: string;
+  mobile_number: string;
+  city: string;
+  awards_nomination: string;
+  company_name: string;
+  website: string;
+  industry: string;
+  location: string;
+  gst_number: string;
+  contact_person_name: string;
+  contact_person_designation: string;
+  contact_person_email: string;
+  contact_person_phone: string;
+  created_at: string;
+}
+
+type TabType = "overview" | "event-registrations" | "cms-delegates" | "contacts" | "events" | "database";
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -97,11 +118,13 @@ export default function AdminDashboardPage() {
   });
 
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [cmsDelegates, setCmsDelegates] = useState<CmsDelegateRegistration[]>([]);
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
+  const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
   const [selectedContactDetail, setSelectedContactDetail] = useState<ContactSubmission | null>(null);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -184,6 +207,15 @@ export default function AdminDashboardPage() {
         setRegistrations(regData.registrations);
       }
 
+      // 2b. Fetch CMS Delegate Registrations
+      const delRes = await fetch("/api/admin/delegate-registrations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const delData = await delRes.json();
+      if (delData.success && Array.isArray(delData.delegateRegistrations)) {
+        setCmsDelegates(delData.delegateRegistrations);
+      }
+
       // 3. Fetch Contacts
       const conRes = await fetch("/api/admin/contacts", {
         headers: { Authorization: `Bearer ${token}` },
@@ -259,14 +291,15 @@ export default function AdminDashboardPage() {
   };
 
   // CSV Export Handler
-  const exportToCSV = (type: "registrations" | "contacts") => {
-    if (type === "registrations") {
-      if (registrations.length === 0) {
-        toast.error("No registrations to export.");
+  const exportToCSV = (type: "event-registrations" | "cms-delegates" | "contacts") => {
+    if (type === "event-registrations") {
+      const eventRegs = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
+      if (eventRegs.length === 0) {
+        toast.error("No event registrations to export.");
         return;
       }
       const headers = ["ID", "Name", "Email", "Phone", "Organization", "Designation", "Event ID", "Date"];
-      const rows = registrations.map((r) => [
+      const rows = eventRegs.map((r) => [
         r.id,
         `"${r.name}"`,
         r.email,
@@ -280,11 +313,65 @@ export default function AdminDashboardPage() {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `et_media_delegates_${Date.now()}.csv`);
+      link.setAttribute("download", `et_media_event_registrations_${Date.now()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success("Exported delegate registrations to CSV!");
+      toast.success("Exported event registrations to CSV!");
+    } else if (type === "cms-delegates") {
+      if (cmsDelegates.length === 0) {
+        toast.error("No corporate delegate forms to export.");
+        return;
+      }
+      const headers = [
+        "ID",
+        "Full Name",
+        "Designation",
+        "Organisation",
+        "Official Email",
+        "Mobile Number",
+        "City",
+        "Awards Nomination",
+        "Company Name",
+        "Website",
+        "Industry",
+        "Location",
+        "GST Number",
+        "Contact Person Name",
+        "Contact Person Designation",
+        "Contact Person Email",
+        "Contact Person Phone",
+        "Created At",
+      ];
+      const rows = cmsDelegates.map((c) => [
+        c.id,
+        `"${c.full_name}"`,
+        `"${c.designation}"`,
+        `"${c.organization}"`,
+        c.official_email,
+        c.mobile_number,
+        `"${c.city}"`,
+        `"${c.awards_nomination}"`,
+        `"${c.company_name}"`,
+        `"${c.website}"`,
+        `"${c.industry}"`,
+        `"${c.location}"`,
+        `"${c.gst_number}"`,
+        `"${c.contact_person_name}"`,
+        `"${c.contact_person_designation}"`,
+        c.contact_person_email,
+        c.contact_person_phone,
+        c.created_at,
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `et_media_corporate_delegates_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Exported corporate delegate forms to CSV!");
     } else {
       if (contacts.length === 0) {
         toast.error("No contacts to export.");
@@ -705,12 +792,23 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const filteredRegistrations = registrations.filter(
+  const eventRegistrationsList = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
+
+  const filteredRegistrations = eventRegistrationsList.filter(
     (r) =>
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.event_id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredCmsDelegates = cmsDelegates.filter(
+    (d) =>
+      d.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.official_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.city.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredContacts = contacts.filter(
@@ -730,9 +828,10 @@ export default function AdminDashboardPage() {
 
   const navItems: NavItem[] = [
     { id: "overview", label: "Overview & Analytics", icon: LayoutDashboard },
-    { id: "registrations", label: "Delegate Registrations", icon: Users, count: registrations.length },
+    { id: "event-registrations", label: "Event Registrations", icon: Calendar, count: eventRegistrationsList.length },
+    { id: "cms-delegates", label: "Corporate Delegate Forms", icon: Users, count: cmsDelegates.length },
     { id: "contacts", label: "Contact Messages", icon: MessageSquare, count: contacts.length },
-    { id: "events", label: "Events Directory", icon: Calendar },
+    { id: "events", label: "Events Directory", icon: Award },
     { id: "database", label: "Laragon MySQL Engine", icon: Database },
   ];
 
@@ -890,9 +989,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Quick Export Button */}
-            {(activeTab === "registrations" || activeTab === "contacts") && (
+            {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts") && (
               <button
-                onClick={() => exportToCSV(activeTab as "registrations" | "contacts")}
+                onClick={() => exportToCSV(activeTab as "event-registrations" | "cms-delegates" | "contacts")}
                 className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 transition-transform hover:scale-105"
               >
                 <FileSpreadsheet className="h-3.5 w-3.5" />
@@ -1076,8 +1175,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* REGISTRATIONS TAB */}
-          {activeTab === "registrations" && (
+          {/* TAB 1: EVENT REGISTRATIONS */}
+          {activeTab === "event-registrations" && (
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
                 <div className="relative flex-1 max-w-md">
@@ -1086,13 +1185,13 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search delegates by name, email, organization, or event..."
+                    placeholder="Search summit event delegates by name, email, organization, or event..."
                     className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <span>Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> records</span>
+                  <span>Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> summit event registrations</span>
                 </div>
               </div>
 
@@ -1165,7 +1264,118 @@ export default function AdminDashboardPage() {
                     {filteredRegistrations.length === 0 && (
                       <tr>
                         <td colSpan={7} className="py-16 text-center text-slate-400">
-                          No registrations found for "{searchQuery}".
+                          No event registrations found for "{searchQuery}".
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CMS CORPORATE DELEGATE FORMS */}
+          {activeTab === "cms-delegates" && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search corporate delegates by name, email, company, industry, or city..."
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <span>Showing <strong className="text-slate-900">{filteredCmsDelegates.length}</strong> corporate form entries</span>
+                </div>
+              </div>
+
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                      <th className="py-3 px-4">Delegate Name</th>
+                      <th className="py-3 px-4">Designation & Company</th>
+                      <th className="py-3 px-4">Contact Info</th>
+                      <th className="py-3 px-4">Industry & Location</th>
+                      <th className="py-3 px-4">Awards Nomination</th>
+                      <th className="py-3 px-4">Submitted At</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredCmsDelegates.map((del) => (
+                      <tr key={del.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-4 px-4 font-bold text-slate-900">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-bold text-xs">
+                              {del.full_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="block font-bold text-slate-900">{del.full_name}</span>
+                              <span className="text-[11px] text-slate-500 font-medium">{del.city}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-slate-700">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-900">{del.designation}</span>
+                            <span className="text-[11px] text-purple-700 font-semibold">{del.company_name || del.organization}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-slate-700">
+                          <div className="flex flex-col">
+                            <span className="flex items-center gap-1.5 text-slate-900 font-medium">
+                              <Mail className="h-3 w-3 text-cyan-600" /> {del.official_email}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
+                              <Phone className="h-3 w-3 text-slate-400" /> {del.mobile_number}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-800 border border-slate-200 font-medium max-w-[160px] truncate">
+                              {del.industry}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono">{del.location}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {del.awards_nomination === "Yes" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 border border-purple-300 px-3 py-1 text-purple-800 font-black text-[11px] shadow-xs">
+                              <Star className="h-3 w-3 fill-purple-700 text-purple-700" />
+                              Nomination (Yes)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-slate-500 font-medium text-[11px]">
+                              No
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
+                          {new Date(del.created_at).toLocaleString()}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => setSelectedCmsDelegateDetail(del)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-800 transition-all hover:bg-purple-100 hover:scale-105 shadow-xs cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-purple-600" />
+                            <span>View Details</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {filteredCmsDelegates.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="py-16 text-center text-slate-400">
+                          No corporate delegate form entries found for "{searchQuery}".
                         </td>
                       </tr>
                     )}
@@ -2532,6 +2742,177 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setSelectedContactDetail(null)}
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* CMS CORPORATE DELEGATE FULL DETAILS MODAL */}
+      {/* ========================================== */}
+      {selectedCmsDelegateDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedCmsDelegateDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-600">
+              <Users className="h-4 w-4" />
+              <span>CMS Corporate Delegate Submission</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedCmsDelegateDetail.full_name}
+            </h3>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Delegate Form ID: <span className="text-purple-700 font-bold">{selectedCmsDelegateDetail.id}</span>
+            </p>
+
+            {/* Details Grid */}
+            <div className="mt-6 space-y-4 text-xs">
+              {/* 1. Delegate Details */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  1. Delegate Details
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Full Name:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.full_name}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Designation:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.designation}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Organisation / Company:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.organization}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Official Email:</span>
+                    <a href={`mailto:${selectedCmsDelegateDetail.official_email}`} className="text-purple-700 font-bold hover:underline">{selectedCmsDelegateDetail.official_email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Mobile Number:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.mobile_number}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">City:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.city}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Awards Nomination */}
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase text-purple-800 tracking-wider">2. Awards Nomination Status</span>
+                  <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+                    selectedCmsDelegateDetail.awards_nomination === "Yes"
+                      ? "bg-purple-600 text-white shadow-xs"
+                      : "bg-slate-200 text-slate-700"
+                  }`}>
+                    {selectedCmsDelegateDetail.awards_nomination}
+                  </span>
+                </div>
+                {selectedCmsDelegateDetail.awards_nomination === "Yes" && (
+                  <p className="text-[11px] text-purple-900 font-bold bg-white p-2.5 rounded-xl border border-purple-200 leading-relaxed">
+                    ✨ "Our team will contact you shortly to explain the nomination process."
+                  </p>
+                )}
+              </div>
+
+              {/* 3. Organisation Details */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  3. Organisation Details
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Company Name:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.company_name}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Website:</span>
+                    {selectedCmsDelegateDetail.website ? (
+                      <a href={selectedCmsDelegateDetail.website} target="_blank" rel="noreferrer" className="text-cyan-700 font-bold hover:underline truncate block">
+                        {selectedCmsDelegateDetail.website}
+                      </a>
+                    ) : (
+                      <span className="text-slate-500">N/A</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Industry:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.industry}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Location:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.location}</strong>
+                  </div>
+                  {selectedCmsDelegateDetail.gst_number && (
+                    <div className="col-span-2">
+                      <span className="text-slate-400 block text-[10px]">GST Number:</span>
+                      <strong className="text-slate-900 font-mono text-xs">{selectedCmsDelegateDetail.gst_number}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 4. Contact Person Details */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                  4. Contact Person
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Name:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.contact_person_name}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Designation:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.contact_person_designation}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Email:</span>
+                    <a href={`mailto:${selectedCmsDelegateDetail.contact_person_email}`} className="text-purple-700 font-bold hover:underline">{selectedCmsDelegateDetail.contact_person_email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Phone:</span>
+                    <strong className="text-slate-900 text-xs">{selectedCmsDelegateDetail.contact_person_phone}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-400 font-mono pt-1">
+                Submitted Timestamp: {new Date(selectedCmsDelegateDetail.created_at).toLocaleString()}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(selectedCmsDelegateDetail, null, 2));
+                  toast.success("Corporate delegate data copied to clipboard!");
+                }}
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              >
+                Copy JSON Data
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCmsDelegateDetail(null)}
+                className="flex-1 rounded-xl bg-purple-600 py-3 text-xs font-bold text-white hover:bg-purple-700 transition-colors cursor-pointer"
               >
                 Close
               </button>

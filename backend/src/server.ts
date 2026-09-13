@@ -704,7 +704,7 @@ app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
   }
 });
 
-// Admin Get All Registrations
+// Admin Get All Event Registrations
 app.get("/api/admin/registrations", authenticateAdmin, async (_req, res) => {
   try {
     if (!pool) return res.json({ success: true, registrations: [] });
@@ -713,6 +713,18 @@ app.get("/api/admin/registrations", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Fetch Registrations Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch registrations." });
+  }
+});
+
+// Admin Get All CMS Delegate Registrations (Separate Corporate Submissions)
+app.get("/api/admin/delegate-registrations", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, delegateRegistrations: [] });
+    const [rows]: any = await pool.query("SELECT * FROM delegate_registrations ORDER BY created_at DESC");
+    res.json({ success: true, delegateRegistrations: rows });
+  } catch (err) {
+    console.error("Fetch CMS Delegate Registrations Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch delegate registrations." });
   }
 });
 
