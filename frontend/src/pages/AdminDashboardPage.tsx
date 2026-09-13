@@ -132,10 +132,10 @@ export default function AdminDashboardPage() {
         time: "",
       },
     ],
-    speakers_list: getDefaultSpeakers(),
-    sponsors_list: getDefaultSponsors(),
-    gallery_list: getDefaultGallery(),
-    agenda_list: getDefaultAgenda(),
+    speakers_list: [],
+    sponsors_list: [],
+    gallery_list: [],
+    agenda_list: [],
     map_url: "",
     venue_address: "",
   });
@@ -464,10 +464,10 @@ export default function AdminDashboardPage() {
           time: "",
         },
       ],
-      speakers_list: getDefaultSpeakers(),
-      sponsors_list: getDefaultSponsors(),
-      gallery_list: getDefaultGallery(),
-      agenda_list: getDefaultAgenda(),
+      speakers_list: [],
+      sponsors_list: [],
+      gallery_list: [],
+      agenda_list: [],
       map_url: "",
       venue_address: "",
     });
@@ -499,28 +499,28 @@ export default function AdminDashboardPage() {
       if (typeof evt.speakers_list === "string") parsedSpeakers = JSON.parse(evt.speakers_list);
       else if (Array.isArray(evt.speakers_list)) parsedSpeakers = evt.speakers_list;
     } catch (e) {}
-    if (!parsedSpeakers || parsedSpeakers.length === 0) parsedSpeakers = getDefaultSpeakers(evt.category);
+    if (!parsedSpeakers) parsedSpeakers = [];
 
     let parsedSponsors: Sponsor[] = [];
     try {
       if (typeof evt.sponsors_list === "string") parsedSponsors = JSON.parse(evt.sponsors_list);
       else if (Array.isArray(evt.sponsors_list)) parsedSponsors = evt.sponsors_list;
     } catch (e) {}
-    if (!parsedSponsors || parsedSponsors.length === 0) parsedSponsors = getDefaultSponsors();
+    if (!parsedSponsors) parsedSponsors = [];
 
     let parsedGallery: GalleryItem[] = [];
     try {
       if (typeof evt.gallery_list === "string") parsedGallery = JSON.parse(evt.gallery_list);
       else if (Array.isArray(evt.gallery_list)) parsedGallery = evt.gallery_list;
     } catch (e) {}
-    if (!parsedGallery || parsedGallery.length === 0) parsedGallery = getDefaultGallery();
+    if (!parsedGallery) parsedGallery = [];
 
     let parsedAgenda: AgendaItem[] = [];
     try {
       if (typeof evt.agenda_list === "string") parsedAgenda = JSON.parse(evt.agenda_list);
       else if (Array.isArray(evt.agenda_list)) parsedAgenda = evt.agenda_list;
     } catch (e) {}
-    if (!parsedAgenda || parsedAgenda.length === 0) parsedAgenda = getDefaultAgenda();
+    if (!parsedAgenda) parsedAgenda = [];
 
     setEventForm({
       title: evt.title || "",
