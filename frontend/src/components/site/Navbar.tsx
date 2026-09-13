@@ -209,7 +209,7 @@ export function Navbar() {
               Executive Talks Magazine
             </NavLink>
 
-            <NavLink to="/events/register" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/delegate-registration" className={({ isActive }) => navLinkStyle(isActive)}>
               Delegate Registration
             </NavLink>
 

@@ -123,6 +123,29 @@ export async function initDatabase() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS delegate_registrations (
+        id VARCHAR(100) PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        designation VARCHAR(255) NOT NULL,
+        organization VARCHAR(255) NOT NULL,
+        official_email VARCHAR(255) NOT NULL,
+        mobile_number VARCHAR(100) NOT NULL,
+        city VARCHAR(255) NOT NULL,
+        awards_nomination VARCHAR(50) DEFAULT 'No',
+        company_name VARCHAR(255) NOT NULL,
+        website VARCHAR(255),
+        industry VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        gst_number VARCHAR(100),
+        contact_person_name VARCHAR(255) NOT NULL,
+        contact_person_designation VARCHAR(255) NOT NULL,
+        contact_person_email VARCHAR(255) NOT NULL,
+        contact_person_phone VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Create events table for Dynamic CMS management
     await ensureEventsTable();
 

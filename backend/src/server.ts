@@ -446,6 +446,130 @@ app.post("/api/events/register", async (req, res) => {
   }
 });
 
+  // 3b. CMS Managed Delegate Registration endpoint
+  app.post("/api/delegate-registrations", async (req, res) => {
+    const {
+      fullName,
+      designation,
+      organization,
+      officialEmail,
+      mobileNumber,
+      city,
+      awardsNomination,
+      companyName,
+      website,
+      industry,
+      location,
+      gstNumber,
+      contactPersonName,
+      contactPersonDesignation,
+      contactPersonEmail,
+      contactPersonPhone,
+    } = req.body;
+
+    if (!fullName || !officialEmail || !companyName) {
+      return res.status(400).json({
+        success: false,
+        message: "Full Name, Official Email, and Company Name are required.",
+      });
+    }
+
+    const delId = `DEL-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+
+    try {
+      if (pool) {
+        // 1. Insert into delegate_registrations table
+        await pool.query(
+          `INSERT INTO delegate_registrations (
+            id, full_name, designation, organization, official_email, mobile_number, city, awards_nomination, company_name, website, industry, location, gst_number, contact_person_name, contact_person_designation, contact_person_email, contact_person_phone
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            delId,
+            fullName,
+            designation || "N/A",
+            organization || companyName || "N/A",
+            officialEmail,
+            mobileNumber || "N/A",
+            city || "N/A",
+            awardsNomination || "No",
+            companyName,
+            website || "",
+            industry || "Technology & IT",
+            location || city || "N/A",
+            gstNumber || "",
+            contactPersonName || fullName,
+            contactPersonDesignation || designation || "N/A",
+            contactPersonEmail || officialEmail,
+            contactPersonPhone || mobileNumber || "N/A",
+          ]
+        );
+
+        // 2. Also sync to registrations table for instant Admin Dashboard visibility
+        const nameParts = fullName.trim().split(" ");
+        const firstName = nameParts[0] || fullName;
+        const lastName = nameParts.slice(1).join(" ") || "";
+        await pool.query(
+          `INSERT INTO registrations (
+            id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            delId,
+            fullName,
+            firstName,
+            lastName,
+            officialEmail,
+            mobileNumber,
+            organization || companyName,
+            designation,
+            city,
+            "India",
+            "Executive Delegate Pass",
+            location || city,
+            awardsNomination === "Yes" ? "Awards Nomination (Yes)" : "Direct Registration",
+            "delegate-executive-pass",
+            `Corporate Delegate Pass (${companyName})`,
+          ]
+        );
+      }
+
+      const newRegData = {
+        id: delId,
+        name: fullName,
+        email: officialEmail,
+        phone: mobileNumber,
+        organization: organization || companyName,
+        designation,
+        event_id: "delegate-executive-pass",
+        event_title: `Corporate Delegate Pass (${companyName})`,
+        created_at: timestamp,
+      };
+
+      // Realtime Broadcast
+      io.emit("new_registration", {
+        registration: newRegData,
+        message: `🎉 Executive Delegate: ${fullName} (${companyName}) registered!`,
+      });
+
+      // Email Confirmation
+      const emailSent = await sendRegistrationConfirmationEmail({
+        firstName: fullName.split(" ")[0] || fullName,
+        email: officialEmail,
+        eventTitle: `ET Media Executive Platform (${companyName})`,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Delegate Registration submitted successfully!",
+        emailSent,
+        data: newRegData,
+      });
+    } catch (err: any) {
+      console.error("Delegate Registration DB Error:", err);
+      return res.status(500).json({ success: false, message: err.message || "Database insertion error." });
+    }
+  });
+
 
 // 4. Contact form submission
 app.post("/api/contact", async (req, res) => {

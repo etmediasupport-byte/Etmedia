@@ -5,6 +5,7 @@ import AboutPage from "@/pages/AboutPage";
 import MagazinePage from "@/pages/MagazinePage";
 import EventsPage from "@/pages/EventsPage";
 import EventDetailPage from "@/pages/EventDetailPage";
+import DelegateRegistrationPage from "@/pages/DelegateRegistrationPage";
 import ContactPage from "@/pages/ContactPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminLoginPage from "@/pages/AdminLoginPage";
@@ -24,6 +25,8 @@ export default function App() {
           <Route path="magazine" element={<MagazinePage />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="events/:slug" element={<EventDetailPage />} />
+          <Route path="delegate-registration" element={<DelegateRegistrationPage />} />
+          <Route path="events/register" element={<DelegateRegistrationPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -31,4 +34,5 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
 
