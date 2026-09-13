@@ -115,7 +115,7 @@ export default function EventDetailPage() {
     );
   }
 
-  // Parse Locations
+  // Parse Locations saved by admin in DB
   let parsedLocations: any[] = [];
   try {
     if (typeof event.locations === "string") {
@@ -125,17 +125,28 @@ export default function EventDetailPage() {
     }
   } catch (e) {}
 
-  if (!parsedLocations || parsedLocations.length === 0) {
-    parsedLocations = [{ city: event.city || "Mumbai", venue: event.venue || "Convention Center", date: event.date, time: event.time }];
+  parsedLocations = (parsedLocations || []).filter(
+    (loc: any) => loc && (loc.city || loc.venue || loc.date || loc.time)
+  );
+
+  if (parsedLocations.length === 0 && (event.city || event.venue || event.date || event.time)) {
+    parsedLocations = [
+      {
+        city: event.city || "",
+        venue: event.venue || "",
+        date: event.date || "",
+        time: event.time || "",
+      },
+    ];
   }
 
   const primaryLoc = parsedLocations[0] || {};
-  const dateText = primaryLoc.date || event.date;
-  const timeText = primaryLoc.time || event.time || "09:00 AM — 06:00 PM";
-  const venueText = primaryLoc.venue || event.venue || `${event.city || "Mumbai"} Main Convention Center`;
-  const cityText = primaryLoc.city || event.city || "Mumbai";
+  const dateText = primaryLoc.date || event.date || "Date TBA";
+  const timeText = primaryLoc.time || event.time || "Schedule TBA";
+  const venueText = primaryLoc.venue || event.venue || "Venue TBA";
+  const cityText = primaryLoc.city || event.city || "Location TBA";
 
-  // Parse Speakers
+  // Parse Speakers saved by admin in DB
   let speakersList: Speaker[] = [];
   try {
     if (typeof event.speakers_list === "string") {
@@ -144,11 +155,8 @@ export default function EventDetailPage() {
       speakersList = event.speakers_list;
     }
   } catch (e) {}
-  if (!speakersList || speakersList.length === 0) {
-    speakersList = getDefaultSpeakers(event.category);
-  }
 
-  // Parse Sponsors
+  // Parse Sponsors saved by admin in DB
   let sponsorsList: Sponsor[] = [];
   try {
     if (typeof event.sponsors_list === "string") {
@@ -157,11 +165,8 @@ export default function EventDetailPage() {
       sponsorsList = event.sponsors_list;
     }
   } catch (e) {}
-  if (!sponsorsList || sponsorsList.length === 0) {
-    sponsorsList = getDefaultSponsors();
-  }
 
-  // Parse Gallery
+  // Parse Gallery saved by admin in DB
   let galleryList: GalleryItem[] = [];
   try {
     if (typeof event.gallery_list === "string") {
@@ -170,11 +175,8 @@ export default function EventDetailPage() {
       galleryList = event.gallery_list;
     }
   } catch (e) {}
-  if (!galleryList || galleryList.length === 0) {
-    galleryList = getDefaultGallery();
-  }
 
-  // Parse Agenda
+  // Parse Agenda saved by admin in DB
   let agendaList: AgendaItem[] = [];
   try {
     if (typeof event.agenda_list === "string") {
@@ -183,9 +185,6 @@ export default function EventDetailPage() {
       agendaList = event.agenda_list;
     }
   } catch (e) {}
-  if (!agendaList || agendaList.length === 0) {
-    agendaList = getDefaultAgenda();
-  }
 
   // Google Maps embed URL
   const mapEmbedUrl =
@@ -360,6 +359,31 @@ export default function EventDetailPage() {
             Google Maps <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
+
+        {/* MULTI-CITY SCHEDULES & LOCATIONS */}
+        {parsedLocations.length > 1 && (
+          <div className="md:col-span-2 glass-card rounded-3xl p-6 border border-slate-200/80 bg-white/90 dark:bg-slate-900/90 shadow-lg space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-3">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-cyan-600" />
+                <span>All Event Schedules & Cities ({parsedLocations.length} Locations)</span>
+              </span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {parsedLocations.map((loc: any, idx: number) => (
+                <div key={idx} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-cyan-800 dark:text-cyan-400 text-xs">Slot #{idx + 1} {idx === 0 ? "(Primary)" : ""}</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{loc.city}</span>
+                  </div>
+                  {loc.venue && <p className="text-sm font-bold text-slate-900 dark:text-white">{loc.venue}</p>}
+                  {loc.date && <p className="text-xs text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1"><CalendarDays className="h-3 w-3 text-cyan-600" /> {loc.date}</p>}
+                  {loc.time && <p className="text-xs text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1"><Clock className="h-3 w-3 text-purple-600" /> {loc.time}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* NAVIGATION TABS FOR SECTIONS */}
