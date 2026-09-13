@@ -1,217 +1,267 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Globe, MapPin, Sparkles } from "lucide-react";
-import { images } from "@/lib/site-data";
-import { MagneticButton } from "@/components/ui/MagneticButton";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Calendar, Users, Handshake, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatedGlobe } from "@/components/ui/AnimatedGlobe";
-import { HeroLightRays } from "@/components/ui/HeroLightRays";
+import { MagneticButton } from "@/components/ui/MagneticButton";
 
-const heroBanners = [
+const statsList = [
   {
-    id: 1,
-    image: images.heroLeadership,
-    kicker: "ENTER THE NEW ERA OF BUSINESS INTELLIGENCE",
-    title: "Connecting Leaders • Creating Opportunities",
-    description: "India's premier corporate platform bridging C-Suite executives, global capability centers, and commercial growth opportunities.",
-    primaryCta: { label: "Explore Events", to: "/events" },
-    secondaryCta: { label: "Partner With Us", to: "/events/partner" },
+    icon: Calendar,
+    value: "100+",
+    label: "Events Hosted",
+    color: "text-cyan-600 bg-cyan-50 border-cyan-200",
   },
   {
-    id: 2,
-    image: images.heroSummit,
-    kicker: "NATIONAL CONCLAVES & SUMMITS",
-    title: "India's Leading Leadership & Business Summit Platform",
-    subtitle: "Bringing together corporate hubs and C-Suite leaders.",
-    cities: ["Mumbai", "Bengaluru", "Hyderabad", "Delhi NCR", "Chennai", "Pune"],
-    primaryCta: { label: "View Conclaves", to: "/events/upcoming" },
-    secondaryCta: { label: "Register Delegate", to: "/events/register" },
+    icon: Users,
+    value: "50,000+",
+    label: "Delegates Connected",
+    color: "text-purple-600 bg-purple-50 border-purple-200",
   },
   {
-    id: 3,
-    image: images.heroAwards,
-    kicker: "GLOBAL EXPANSION & NETWORK",
-    title: "From India to Global Markets",
-    destinations: ["India", "Dubai", "Bangkok", "Malaysia", "Europe"],
-    description: "Extending corporate intelligence, executive networking, and strategic cross-border partnerships across Asia and Europe.",
-    primaryCta: { label: "Global Platforms", to: "/events" },
-    secondaryCta: { label: "Contact Us", to: "/contact" },
+    icon: Handshake,
+    value: "500+",
+    label: "Industry Partners",
+    color: "text-blue-600 bg-blue-50 border-blue-200",
+  },
+  {
+    icon: Globe,
+    value: "8+",
+    label: "Countries",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
   },
 ];
 
 export function HeroSection() {
-  const [index, setIndex] = useState(0);
+  const [activeStatIndex, setActiveStatIndex] = useState(0);
 
-  // Auto slide every 5 seconds
+  // Auto-rotate stats highlight indicator every 4s
   useEffect(() => {
-    const id = setInterval(() => {
-      setIndex((prev) => (prev + 1) % heroBanners.length);
-    }, 5000);
-    return () => clearInterval(id);
+    const timer = setInterval(() => {
+      setActiveStatIndex((prev) => (prev + 1) % statsList.length);
+    }, 4000);
+    return () => clearInterval(timer);
   }, []);
 
-  const banner = heroBanners[index]!;
-
   return (
-    <section className="relative h-[95vh] min-h-[660px] w-full overflow-hidden lg:h-screen bg-gradient-to-br from-slate-50 via-cyan-50/30 to-slate-100 border-b border-slate-200">
-      {/* Full Vivid Light Mode Carousel Background Image Slide */}
-      <AnimatePresence mode="sync">
-        <motion.img
-          key={index}
-          src={banner.image}
-          alt={banner.title}
-          initial={{ opacity: 0, scale: 1.08 }}
-          animate={{ opacity: 0.35, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ opacity: { duration: 1 }, scale: { duration: 6, ease: "linear" } }}
-          className="absolute inset-0 h-full w-full object-cover mix-blend-multiply opacity-25"
-          width={1920}
-          height={1080}
-        />
-      </AnimatePresence>
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#f4f8fc] via-[#edf4fa] via-60% to-[#e2edf8] pt-20 sm:pt-22 lg:pt-24 pb-3 sm:pb-4 text-slate-900 border-b border-slate-200/80">
+      
+      {/* Background Radial Atmosphere Glow behind Globe */}
+      <div className="absolute top-1/4 right-0 w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.18)_0%,rgba(147,51,234,0.08)_40%,transparent_70%)] pointer-events-none blur-3xl" />
+      <div className="absolute inset-0 bg-[radial-gradient(#00aeef_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.07] pointer-events-none" />
 
-      {/* Light Gradient Overlay for Content Readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 via-60% to-slate-50/40 z-0" />
-
-      {/* Ambient Light Beams */}
-      <HeroLightRays />
-
-      {/* Main Hero Container */}
-      <div className="container-x relative flex h-full flex-col justify-center pt-24 z-10">
-        <div className="grid items-center gap-8 lg:grid-cols-12">
-          {/* Text Content Column */}
-          <div className="lg:col-span-7">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 35, filter: "blur(6px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -25, filter: "blur(4px)" }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="max-w-3xl"
-              >
-                {/* Glowing Kicker Badge */}
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 backdrop-blur-md shadow-sm">
-                  <Sparkles className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
-                  <span className="text-xs font-extrabold tracking-[0.22em] text-cyan-800 uppercase font-btn">
-                    {banner.kicker}
-                  </span>
-                </div>
-
-                {/* Main Light Heading */}
-                <h1 className="mt-5 text-2xl sm:text-3xl lg:text-4xl xl:text-5xl leading-[1.15] font-extrabold text-slate-900 font-display tracking-tight drop-shadow-sm">
-                  {banner.title}
-                </h1>
-
-                {/* Subtitle / Destinations / Cities Rotator */}
-                {banner.cities ? (
-                  <div className="mt-5 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-cyan-700 flex items-center gap-1.5 font-btn">
-                      <MapPin className="h-4 w-4 text-cyan-600" /> Rotating Hubs:
-                    </span>
-                    {banner.cities.map((city) => (
-                      <span
-                        key={city}
-                        className="rounded-full bg-white border border-slate-200 px-3 py-1 text-xs font-bold text-slate-800 shadow-sm hover:border-cyan-400 transition-colors"
-                      >
-                        {city}
-                      </span>
-                    ))}
-                  </div>
-                ) : banner.destinations ? (
-                  <div className="mt-5 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-cyan-700 flex items-center gap-1.5 font-btn">
-                      <Globe className="h-4 w-4 text-cyan-600" /> Global Footprint:
-                    </span>
-                    {banner.destinations.map((dest) => (
-                      <span
-                        key={dest}
-                        className="rounded-full gradient-brand px-3.5 py-1 text-xs font-bold text-white shadow-sm"
-                      >
-                        {dest}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-
-                {/* Description */}
-                {banner.description && (
-                  <p className="mt-6 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed font-sans font-medium">
-                    {banner.description}
-                  </p>
-                )}
-
-                {/* CTA Buttons */}
-                <div className="mt-8 flex flex-wrap gap-4 items-center">
-                  <MagneticButton
-                    strength={20}
-                    className="gradient-brand rounded-full px-8 py-4 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all duration-300"
-                  >
-                    <Link to={banner.primaryCta.to} className="flex items-center gap-2">
-                      <span>{banner.primaryCta.label}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </MagneticButton>
-
-                  <MagneticButton
-                    strength={15}
-                    className="bg-white hover:bg-slate-50 rounded-full px-8 py-4 text-sm sm:text-base font-bold text-slate-800 border border-slate-300 shadow-sm transition-all duration-200"
-                  >
-                    <Link to={banner.secondaryCta.to}>
-                      {banner.secondaryCta.label}
-                    </Link>
-                  </MagneticButton>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* RIGHT COLUMN: COBE LIGHT MODE INTERACTIVE GLOBE */}
-          <div className="hidden lg:flex lg:col-span-5 justify-center items-center">
-            <AnimatedGlobe />
-          </div>
-        </div>
-
-        {/* 5-Second Timer Progress Indicators */}
-        <div className="mt-14 flex items-center justify-between z-20 border-t border-slate-200/80 pt-4">
-          <div className="flex items-center gap-3">
-            {heroBanners.map((b, i) => (
-              <button
-                key={b.id}
-                type="button"
-                aria-label={`Go to slide ${i + 1}`}
-                onClick={() => setIndex(i)}
-                className="relative h-2.5 rounded-full overflow-hidden transition-all duration-500 cursor-pointer"
-                style={{ width: i === index ? "4.5rem" : "1.75rem", backgroundColor: "rgba(0, 0, 0, 0.12)" }}
-              >
-                {i === index && (
-                  <motion.div
-                    initial={{ width: "0%" }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 5, ease: "linear" }}
-                    className="h-full gradient-brand rounded-full"
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-xs font-bold text-slate-500 tracking-wider font-btn uppercase hidden sm:block">
-            0{index + 1} / 0{heroBanners.length} Banners
-          </span>
-        </div>
+      {/* BOTTOM GLOBAL CITY SKYLINE GRAPHIC BACKGROUND (ABSOLUTE DECORATIVE) */}
+      <div className="absolute bottom-0 inset-x-0 h-20 sm:h-28 pointer-events-none overflow-hidden opacity-25 select-none z-0">
+        <svg className="w-full h-full text-slate-400" viewBox="0 0 1200 120" preserveAspectRatio="none" fill="currentColor">
+          {/* Taj Mahal & India Gate Skyline Silhouettes */}
+          <path d="M0 120 V100 H15 V120 H30 V90 H45 V120 H60 V80 H75 V120 H90 V105 H105 V120 H120 V70 L135 60 L150 70 V120 H165 V95 H180 V120 H200 V85 H220 V120 H240 V60 H255 V50 H270 V60 H285 V120 H310 V90 H330 V120 H360 V40 L375 20 L390 40 V120 H420 V85 H440 V120 H470 V65 H490 V120 H520 V30 L535 15 L550 30 V120 H580 V75 H600 V120 H630 V50 H645 V35 H660 V50 H675 V120 H700 V85 H720 V120 H750 V20 L765 10 L780 20 V120 H810 V70 H830 V120 H860 V55 H875 V45 H890 V55 H905 V120 H930 V90 H950 V120 H980 V35 L995 20 L1010 35 V120 H1040 V80 H1060 V120 H1090 V60 H1110 V120 H1140 V95 H1160 V120 H1200 V120 Z" />
+        </svg>
       </div>
 
-      {/* Animated Scroll Down Indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 pointer-events-none">
-        <span className="text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 font-btn">Scroll</span>
+      {/* MAIN CONTENT CONTAINER */}
+      <div className="container-x relative z-10 flex flex-col justify-between">
+        
+        {/* TOP ROW: TWO COLUMNS (LEFT CONTENT & RIGHT INTERACTIVE GLOBE) */}
+        <div className="grid gap-4 lg:grid-cols-12 items-center">
+          
+          {/* LEFT COLUMN: BRANDING, HEADLINE, LOCATIONS & CTAS */}
+          <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+            
+            {/* Top Subtitle Kicker */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-500 font-btn"
+            >
+              <span>E T &nbsp; M E D I A &nbsp; — &nbsp; O U R &nbsp; E V E N T &nbsp; N E T W O R K</span>
+            </motion.div>
+
+            {/* Main Headline (Strictly 2 Lines) */}
+            <motion.h1
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-slate-900 font-display leading-[1.15]"
+            >
+              <span className="block whitespace-nowrap">
+                Connecting{" "}
+                <span className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Ideas. People.
+                </span>
+              </span>
+              <span className="block">Opportunities.</span>
+            </motion.h1>
+
+            {/* Subtext Paragraph */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xs sm:text-sm lg:text-base text-slate-600 font-medium max-w-xl leading-relaxed"
+            >
+              A global platform for business intelligence, thought leadership and meaningful collaborations.
+            </motion.p>
+
+            {/* ACTION BUTTONS */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="flex flex-wrap items-center gap-3 pt-1 sm:pt-2"
+            >
+              <MagneticButton
+                strength={20}
+                className="gradient-brand rounded-full px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_25px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_35px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
+              >
+                <Link to="/events" className="flex items-center gap-2 font-btn">
+                  <span>Explore Events</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </MagneticButton>
+
+              <MagneticButton
+                strength={15}
+                className="rounded-full border border-slate-300/90 bg-white/90 hover:bg-white px-6 py-3 text-xs sm:text-sm font-extrabold text-slate-800 shadow-sm hover:border-cyan-500 hover:text-cyan-700 transition-all duration-200 cursor-pointer"
+              >
+                <Link to="/events/partner" className="font-btn">
+                  Partner With Us
+                </Link>
+              </MagneticButton>
+            </motion.div>
+
+          </div>
+
+          {/* RIGHT COLUMN: 3D GLOBE WITH ATMOSPHERE, VERTICAL TEXT & CALLIGRAPHY */}
+          <div className="lg:col-span-6 relative flex justify-center items-center">
+            
+            {/* Top Right Vertical Tagline */}
+            <div className="hidden xl:flex absolute top-0 right-2 flex-col items-end text-right select-none z-20 pointer-events-none">
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 font-mono">IDEAS</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 font-mono">PEOPLE</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 font-mono">IMPACT</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-cyan-600 font-mono font-bold">GLOBALLY</span>
+              <div className="h-6 w-0.5 bg-gradient-to-b from-cyan-500 to-purple-500 mt-1" />
+            </div>
+
+            {/* 3D Animated Interactive Canvas Globe */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="w-full max-w-[340px] sm:max-w-[380px] lg:max-w-[400px]"
+            >
+              <AnimatedGlobe />
+            </motion.div>
+
+            {/* Bottom Right Calligraphic Cursive Accent Text */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="absolute bottom-0 right-2 sm:right-6 select-none pointer-events-none z-20"
+            >
+              <div className="relative">
+                <span
+                  style={{ fontFamily: "'Dancing Script', 'Caveat', 'Brush Script MT', cursive" }}
+                  className="text-xl sm:text-2xl font-extrabold text-slate-700/85 tracking-wide transform -rotate-6 block drop-shadow-sm"
+                >
+                  A More Connected Tomorrow
+                </span>
+                <svg className="w-40 h-2.5 text-cyan-500/60 ml-auto -mt-0.5" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 8C50 2 150 12 198 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+            </motion.div>
+
+          </div>
+
+        </div>
+
+        {/* BOTTOM FLOATING STATS CARD BAR */}
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          className="h-8 w-5 rounded-full border-2 border-slate-500/60 p-1 flex justify-center backdrop-blur-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="relative z-20 mt-3 sm:mt-4 rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white/95 p-3.5 sm:p-4 shadow-[0_15px_40px_-10px_rgba(0,174,239,0.18)] backdrop-blur-xl"
         >
-          <div className="h-2 w-1 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            
+            {/* 4 COUNTER STATISTICS GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+              {statsList.map((st, idx) => {
+                const IconComp = st.icon;
+                const isActive = idx === activeStatIndex;
+                return (
+                  <div
+                    key={st.label}
+                    onClick={() => setActiveStatIndex(idx)}
+                    className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-300 cursor-pointer ${
+                      isActive
+                        ? "bg-cyan-50/80 border-cyan-300 shadow-sm scale-[1.01]"
+                        : "bg-slate-50/70 border-slate-200/80 hover:bg-slate-100/80"
+                    }`}
+                  >
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border ${st.color}`}>
+                      <IconComp className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
+                    <div>
+                      <div className="text-lg sm:text-2xl font-black font-display text-slate-900 leading-none">
+                        {st.value}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] font-bold text-slate-600 mt-1 whitespace-nowrap">
+                        {st.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* RIGHT TAGLINE & CONTROLS */}
+            <div className="hidden xl:flex items-center gap-3 pl-3 border-l border-slate-200 shrink-0">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">KNOWLEDGE</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">NETWORKS</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-cyan-600 font-bold block">OPPORTUNITIES —</span>
+              </div>
+
+              {/* Slider Dots */}
+              <div className="flex items-center gap-1">
+                {statsList.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveStatIndex(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      i === activeStatIndex ? "w-5 bg-cyan-500" : "w-1.5 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Prev / Next Buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveStatIndex((prev) => (prev === 0 ? statsList.length - 1 : prev - 1))}
+                  className="rounded-full border border-slate-200 p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveStatIndex((prev) => (prev + 1) % statsList.length)}
+                  className="rounded-full border border-slate-200 p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+          </div>
         </motion.div>
+
       </div>
     </section>
   );

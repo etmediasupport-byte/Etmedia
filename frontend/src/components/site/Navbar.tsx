@@ -107,15 +107,15 @@ export function Navbar() {
           {/* LEFT: ET Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center transition-transform hover:scale-[1.03]"
+            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.03]"
             onClick={() => setMobileMenuOpen(false)}
           >
             <img
               src={logo}
               alt="ET Media Business Intelligence"
-              className="h-10 sm:h-12 w-auto object-contain rounded-lg shadow-sm"
-              width={260}
-              height={100}
+              className="h-14 sm:h-16 lg:h-18 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
+              width={280}
+              height={110}
             />
           </Link>
 
@@ -217,39 +217,20 @@ export function Navbar() {
               Careers
             </NavLink>
 
-            <NavLink to="/gallery" className={({ isActive }) => navLinkStyle(isActive)}>
-              Media Gallery
-            </NavLink>
-
             <NavLink to="/contact" className={({ isActive }) => navLinkStyle(isActive)}>
               Contact Us
             </NavLink>
           </div>
 
-          {/* RIGHT: Search Icon • Glowing Register Button • Mobile Menu */}
+          {/* RIGHT: Glowing Register Button • Mobile Menu */}
           <div className="flex items-center gap-3">
-            {/* Search Icon Button */}
-            <button
-              type="button"
-              aria-label="Search site"
-              onClick={() => setSearchOpen(true)}
-              className={cn(
-                "p-2.5 rounded-full border transition-all duration-200 cursor-pointer shadow-sm",
-                scrolled
-                  ? "border-slate-200 bg-slate-100 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300"
-                  : "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-cyan-300"
-              )}
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
             {/* Glowing Register CTA Button */}
             <MagneticButton
               strength={18}
-              className="relative gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_0_22px_rgba(0,174,239,0.55)] hover:shadow-[0_0_30px_rgba(20,198,248,0.8)] transition-all duration-300"
+              className="relative gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_18px_rgba(0,174,239,0.4)] hover:shadow-[0_6px_25px_rgba(0,174,239,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
             >
-              <Link to="/events/register" className="flex items-center gap-1.5">
-                <span>Register</span>
+              <Link to="/events/register" className="flex items-center gap-1.5 font-btn">
+                <span>Register Now</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </MagneticButton>
@@ -290,7 +271,6 @@ export function Navbar() {
                   { to: "/magazine", label: "Executive Talks Magazine" },
                   { to: "/events/register", label: "Delegate Registration" },
                   { to: "/careers", label: "Careers" },
-                  { to: "/gallery", label: "Media Gallery" },
                   { to: "/contact", label: "Contact Us" },
                 ].map((item) => (
                   <Link
@@ -314,136 +294,6 @@ export function Navbar() {
           )}
         </AnimatePresence>
       </header>
-
-      {/* SEARCH POPUP MODAL */}
-      <AnimatePresence>
-        {searchOpen && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4">
-            {/* Backdrop Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSearchOpen(false)}
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-md"
-            />
-
-            {/* Modal Dialog Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: -20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: -20 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl z-10"
-            >
-              {/* Search Bar Input Header */}
-              <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                <Search className="h-6 w-6 text-cyan-600 shrink-0" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Search conferences, magazines, speakers, or topics..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent text-lg font-medium text-slate-900 placeholder-slate-400 focus:outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="p-1 rounded-full text-slate-400 hover:text-slate-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(false)}
-                  className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Quick Results Container */}
-              <div className="mt-5 max-h-[60vh] overflow-y-auto pr-1 space-y-3">
-                {searchQuery.trim() === "" ? (
-                  <div className="py-6 text-center text-slate-500">
-                    <p className="text-xs uppercase tracking-wider text-cyan-700 font-bold mb-3">Popular Searches</p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {["CFO Leadership Summit", "HR Excellence Awards", "Enterprise Tech Conclave", "Executive Talks Magazine", "Delegate Registration"].map((term) => (
-                        <button
-                          key={term}
-                          type="button"
-                          onClick={() => setSearchQuery(term)}
-                          className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs text-slate-700 hover:bg-cyan-50 hover:border-cyan-300 hover:text-cyan-700 transition-colors"
-                        >
-                          {term}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : filteredEvents.length > 0 ? (
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-cyan-700 font-bold mb-3">Matching Events</p>
-                    <div className="grid gap-3">
-                      {filteredEvents.map((evt) => (
-                        <div
-                          key={evt.slug}
-                          onClick={() => handleSearchResultClick(`/events/${evt.slug}`)}
-                          className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-cyan-50/70 hover:border-cyan-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="gradient-brand p-2.5 rounded-xl text-white shadow-sm">
-                              <Calendar className="h-4 w-4" />
-                            </span>
-                            <div>
-                              <h4 className="text-sm font-bold text-slate-900 group-hover:text-cyan-700 font-display">
-                                {evt.title}
-                              </h4>
-                              <p className="text-xs text-slate-500">
-                                {evt.date} • {evt.city}
-                              </p>
-                            </div>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-cyan-600 group-hover:translate-x-1 transition-all" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-slate-500">
-                    <p className="text-sm">No results found for "{searchQuery}"</p>
-                    <p className="text-xs text-slate-400 mt-1">Try searching for CFO, HR, Tech, or Magazine</p>
-                  </div>
-                )}
-
-                {/* Quick Link Pages */}
-                <div className="border-t border-slate-100 pt-4 mt-4">
-                  <p className="text-xs uppercase tracking-wider text-cyan-700 font-bold mb-3 font-display">Quick Pages</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "About ET Media", path: "/about", icon: Sparkles },
-                      { label: "Executive Talks Magazine", path: "/magazine", icon: BookOpen },
-                      { label: "Delegate Registration", path: "/events/register", icon: Users },
-                      { label: "Partner & Sponsorship", path: "/events/partner", icon: Handshake },
-                    ].map((pg) => (
-                      <div
-                        key={pg.path}
-                        onClick={() => handleSearchResultClick(pg.path)}
-                        className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-cyan-700 transition-colors cursor-pointer"
-                      >
-                        <pg.icon className="h-3.5 w-3.5 text-cyan-600" />
-                        <span>{pg.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

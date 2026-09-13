@@ -204,7 +204,7 @@ export function GlobeInteractive({
 
       {/* Floating 3D City Labels for Primary Key Hubs */}
       {markers
-        .filter((m) => ["hyderabad", "europe", "dubai", "delhi"].includes(m.id) || selectedMarker?.id === m.id)
+        .filter((m) => ["hyderabad", "europe", "dubai", "delhi", "mumbai", "bengaluru", "pune", "ahmedabad", "bangkok", "malaysia"].includes(m.id) || selectedMarker?.id === m.id)
         .map((m) => (
           <div
             key={m.id}
