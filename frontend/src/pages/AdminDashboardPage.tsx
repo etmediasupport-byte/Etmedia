@@ -486,12 +486,19 @@ export default function AdminDashboardPage() {
     if (!parsedLocations || parsedLocations.length === 0) {
       parsedLocations = [
         {
-          city: evt.city || "",
-          venue: evt.venue || "",
-          date: evt.date || "",
-          time: evt.time || "",
+          city: "",
+          venue: "",
+          date: "",
+          time: "",
         },
       ];
+    } else {
+      parsedLocations = parsedLocations.map((loc: any) => ({
+        city: loc.city === "Mumbai" ? "" : loc.city || "",
+        venue: (loc.venue || "").toLowerCase().includes("st. regis") ? "" : loc.venue || "",
+        date: loc.date || "",
+        time: loc.time === "09:00 AM — 06:00 PM" ? "" : loc.time || "",
+      }));
     }
 
     let parsedSpeakers: Speaker[] = [];
