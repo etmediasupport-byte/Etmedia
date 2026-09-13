@@ -11,7 +11,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable } from "./db.js";
 
 dotenv.config();
 
@@ -988,33 +988,19 @@ app.delete("/api/admin/contacts/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
-// 0. Image File Upload Handler (saves uploaded image to /public/uploads/)
+// 0. Image File Upload Handler (stores base64 directly into MySQL database)
 app.post("/api/admin/upload", authenticateAdmin, async (req, res) => {
-  const { imageBase64, filename } = req.body;
+  const { imageBase64 } = req.body;
   if (!imageBase64) {
     return res.status(400).json({ success: false, message: "No image data provided." });
   }
 
   try {
-    const uploadsDir = path.join(publicPath, "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    const ext = matches && matches[1] ? matches[1].split("/")[1] : "jpg";
-    const cleanFilename = `banner_${Date.now()}.${ext}`;
-    const filePath = path.join(uploadsDir, cleanFilename);
-    const base64Data = matches ? matches[2] : imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
-
-    fs.writeFileSync(filePath, buffer);
-
-    const imageUrl = `/uploads/${cleanFilename}`;
-    return res.json({ success: true, url: imageUrl, message: "Image banner uploaded successfully!" });
+    // Return base64 string directly to be stored straight into MySQL DB table column
+    return res.json({ success: true, url: imageBase64, message: "Image stored directly in database!" });
   } catch (err: any) {
     console.error("Upload error:", err);
-    return res.status(500).json({ success: false, message: "Failed to upload image file." });
+    return res.status(500).json({ success: false, message: "Failed to process image data." });
   }
 });
 
@@ -1028,6 +1014,248 @@ app.get("/api/admin/events", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Admin Fetch Events Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch events." });
+  }
+});
+
+// ==========================================
+// EVENT PAYMENTS MANAGEMENT API ENDPOINTS
+// ==========================================
+
+// 1. Get all event payment configurations for admin
+app.get("/api/admin/event-payments", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, payments: [] });
+    await ensureEventPaymentsTable();
+    const [rows]: any = await pool.query(`
+      SELECT p.*, e.title as event_title, e.category as event_category, e.city as event_city, e.date as event_date, e.image as event_image, e.slug as event_slug
+      FROM event_payment_settings p
+      LEFT JOIN events e ON p.event_id = e.id
+      ORDER BY p.updated_at DESC
+    `);
+    res.json({ success: true, payments: rows });
+  } catch (err) {
+    console.error("Admin Fetch Event Payments Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch event payment settings." });
+  }
+});
+
+// 2. Create / Upsert Event Payment Config
+app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
+  const {
+    event_id,
+    event_title,
+    event_slug,
+    registration_fee,
+    currency,
+    gst_percentage,
+    gst_included,
+    platform_fee,
+    convenience_fee,
+    registration_type_prices,
+    early_bird_enabled,
+    early_bird_price,
+    early_bird_start_date,
+    early_bird_end_date,
+    special_prices,
+    total_seats,
+    available_seats,
+    reserved_seats,
+    vip_seats,
+    speaker_seats,
+    sponsor_seats,
+    coupons_enabled,
+    coupons,
+    payment_required,
+    online_payment_enabled,
+    offline_payment_enabled,
+    free_registration_allowed,
+    auto_close_seats_full,
+    registration_open_date,
+    registration_close_date,
+    event_start_date,
+    event_end_date,
+    payment_status,
+  } = req.body;
+
+  if (!event_id) {
+    return res.status(400).json({ success: false, message: "Event Selection is required." });
+  }
+
+  const id = req.body.id || `PAY-${event_id}`;
+  const regTypePricesStr = typeof registration_type_prices === "string" ? registration_type_prices : JSON.stringify(registration_type_prices || {});
+  const specialPricesStr = typeof special_prices === "string" ? special_prices : JSON.stringify(special_prices || {});
+  const couponsStr = typeof coupons === "string" ? coupons : JSON.stringify(coupons || []);
+
+  try {
+    if (pool) {
+      await ensureEventPaymentsTable();
+      await pool.query(
+        `INSERT INTO event_payment_settings (
+          id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+          platform_fee, convenience_fee, registration_type_prices, early_bird_enabled, early_bird_price,
+          early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
+          reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
+          online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
+          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          event_title = VALUES(event_title),
+          event_slug = VALUES(event_slug),
+          registration_fee = VALUES(registration_fee),
+          currency = VALUES(currency),
+          gst_percentage = VALUES(gst_percentage),
+          gst_included = VALUES(gst_included),
+          platform_fee = VALUES(platform_fee),
+          convenience_fee = VALUES(convenience_fee),
+          registration_type_prices = VALUES(registration_type_prices),
+          early_bird_enabled = VALUES(early_bird_enabled),
+          early_bird_price = VALUES(early_bird_price),
+          early_bird_start_date = VALUES(early_bird_start_date),
+          early_bird_end_date = VALUES(early_bird_end_date),
+          special_prices = VALUES(special_prices),
+          total_seats = VALUES(total_seats),
+          available_seats = VALUES(available_seats),
+          reserved_seats = VALUES(reserved_seats),
+          vip_seats = VALUES(vip_seats),
+          speaker_seats = VALUES(speaker_seats),
+          sponsor_seats = VALUES(sponsor_seats),
+          coupons_enabled = VALUES(coupons_enabled),
+          coupons = VALUES(coupons),
+          payment_required = VALUES(payment_required),
+          online_payment_enabled = VALUES(online_payment_enabled),
+          offline_payment_enabled = VALUES(offline_payment_enabled),
+          free_registration_allowed = VALUES(free_registration_allowed),
+          auto_close_seats_full = VALUES(auto_close_seats_full),
+          registration_open_date = VALUES(registration_open_date),
+          registration_close_date = VALUES(registration_close_date),
+          event_start_date = VALUES(event_start_date),
+          event_end_date = VALUES(event_end_date),
+          payment_status = VALUES(payment_status)`,
+        [
+          id, event_id, event_title, event_slug, registration_fee || 0, currency || "INR", gst_percentage || 18, gst_included ? 1 : 0,
+          platform_fee || 0, convenience_fee || 0, regTypePricesStr, early_bird_enabled ? 1 : 0, early_bird_price || 0,
+          early_bird_start_date || "", early_bird_end_date || "", specialPricesStr, total_seats || 100, available_seats || 100,
+          reserved_seats || 0, vip_seats || 0, speaker_seats || 0, sponsor_seats || 0, coupons_enabled ? 1 : 0, couponsStr,
+          payment_required ? 1 : 0, online_payment_enabled ? 1 : 0, offline_payment_enabled ? 1 : 0, free_registration_allowed ? 1 : 0,
+          auto_close_seats_full ? 1 : 0, registration_open_date || "", registration_close_date || "", event_start_date || "",
+          event_end_date || "", payment_status || "Enabled"
+        ]
+      );
+      res.json({ success: true, id, message: "Event payment settings saved successfully!" });
+    }
+  } catch (err) {
+    console.error("Save Event Payment Error:", err);
+    res.status(500).json({ success: false, message: "Failed to save event payment settings." });
+  }
+});
+
+// 3. Update Event Payment Config
+app.put("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+  try {
+    if (pool) {
+      await ensureEventPaymentsTable();
+      const regTypePricesStr = typeof data.registration_type_prices === "string" ? data.registration_type_prices : JSON.stringify(data.registration_type_prices || {});
+      const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
+      const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
+
+      await pool.query(
+        `UPDATE event_payment_settings SET
+          registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?, platform_fee = ?, convenience_fee = ?,
+          registration_type_prices = ?, early_bird_enabled = ?, early_bird_price = ?, early_bird_start_date = ?,
+          early_bird_end_date = ?, special_prices = ?, total_seats = ?, available_seats = ?, reserved_seats = ?,
+          vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?, coupons = ?, payment_required = ?,
+          online_payment_enabled = ?, offline_payment_enabled = ?, free_registration_allowed = ?, auto_close_seats_full = ?,
+          registration_open_date = ?, registration_close_date = ?, event_start_date = ?, event_end_date = ?, payment_status = ?
+        WHERE id = ? OR event_id = ?`,
+        [
+          data.registration_fee || 0, data.currency || "INR", data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+          regTypePricesStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0, data.early_bird_start_date || "",
+          data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100, data.available_seats || 100, data.reserved_seats || 0,
+          data.vip_seats || 0, data.speaker_seats || 0, data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0, data.auto_close_seats_full ? 1 : 0,
+          data.registration_open_date || "", data.registration_close_date || "", data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          id, id
+        ]
+      );
+      res.json({ success: true, message: "Event payment settings updated successfully!" });
+    }
+  } catch (err) {
+    console.error("Update Event Payment Error:", err);
+    res.status(500).json({ success: false, message: "Failed to update event payment settings." });
+  }
+});
+
+// 4. Delete Event Payment Config
+app.delete("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM event_payment_settings WHERE id = ? OR event_id = ?", [id, id]);
+      res.json({ success: true, message: "Payment configuration deleted successfully!" });
+    }
+  } catch (err) {
+    console.error("Delete Event Payment Error:", err);
+    res.status(500).json({ success: false, message: "Failed to delete payment configuration." });
+  }
+});
+
+// 5. Bulk Payment Operations
+app.post("/api/admin/event-payments/bulk", authenticateAdmin, async (req, res) => {
+  const { action, ids, gst_percentage } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: "No event payment IDs selected." });
+  }
+  try {
+    if (pool) {
+      if (action === "enable") {
+        await pool.query("UPDATE event_payment_settings SET payment_status = 'Enabled' WHERE id IN (?)", [ids]);
+      } else if (action === "disable") {
+        await pool.query("UPDATE event_payment_settings SET payment_status = 'Disabled' WHERE id IN (?)", [ids]);
+      } else if (action === "update_gst" && gst_percentage !== undefined) {
+        await pool.query("UPDATE event_payment_settings SET gst_percentage = ? WHERE id IN (?)", [gst_percentage, ids]);
+      } else if (action === "delete") {
+        await pool.query("DELETE FROM event_payment_settings WHERE id IN (?)", [ids]);
+      }
+      res.json({ success: true, message: `Bulk action '${action}' completed successfully!` });
+    }
+  } catch (err) {
+    console.error("Bulk Payment Action Error:", err);
+    res.status(500).json({ success: false, message: "Failed to execute bulk payment action." });
+  }
+});
+
+// 6. Public Endpoint: Get Payment Config by Event ID or Slug
+app.get("/api/event-payments/event/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    if (pool) {
+      await ensureEventPaymentsTable();
+      const [rows]: any = await pool.query(
+        "SELECT * FROM event_payment_settings WHERE event_id = ? OR event_slug = ?",
+        [eventId, eventId]
+      );
+      if (rows.length > 0) {
+        return res.json({ success: true, payment: rows[0] });
+      }
+    }
+    res.json({
+      success: true,
+      payment: {
+        event_id: eventId,
+        registration_fee: 4999,
+        currency: "INR",
+        gst_percentage: 18,
+        gst_included: 0,
+        platform_fee: 99,
+        convenience_fee: 0,
+        payment_status: "Enabled",
+        registration_type_prices: JSON.stringify({ Delegate: 4999, Speaker: 0, VIP: 9999, Student: 1499 }),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch event payment settings." });
   }
 });
 
@@ -1645,24 +1873,16 @@ app.patch("/api/admin/magazines/:id/featured", authenticateAdmin, async (req, re
 // CAREERS & JOBS API ENDPOINTS
 // ==========================================
 
-// Public PDF Resume Upload Handler
+// Public PDF Resume Upload Handler (stores base64 data URI directly to MySQL column)
 app.post("/api/upload-resume", async (req, res) => {
   try {
-    const publicPath = path.join(__dirname, "..", "public");
-    const resumesDir = path.join(publicPath, "uploads", "resumes");
-    if (!fs.existsSync(resumesDir)) {
-      fs.mkdirSync(resumesDir, { recursive: true });
-    }
-
     const chunks: Buffer[] = [];
     req.on("data", (chunk) => chunks.push(chunk));
     req.on("end", () => {
       const buffer = Buffer.concat(chunks);
-      const filename = `resume-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`;
-      const filePath = path.join(resumesDir, filename);
-      fs.writeFileSync(filePath, buffer);
-      const resumeUrl = `/uploads/resumes/${filename}`;
-      return res.json({ success: true, url: resumeUrl, message: "Resume uploaded successfully!" });
+      const base64Str = buffer.toString("base64");
+      const pdfDataUrl = `data:application/pdf;base64,${base64Str}`;
+      return res.json({ success: true, url: pdfDataUrl, message: "Resume data stored directly in database!" });
     });
   } catch (err: any) {
     console.error("Resume Upload Error:", err);

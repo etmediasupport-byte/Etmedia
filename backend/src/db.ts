@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Hostinger MySQL credentials provided by user
-const DB_HOST = process.env.DB_HOST || "localhost";
+const DB_HOST = process.env.DB_HOST || "auth-db1743.hstgr.io";
 const DB_USER = process.env.DB_USER || "u409108324_ETMedia";
 const DB_PASSWORD = process.env.DB_PASSWORD || "ETMedia@2026";
 const DB_NAME = process.env.DB_NAME || "u409108324_ETMedia";
@@ -169,6 +169,8 @@ export async function initDatabase() {
     // Create new admin modules tables (testimonials, newsletter, seo, settings)
     await ensureNewAdminTables();
     await seedNewAdminTables();
+    await ensureEventPaymentsTable();
+    await seedDefaultEventPayments();
     await ensureCollectionAliases();
 
     // Seed default initial events if empty
@@ -303,6 +305,7 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN agenda_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN map_url TEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN venue_address TEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating events table:", err);
   }
@@ -325,6 +328,7 @@ export async function ensurePartnersTables() {
     `);
     try { await pool.query("ALTER TABLE partners ADD COLUMN priority INT DEFAULT 0;"); } catch (e) {}
     try { await pool.query("ALTER TABLE partners ADD COLUMN status VARCHAR(50) DEFAULT 'Active';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE partners MODIFY COLUMN logo LONGTEXT;"); } catch (e) {}
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS partner_submissions (
@@ -406,14 +410,17 @@ export async function ensureMagazinesTable() {
         title VARCHAR(255) NOT NULL,
         date VARCHAR(100) NOT NULL,
         month VARCHAR(100),
-        cover VARCHAR(255) NOT NULL,
-        pdf_url TEXT,
+        cover LONGTEXT NOT NULL,
+        pdf_url LONGTEXT,
         pages_list LONGTEXT,
         category VARCHAR(100) DEFAULT 'Leadership',
         is_featured TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE magazines MODIFY COLUMN cover LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE magazines MODIFY COLUMN pdf_url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE magazines MODIFY COLUMN pages_list LONGTEXT;"); } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating magazines table:", err);
   }
@@ -517,11 +524,12 @@ export async function ensureJobsTables() {
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(100) NOT NULL,
         experience VARCHAR(100) NOT NULL,
-        resume_url TEXT NOT NULL,
+        resume_url LONGTEXT NOT NULL,
         portfolio_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE job_applications MODIFY COLUMN resume_url LONGTEXT;"); } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating jobs tables:", err);
   }
@@ -628,8 +636,8 @@ export async function ensureGalleryTable() {
         id VARCHAR(100) PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         type ENUM('photo', 'video') DEFAULT 'photo',
-        url TEXT NOT NULL,
-        thumbnail_url TEXT,
+        url LONGTEXT NOT NULL,
+        thumbnail_url LONGTEXT,
         category VARCHAR(100) DEFAULT 'Keynotes',
         event_slug VARCHAR(255) DEFAULT 'all',
         event_title VARCHAR(255) DEFAULT 'All Events',
@@ -637,6 +645,8 @@ export async function ensureGalleryTable() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE gallery_items MODIFY COLUMN url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE gallery_items MODIFY COLUMN thumbnail_url LONGTEXT;"); } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating gallery_items table:", err);
   }
@@ -794,9 +804,13 @@ export async function ensureNewAdminTables() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS website_settings (
         setting_key VARCHAR(100) PRIMARY KEY,
-        setting_value TEXT NOT NULL
+        setting_value LONGTEXT NOT NULL
       );
     `);
+    try { await pool.query("ALTER TABLE testimonials MODIFY COLUMN avatar LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE seo_settings ADD COLUMN og_image LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE seo_settings MODIFY COLUMN og_image LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE website_settings MODIFY COLUMN setting_value LONGTEXT;"); } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error creating new admin tables:", err);
   }
@@ -917,8 +931,247 @@ export async function ensureCollectionAliases() {
     await pool.query(`CREATE TABLE IF NOT EXISTS newsletter LIKE newsletter_subscribers;`).catch(() => {});
     // 7. settings -> website_settings
     await pool.query(`CREATE TABLE IF NOT EXISTS settings LIKE website_settings;`).catch(() => {});
+    // 8. payments -> event_payment_settings
+    await pool.query(`CREATE TABLE IF NOT EXISTS payments LIKE event_payment_settings;`).catch(() => {});
   } catch (err) {
     console.error("[MySQL] Error setting up collection aliases:", err);
+  }
+}
+
+export async function ensureEventPaymentsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS event_payment_settings (
+        id VARCHAR(100) PRIMARY KEY,
+        event_id VARCHAR(100) NOT NULL UNIQUE,
+        event_title VARCHAR(255),
+        event_slug VARCHAR(255),
+        registration_fee DECIMAL(10,2) DEFAULT 4999.00,
+        currency VARCHAR(10) DEFAULT 'INR',
+        gst_percentage DECIMAL(5,2) DEFAULT 18.00,
+        gst_included TINYINT(1) DEFAULT 0,
+        platform_fee DECIMAL(10,2) DEFAULT 0.00,
+        convenience_fee DECIMAL(10,2) DEFAULT 0.00,
+        registration_type_prices LONGTEXT,
+        early_bird_enabled TINYINT(1) DEFAULT 1,
+        early_bird_price DECIMAL(10,2) DEFAULT 3999.00,
+        early_bird_start_date VARCHAR(100),
+        early_bird_end_date VARCHAR(100),
+        special_prices LONGTEXT,
+        total_seats INT DEFAULT 150,
+        available_seats INT DEFAULT 120,
+        reserved_seats INT DEFAULT 10,
+        vip_seats INT DEFAULT 10,
+        speaker_seats INT DEFAULT 5,
+        sponsor_seats INT DEFAULT 5,
+        coupons_enabled TINYINT(1) DEFAULT 1,
+        coupons LONGTEXT,
+        payment_required TINYINT(1) DEFAULT 1,
+        online_payment_enabled TINYINT(1) DEFAULT 1,
+        offline_payment_enabled TINYINT(1) DEFAULT 1,
+        free_registration_allowed TINYINT(1) DEFAULT 0,
+        auto_close_seats_full TINYINT(1) DEFAULT 1,
+        registration_open_date VARCHAR(100),
+        registration_close_date VARCHAR(100),
+        event_start_date VARCHAR(100),
+        event_end_date VARCHAR(100),
+        payment_status VARCHAR(50) DEFAULT 'Enabled',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error creating event_payment_settings table:", err);
+  }
+}
+
+export async function seedDefaultEventPayments() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM event_payment_settings");
+    if (existing[0]?.count === 0) {
+      const defaultConfigs = [
+        {
+          id: "PAY-EVT-101",
+          event_id: "EVT-101",
+          event_title: "India CFO & Finance Leadership Summit 2026",
+          event_slug: "cfo-leadership-summit-2026",
+          registration_fee: 4999.00,
+          currency: "INR",
+          gst_percentage: 18.00,
+          gst_included: 0,
+          platform_fee: 99.00,
+          convenience_fee: 0.00,
+          registration_type_prices: JSON.stringify({
+            Delegate: 4999,
+            Speaker: 0,
+            Sponsorship: 49999,
+            Exhibitor: 24999,
+            VIP: 9999,
+            Student: 1499,
+            Media: 0,
+          }),
+          early_bird_enabled: 1,
+          early_bird_price: 3999.00,
+          early_bird_start_date: "2026-09-01",
+          early_bird_end_date: "2026-10-15",
+          special_prices: JSON.stringify({
+            corporate: 19999,
+            group: 14999,
+            bulk: 9999,
+            inviteOnly: 0,
+          }),
+          total_seats: 150,
+          available_seats: 112,
+          reserved_seats: 15,
+          vip_seats: 10,
+          speaker_seats: 8,
+          sponsor_seats: 5,
+          coupons_enabled: 1,
+          coupons: JSON.stringify([
+            { id: "CPN-1", code: "CFOVIP20", type: "percentage", value: 20, usageLimit: 50, expiryDate: "2026-11-01", status: "Active" },
+            { id: "CPN-2", code: "EARLYBIRD500", type: "flat", value: 500, usageLimit: 100, expiryDate: "2026-10-31", status: "Active" },
+          ]),
+          payment_required: 1,
+          online_payment_enabled: 1,
+          offline_payment_enabled: 1,
+          free_registration_allowed: 0,
+          auto_close_seats_full: 1,
+          registration_open_date: "2026-08-01",
+          registration_close_date: "2026-11-10",
+          event_start_date: "2026-11-12",
+          event_end_date: "2026-11-12",
+          payment_status: "Enabled",
+        },
+        {
+          id: "PAY-EVT-102",
+          event_id: "EVT-102",
+          event_title: "National HR Excellence & Workplace Awards",
+          event_slug: "hr-excellence-awards-2026",
+          registration_fee: 5999.00,
+          currency: "INR",
+          gst_percentage: 18.00,
+          gst_included: 0,
+          platform_fee: 99.00,
+          convenience_fee: 0.00,
+          registration_type_prices: JSON.stringify({
+            Delegate: 5999,
+            Speaker: 0,
+            Sponsorship: 59999,
+            Exhibitor: 29999,
+            VIP: 11999,
+            Student: 1999,
+            Media: 0,
+          }),
+          early_bird_enabled: 1,
+          early_bird_price: 4999.00,
+          early_bird_start_date: "2026-09-01",
+          early_bird_end_date: "2026-10-30",
+          special_prices: JSON.stringify({
+            corporate: 24999,
+            group: 17999,
+            bulk: 11999,
+            inviteOnly: 0,
+          }),
+          total_seats: 200,
+          available_seats: 145,
+          reserved_seats: 20,
+          vip_seats: 15,
+          speaker_seats: 10,
+          sponsor_seats: 10,
+          coupons_enabled: 1,
+          coupons: JSON.stringify([
+            { id: "CPN-3", code: "HRAWARDS15", type: "percentage", value: 15, usageLimit: 40, expiryDate: "2026-11-15", status: "Active" },
+          ]),
+          payment_required: 1,
+          online_payment_enabled: 1,
+          offline_payment_enabled: 1,
+          free_registration_allowed: 0,
+          auto_close_seats_full: 1,
+          registration_open_date: "2026-08-15",
+          registration_close_date: "2026-11-16",
+          event_start_date: "2026-11-18",
+          event_end_date: "2026-11-18",
+          payment_status: "Enabled",
+        },
+        {
+          id: "PAY-EVT-103",
+          event_id: "EVT-103",
+          event_title: "Enterprise Technology & AI Leadership Conclave",
+          event_slug: "tech-enterprise-summit-2026",
+          registration_fee: 6999.00,
+          currency: "INR",
+          gst_percentage: 18.00,
+          gst_included: 0,
+          platform_fee: 99.00,
+          convenience_fee: 0.00,
+          registration_type_prices: JSON.stringify({
+            Delegate: 6999,
+            Speaker: 0,
+            Sponsorship: 74999,
+            Exhibitor: 34999,
+            VIP: 14999,
+            Student: 2499,
+            Media: 0,
+          }),
+          early_bird_enabled: 1,
+          early_bird_price: 5499.00,
+          early_bird_start_date: "2026-09-01",
+          early_bird_end_date: "2026-11-01",
+          special_prices: JSON.stringify({
+            corporate: 29999,
+            group: 19999,
+            bulk: 14999,
+            inviteOnly: 0,
+          }),
+          total_seats: 250,
+          available_seats: 190,
+          reserved_seats: 25,
+          vip_seats: 20,
+          speaker_seats: 10,
+          sponsor_seats: 5,
+          coupons_enabled: 1,
+          coupons: JSON.stringify([
+            { id: "CPN-4", code: "AITECH1000", type: "flat", value: 1000, usageLimit: 60, expiryDate: "2026-11-30", status: "Active" },
+          ]),
+          payment_required: 1,
+          online_payment_enabled: 1,
+          offline_payment_enabled: 1,
+          free_registration_allowed: 0,
+          auto_close_seats_full: 1,
+          registration_open_date: "2026-09-01",
+          registration_close_date: "2026-12-03",
+          event_start_date: "2026-12-05",
+          event_end_date: "2026-12-05",
+          payment_status: "Enabled",
+        },
+      ];
+
+      for (const p of defaultConfigs) {
+        await pool.query(
+          `INSERT INTO event_payment_settings (
+            id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+            platform_fee, convenience_fee, registration_type_prices, early_bird_enabled, early_bird_price,
+            early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
+            reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
+            online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
+            registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            p.id, p.event_id, p.event_title, p.event_slug, p.registration_fee, p.currency, p.gst_percentage, p.gst_included,
+            p.platform_fee, p.convenience_fee, p.registration_type_prices, p.early_bird_enabled, p.early_bird_price,
+            p.early_bird_start_date, p.early_bird_end_date, p.special_prices, p.total_seats, p.available_seats,
+            p.reserved_seats, p.vip_seats, p.speaker_seats, p.sponsor_seats, p.coupons_enabled, p.coupons, p.payment_required,
+            p.online_payment_enabled, p.offline_payment_enabled, p.free_registration_allowed, p.auto_close_seats_full,
+            p.registration_open_date, p.registration_close_date, p.event_start_date, p.event_end_date, p.payment_status
+          ]
+        );
+      }
+      console.log("[MySQL] Seeded default event payment configurations!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding default event payment settings:", err);
   }
 }
 

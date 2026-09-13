@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/logo.jpeg";
@@ -65,9 +65,22 @@ import {
   UserPlus,
   Sliders,
   ShieldCheck,
+  CreditCard,
+  Percent,
+  IndianRupee,
+  Tag,
+  SlidersHorizontal,
+  Layers,
+  Ticket,
+  Sparkles,
+  Clock3,
+  Lock,
+  Unlock,
+  Check,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery } from "@/lib/site-data";
+import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
 
 interface Registration {
   id: string;
@@ -178,6 +191,7 @@ interface WebsiteSettings {
 type TabType =
   | "overview"
   | "events"
+  | "event-payments"
   | "magazines"
   | "partners"
   | "partner-requests"
@@ -201,6 +215,13 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({ top: 0, left: 0 });
+    }
+  }, [activeTab]);
 
   const [stats, setStats] = useState({
     totalRegistrations: 0,
@@ -337,6 +358,68 @@ export default function AdminDashboardPage() {
     maintenance_mode: false,
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Event Payments Management State
+  const [eventPayments, setEventPayments] = useState<EventPaymentConfig[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [editingPaymentConfig, setEditingPaymentConfig] = useState<EventPaymentConfig | null>(null);
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
+  const [paymentFilterStatus, setPaymentFilterStatus] = useState<string>("all");
+  const [paymentFilterCategory, setPaymentFilterCategory] = useState<string>("all");
+  const [paymentFilterCity, setPaymentFilterCity] = useState<string>("all");
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [showTicketPreviewModal, setShowTicketPreviewModal] = useState(false);
+  const [ticketPreviewItem, setTicketPreviewItem] = useState<EventPaymentConfig | null>(null);
+  const [bulkGstValue, setBulkGstValue] = useState<number>(18);
+  const [showBulkGstModal, setShowBulkGstModal] = useState(false);
+
+  const [paymentForm, setPaymentForm] = useState<any>({
+    event_id: "",
+    event_title: "",
+    event_slug: "",
+    registration_fee: 4999,
+    currency: "INR",
+    gst_percentage: 18,
+    gst_included: false,
+    platform_fee: 99,
+    convenience_fee: 0,
+    registration_type_prices: {
+      Delegate: 4999,
+      Speaker: 0,
+      Sponsorship: 24999,
+      Exhibitor: 14999,
+      VIP: 9999,
+      Student: 1499,
+      Media: 0,
+    },
+    early_bird_enabled: true,
+    early_bird_price: 3999,
+    early_bird_start_date: new Date().toISOString().split("T")[0],
+    early_bird_end_date: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
+    special_prices: {},
+    total_seats: 150,
+    available_seats: 120,
+    reserved_seats: 10,
+    vip_seats: 20,
+    speaker_seats: 10,
+    sponsor_seats: 10,
+    coupons_enabled: true,
+    coupons: [
+      { id: "cp-1", code: "EARLY50", type: "percentage", value: 20, usageLimit: 50, expiryDate: "2026-12-31", status: "Active" },
+      { id: "cp-2", code: "CXO2026", type: "flat", value: 1000, usageLimit: 100, expiryDate: "2026-12-31", status: "Active" },
+    ],
+    payment_required: true,
+    online_payment_enabled: true,
+    offline_payment_enabled: true,
+    free_registration_allowed: false,
+    auto_close_seats_full: true,
+    registration_open_date: new Date().toISOString().split("T")[0],
+    registration_close_date: "2026-12-31",
+    event_start_date: "2026-10-15",
+    event_end_date: "2026-10-16",
+    payment_status: "Enabled",
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
@@ -589,6 +672,19 @@ export default function AdminDashboardPage() {
         }
       } catch (e) {
         console.warn("Could not fetch settings", e);
+      }
+
+      // 16. Fetch Event Payment Configurations
+      try {
+        const payRes = await fetch("/api/admin/event-payments", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const payData = await payRes.json();
+        if (payData.success && Array.isArray(payData.payments)) {
+          setEventPayments(payData.payments);
+        }
+      } catch (e) {
+        console.warn("Could not fetch event payment settings", e);
       }
     } catch (err) {
       console.error(err);
@@ -937,6 +1033,192 @@ export default function AdminDashboardPage() {
     localStorage.removeItem("etmedia_admin_user");
     toast.success("Logged out successfully.");
     navigate("/admin/login");
+  };
+
+  // --- EVENT PAYMENT MANAGEMENT HANDLERS ---
+  const handleOpenAddPaymentConfig = () => {
+    setEditingPaymentConfig(null);
+    const defaultEvent = cmsEvents[0] || {};
+    setPaymentForm({
+      event_id: defaultEvent.id || defaultEvent.slug || "cfo-leadership-summit",
+      event_title: defaultEvent.title || "India CFO Leadership Summit 2026",
+      event_slug: defaultEvent.slug || "cfo-leadership-summit",
+      registration_fee: 4999,
+      currency: "INR",
+      gst_percentage: 18,
+      gst_included: false,
+      platform_fee: 99,
+      convenience_fee: 0,
+      registration_type_prices: {
+        Delegate: 4999,
+        Speaker: 0,
+        Sponsorship: 24999,
+        Exhibitor: 14999,
+        VIP: 9999,
+        Student: 1499,
+        Media: 0,
+      },
+      early_bird_enabled: true,
+      early_bird_price: 3999,
+      early_bird_start_date: new Date().toISOString().split("T")[0],
+      early_bird_end_date: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
+      special_prices: {},
+      total_seats: 150,
+      available_seats: 120,
+      reserved_seats: 10,
+      vip_seats: 20,
+      speaker_seats: 10,
+      sponsor_seats: 10,
+      coupons_enabled: true,
+      coupons: [
+        { id: "cp-1", code: "EARLY50", type: "percentage", value: 20, usageLimit: 50, expiryDate: "2026-12-31", status: "Active" },
+        { id: "cp-2", code: "CXO2026", type: "flat", value: 1000, usageLimit: 100, expiryDate: "2026-12-31", status: "Active" },
+      ],
+      payment_required: true,
+      online_payment_enabled: true,
+      offline_payment_enabled: true,
+      free_registration_allowed: false,
+      auto_close_seats_full: true,
+      registration_open_date: new Date().toISOString().split("T")[0],
+      registration_close_date: "2026-12-31",
+      event_start_date: defaultEvent.date || "2026-10-15",
+      event_end_date: defaultEvent.date || "2026-10-16",
+      payment_status: "Enabled",
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handleEditPaymentConfig = (item: EventPaymentConfig) => {
+    setEditingPaymentConfig(item);
+    let parsedRegPrices = item.registration_type_prices;
+    if (typeof parsedRegPrices === "string") {
+      try { parsedRegPrices = JSON.parse(parsedRegPrices); } catch(e) {}
+    }
+    let parsedCoupons = item.coupons;
+    if (typeof parsedCoupons === "string") {
+      try { parsedCoupons = JSON.parse(parsedCoupons); } catch(e) {}
+    }
+    setPaymentForm({
+      ...item,
+      registration_type_prices: parsedRegPrices || { Delegate: item.registration_fee || 4999 },
+      coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handleSavePaymentConfigSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentForm.event_id) {
+      toast.error("Please select an event.");
+      return;
+    }
+    setPaymentSaving(true);
+    try {
+      const url = editingPaymentConfig
+        ? `/api/admin/event-payments/${editingPaymentConfig.id}`
+        : "/api/admin/event-payments";
+      const method = editingPaymentConfig ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(paymentForm),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(editingPaymentConfig ? "Event payment settings updated!" : "Event payment configuration created!");
+        setShowPaymentModal(false);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save event payment settings.");
+      }
+    } catch (err) {
+      toast.error("Network error saving event payment settings.");
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
+
+  const handleTogglePaymentStatusRow = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "Enabled" ? "Disabled" : "Enabled";
+    try {
+      const res = await fetch(`/api/admin/event-payments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ payment_status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Payment status updated to ${newStatus}`);
+        setEventPayments((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, payment_status: newStatus as any } : p))
+        );
+      } else {
+        toast.error("Failed to update status.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleDeletePaymentConfigRow = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this payment configuration?")) return;
+    try {
+      const res = await fetch(`/api/admin/event-payments/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Payment configuration deleted.");
+        setEventPayments((prev) => prev.filter((p) => p.id !== id));
+      } else {
+        toast.error("Failed to delete configuration.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleBulkPaymentActionExecute = async (action: "enable" | "disable" | "update_gst" | "delete", value?: number) => {
+    if (selectedPaymentIds.length === 0) {
+      toast.error("Please select at least 1 event payment item.");
+      return;
+    }
+    if (action === "delete" && !confirm(`Are you sure you want to delete ${selectedPaymentIds.length} payment configurations?`)) return;
+
+    try {
+      const res = await fetch("/api/admin/event-payments/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action,
+          ids: selectedPaymentIds,
+          gst_percentage: value !== undefined ? value : bulkGstValue,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Bulk action '${action}' completed for ${selectedPaymentIds.length} items!`);
+        setSelectedPaymentIds([]);
+        setShowBulkGstModal(false);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to execute bulk action.");
+      }
+    } catch (err) {
+      toast.error("Network error executing bulk action.");
+    }
   };
 
   const handleToggleRegistrationStatus = (id: string) => {
@@ -2079,6 +2361,7 @@ export default function AdminDashboardPage() {
   const navItems: NavItem[] = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+    { id: "event-payments", label: "Event Payments", icon: CreditCard, count: eventPayments.length },
     { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
     { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
     { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
@@ -2222,36 +2505,42 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 md:px-6 py-3.5 backdrop-blur-md shadow-xs">
-          <div className="flex items-center gap-3">
+        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white px-4 md:px-6 py-3.5 shadow-xs">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 hover:bg-slate-100 lg:hidden cursor-pointer"
+              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
               title="Open Navigation Drawer"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight capitalize">
-                  {activeTab.replace("-", " ")}
-                </h1>
-                <span className="hidden sm:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-700 border border-cyan-200 uppercase tracking-wider">
-                  CMS Module
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-md">
-                ET Media Business Intelligence Executive Workspace
-              </p>
-            </div>
+            {(() => {
+              const activeNav = navItems.find((n) => n.id === activeTab) || navItems[0] || { label: "Dashboard", icon: LayoutDashboard };
+              const IconComp = activeNav.icon || LayoutDashboard;
+              return (
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 font-bold shadow-2xs">
+                    <IconComp className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
+                      {activeNav.label}
+                    </h1>
+                    <span className="hidden sm:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 border border-cyan-200 uppercase tracking-wider shrink-0">
+                      CMS Control
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Live Socket Indicator */}
-            <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 font-bold">
+            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-800 font-bold">
               <Radio className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
-              <span>Sockets: {stats.activeLiveUsers} Online</span>
+              <span className="whitespace-nowrap">Sockets: {stats.activeLiveUsers} Online</span>
             </div>
 
             {/* Quick Export Buttons */}
@@ -2259,14 +2548,14 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => exportToExcel(activeTab as any)}
-                  className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-xs cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-xs cursor-pointer"
                 >
                   <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Export Excel</span>
                 </button>
                 <button
                   onClick={() => exportToCSV(activeTab as any)}
-                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5 text-cyan-600" />
                   <span>Export CSV</span>
@@ -2277,7 +2566,7 @@ export default function AdminDashboardPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
           {/* OVERVIEW TAB: ANALYTICS WIDGETS & DASHBOARD BOARDS */}
           {activeTab === "overview" && (
             <div className="space-y-8">
@@ -2651,6 +2940,427 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: EVENT PAYMENTS MANAGEMENT MODULE */}
+          {activeTab === "event-payments" && (
+            <div className="space-y-6">
+              {/* TOP HEADER SUMMARY BAR */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-cyan-700 font-extrabold text-xs uppercase tracking-wider">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Event Registration Fee & Pricing Engine</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
+                      Event Payment Management
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                      Control registration fees, GST %, category pricing, early-bird discounts, seat inventory, coupon codes & payment toggles for every event.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <button
+                      onClick={handleOpenAddPaymentConfig}
+                      className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-3 text-xs font-bold text-white shadow-md shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>Add Payment Configuration</span>
+                    </button>
+                    <button
+                      onClick={() => exportToExcel("event-registrations")}
+                      className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      <Download className="h-4 w-4 text-cyan-600" />
+                      <span>Export Payments</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 KPI SUMMARY CARDS */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Configured</span>
+                      <div className="rounded-xl bg-cyan-100 p-2 text-cyan-700">
+                        <CreditCard className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">{eventPayments.length}</span>
+                      <span className="text-[11px] text-slate-500 font-medium">Events</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payments Active</span>
+                      <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">
+                        {eventPayments.filter((p) => (p.payment_status || "Enabled") === "Enabled").length}
+                      </span>
+                      <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Live Checkout
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Seats Capacity</span>
+                      <div className="rounded-2xl bg-purple-100 p-2 text-purple-700">
+                        <Users className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">
+                        {eventPayments.reduce((acc, item) => acc + (Number(item.total_seats) || 0), 0)}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-medium">Seats Managed</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Coupons</span>
+                      <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                        <Tag className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-slate-900">
+                        {eventPayments.reduce((acc, item) => {
+                          let c = item.coupons;
+                          if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = []; } }
+                          return acc + (Array.isArray(c) ? c.length : 0);
+                        }, 0)}
+                      </span>
+                      <span className="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        Discounts Active
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEARCH & FILTERS BAR */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                  {/* Search Input */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search event payment config by title, slug, city, or coupon code..."
+                      className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Filter Dropdowns */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    {/* Status Filter */}
+                    <select
+                      value={paymentFilterStatus}
+                      onChange={(e) => setPaymentFilterStatus(e.target.value)}
+                      className="rounded-2xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 font-bold text-slate-700 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Enabled">Enabled Only</option>
+                      <option value="Disabled">Disabled Only</option>
+                      <option value="EarlyBird">Early Bird Active</option>
+                    </select>
+
+                    {/* City Filter */}
+                    <select
+                      value={paymentFilterCity}
+                      onChange={(e) => setPaymentFilterCity(e.target.value)}
+                      className="rounded-2xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 font-bold text-slate-700 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Cities</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Delhi NCR">Delhi NCR</option>
+                      <option value="Bengaluru">Bengaluru</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* BULK ACTIONS BAR */}
+                {selectedPaymentIds.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-300 bg-cyan-50/90 px-4 py-3 text-xs font-bold text-cyan-900 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-cyan-700" />
+                      <span>{selectedPaymentIds.length} Event Configurations Selected</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => handleBulkPaymentActionExecute("enable")}
+                        className="rounded-xl bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        Enable Selected
+                      </button>
+                      <button
+                        onClick={() => handleBulkPaymentActionExecute("disable")}
+                        className="rounded-xl bg-amber-600 px-3 py-1.5 text-white hover:bg-amber-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        Disable Selected
+                      </button>
+                      <button
+                        onClick={() => setShowBulkGstModal(true)}
+                        className="rounded-xl bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        Update GST %
+                      </button>
+                      <button
+                        onClick={() => handleBulkPaymentActionExecute("delete")}
+                        className="rounded-xl bg-rose-600 px-3 py-1.5 text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        Delete Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* EVENT PAYMENTS DATA TABLE */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1000px] text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                        <th className="py-3 px-3 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedPaymentIds.length === eventPayments.length && eventPayments.length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPaymentIds(eventPayments.map((p) => p.id));
+                              } else {
+                                setSelectedPaymentIds([]);
+                              }
+                            }}
+                            className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                          />
+                        </th>
+                        <th className="py-3 px-4">Event Details</th>
+                        <th className="py-3 px-4">Base Fee & GST</th>
+                        <th className="py-3 px-4">Total Payable</th>
+                        <th className="py-3 px-4">Seat Capacity</th>
+                        <th className="py-3 px-4">Early Bird / Coupons</th>
+                        <th className="py-3 px-4 text-center">Payment Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {eventPayments
+                        .filter((item) => {
+                          const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
+                          const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
+                          const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
+                          return titleMatch && statusMatch && cityMatch;
+                        })
+                        .map((item) => {
+                          const baseFee = Number(item.registration_fee) || 0;
+                          const gstPct = Number(item.gst_percentage) || 18;
+                          const gstAmount = Math.round((baseFee * gstPct) / 100);
+                          const totalPayable = item.gst_included ? baseFee : baseFee + gstAmount;
+
+                          const available = Number(item.available_seats) || 100;
+                          const total = Number(item.total_seats) || 100;
+                          const pctSeats = Math.round(((total - available) / total) * 100);
+
+                          let parsedCoupons: any[] = [];
+                          if (typeof item.coupons === "string") {
+                            try { parsedCoupons = JSON.parse(item.coupons); } catch(e){}
+                          } else if (Array.isArray(item.coupons)) {
+                            parsedCoupons = item.coupons;
+                          }
+
+                          const isSelected = selectedPaymentIds.includes(item.id);
+
+                          return (
+                            <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? "bg-cyan-50/50" : ""}`}>
+                              {/* Select Checkbox */}
+                              <td className="py-4 px-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedPaymentIds((prev) => [...prev, item.id]);
+                                    } else {
+                                      setSelectedPaymentIds((prev) => prev.filter((id) => id !== item.id));
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                                />
+                              </td>
+
+                              {/* Event Details */}
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
+                                    <img
+                                      src={item.event_image || logo}
+                                      alt="Event"
+                                      className="h-full w-full object-cover"
+                                      onError={(e: any) => { e.target.src = logo; }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm line-clamp-1">
+                                      {item.event_title || item.event_id}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 font-medium">
+                                      <span className="inline-flex items-center gap-1 text-cyan-700 font-semibold">
+                                        <MapPin className="h-3 w-3" />
+                                        {item.event_city || "Pan-India"}
+                                      </span>
+                                      <span>•</span>
+                                      <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                                        {item.event_slug || item.event_id}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Base Fee & GST */}
+                              <td className="py-4 px-4">
+                                <div className="space-y-0.5">
+                                  <div className="font-extrabold text-slate-900 text-sm">
+                                    ₹{baseFee.toLocaleString("en-IN")}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[11px]">
+                                    <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-bold text-indigo-700 border border-indigo-200">
+                                      {gstPct}% GST
+                                    </span>
+                                    <span className="text-slate-500">+ ₹{gstAmount.toLocaleString("en-IN")}</span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Total Payable */}
+                              <td className="py-4 px-4">
+                                <div className="space-y-0.5">
+                                  <div className="font-black text-cyan-800 text-sm flex items-center gap-1">
+                                    <span>₹{totalPayable.toLocaleString("en-IN")}</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 block font-medium">
+                                    {item.gst_included ? "GST Included" : "Excl. Platform Fee"}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Seat Capacity Progress */}
+                              <td className="py-4 px-4 min-w-[140px]">
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-[11px] font-bold">
+                                    <span className="text-emerald-700">{available} Available</span>
+                                    <span className="text-slate-500">{total} Total</span>
+                                  </div>
+                                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${
+                                        pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
+                                      }`}
+                                      style={{ width: `${Math.min(pctSeats, 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Early Bird & Coupons */}
+                              <td className="py-4 px-4">
+                                <div className="space-y-1">
+                                  {item.early_bird_enabled ? (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-bold text-purple-800 border border-purple-200">
+                                      <Sparkles className="h-3 w-3 text-purple-600" />
+                                      Early Bird: ₹{item.early_bird_price}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-400 font-medium">No Early Bird</span>
+                                  )}
+
+                                  <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1">
+                                    <Tag className="h-3 w-3 text-amber-600" />
+                                    <span>{parsedCoupons.length} Active Coupon(s)</span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Payment Status Toggle */}
+                              <td className="py-4 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold border transition-all cursor-pointer shadow-2xs ${
+                                    (item.payment_status || "Enabled") === "Enabled"
+                                      ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                      : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
+                                  }`}
+                                >
+                                  <span className={`h-1.5 w-1.5 rounded-full ${
+                                    (item.payment_status || "Enabled") === "Enabled" ? "bg-emerald-500" : "bg-rose-500"
+                                  }`} />
+                                  {item.payment_status || "Enabled"}
+                                </button>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-4 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setTicketPreviewItem(item);
+                                      setShowTicketPreviewModal(true);
+                                    }}
+                                    title="Preview Ticket Checkout Card"
+                                    className="rounded-xl border border-purple-200 bg-purple-50 p-2 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+                                  >
+                                    <Ticket className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditPaymentConfig(item)}
+                                    title="Edit Payment Config"
+                                    className="rounded-xl border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePaymentConfigRow(item.id)}
+                                    title="Delete Config"
+                                    className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                      {eventPayments.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="py-16 text-center text-slate-400">
+                            No event payment configurations found. Click "Add Payment Configuration" to create one!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -3095,26 +3805,22 @@ export default function AdminDashboardPage() {
           {activeTab === "events" && (
             <div className="space-y-6">
               {/* Header Action Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <span>Events Management CMS</span>
-                    <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-xs text-cyan-800 font-bold border border-cyan-200">
-                      {cmsEvents.length} Total
-                    </span>
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1 font-medium">
-                    Control public upcoming event listings, publish/draft statuses, featured cards, and multi-city schedules.
-                  </p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <p className="text-xs text-slate-500 font-medium">
+                  Control public upcoming event listings, publish/draft statuses, featured cards, agendas, and pricing.
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
+                    Total Summits: {cmsEvents.length}
+                  </span>
+                  <button
+                    onClick={handleOpenAddEvent}
+                    className="flex items-center gap-2 rounded-2xl bg-cyan-600 hover:bg-cyan-700 px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all hover:scale-105"
+                  >
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                    <span>Add New Event</span>
+                  </button>
                 </div>
-
-                <button
-                  onClick={handleOpenAddEvent}
-                  className="flex items-center gap-2 rounded-2xl bg-cyan-600 hover:bg-cyan-700 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 stroke-[3]" />
-                  <span>Add New Event</span>
-                </button>
               </div>
 
               {/* Events Cards Grid */}
@@ -3268,10 +3974,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
-
-
-        </main>
-      </div>
 
       {/* ========================================== */}
       {/* RIGHT SIDE CONTAINER DRAWER (EVENT BUILDER) */}
@@ -4290,16 +4992,10 @@ export default function AdminDashboardPage() {
           {activeTab === "partners" && (
             <div className="space-y-6">
               {/* Header Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <Handshake className="h-6 w-6 text-cyan-600" />
-                    Partners & Collaborators CMS
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Upload collaborator brand logos for the website animated carousel and manage incoming strategic partner lead inquiries.
-                  </p>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <p className="text-xs text-slate-500 font-medium">
+                  Upload collaborator brand logos for the website animated carousel and manage incoming strategic partner lead inquiries.
+                </p>
 
                 {/* Sub-tab toggle */}
                 <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1.5 border border-slate-200">
@@ -4731,17 +5427,13 @@ export default function AdminDashboardPage() {
           {/* TAB: EXECUTIVE TALKS MAGAZINE CMS */}
           {activeTab === "magazines" && (
             <div className="space-y-6">
-              {/* Header Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <BookOpen className="h-6 w-6 text-purple-600" />
-                    Executive Talks Magazine CMS
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Upload cover images, PDF downloads, and flipbook page spreads for Executive Talks Magazine digital editions.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <p className="text-xs text-slate-500 font-medium">
+                  Upload cover images, PDF downloads, and flipbook page spreads for Executive Talks Magazine digital editions.
+                </p>
+                <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
+                  Published Editions: {cmsMagazines.length}
+                </span>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
@@ -5674,12 +6366,29 @@ export default function AdminDashboardPage() {
           {/* TAB: MEDIA GALLERY CMS */}
           {activeTab === "gallery" && (
             <div className="space-y-6">
-              <div className="grid gap-8 lg:grid-cols-3">
-                {/* Form Column (Add / Edit Media Asset) */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-cyan-700 font-extrabold text-xs uppercase tracking-wider mb-1">
+                    <Film className="h-4 w-4" />
+                    <span>Media Gallery Assets & Publishing</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Upload, organize, edit, and publish high-resolution summit photo and video assets
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
+                    Total Active Assets: {cmsGalleryItems.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-3 items-start">
+                {/* Form Column (Add / Edit Media Asset) - STICKY LEFT PANEL */}
+                <div className="lg:col-span-1 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 lg:sticky lg:top-4 self-start">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                      <PlusCircle className="h-5 w-5 text-cyan-600" />
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <PlusCircle className="h-4 w-4 text-cyan-600" />
                       <span>{editingGalleryItem ? "Edit Media Asset" : "Upload New Media Asset"}</span>
                     </h3>
                     {editingGalleryItem && (
@@ -5691,7 +6400,7 @@ export default function AdminDashboardPage() {
 
                   <form onSubmit={handleAddGalleryItem} className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Media Title *
                       </label>
                       <input
@@ -5704,15 +6413,15 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                           Media Type *
                         </label>
                         <select
                           value={newGalleryForm.type}
                           onChange={(e) => setNewGalleryForm({ ...newGalleryForm, type: e.target.value as "photo" | "video" })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
                         >
                           <option value="photo">📷 Photo Image</option>
                           <option value="video">🎥 Video Embed</option>
@@ -5720,13 +6429,13 @@ export default function AdminDashboardPage() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                           Category *
                         </label>
                         <select
                           value={newGalleryForm.category}
                           onChange={(e) => setNewGalleryForm({ ...newGalleryForm, category: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
                         >
                           <option value="Keynotes">Keynotes</option>
                           <option value="Networking">Networking</option>
@@ -5739,7 +6448,7 @@ export default function AdminDashboardPage() {
 
                     {/* File Upload Option */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Upload Media File or Enter URL *
                       </label>
                       
@@ -5801,7 +6510,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Associated Summit Event
                       </label>
                       <select
@@ -5856,90 +6565,113 @@ export default function AdminDashboardPage() {
                   </form>
                 </div>
 
-                {/* Media Assets Display Grid */}
-                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
-                    <span>Summit Media Assets ({cmsGalleryItems.length})</span>
-                    <span className="text-xs text-slate-500 font-normal">Active on Public Media Gallery</span>
-                  </h3>
+                {/* Media Assets Display Grid - INDEPENDENT SCROLLABLE PANEL */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>Summit Media Assets ({cmsGalleryItems.length})</span>
+                    </h3>
+                    <span className="text-[11px] text-cyan-700 font-bold bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200">
+                      Scroll to view all items
+                    </span>
+                  </div>
 
                   {cmsGalleryItems.length === 0 ? (
                     <div className="py-12 text-center text-slate-500 text-xs">
                       No media assets uploaded yet.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {cmsGalleryItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-cyan-400 transition-all space-y-3"
-                        >
-                          <div className="flex gap-3">
-                            <img
-                              src={item.thumbnail_url || item.url}
-                              alt={item.title}
-                              className="h-20 w-24 rounded-xl object-cover border border-slate-300 shrink-0 bg-slate-900"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-mono font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                    /* Scrollable container for cards */
+                    <div className="max-h-[calc(100vh-210px)] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {cmsGalleryItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${
+                              editingGalleryItem?.id === item.id
+                                ? "border-cyan-600 ring-2 ring-cyan-500/20 shadow-md"
+                                : "border-slate-200 hover:border-cyan-400 hover:shadow-md"
+                            }`}
+                          >
+                            {/* Top Thumbnail Image Banner with Badges Overlay */}
+                            <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
+                              <img
+                                src={item.thumbnail_url || item.url}
+                                alt={item.title}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                              
+                              <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 z-10">
+                                <span className="text-[10px] font-mono font-bold text-white bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20 shadow-xs">
                                   {item.category}
-                                </span>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                  item.type === "video" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-slate-200 text-slate-700 border-slate-300"
-                                }`}>
-                                  {item.type === "video" ? "🎥 Video" : "📷 Photo"}
                                 </span>
                               </div>
 
-                              <h4 className="font-bold text-slate-900 text-xs line-clamp-2">
-                                {item.title}
-                              </h4>
-                              
-                              <p className="text-[10px] text-slate-500 font-medium truncate">
-                                📍 {item.event_title || "All Events"}
-                              </p>
+                              <div className="absolute top-2.5 right-2.5 z-10">
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${
+                                  item.type === "video"
+                                    ? "bg-purple-900/80 text-purple-200 border-purple-400/40"
+                                    : "bg-slate-900/80 text-cyan-200 border-cyan-400/40"
+                                }`}>
+                                  {item.type === "video" ? "🎥 Video Embed" : "📷 Photo Image"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Card Main Info */}
+                            <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                              <div className="space-y-1.5">
+                                <h4 className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2" title={item.title}>
+                                  {item.title}
+                                </h4>
+                                
+                                <p className="text-[11px] text-slate-600 font-medium flex items-center gap-1">
+                                  <span className="text-cyan-600 font-bold">📍</span>
+                                  <span className="truncate">{item.event_title || "All Events"}</span>
+                                </p>
+                              </div>
+
+                              {/* Action Bar */}
+                              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs mt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingGalleryItem(item);
+                                    setNewGalleryForm({
+                                      title: item.title,
+                                      type: item.type || "photo",
+                                      url: item.url,
+                                      thumbnail_url: item.thumbnail_url || item.url,
+                                      category: item.category || "Keynotes",
+                                      event_slug: item.event_slug || "all",
+                                      event_title: item.event_title || "All Events",
+                                      aspect_ratio: item.aspect_ratio || "aspect-[16/9]",
+                                    });
+                                  }}
+                                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-cyan-50 border border-cyan-200 px-3 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer mr-1.5"
+                                  title="Edit Media Item"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5 text-cyan-600" />
+                                  <span>Edit Asset</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGalleryItem(item.id)}
+                                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                  title="Delete Media Item"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
-
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingGalleryItem(item);
-                                setNewGalleryForm({
-                                  title: item.title,
-                                  type: item.type || "photo",
-                                  url: item.url,
-                                  thumbnail_url: item.thumbnail_url || item.url,
-                                  category: item.category || "Keynotes",
-                                  event_slug: item.event_slug || "all",
-                                  event_title: item.event_title || "All Events",
-                                  aspect_ratio: item.aspect_ratio || "aspect-[16/9]",
-                                });
-                              }}
-                              className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
-                              title="Edit Media Item"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                              <span>Edit</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteGalleryItem(item.id)}
-                              className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
-                              title="Delete Media Item"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -5952,75 +6684,205 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "partner-requests" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Partner Requests & Applications</h2>
+              {/* Header Title Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <div className="space-y-1">
+                  <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <Building className="h-5 w-5 text-cyan-600" />
+                    <span>Corporate Partnerships & Proposals</span>
+                  </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Strategic partnership enquiries, branding, sponsorship, and speaking proposals
+                    Manage strategic partnership proposals, sponsorship inquiries, speaking slots, and exhibit requests
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800">
-                    Total Inquiries: {partnerSubmissions.length}
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
+                    Total Corporate Leads: {partnerSubmissions.length}
                   </span>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+              {/* 4 Metric KPI Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                    <Handshake className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Inquiries</p>
+                    <p className="text-lg font-black text-slate-900">{partnerSubmissions.length}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sponsorships</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("sponsor") || (p.partnership_type || "").toLowerCase().includes("brand")).length || 1}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Speaking Proposals</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("speak") || (p.partnership_type || "").toLowerCase().includes("keynote")).length || 1}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <Building className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exhibit & PR</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("media") || (p.partnership_type || "").toLowerCase().includes("exhibit")).length || 1}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Data Container */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search company, contact person, or email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none w-64 md:w-80"
+                    />
+                  </div>
+
+                  <span className="text-xs text-slate-500 font-medium">
+                    Showing <strong className="text-slate-900">{partnerSubmissions.length}</strong> strategic applications
+                  </span>
+                </div>
+
                 {partnerSubmissions.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs">
-                    No partner requests submitted yet.
+                  <div className="py-16 text-center text-slate-500 text-xs">
+                    <Handshake className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                    <p className="font-bold text-slate-700">No Partner Applications Found</p>
+                    <p className="text-slate-400 mt-1">Strategic partnership inquiries submitted via the website form will appear here.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[800px] text-left text-xs">
-                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                        <tr>
-                          <th className="py-3 px-4">Company</th>
-                          <th className="py-3 px-4">Contact Person</th>
-                          <th className="py-3 px-4">Partnership Type</th>
-                          <th className="py-3 px-4">Email / Phone</th>
-                          <th className="py-3 px-4">Submitted Date</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
+                    <table className="w-full min-w-[900px] text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
+                          <th className="py-3.5 px-4 rounded-tl-xl">Company & Website</th>
+                          <th className="py-3.5 px-4">Contact Executive</th>
+                          <th className="py-3.5 px-4">Proposal Category</th>
+                          <th className="py-3.5 px-4">Direct Contact</th>
+                          <th className="py-3.5 px-4">Submitted Date</th>
+                          <th className="py-3.5 px-4 text-right rounded-tr-xl">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium">
-                        {partnerSubmissions.map((sub) => (
-                          <tr key={sub.id} className="hover:bg-cyan-50/30 transition-colors">
-                            <td className="py-3 px-4 font-extrabold text-slate-900">
-                              <div>{sub.company_name}</div>
-                              {sub.website && (
-                                <a href={sub.website} target="_blank" rel="noreferrer" className="text-[10px] text-cyan-700 hover:underline">
-                                  {sub.website}
+                        {partnerSubmissions.map((sub) => {
+                          const typeLower = (sub.partnership_type || sub.industry || "").toLowerCase();
+                          let badgeStyle = "bg-cyan-50 text-cyan-800 border-cyan-200";
+                          if (typeLower.includes("sponsor") || typeLower.includes("brand")) {
+                            badgeStyle = "bg-amber-50 text-amber-800 border-amber-200";
+                          } else if (typeLower.includes("speak") || typeLower.includes("keynote")) {
+                            badgeStyle = "bg-purple-50 text-purple-800 border-purple-200";
+                          } else if (typeLower.includes("media") || typeLower.includes("pr")) {
+                            badgeStyle = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                          }
+
+                          return (
+                            <tr key={sub.id} className="hover:bg-cyan-50/40 transition-colors">
+                              {/* Company */}
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-slate-900 font-black text-white text-xs shadow-2xs uppercase">
+                                    {(sub.company_name || "P")[0]}
+                                  </div>
+                                  <div>
+                                    <div className="font-extrabold text-slate-900 text-xs">{sub.company_name}</div>
+                                    {sub.website ? (
+                                      <a
+                                        href={sub.website.startsWith("http") ? sub.website : `https://${sub.website}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-[10px] text-cyan-700 hover:text-cyan-900 hover:underline font-mono"
+                                      >
+                                        <span>{sub.website.replace("https://", "").replace("http://", "")}</span>
+                                        <ExternalLink className="h-2.5 w-2.5" />
+                                      </a>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400">No website listed</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Contact Executive */}
+                              <td className="py-3.5 px-4">
+                                <div className="text-slate-900 font-bold">{sub.contact_person}</div>
+                                <div className="text-[10px] text-slate-500 font-medium">{sub.designation || "Executive"}</div>
+                              </td>
+
+                              {/* Proposal Category */}
+                              <td className="py-3.5 px-4">
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-extrabold ${badgeStyle}`}>
+                                  <Handshake className="h-3 w-3" />
+                                  <span>{sub.partnership_type || sub.industry || "Strategic Partner"}</span>
+                                </span>
+                              </td>
+
+                              {/* Direct Contact */}
+                              <td className="py-3.5 px-4">
+                                <a href={`mailto:${sub.email}`} className="text-slate-900 font-mono hover:text-cyan-700 block truncate max-w-[180px]">
+                                  {sub.email}
                                 </a>
-                              )}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-slate-900 font-bold">{sub.contact_person}</div>
-                              <div className="text-[10px] text-slate-500">{sub.designation}</div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 px-2.5 py-0.5 text-[10px] font-bold">
-                                {sub.partnership_type || sub.industry}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div>{sub.email}</div>
-                              <div className="text-[10px] text-slate-500">{sub.phone}</div>
-                            </td>
-                            <td className="py-3 px-4 text-[10px] text-slate-400 font-mono">
-                              {new Date(sub.created_at || Date.now()).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <button
-                                onClick={() => setSelectedPartnerLeadDetail(sub)}
-                                className="rounded-xl bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                              >
-                                View Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                                <a href={`tel:${sub.phone}`} className="text-[10px] text-slate-500 font-mono hover:text-cyan-700 block">
+                                  {sub.phone || "N/A"}
+                                </a>
+                              </td>
+
+                              {/* Date */}
+                              <td className="py-3.5 px-4 text-[11px] text-slate-500 font-mono">
+                                {new Date(sub.created_at || Date.now()).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric"
+                                })}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => setSelectedPartnerLeadDetail(sub)}
+                                    className="inline-flex items-center gap-1 rounded-xl bg-cyan-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-cyan-700 transition-colors shadow-2xs cursor-pointer"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    <span>View Lead</span>
+                                  </button>
+                                  <a
+                                    href={`mailto:${sub.email}?subject=ET%20Media%20Hub%20Partnership%20Inquiry`}
+                                    className="rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                                    title="Send Email"
+                                  >
+                                    <Mail className="h-3.5 w-3.5" />
+                                  </a>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -6034,13 +6896,6 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "career-jobs" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Career Job Postings CMS</h2>
-                  <p className="text-xs text-slate-500 font-medium">Manage active positions, job requirements, and hiring status</p>
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Job Form */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 h-fit">
@@ -6204,13 +7059,10 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "career-applicants" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Job Applications & Resumes</h2>
-                  <p className="text-xs text-slate-500 font-medium">Review candidates, download PDF resumes, and contact applicants</p>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <p className="text-xs text-slate-500 font-medium">Review candidate applications, download PDF resumes, and update hiring pipeline status</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800 mr-2">
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
                     Total Applicants: {jobApplications.length}
                   </span>
                   <button
@@ -6375,16 +7227,7 @@ export default function AdminDashboardPage() {
           {/* CXO TESTIMONIALS TAB                       */}
           {/* ========================================== */}
           {activeTab === "testimonials" && (
-            <div className="space-y-8">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">CXO Testimonials & Reviews</h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Manage executive testimonials, attendee feedback, and star ratings across summits
-                  </p>
-                </div>
-              </div>
-
+            <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Testimonial Form */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 h-fit">
@@ -6653,13 +7496,10 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "newsletter" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Newsletter Subscribers Inbox</h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Manage newsletter subscribers, real-time signups, and export subscriber lists
-                  </p>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <p className="text-xs text-slate-500 font-medium">
+                  Manage executive newsletter subscribers, real-time signups, and export subscriber lists
+                </p>
                 <button
                   onClick={exportNewsletterCSV}
                   className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer"
@@ -6725,134 +7565,234 @@ export default function AdminDashboardPage() {
           {/* SEO META TAGS EDITOR TAB                   */}
           {/* ========================================== */}
           {activeTab === "seo" && (
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">SEO & Meta Tags Editor</h2>
-                <p className="text-xs text-slate-500 font-medium">
-                  Optimize Search Engine Optimization, meta titles, descriptions, and OpenGraph preview images
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Page Selection Sidebar */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm space-y-2 h-fit">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 block">
-                    Select Page
-                  </span>
+                <div className="lg:col-span-4 xl:col-span-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm space-y-2 h-fit">
+                  <div className="px-2 py-1 flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                      Select Site Page
+                    </span>
+                    <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping" />
+                  </div>
                   {[
-                    { key: "home", label: "Home Page" },
-                    { key: "events", label: "Events & Summits" },
-                    { key: "magazines", label: "Magazines" },
-                    { key: "partners", label: "Partners" },
-                    { key: "careers", label: "Careers Page" },
-                    { key: "contact", label: "Contact Us" },
-                    { key: "gallery", label: "Media Gallery" },
-                  ].map((pg) => (
-                    <button
-                      key={pg.key}
-                      onClick={() => handleSelectSeoPage(pg.key)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                        activeSeoPage === pg.key
-                          ? "bg-cyan-600 text-white shadow-sm"
-                          : "text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      <span>{pg.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-                    </button>
-                  ))}
+                    { key: "home", label: "Home Page", icon: Globe, path: "/" },
+                    { key: "events", label: "Events & Summits", icon: Calendar, path: "/events" },
+                    { key: "magazines", label: "Magazines", icon: BookOpen, path: "/magazines" },
+                    { key: "partners", label: "Partners", icon: Handshake, path: "/collaborators" },
+                    { key: "careers", label: "Careers Page", icon: Briefcase, path: "/careers" },
+                    { key: "contact", label: "Contact Us", icon: Mail, path: "/contact" },
+                    { key: "gallery", label: "Media Gallery", icon: Film, path: "/gallery" },
+                  ].map((pg) => {
+                    const PgIcon = pg.icon;
+                    const isSelected = activeSeoPage === pg.key;
+                    return (
+                      <button
+                        key={pg.key}
+                        onClick={() => handleSelectSeoPage(pg.key)}
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                            : "text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <PgIcon className={`h-4 w-4 ${isSelected ? "text-white" : "text-cyan-600"}`} />
+                          <div className="text-left">
+                            <div>{pg.label}</div>
+                            <div className={`text-[10px] font-mono ${isSelected ? "text-cyan-100" : "text-slate-400"}`}>
+                              {pg.path}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className={`h-4 w-4 ${isSelected ? "text-white" : "text-slate-400"}`} />
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* SEO Form */}
-                <div className="lg:col-span-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 capitalize">
-                        {seoForm.page_key} Page Meta Configuration
-                      </h3>
-                      <p className="text-xs text-slate-500">Live search engine preview & social sharing meta tags</p>
+                <div className="lg:col-span-8 xl:col-span-9 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-6">
+                  <div className="flex flex-wrap items-center justify-between border-b border-slate-200/80 pb-4 gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <SearchCode className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-900 capitalize">
+                          {seoForm.page_key === "home" ? "Home Page" : seoForm.page_key} Meta Tags & OpenGraph
+                        </h3>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Search engine indexing, SERP title, description, and social media graph configuration
+                        </p>
+                      </div>
                     </div>
-                    <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800 uppercase font-mono">
+                    <span className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-mono font-bold text-cyan-800">
                       /{seoForm.page_key}
                     </span>
                   </div>
 
-                  <form onSubmit={handleSaveSeo} className="space-y-5">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Page Title (&lt;title&gt;)
-                      </label>
+                  <form onSubmit={handleSaveSeo} className="space-y-6">
+                    {/* Page Title */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Page Title (&lt;title&gt;) *
+                        </label>
+                        <span className={`text-[11px] font-bold ${
+                          seoForm.title.length >= 50 && seoForm.title.length <= 65
+                            ? "text-emerald-600"
+                            : "text-amber-600"
+                        }`}>
+                          {seoForm.title.length} / 60 chars
+                        </span>
+                      </div>
                       <input
                         type="text"
                         required
                         value={seoForm.title}
                         onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="e.g. ET Media | India's Premier CXO Summit Platform"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Recommended length: 50–60 characters</p>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        Recommended: 50–60 characters. Appears as the clickable heading in search results.
+                      </p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Meta Description
-                      </label>
+                    {/* Meta Description */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Meta Description *
+                        </label>
+                        <span className={`text-[11px] font-bold ${
+                          seoForm.description.length >= 140 && seoForm.description.length <= 165
+                            ? "text-emerald-600"
+                            : "text-amber-600"
+                        }`}>
+                          {seoForm.description.length} / 160 chars
+                        </span>
+                      </div>
                       <textarea
                         rows={3}
                         required
                         value={seoForm.description}
                         onChange={(e) => setSeoForm({ ...seoForm, description: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="Summarize page content for search engines..."
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Recommended length: 150–160 characters</p>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        Recommended: 150–160 characters. Provide a compelling call-to-action summary.
+                      </p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Keywords (Comma Separated)
+                    {/* Keywords */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                        SEO Keywords (Comma Separated)
                       </label>
                       <input
                         type="text"
                         value={seoForm.keywords}
                         onChange={(e) => setSeoForm({ ...seoForm, keywords: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="CFO Summit, HR Awards, ET Media, Leadership Conference"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        OpenGraph Preview Image URL (og:image)
+                    {/* OpenGraph Image */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                        Social Share Banner Image URL (og:image)
                       </label>
                       <input
                         type="text"
                         value={seoForm.og_image}
                         onChange={(e) => setSeoForm({ ...seoForm, og_image: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://images.unsplash.com/..."
                       />
                     </div>
 
-                    {/* Live Preview Box */}
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                        Google Search Result Live Preview
-                      </span>
-                      <div className="text-blue-800 font-bold text-sm hover:underline cursor-pointer">
-                        {seoForm.title || "ET Media Hub"}
+                    {/* Live Preview Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      {/* Google SERP Live Snippet */}
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                            <span>Google SERP Live Preview</span>
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">Desktop Snippet</span>
+                        </div>
+                        <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                          <div className="flex items-center gap-2 text-xs text-slate-700 font-sans truncate">
+                            <span className="h-4 w-4 rounded-full bg-cyan-600 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                              ET
+                            </span>
+                            <span className="truncate text-slate-800 text-[11px] font-medium">
+                              https://www.etmedia.in › {seoForm.page_key}
+                            </span>
+                          </div>
+                          <div className="text-blue-800 font-semibold text-sm hover:underline cursor-pointer truncate">
+                            {seoForm.title || "ET Media Hub | Leadership Summit"}
+                          </div>
+                          <div className="text-slate-600 text-xs line-clamp-2 leading-relaxed font-sans">
+                            {seoForm.description || "Official page of ET Media Hub..."}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-emerald-700 text-xs font-mono">
-                        https://www.etmedia.in/{seoForm.page_key}
-                      </div>
-                      <div className="text-slate-600 text-xs line-clamp-2">
-                        {seoForm.description || "Official page of ET Media Hub..."}
+
+                      {/* Social Graph Card Preview */}
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                            <ExternalLink className="h-3.5 w-3.5 text-purple-600" />
+                            <span>Social Card Preview (LinkedIn/X)</span>
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">OpenGraph</span>
+                        </div>
+                        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+                          {seoForm.og_image ? (
+                            <img
+                              src={seoForm.og_image}
+                              alt="OG Preview"
+                              className="h-24 w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-24 w-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-medium">
+                              No OG Image Specified
+                            </div>
+                          )}
+                          <div className="p-3 space-y-1">
+                            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                              etmedia.in
+                            </div>
+                            <div className="text-xs font-extrabold text-slate-900 truncate">
+                              {seoForm.title || "ET Media Hub"}
+                            </div>
+                            <div className="text-[11px] text-slate-500 line-clamp-1">
+                              {seoForm.description}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={seoSaving}
-                      className="rounded-2xl bg-cyan-600 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      {seoSaving ? "Saving..." : "Save SEO Meta Settings"}
-                    </button>
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        disabled={seoSaving}
+                        className="flex items-center gap-2 rounded-2xl gradient-brand px-6 py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${seoSaving ? "animate-spin" : ""}`} />
+                        <span>{seoSaving ? "Saving Settings..." : "Save SEO Meta Settings"}</span>
+                      </button>
+                    </div>
                   </form>
                 </div>
               </div>
@@ -6862,77 +7802,158 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {/* ADMIN USER MANAGEMENT TAB                  */}
           {/* ========================================== */}
+          {/* ========================================== */}
+          {/* ADMIN USER MANAGEMENT TAB                  */}
+          {/* ========================================== */}
           {activeTab === "users" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Admin User Accounts</h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Manage system administrative access and add new platform administrators
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowAddUserModal(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Create New Admin</span>
-                </button>
-              </div>
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                      <UserPlus className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900">
+                        Administrative Security & Role Controls
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Manage platform administrators, credentials, access privileges, and active session roles
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => setShowAddUserModal(true)}
+                    className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Create New Admin</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {adminUsers.map((u) => (
-                    <div key={u.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3 hover:border-cyan-400 transition-all">
+                    <div
+                      key={u.id}
+                      className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600" />
+                      
                       <div className="flex items-center justify-between">
-                        <span className="rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
-                          {u.role || "Super Admin"}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase text-cyan-800 border border-cyan-200">
+                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-600 animate-pulse" />
+                          {u.role || "SUPER_ADMIN"}
                         </span>
+
                         {adminUsers.length > 1 && (
                           <button
                             onClick={() => handleDeleteAdminUser(u.id)}
-                            className="rounded-lg p-1 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                            title="Remove Administrator"
+                            className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                            title="Revoke Admin Access"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-slate-900 text-white font-extrabold flex items-center justify-center text-sm">
-                          {u.name.charAt(0)}
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 text-white font-black text-base shadow-sm">
+                          {u.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-extrabold text-slate-900">{u.name}</h4>
-                          <p className="text-xs text-slate-500">{u.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-sm font-extrabold text-slate-900">{u.name}</h4>
+                          <p className="truncate text-xs text-slate-500 font-medium">{u.email}</p>
                         </div>
                       </div>
 
-                      <div className="text-[10px] text-slate-400 font-mono pt-2 border-t border-slate-200">
-                        Created: {new Date(u.created_at || Date.now()).toLocaleDateString()}
+                      <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1 font-medium text-emerald-700">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          Full Privilege Access
+                        </span>
+                        <span className="font-mono">
+                          {new Date(u.created_at || Date.now()).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   ))}
+
+                  {/* Security Overview Card */}
+                  <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Authentication Status
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                        <Shield className="h-3 w-3" />
+                        Hostinger Cloud DB
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-extrabold text-slate-900">Database Role Policies</h4>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        Super Administrators retain full read, write, update, and delete access across all 15 CMS database tables.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/80 text-[10px] text-cyan-800 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>Hostinger MySQL Cloud Sync Active</span>
+                    </div>
+                  </div>
+
+                  {/* Security Audit Card */}
+                  <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Session Controls
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-bold text-cyan-800 border border-cyan-200">
+                        <Radio className="h-3 w-3 text-cyan-600 animate-pulse" />
+                        Live Sockets
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-extrabold text-slate-900">JWT Token Security</h4>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                        All administrative requests require a valid Bearer token issued upon authenticating at `/api/admin/login`.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/80 text-[10px] text-slate-500 font-mono">
+                      Session Token: Valid • 24h Expiry
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Add Admin User Modal */}
               {showAddUserModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-                  <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl space-y-4">
+                  <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900">
                     <button
                       onClick={() => setShowAddUserModal(false)}
-                      className="absolute top-4 right-4 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 cursor-pointer"
+                      className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
                     >
                       <X className="h-4 w-4" />
                     </button>
 
-                    <h3 className="text-lg font-extrabold text-slate-900">Create New Administrator</h3>
-
-                    <form onSubmit={handleCreateAdminUser} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <UserPlus className="h-5 w-5" />
+                      </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <h3 className="text-base font-extrabold text-slate-900">Create Administrator</h3>
+                        <p className="text-xs text-slate-500 font-medium">Grant full CMS control panel privileges</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleCreateAdminUser} className="space-y-4 pt-2">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                           Full Name *
                         </label>
                         <input
@@ -6940,50 +7961,53 @@ export default function AdminDashboardPage() {
                           required
                           value={newUserForm.name}
                           onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="e.g. Executive Manager"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Email Address *
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Official Email Address *
                         </label>
                         <input
                           type="email"
                           required
                           value={newUserForm.email}
                           onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="admin@etmedia.in"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Password *
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Account Password *
                         </label>
                         <input
                           type="password"
                           required
                           value={newUserForm.password}
                           onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="••••••••••••"
                         />
                       </div>
 
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-3 pt-3">
                         <button
                           type="button"
                           onClick={() => setShowAddUserModal(false)}
-                          className="flex-1 rounded-xl border border-slate-300 bg-slate-100 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
                           disabled={userCreating}
-                          className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-xs font-bold text-white hover:bg-cyan-700 disabled:opacity-50 cursor-pointer"
+                          className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                         >
-                          {userCreating ? "Creating..." : "Create Admin Account"}
+                          {userCreating ? "Creating Account..." : "Create Admin Account"}
                         </button>
                       </div>
                     </form>
@@ -6998,154 +8022,193 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "settings" && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Website Settings & Configuration</h2>
-                <p className="text-xs text-slate-500 font-medium">
-                  Configure global site metadata, support contact numbers, social media links, and operational settings
-                </p>
-              </div>
+              <form onSubmit={handleSaveSiteSettings} className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-8">
+                {/* Header Banner Inside Card */}
+                <div className="flex flex-wrap items-center justify-between border-b border-slate-200/80 pb-6 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                      <Settings className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900">
+                        Global Platform Configuration
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Branding, support helplines, social links, and Razorpay API parameters
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-extrabold text-emerald-800 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    System Operational
+                  </span>
+                </div>
 
-              <form onSubmit={handleSaveSiteSettings} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Site Name / Organization Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={siteSettings.site_name}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, site_name: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
+                {/* Section 1: Brand & Contact Info */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 tracking-wider">
+                    <Globe className="h-4 w-4 text-cyan-600" />
+                    <span>Brand Details & Support Information</span>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Official Support Email
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={siteSettings.support_email}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, support_email: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Site Name / Brand Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={siteSettings.site_name}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, site_name: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Support Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      value={siteSettings.support_phone}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, support_phone: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Official Support Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={siteSettings.support_email}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, support_email: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      WhatsApp Contact Number
-                    </label>
-                    <input
-                      type="text"
-                      value={siteSettings.whatsapp_number}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, whatsapp_number: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Support Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.support_phone}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, support_phone: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Office Physical Address
-                    </label>
-                    <input
-                      type="text"
-                      value={siteSettings.office_address}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, office_address: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        WhatsApp Helpline Number
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.whatsapp_number}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, whatsapp_number: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Office Working Hours
-                    </label>
-                    <input
-                      type="text"
-                      value={siteSettings.office_hours}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, office_hours: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Corporate Office Physical Address
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.office_address}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, office_address: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Google Maps URL
-                    </label>
-                    <input
-                      type="text"
-                      value={siteSettings.google_maps_url}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, google_maps_url: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
-                    />
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Office Working Hours
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.office_hours}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, office_hours: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Google Maps Embed / Navigation URL
+                      </label>
+                      <input
+                        type="text"
+                        value={siteSettings.google_maps_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, google_maps_url: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="border-t border-slate-200 pt-5 space-y-4">
-                  <h4 className="text-xs font-black uppercase text-slate-500 tracking-wider">Social Media Links</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">LinkedIn URL</label>
+                {/* Section 2: Social Media Profiles */}
+                <div className="border-t border-slate-200/80 pt-6 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 tracking-wider">
+                    <ExternalLink className="h-4 w-4 text-purple-600" />
+                    <span>Social Media Channels</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">LinkedIn Company Page</label>
                       <input
                         type="text"
                         value={siteSettings.linkedin_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, linkedin_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://linkedin.com/company/etmedia"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Twitter / X URL</label>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Twitter / X Profile</label>
                       <input
                         type="text"
                         value={siteSettings.twitter_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, twitter_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://x.com/etmedia"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Facebook URL</label>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Facebook Page</label>
                       <input
                         type="text"
                         value={siteSettings.facebook_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, facebook_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://facebook.com/etmedia"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Instagram URL</label>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Instagram Profile</label>
                       <input
                         type="text"
                         value={siteSettings.instagram_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, instagram_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://instagram.com/etmedia"
                       />
                     </div>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={settingsSaving}
-                  className="rounded-2xl bg-cyan-600 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {settingsSaving ? "Saving..." : "Save Website Settings"}
-                </button>
+                <div className="flex justify-end border-t border-slate-200/80 pt-6">
+                  <button
+                    type="submit"
+                    disabled={settingsSaving}
+                    className="flex items-center gap-2 rounded-2xl gradient-brand px-7 py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${settingsSaving ? "animate-spin" : ""}`} />
+                    <span>{settingsSaving ? "Saving Configuration..." : "Save Website Settings"}</span>
+                  </button>
+                </div>
               </form>
             </div>
           )}
+        </main>
+      </div>
 
       {/* PARTNER LEAD DETAILS MODAL */}
       {selectedPartnerLeadDetail && (
@@ -7650,6 +8713,511 @@ export default function AdminDashboardPage() {
                 className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================== */}
+      {/* ADD / EDIT PAYMENT CONFIGURATION DRAWER / MODAL */}
+      {/* ========================================== */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+              <CreditCard className="h-4 w-4" />
+              <span>{editingPaymentConfig ? "Edit Event Payment Settings" : "Add New Event Payment Configuration"}</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {editingPaymentConfig ? editingPaymentConfig.event_title || editingPaymentConfig.event_id : "Configure Event Pricing & GST"}
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Set registration prices, GST percentage, category rules, early bird discounts, seat inventory, and coupon codes.
+            </p>
+
+            <form onSubmit={handleSavePaymentConfigSubmit} className="mt-6 space-y-6 text-xs">
+              {/* SECTION 1: EVENT SELECTION & BASE FEES */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-cyan-600" />
+                  <span>1. Event & Base Registration Fee</span>
+                </h4>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Select Event *</label>
+                    <select
+                      value={paymentForm.event_id || ""}
+                      onChange={(e) => {
+                        const selId = e.target.value;
+                        const selEvent = cmsEvents.find((evt) => (evt.id || evt.slug) === selId);
+                        setPaymentForm((prev: any) => ({
+                          ...prev,
+                          event_id: selId,
+                          event_title: selEvent?.title || selId,
+                          event_slug: selEvent?.slug || selId,
+                          event_city: selEvent?.city || "",
+                          event_date: selEvent?.date || "",
+                          event_image: selEvent?.image || "",
+                        }));
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none"
+                    >
+                      {cmsEvents.map((evt) => (
+                        <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
+                          {evt.title} ({evt.city || "Pan-India"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Currency</label>
+                    <input
+                      type="text"
+                      value={paymentForm.currency || "INR"}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                      placeholder="e.g. INR / USD"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Base Registration Fee (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={paymentForm.registration_fee ?? 4999}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, registration_fee: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">GST Percentage (%) *</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        required
+                        min={0}
+                        max={100}
+                        value={paymentForm.gst_percentage ?? 18}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, gst_percentage: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-slate-500">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LIVE PRICE SUMMARY CALCULATOR */}
+                {(() => {
+                  const fee = Number(paymentForm.registration_fee) || 0;
+                  const gst = Number(paymentForm.gst_percentage) || 18;
+                  const gstAmt = Math.round((fee * gst) / 100);
+                  const total = paymentForm.gst_included ? fee : fee + gstAmt;
+                  return (
+                    <div className="rounded-xl border border-cyan-200 bg-cyan-50/80 p-3.5 flex flex-wrap items-center justify-between gap-3 text-cyan-950 font-bold">
+                      <div>
+                        <span className="text-xs block text-cyan-800">Live Fee Calculation Breakdown:</span>
+                        <span className="text-xs font-normal">
+                          Base: ₹{fee.toLocaleString("en-IN")} + {gst}% GST (₹{gstAmt.toLocaleString("en-IN")})
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase tracking-wider block text-cyan-700 font-extrabold">Total Payable by Delegate</span>
+                        <span className="text-lg font-black text-cyan-900">₹{total.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* SECTION 2: EARLY BIRD DISCOUNT */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <span>2. Early Bird Promotional Price</span>
+                  </h4>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(paymentForm.early_bird_enabled)}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_enabled: e.target.checked })}
+                      className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-xs font-bold text-purple-900">Enable Early Bird Pricing</span>
+                  </label>
+                </div>
+
+                {paymentForm.early_bird_enabled && (
+                  <div className="grid gap-4 sm:grid-cols-3 pt-2">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Early Bird Price (₹) *</label>
+                      <input
+                        type="number"
+                        value={paymentForm.early_bird_price ?? 3999}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_price: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-purple-300 bg-white px-3.5 py-2 text-xs font-extrabold text-purple-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={paymentForm.early_bird_start_date || ""}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_start_date: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={paymentForm.early_bird_end_date || ""}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_end_date: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 3: SEAT CAPACITY & INVENTORY */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  <span>3. Seat Inventory & Reservation Limits</span>
+                </h4>
+
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Total Seats</label>
+                    <input
+                      type="number"
+                      value={paymentForm.total_seats ?? 150}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, total_seats: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Available Seats</label>
+                    <input
+                      type="number"
+                      value={paymentForm.available_seats ?? 120}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, available_seats: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Reserved VIP Seats</label>
+                    <input
+                      type="number"
+                      value={paymentForm.vip_seats ?? 20}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, vip_seats: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-purple-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Speaker Seats</label>
+                    <input
+                      type="number"
+                      value={paymentForm.speaker_seats ?? 10}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, speaker_seats: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: COUPONS & PROMO CODES */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-amber-600" />
+                    <span>4. Dynamic Coupon Codes</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentCoupons = Array.isArray(paymentForm.coupons) ? paymentForm.coupons : [];
+                      setPaymentForm({
+                        ...paymentForm,
+                        coupons: [
+                          ...currentCoupons,
+                          {
+                            id: `cp-${Date.now()}`,
+                            code: `PROMO${Math.floor(Math.random() * 900 + 100)}`,
+                            type: "percentage",
+                            value: 15,
+                            usageLimit: 50,
+                            expiryDate: "2026-12-31",
+                            status: "Active",
+                          },
+                        ],
+                      });
+                    }}
+                    className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100"
+                  >
+                    + Add Coupon Code
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(Array.isArray(paymentForm.coupons) ? paymentForm.coupons : []).map((cp: any, idx: number) => (
+                    <div key={idx} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5">
+                      <input
+                        type="text"
+                        value={cp.code}
+                        onChange={(e) => {
+                          const updated = [...(paymentForm.coupons as any[])];
+                          updated[idx].code = e.target.value.toUpperCase();
+                          setPaymentForm({ ...paymentForm, coupons: updated });
+                        }}
+                        placeholder="CODE"
+                        className="w-28 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-mono font-bold uppercase text-slate-900"
+                      />
+
+                      <select
+                        value={cp.type}
+                        onChange={(e) => {
+                          const updated = [...(paymentForm.coupons as any[])];
+                          updated[idx].type = e.target.value;
+                          setPaymentForm({ ...paymentForm, coupons: updated });
+                        }}
+                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-700"
+                      >
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="flat">Flat Amount (₹)</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        value={cp.value}
+                        onChange={(e) => {
+                          const updated = [...(paymentForm.coupons as any[])];
+                          updated[idx].value = Number(e.target.value);
+                          setPaymentForm({ ...paymentForm, coupons: updated });
+                        }}
+                        placeholder="Value"
+                        className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-900"
+                      />
+
+                      <input
+                        type="date"
+                        value={cp.expiryDate || ""}
+                        onChange={(e) => {
+                          const updated = [...(paymentForm.coupons as any[])];
+                          updated[idx].expiryDate = e.target.value;
+                          setPaymentForm({ ...paymentForm, coupons: updated });
+                        }}
+                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (paymentForm.coupons as any[]).filter((_, i) => i !== idx);
+                          setPaymentForm({ ...paymentForm, coupons: updated });
+                        }}
+                        className="ml-auto text-rose-600 font-bold hover:text-rose-700 text-xs px-2"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SECTION 5: PAYMENT STATUS TOGGLE */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                  <span>5. Payment Switches & Status</span>
+                </h4>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Configuration Status</label>
+                    <select
+                      value={paymentForm.payment_status || "Enabled"}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, payment_status: e.target.value as any })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-extrabold text-slate-900"
+                    >
+                      <option value="Enabled">🟢 Enabled (Live Checkout)</option>
+                      <option value="Disabled">🔴 Disabled (Payments Off)</option>
+                      <option value="Draft">⚪ Draft Mode</option>
+                      <option value="Coming Soon">🟡 Coming Soon</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col justify-center space-y-2 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(paymentForm.online_payment_enabled)}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, online_payment_enabled: e.target.checked })}
+                        className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                      />
+                      <span className="text-xs font-bold text-slate-800">Online Payment Gateway (Razorpay)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(paymentForm.offline_payment_enabled)}
+                        onChange={(e) => setPaymentForm({ ...paymentForm, offline_payment_enabled: e.target.checked })}
+                        className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                      />
+                      <span className="text-xs font-bold text-slate-800">Offline Bank Transfer Option</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={paymentSaving}
+                  className="flex-1 rounded-xl gradient-brand py-3 text-xs font-bold text-white shadow-md hover:scale-[1.01] transition-transform disabled:opacity-50 cursor-pointer"
+                >
+                  {paymentSaving ? "Saving Configuration..." : "Save Payment Settings"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* LIVE DELEGATE TICKET PREVIEW MODAL         */}
+      {/* ========================================== */}
+      {showTicketPreviewModal && ticketPreviewItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl text-white animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowTicketPreviewModal(false)}
+              className="absolute top-5 right-5 rounded-full bg-white/10 p-2 text-slate-300 hover:bg-white/20 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-400">
+              <Ticket className="h-4 w-4" />
+              <span>Interactive Ticket Checkout Preview</span>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/80 p-5 space-y-4 shadow-inner">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-cyan-500/20 border border-cyan-400/40 p-1 flex items-center justify-center">
+                  <img src={ticketPreviewItem.event_image || logo} alt="Logo" className="h-full w-full object-cover rounded-lg" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-white text-sm line-clamp-1">{ticketPreviewItem.event_title || ticketPreviewItem.event_id}</h3>
+                  <p className="text-xs text-cyan-300 font-medium flex items-center gap-1 mt-0.5">
+                    <MapPin className="h-3 w-3" /> {ticketPreviewItem.event_city || "Pan-India"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-px bg-slate-700/60" />
+
+              {/* Price Calculation Card */}
+              {(() => {
+                const base = Number(ticketPreviewItem.registration_fee) || 4999;
+                const gstPct = Number(ticketPreviewItem.gst_percentage) || 18;
+                const gstAmt = Math.round((base * gstPct) / 100);
+                const total = base + gstAmt;
+                return (
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-300">
+                      <span>Executive Pass Fee:</span>
+                      <span className="font-mono font-bold text-white">₹{base.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400 text-[11px]">
+                      <span>GST ({gstPct}% Tax):</span>
+                      <span className="font-mono text-cyan-300">+ ₹{gstAmt.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400 text-[11px]">
+                      <span>Razorpay Processing:</span>
+                      <span className="text-emerald-400 font-bold">Waived (₹0)</span>
+                    </div>
+                    <div className="h-px bg-slate-700/60 my-2" />
+                    <div className="flex justify-between items-baseline text-sm font-black text-white">
+                      <span>Total Amount Payable:</span>
+                      <span className="text-lg font-mono text-cyan-400">₹{total.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success("Razorpay Payment Test Triggered! Key: rzp_test_SwedUUn1KgRMs0");
+                }}
+                className="w-full rounded-xl gradient-brand py-3 text-xs font-extrabold text-white shadow-lg shadow-cyan-500/20 hover:scale-[1.02] transition-transform cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                <span>Proceed to Razorpay Checkout (Test Mode)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK GST UPDATE MODAL */}
+      {showBulkGstModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl text-slate-900">
+            <h3 className="text-lg font-extrabold text-slate-900">Update GST % Bulk</h3>
+            <p className="text-xs text-slate-500 mt-1">Set new GST rate for {selectedPaymentIds.length} selected events.</p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold text-slate-700 mb-1">GST Percentage (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={bulkGstValue}
+                onChange={(e) => setBulkGstValue(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-300 p-2.5 text-sm font-bold text-slate-900"
+              />
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              <button
+                onClick={() => setShowBulkGstModal(false)}
+                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleBulkPaymentActionExecute("update_gst", bulkGstValue)}
+                className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
+              >
+                Apply GST %
               </button>
             </div>
           </div>

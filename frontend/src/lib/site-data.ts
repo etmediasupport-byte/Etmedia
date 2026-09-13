@@ -894,4 +894,57 @@ export const getDefaultMediaGallery = (): MediaGalleryItem[] => [
   },
 ];
 
+export interface CouponItem {
+  id: string;
+  code: string;
+  type: "percentage" | "flat";
+  value: number;
+  usageLimit: number;
+  expiryDate: string;
+  status: "Active" | "Inactive";
+}
+
+export interface EventPaymentConfig {
+  id: string;
+  event_id: string;
+  event_title?: string;
+  event_category?: string;
+  event_city?: string;
+  event_date?: string;
+  event_image?: string;
+  event_slug?: string;
+  registration_fee: number;
+  currency: string;
+  gst_percentage: number;
+  gst_included: number | boolean;
+  platform_fee: number;
+  convenience_fee: number;
+  registration_type_prices: string | Record<string, number>;
+  early_bird_enabled: number | boolean;
+  early_bird_price: number;
+  early_bird_start_date: string;
+  early_bird_end_date: string;
+  special_prices: string | Record<string, number>;
+  total_seats: number;
+  available_seats: number;
+  reserved_seats: number;
+  vip_seats: number;
+  speaker_seats: number;
+  sponsor_seats: number;
+  coupons_enabled: number | boolean;
+  coupons: string | CouponItem[];
+  payment_required: number | boolean;
+  online_payment_enabled: number | boolean;
+  offline_payment_enabled: number | boolean;
+  free_registration_allowed: number | boolean;
+  auto_close_seats_full: number | boolean;
+  registration_open_date: string;
+  registration_close_date: string;
+  event_start_date: string;
+  event_end_date: string;
+  payment_status: "Enabled" | "Disabled" | "Draft" | "Coming Soon";
+  created_at?: string;
+  updated_at?: string;
+}
+
 

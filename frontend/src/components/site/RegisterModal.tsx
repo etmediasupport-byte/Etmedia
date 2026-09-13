@@ -30,6 +30,12 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
 
+  // Payment Config & Coupon state
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponMessage, setCouponMessage] = useState("");
+
   // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -42,7 +48,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     };
   }, [isOpen]);
 
-  // Auto-select event details when event changes
+  // Auto-select event details & fetch payment configuration when event changes
   useEffect(() => {
     if (event) {
       let cities: string[] = [];
@@ -64,6 +70,16 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
         ...prev,
         registeringCity: initialRegisteringCity,
       }));
+
+      // Fetch payment config for event
+      fetch(`/api/event-payments/event/${event.id || event.slug}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.payment) {
+            setPaymentConfig(data.payment);
+          }
+        })
+        .catch((err) => console.warn("Could not load payment settings for event", err));
     }
   }, [event]);
 
@@ -122,12 +138,64 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setSubmittedData({
-          ...formData,
-          eventTitle: event.title,
-          emailSent: data.emailSent,
-        });
-        setSuccessModalOpen(true);
+        // Check if Razorpay online payment checkout is required
+        const isOnlinePaymentEnabled = paymentConfig?.online_payment_enabled !== 0 && paymentConfig?.payment_status === "Enabled";
+        const razorpayKey = (import.meta.env as any)["VITE_RAZORPAY_KEY_ID"] || "rzp_test_SwedUUn1KgRMs0";
+
+        if (isOnlinePaymentEnabled && typeof (window as any).Razorpay !== "undefined") {
+          const baseFee = Number(paymentConfig?.registration_fee) || 4999;
+          const gstPct = Number(paymentConfig?.gst_percentage) || 18;
+          const gstAmt = Math.round((baseFee * gstPct) / 100);
+          const totalAmount = paymentConfig?.gst_included ? baseFee : baseFee + gstAmt;
+
+          const options = {
+            key: razorpayKey,
+            amount: totalAmount * 100, // Razorpay takes amount in paise
+            currency: paymentConfig?.currency || "INR",
+            name: "ET Media Business Intelligence",
+            description: `Delegate Registration Fee: ${event.title}`,
+            image: "/logo.jpeg",
+            prefill: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              contact: formData.contactNumber,
+            },
+            theme: {
+              color: "#0891b2",
+            },
+            handler: function (response: any) {
+              toast.success(`💳 Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+              setSubmittedData({
+                ...formData,
+                eventTitle: event.title,
+                emailSent: data.emailSent,
+                paymentId: response.razorpay_payment_id,
+              });
+              setSuccessModalOpen(true);
+            },
+            modal: {
+              ondismiss: function () {
+                toast.info("Payment window closed. Your registration details have been saved.");
+                setSubmittedData({
+                  ...formData,
+                  eventTitle: event.title,
+                  emailSent: data.emailSent,
+                });
+                setSuccessModalOpen(true);
+              },
+            },
+          };
+
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } else {
+          setSubmittedData({
+            ...formData,
+            eventTitle: event.title,
+            emailSent: data.emailSent,
+          });
+          setSuccessModalOpen(true);
+        }
       } else {
         toast.error(data.message || "Registration failed. Please try again.");
       }
