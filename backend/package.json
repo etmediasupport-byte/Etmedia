@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "cd ../frontend && npm install && npm run build && cd ../backend && tsc && node build-sync.js",
+    "build": "cd ../frontend && npm install --include=dev && npm run build && cd ../backend && tsc && node build-sync.js",
     "start": "node dist/server.js"
   },
   "dependencies": {
