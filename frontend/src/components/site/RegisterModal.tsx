@@ -253,37 +253,21 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           return;
         }
 
-        // 1. Create order on backend
-        let orderData: any = null;
-        try {
-          const orderRes = await fetch("/api/payments/create-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              amount: pricing.totalPayable,
-              currency: paymentConfig?.currency || "INR",
-              receipt: `rcpt_${Date.now()}`,
-            }),
-          });
-          orderData = await orderRes.json();
-        } catch (oErr) {
-          console.warn("Backend order creation warning:", oErr);
-        }
+        const activeKey = (paymentConfig?.razorpay_key_id || razorpayKey).trim();
+        const logoUrl = typeof window !== "undefined" ? `${window.location.origin}/logo.jpeg` : "/logo.jpeg";
 
-        const razorpayOrderId = orderData?.success ? orderData.order?.id : undefined;
-
-        // 2. Options for Razorpay Popup
+        // Options for Razorpay Checkout Modal
         const options: any = {
-          key: orderData?.key || razorpayKey,
-          amount: pricing.totalPayable * 100, // Amount in paise
+          key: activeKey,
+          amount: Math.round(pricing.totalPayable * 100), // Amount in paise
           currency: paymentConfig?.currency || "INR",
           name: "ET Media Business Intelligence",
           description: `${formData.registrationCategory} Pass: ${event.title}`,
-          image: "/logo.jpeg",
+          image: logoUrl,
           prefill: {
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            contact: formData.contactNumber,
+            name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+            email: formData.email.trim(),
+            contact: formData.contactNumber.trim(),
           },
           theme: {
             color: "#0891b2",
@@ -300,7 +284,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                 paymentAmount: pricing.totalPayable,
                 paymentStatus: "Paid",
                 paymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id || razorpayOrderId || null,
+                razorpayOrderId: response.razorpay_order_id || null,
                 couponApplied: appliedCoupon?.code || null,
               };
 
@@ -335,16 +319,13 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           },
         };
 
-        if (razorpayOrderId) {
-          options.order_id = razorpayOrderId;
-        }
-
         const rzp = new (window as any).Razorpay(options);
         rzp.on("payment.failed", function (response: any) {
           toast.error(`Payment failed: ${response.error.description || response.error.reason}`);
           setSubmitting(false);
         });
 
+        // Open Razorpay Modal synchronously in user click gesture
         rzp.open();
       } else {
         // Free registration path
