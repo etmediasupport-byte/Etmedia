@@ -424,50 +424,118 @@ export const events: EventItem[] = [
   },
 ];
 
-export const magazines = [
+export type MagazineItem = {
+  id: string;
+  issue: string;
+  title: string;
+  date: string;
+  month?: string;
+  cover: string;
+  pdf_url?: string;
+  pages_list?: string | string[];
+  category: string;
+  is_featured?: boolean | number;
+};
+
+export const getDefaultMagazines = (): MagazineItem[] => [
   {
+    id: "MAG-101",
     issue: "Issue 28",
     title: "Leading Beyond Today",
     date: "September 2026",
+    month: "September 2026",
     cover: magazineCover,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      magazineCover,
+      heroLeadership,
+      heroSummit,
+      aboutOffice,
+      heroNetworking,
+    ],
     category: "Leadership",
+    is_featured: true,
   },
   {
+    id: "MAG-102",
     issue: "Issue 27",
     title: "The Talent Equation",
     date: "July 2026",
+    month: "July 2026",
     cover: eventHr,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      eventHr,
+      heroLeadership,
+      aboutOffice,
+    ],
     category: "HR",
+    is_featured: false,
   },
   {
+    id: "MAG-103",
     issue: "Issue 26",
     title: "Capital & Confidence",
     date: "May 2026",
+    month: "May 2026",
     cover: eventCfo,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      eventCfo,
+      heroSummit,
+      heroAwards,
+    ],
     category: "Finance",
+    is_featured: false,
   },
   {
+    id: "MAG-104",
     issue: "Issue 25",
     title: "India's GCC Decade",
     date: "March 2026",
+    month: "March 2026",
     cover: heroSummit,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      heroSummit,
+      heroLeadership,
+    ],
     category: "GCC",
+    is_featured: false,
   },
   {
+    id: "MAG-105",
     issue: "Issue 24",
     title: "Founders At Scale",
     date: "January 2026",
+    month: "January 2026",
     cover: heroNetworking,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      heroNetworking,
+      aboutOffice,
+    ],
     category: "Startup",
+    is_featured: false,
   },
   {
+    id: "MAG-106",
     issue: "Issue 23",
     title: "Machines That Learn",
     date: "November 2025",
+    month: "November 2025",
     cover: heroAwards,
+    pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    pages_list: [
+      heroAwards,
+      eventCfo,
+    ],
     category: "Technology",
+    is_featured: false,
   },
 ];
+
+export const magazines = getDefaultMagazines();
 
 export const magazineCategories = [
   "Leadership",
@@ -559,3 +627,267 @@ export const sponsorshipPackages = [
     ],
   },
 ];
+
+export type Collaborator = {
+  id: string;
+  brand_name: string;
+  logo: string;
+  website?: string;
+  category?: string;
+};
+
+export const getDefaultCollaborators = (): Collaborator[] => [
+  {
+    id: "PTR-101",
+    brand_name: "NorthBridge Capital",
+    logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+    website: "https://northbridge.com",
+    category: "Strategic Partner",
+  },
+  {
+    id: "PTR-102",
+    brand_name: "Vantage Enterprise Systems",
+    logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&q=80&w=300",
+    website: "https://vantage.com",
+    category: "Tech Partner",
+  },
+  {
+    id: "PTR-103",
+    brand_name: "Axiom Cloud Intelligence",
+    logo: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=300",
+    website: "https://axiomcloud.com",
+    category: "Media Partner",
+  },
+  {
+    id: "PTR-104",
+    brand_name: "Helix Tech & Life Sciences",
+    logo: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=300",
+    website: "https://helixent.com",
+    category: "Award Partner",
+  },
+  {
+    id: "PTR-105",
+    brand_name: "Apex Global Growth",
+    logo: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=300",
+    website: "https://apexglobal.com",
+    category: "Strategic Partner",
+  },
+  {
+    id: "PTR-106",
+    brand_name: "Quantum Media Works",
+    logo: "https://images.unsplash.com/photo-1572021335469-31706a17aaef?auto=format&fit=crop&q=80&w=300",
+    website: "https://quantummedia.com",
+    category: "Media Partner",
+  },
+];
+
+export type JobItem = {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  experience: string;
+  description: string;
+  responsibilities?: string | string[];
+  qualifications?: string | string[];
+  benefits?: string | string[];
+  status?: "Open" | "Closed" | string;
+  created_at?: string;
+};
+
+export type JobApplication = {
+  id: string;
+  job_id: string;
+  job_title: string;
+  name: string;
+  email: string;
+  phone: string;
+  experience: string;
+  resume_url: string;
+  portfolio_url?: string;
+  created_at?: string;
+};
+
+export const getDefaultJobs = (): JobItem[] => [
+  {
+    id: "JOB-101",
+    title: "Senior Conference Producer",
+    department: "Conference Production",
+    location: "Hyderabad (Hybrid)",
+    experience: "3 — 5 Years",
+    description:
+      "Lead the agenda creation, speaker curation, and editorial direction for national C-suite summits and leadership forums.",
+    responsibilities: [
+      "Research industry trends across CFO, HR, and Enterprise AI verticals",
+      "Recruit CXO keynotes and VP-level panel speakers",
+      "Drive conference stage program execution and outcome reports",
+    ],
+    qualifications: [
+      "3+ years experience in B2B conference production or media leadership",
+      "Exceptional executive communication and editorial research skills",
+      "Proven track record of curating high-impact C-suite events",
+    ],
+    benefits: [
+      "Competitive salary with performance bonuses",
+      "Comprehensive health insurance for self & dependents",
+      "Executive networking passes to all ET Media national summits",
+      "Hybrid work flexibility and fast-track leadership career path",
+    ],
+    status: "Open",
+  },
+  {
+    id: "JOB-102",
+    title: "Corporate Sponsorship & Alliances Manager",
+    department: "Sales & Sponsorship",
+    location: "Bengaluru / Remote",
+    experience: "2 — 4 Years",
+    description:
+      "Build strategic partnerships and drive corporate event sponsorship packages across enterprise software, BFSI, and technology brands.",
+    responsibilities: [
+      "Engage CMOs, VP Marketing, and Alliance Leaders for title & platinum event sponsorships",
+      "Manage end-to-end B2B client proposals and partnership contracts",
+      "Collaborate with event operations to deliver maximum sponsor ROI",
+    ],
+    qualifications: [
+      "2+ years experience in B2B event sponsorship, media sales, or corporate alliances",
+      "Strong network across enterprise marketing decision-makers",
+      "Excellent negotiation, presentation, and pipeline management skills",
+    ],
+    benefits: [
+      "High uncapped commission structure on top of base salary",
+      "Executive travel allowances and luxury venue access",
+      "Health & wellness perks",
+    ],
+    status: "Open",
+  },
+  {
+    id: "JOB-103",
+    title: "Senior Event Operations Lead",
+    department: "Event Operations",
+    location: "Hyderabad",
+    experience: "4 — 6 Years",
+    description:
+      "Oversee venue setup, AV technology, VIP delegate hospitality, and logistics execution across major 5-star hotel summits.",
+    responsibilities: [
+      "Manage 5-star hotel convention logistics, stage AV, and booth setups",
+      "Coordinate VIP delegate check-ins and executive hospitality teams",
+      "Ensure flawless timing and vendor management on event days",
+    ],
+    qualifications: [
+      "4+ years experience managing large-scale B2B corporate events or luxury hotel summits",
+      "Strong vendor negotiation, stage AV, and team leadership skills",
+    ],
+    benefits: [
+      "Competitive pay & event milestone incentives",
+      "Full travel & accommodation coverage for outstation events",
+      "Comprehensive medical coverage",
+    ],
+    status: "Open",
+  },
+];
+
+export type MediaGalleryItem = {
+  id: string;
+  title: string;
+  type: "photo" | "video";
+  url: string;
+  thumbnail_url?: string;
+  category: string;
+  event_slug?: string;
+  event_title?: string;
+  aspect_ratio?: string;
+  created_at?: string;
+};
+
+export const getDefaultMediaGallery = (): MediaGalleryItem[] => [
+  {
+    id: "GAL-101",
+    title: "India CFO Leadership Summit Keynote Stage",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop",
+    category: "Keynotes",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[4/3]",
+  },
+  {
+    id: "GAL-102",
+    title: "CXO Networking & Executive Gala Dinner",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=400&auto=format&fit=crop",
+    category: "Networking",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[16/9]",
+  },
+  {
+    id: "GAL-103",
+    title: "HR Excellence Leadership Awards Night",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=400&auto=format&fit=crop",
+    category: "Awards",
+    event_slug: "hr-excellence-awards",
+    event_title: "HR Excellence & Leadership Conclave",
+    aspect_ratio: "aspect-[3/4]",
+  },
+  {
+    id: "GAL-104",
+    title: "Enterprise AI & Tech Leaders Panel Discussion",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=400&auto=format&fit=crop",
+    category: "Keynotes",
+    event_slug: "enterprise-tech-conclave",
+    event_title: "National Enterprise Tech & AI Summit",
+    aspect_ratio: "aspect-[16/9]",
+  },
+  {
+    id: "GAL-105",
+    title: "C-Suite Fireside Chat Highlights Video",
+    type: "video",
+    url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    thumbnail_url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop",
+    category: "Keynotes",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[16/9]",
+  },
+  {
+    id: "GAL-106",
+    title: "Luxury 5-Star Hotel Stage & AV Production Setup",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=400&auto=format&fit=crop",
+    category: "Stage & AV",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[4/3]",
+  },
+  {
+    id: "GAL-107",
+    title: "Title Sponsors & Corporate Booth Exhibition",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=400&auto=format&fit=crop",
+    category: "Exhibitions",
+    event_slug: "enterprise-tech-conclave",
+    event_title: "National Enterprise Tech & AI Summit",
+    aspect_ratio: "aspect-[16/9]",
+  },
+  {
+    id: "GAL-108",
+    title: "Executive Networking Lunch & Coffee Lounge",
+    type: "photo",
+    url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=400&auto=format&fit=crop",
+    category: "Networking",
+    event_slug: "hr-excellence-awards",
+    event_title: "HR Excellence & Leadership Conclave",
+    aspect_ratio: "aspect-[3/4]",
+  },
+];
+
+

@@ -201,7 +201,7 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <NavLink to="/events/partner" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/partner" className={({ isActive }) => navLinkStyle(isActive)}>
               Partner With Us
             </NavLink>
 
@@ -213,8 +213,12 @@ export function Navbar() {
               Delegate Registration
             </NavLink>
 
-            <NavLink to="/contact" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/careers" className={({ isActive }) => navLinkStyle(isActive)}>
               Careers
+            </NavLink>
+
+            <NavLink to="/gallery" className={({ isActive }) => navLinkStyle(isActive)}>
+              Media Gallery
             </NavLink>
 
             <NavLink to="/contact" className={({ isActive }) => navLinkStyle(isActive)}>
@@ -285,7 +289,8 @@ export function Navbar() {
                   { to: "/events/partner", label: "Partner With Us" },
                   { to: "/magazine", label: "Executive Talks Magazine" },
                   { to: "/events/register", label: "Delegate Registration" },
-                  { to: "/contact", label: "Careers" },
+                  { to: "/careers", label: "Careers" },
+                  { to: "/gallery", label: "Media Gallery" },
                   { to: "/contact", label: "Contact Us" },
                 ].map((item) => (
                   <Link

@@ -7,6 +7,9 @@ import EventsPage from "@/pages/EventsPage";
 import EventDetailPage from "@/pages/EventDetailPage";
 import DelegateRegistrationPage from "@/pages/DelegateRegistrationPage";
 import ContactPage from "@/pages/ContactPage";
+import PartnerWithUsPage from "@/pages/PartnerWithUsPage";
+import CareersPage from "@/pages/CareersPage";
+import GalleryPage from "@/pages/GalleryPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminLoginPage from "@/pages/AdminLoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
@@ -25,8 +28,12 @@ export default function App() {
           <Route path="magazine" element={<MagazinePage />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="events/:slug" element={<EventDetailPage />} />
+          <Route path="partner" element={<PartnerWithUsPage />} />
+          <Route path="events/partner" element={<PartnerWithUsPage />} />
           <Route path="delegate-registration" element={<DelegateRegistrationPage />} />
           <Route path="events/register" element={<DelegateRegistrationPage />} />
+          <Route path="careers" element={<CareersPage />} />
+          <Route path="gallery" element={<GalleryPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

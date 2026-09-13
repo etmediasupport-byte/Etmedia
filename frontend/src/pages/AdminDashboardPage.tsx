@@ -47,25 +47,32 @@ import {
   Upload,
   PlusCircle,
   MapPin,
+  Award,
+  Handshake,
+  Globe,
+  BookOpen,
+  Film,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery } from "@/lib/site-data";
 
 interface Registration {
   id: string;
   name: string;
-  first_name?: string;
-  last_name?: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
   organization: string;
   designation: string;
-  city?: string;
-  country?: string;
-  registration_category?: string;
-  registering_city?: string;
-  referral_source?: string;
+  city: string;
+  country: string;
+  registration_category: string;
+  registering_city: string;
+  referral_source: string;
   event_id: string;
-  event_title?: string;
+  event_title: string;
   created_at: string;
 }
 
@@ -100,7 +107,7 @@ interface CmsDelegateRegistration {
   created_at: string;
 }
 
-type TabType = "overview" | "event-registrations" | "cms-delegates" | "contacts" | "events" | "database";
+type TabType = "overview" | "event-registrations" | "cms-delegates" | "contacts" | "events" | "database" | "partners" | "magazines" | "careers" | "gallery";
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -121,6 +128,66 @@ export default function AdminDashboardPage() {
   const [cmsDelegates, setCmsDelegates] = useState<CmsDelegateRegistration[]>([]);
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
+  const [partnersList, setPartnersList] = useState<Collaborator[]>([]);
+  const [partnerSubmissions, setPartnerSubmissions] = useState<any[]>([]);
+  const [partnerSubTab, setPartnerSubTab] = useState<"brands" | "leads">("brands");
+  const [newPartnerForm, setNewPartnerForm] = useState({
+    brand_name: "",
+    website: "",
+    category: "Strategic Partner",
+    logo: "",
+  });
+  const [partnerUploading, setPartnerUploading] = useState(false);
+  const [selectedPartnerLeadDetail, setSelectedPartnerLeadDetail] = useState<any | null>(null);
+  const [cmsMagazines, setCmsMagazines] = useState<MagazineItem[]>([]);
+  const [editingMag, setEditingMag] = useState<MagazineItem | null>(null);
+  const [newMagForm, setNewMagForm] = useState({
+    issue: "Issue 29",
+    title: "",
+    date: "October 2026",
+    month: "October 2026",
+    cover: "",
+    pdf_url: "",
+    pages_list: "",
+    category: "Leadership",
+    is_featured: false,
+  });
+  const [magUploading, setMagUploading] = useState(false);
+
+  // Careers & Jobs CMS State
+  const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
+  const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
+  const [careersSubTab, setCareersSubTab] = useState<"jobs" | "applicants">("jobs");
+  const [editingJob, setEditingJob] = useState<JobItem | null>(null);
+  const [newJobForm, setNewJobForm] = useState({
+    id: "",
+    title: "",
+    department: "Conference Production",
+    location: "Hyderabad (Hybrid)",
+    experience: "3 — 5 Years",
+    description: "",
+    responsibilities: "",
+    qualifications: "",
+    benefits: "",
+    status: "Open" as "Open" | "Closed",
+  });
+  const [selectedApplicantDetail, setSelectedApplicantDetail] = useState<JobApplication | null>(null);
+  const [jobUploading, setJobUploading] = useState(false);
+
+  // Gallery CMS State
+  const [cmsGalleryItems, setCmsGalleryItems] = useState<MediaGalleryItem[]>([]);
+  const [editingGalleryItem, setEditingGalleryItem] = useState<MediaGalleryItem | null>(null);
+  const [newGalleryForm, setNewGalleryForm] = useState({
+    title: "",
+    type: "photo" as "photo" | "video",
+    url: "",
+    thumbnail_url: "",
+    category: "Keynotes",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[16/9]",
+  });
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
@@ -235,6 +302,84 @@ export default function AdminDashboardPage() {
       } else {
         setCmsEvents(staticEvents);
       }
+
+      // 5. Fetch Collaborator Partners
+      try {
+        const ptrRes = await fetch("/api/partners");
+        const ptrData = await ptrRes.json();
+        if (ptrData.success && Array.isArray(ptrData.partners)) {
+          setPartnersList(ptrData.partners);
+        } else {
+          setPartnersList(getDefaultCollaborators());
+        }
+      } catch (e) {
+        setPartnersList(getDefaultCollaborators());
+      }
+
+      // 6. Fetch Partner Form Inquiries
+      try {
+        const subRes = await fetch("/api/admin/partner-submissions", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const subData = await subRes.json();
+        if (subData.success && Array.isArray(subData.submissions)) {
+          setPartnerSubmissions(subData.submissions);
+        }
+      } catch (e) {
+        console.warn("Could not fetch partner submissions", e);
+      }
+
+      // 7. Fetch Magazine Issues
+      try {
+        const magRes = await fetch("/api/magazines");
+        const magData = await magRes.json();
+        if (magData.success && Array.isArray(magData.magazines)) {
+          setCmsMagazines(magData.magazines);
+        } else {
+          setCmsMagazines(getDefaultMagazines());
+        }
+      } catch (e) {
+        setCmsMagazines(getDefaultMagazines());
+      }
+
+      // 8. Fetch Jobs CMS
+      try {
+        const jobRes = await fetch("/api/jobs");
+        const jobData = await jobRes.json();
+        if (jobData.success && Array.isArray(jobData.jobs)) {
+          setCmsJobs(jobData.jobs);
+        } else {
+          setCmsJobs(getDefaultJobs());
+        }
+      } catch (e) {
+        setCmsJobs(getDefaultJobs());
+      }
+
+      // 9. Fetch Job Applications
+      try {
+        const appRes = await fetch("/api/admin/job-applications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const appData = await appRes.json();
+        if (appData.success && Array.isArray(appData.applications)) {
+          setJobApplications(appData.applications);
+        }
+      } catch (e) {
+        console.warn("Could not fetch job applications", e);
+      }
+
+      // 10. Fetch Gallery Items
+      try {
+        const galRes = await fetch("/api/gallery");
+        const galData = await galRes.json();
+        if (galData.success && Array.isArray(galData.items)) {
+          setCmsGalleryItems(galData.items);
+        } else {
+          setCmsGalleryItems(getDefaultMediaGallery());
+        }
+      } catch (e) {
+        setCmsGalleryItems(getDefaultMediaGallery());
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to load dashboard data.");
@@ -272,14 +417,52 @@ export default function AdminDashboardPage() {
       setStats((prev) => ({ ...prev, totalContacts: prev.totalContacts + 1 }));
     };
 
+    const onNewPartnerSubmission = (data: any) => {
+      toast.success(`🤝 New Partner Application: ${data.company_name} (${data.contact_person})`);
+      setPartnerSubmissions((prev) => [data, ...prev]);
+    };
+
+    const onPartnerUpdate = () => {
+      fetchDashboardData();
+    };
+
+    const onMagUpdate = () => {
+      fetchDashboardData();
+    };
+
+    const onJobUpdate = () => {
+      fetchDashboardData();
+    };
+
+    const onNewJobApplication = (data: any) => {
+      toast.success(`💼 New Job Application: ${data.name} applied for ${data.job_title}`);
+      setJobApplications((prev) => [data, ...prev]);
+    };
+
+    const onGalleryUpdate = () => {
+      fetchDashboardData();
+    };
+
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
     socket.on("new_contact_enquiry", onNewEnquiry);
+    socket.on("new_partner_submission", onNewPartnerSubmission);
+    socket.on("partner_updated", onPartnerUpdate);
+    socket.on("magazine_updated", onMagUpdate);
+    socket.on("job_updated", onJobUpdate);
+    socket.on("new_job_application", onNewJobApplication);
+    socket.on("gallery_updated", onGalleryUpdate);
 
     return () => {
       socket.off("live_users_update", onLiveUsers);
       socket.off("new_registration", onNewRegistration);
       socket.off("new_contact_enquiry", onNewEnquiry);
+      socket.off("new_partner_submission", onNewPartnerSubmission);
+      socket.off("partner_updated", onPartnerUpdate);
+      socket.off("magazine_updated", onMagUpdate);
+      socket.off("job_updated", onJobUpdate);
+      socket.off("new_job_application", onNewJobApplication);
+      socket.off("gallery_updated", onGalleryUpdate);
     };
   }, [token]);
 
@@ -792,6 +975,333 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleAddPartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPartnerForm.brand_name.trim() || !newPartnerForm.logo.trim()) {
+      toast.error("Brand name and logo URL/image are required!");
+      return;
+    }
+    setPartnerUploading(true);
+    try {
+      const res = await fetch("/api/admin/partners", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newPartnerForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Collaborator brand added successfully!");
+        setNewPartnerForm({ brand_name: "", website: "", category: "Strategic Partner", logo: "" });
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to add collaborator.");
+      }
+    } catch (err) {
+      toast.error("Network error while adding collaborator.");
+    } finally {
+      setPartnerUploading(false);
+    }
+  };
+
+  const handleDeletePartner = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this collaborator logo?")) return;
+    try {
+      const res = await fetch(`/api/admin/partners/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Collaborator deleted!");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete partner.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleDeletePartnerSubmission = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this partner lead submission?")) return;
+    try {
+      const res = await fetch(`/api/admin/partner-submissions/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Partner lead submission deleted.");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete submission.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleAddMagazine = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMagForm.title.trim() || !newMagForm.cover.trim()) {
+      toast.error("Magazine title and cover image are required!");
+      return;
+    }
+    setMagUploading(true);
+    try {
+      const isEditing = Boolean(editingMag);
+      const url = isEditing ? `/api/admin/magazines/${editingMag?.id}` : "/api/admin/magazines";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newMagForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(isEditing ? "Magazine updated!" : "New Magazine published!");
+        setNewMagForm({
+          issue: "Issue 29",
+          title: "",
+          date: "October 2026",
+          month: "October 2026",
+          cover: "",
+          pdf_url: "",
+          pages_list: "",
+          category: "Leadership",
+          is_featured: false,
+        });
+        setEditingMag(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save magazine.");
+      }
+    } catch (err) {
+      toast.error("Network error saving magazine.");
+    } finally {
+      setMagUploading(false);
+    }
+  };
+
+  const handleDeleteMagazine = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this magazine issue?")) return;
+    try {
+      const res = await fetch(`/api/admin/magazines/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Magazine deleted!");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete magazine.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleToggleMagFeatured = async (mag: MagazineItem) => {
+    try {
+      const newFeatured = !mag.is_featured;
+      const res = await fetch(`/api/admin/magazines/${mag.id}/featured`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ is_featured: newFeatured }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(newFeatured ? "Magazine set as Featured!" : "Magazine removed from Featured.");
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error("Error toggling magazine featured state.");
+    }
+  };
+
+  // --- CAREERS & JOBS CMS HANDLERS ---
+  const handleAddJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobForm.title.trim() || !newJobForm.description.trim()) {
+      toast.error("Job title and description are required!");
+      return;
+    }
+    setJobUploading(true);
+    try {
+      const isEditing = Boolean(editingJob);
+      const url = isEditing ? `/api/admin/jobs/${editingJob?.id}` : "/api/admin/jobs";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newJobForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(isEditing ? "Job position updated!" : "New job opening published!");
+        setNewJobForm({
+          id: "",
+          title: "",
+          department: "Conference Production",
+          location: "Hyderabad (Hybrid)",
+          experience: "3 — 5 Years",
+          description: "",
+          responsibilities: "",
+          qualifications: "",
+          benefits: "",
+          status: "Open",
+        });
+        setEditingJob(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save job.");
+      }
+    } catch (err) {
+      toast.error("Network error saving job.");
+    } finally {
+      setJobUploading(false);
+    }
+  };
+
+  const handleToggleJobStatus = async (job: JobItem) => {
+    try {
+      const newStatus = job.status === "Open" ? "Closed" : "Open";
+      const res = await fetch(`/api/admin/jobs/${job.id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Hiring status changed to ${newStatus}`);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error("Error toggling hiring status.");
+    }
+  };
+
+  const handleDeleteJob = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this job opening?")) return;
+    try {
+      const res = await fetch(`/api/admin/jobs/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Job opening deleted!");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete job.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  const handleDeleteJobApplication = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this applicant submission?")) return;
+    try {
+      const res = await fetch(`/api/admin/job-applications/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Applicant submission deleted!");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete applicant.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
+  // --- GALLERY CMS HANDLERS ---
+  const handleAddGalleryItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGalleryForm.title.trim() || !newGalleryForm.url.trim()) {
+      toast.error("Title and Media URL / Image are required!");
+      return;
+    }
+    setGalleryUploading(true);
+    try {
+      const isEditing = Boolean(editingGalleryItem);
+      const url = isEditing ? `/api/admin/gallery/${editingGalleryItem?.id}` : "/api/admin/gallery";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newGalleryForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(isEditing ? "Gallery media updated!" : "Gallery media item added!");
+        setNewGalleryForm({
+          title: "",
+          type: "photo",
+          url: "",
+          thumbnail_url: "",
+          category: "Keynotes",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          aspect_ratio: "aspect-[16/9]",
+        });
+        setEditingGalleryItem(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save gallery item.");
+      }
+    } catch (err) {
+      toast.error("Network error saving gallery item.");
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const handleDeleteGalleryItem = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this media asset?")) return;
+    try {
+      const res = await fetch(`/api/admin/gallery/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Gallery item deleted!");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete gallery item.");
+      }
+    } catch (err) {
+      toast.error("Network error.");
+    }
+  };
+
   const eventRegistrationsList = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
 
   const filteredRegistrations = eventRegistrationsList.filter(
@@ -832,6 +1342,10 @@ export default function AdminDashboardPage() {
     { id: "cms-delegates", label: "Corporate Delegate Forms", icon: Users, count: cmsDelegates.length },
     { id: "contacts", label: "Contact Messages", icon: MessageSquare, count: contacts.length },
     { id: "events", label: "Events Directory", icon: Award },
+    { id: "partners", label: "Partners & Collaborators", icon: Handshake, count: partnerSubmissions.length },
+    { id: "magazines", label: "Executive Talks Magazine", icon: BookOpen, count: cmsMagazines.length },
+    { id: "careers", label: "Careers & Jobs CMS", icon: Briefcase, count: jobApplications.length },
+    { id: "gallery", label: "Media Gallery CMS", icon: Film, count: cmsGalleryItems.length },
     { id: "database", label: "Laragon MySQL Engine", icon: Database },
   ];
 
@@ -1085,7 +1599,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-slate-500">Latest delegates registered on ET Media</p>
                     </div>
                     <button
-                      onClick={() => setActiveTab("registrations")}
+                      onClick={() => setActiveTab("event-registrations")}
                       className="flex items-center gap-1 text-xs font-bold text-cyan-700 hover:text-cyan-800"
                     >
                       <span>View All</span>
@@ -2673,6 +3187,1501 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+          {/* TAB: PARTNERS & COLLABORATORS */}
+          {activeTab === "partners" && (
+            <div className="space-y-6">
+              {/* Header Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                    <Handshake className="h-6 w-6 text-cyan-600" />
+                    Partners & Collaborators CMS
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Upload collaborator brand logos for the website animated carousel and manage incoming strategic partner lead inquiries.
+                  </p>
+                </div>
+
+                {/* Sub-tab toggle */}
+                <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1.5 border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setPartnerSubTab("brands")}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                      partnerSubTab === "brands"
+                        ? "bg-white text-cyan-700 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Collaborator Logos ({partnersList.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPartnerSubTab("leads")}
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                      partnerSubTab === "leads"
+                        ? "bg-white text-cyan-700 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Partner Applications ({partnerSubmissions.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* SUB-TAB 1: COLLABORATOR BRANDS CMS */}
+              {partnerSubTab === "brands" && (
+                <div className="grid gap-6 lg:grid-cols-3">
+                  {/* Upload Form */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+                      <PlusCircle className="h-5 w-5 text-cyan-600" />
+                      Add Collaborator Brand
+                    </h3>
+
+                    <form onSubmit={handleAddPartner} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Brand Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. NorthBridge Capital"
+                          value={newPartnerForm.brand_name}
+                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, brand_name: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Category *
+                        </label>
+                        <select
+                          value={newPartnerForm.category}
+                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        >
+                          <option value="Strategic Partner">Strategic Partner</option>
+                          <option value="Tech Partner">Tech Partner</option>
+                          <option value="Media Partner">Media Partner</option>
+                          <option value="Award Partner">Award Partner</option>
+                          <option value="Event Sponsor">Event Sponsor</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Website Link
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://company.com"
+                          value={newPartnerForm.website}
+                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, website: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Logo Image (File Upload or URL) *
+                        </label>
+                        
+                        {/* File Upload Option */}
+                        <div className="mb-2">
+                          <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
+                            <Upload className="h-4 w-4 text-cyan-600" />
+                            <span>Choose Logo Image File</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const formDataUpload = new FormData();
+                                formDataUpload.append("image", file);
+                                try {
+                                  toast.loading("Uploading logo...");
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: { Authorization: `Bearer ${token}` },
+                                    body: formDataUpload,
+                                  });
+                                  const uploadRes = await res.json();
+                                  toast.dismiss();
+                                  if (uploadRes.success) {
+                                    setNewPartnerForm((prev) => ({ ...prev, logo: uploadRes.url }));
+                                    toast.success("Logo uploaded!");
+                                  } else {
+                                    toast.error(uploadRes.message || "Upload failed");
+                                  }
+                                } catch (err) {
+                                  toast.dismiss();
+                                  toast.error("File upload error");
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {/* Image URL Input */}
+                        <input
+                          type="text"
+                          required
+                          placeholder="Or enter Image URL (e.g. /uploads/logo.png)"
+                          value={newPartnerForm.logo}
+                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, logo: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                        />
+                      </div>
+
+                      {newPartnerForm.logo && (
+                        <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+                          <img src={newPartnerForm.logo} alt="Preview" className="h-10 w-10 rounded-lg object-cover border border-slate-300" />
+                          <span className="text-[11px] text-slate-500 font-medium truncate">Logo Preview Ready</span>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={partnerUploading}
+                        className="w-full rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {partnerUploading ? "Uploading..." : "Save & Publish Brand Logo"}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Collaborator Grid Display */}
+                  <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                      <span>Collaborator Marquee Logos ({partnersList.length})</span>
+                      <span className="text-xs text-slate-500 font-normal">Active on Partner Page</span>
+                    </h3>
+
+                    {partnersList.length === 0 ? (
+                      <div className="py-12 text-center text-slate-500 text-xs">
+                        No collaborator brands uploaded yet.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {partnersList.map((partner) => (
+                          <div
+                            key={partner.id}
+                            className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-cyan-400 transition-all"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <img
+                                src={partner.logo}
+                                alt={partner.brand_name}
+                                className="h-12 w-12 rounded-xl object-cover border border-slate-300 shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-slate-900 text-xs truncate">
+                                  {partner.brand_name}
+                                </h4>
+                                <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200 inline-block mt-0.5">
+                                  {partner.category || "Strategic Partner"}
+                                </span>
+                                {partner.website && (
+                                  <a
+                                    href={partner.website}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] text-slate-500 hover:text-cyan-600 block truncate mt-0.5"
+                                  >
+                                    {partner.website}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePartner(partner.id)}
+                              className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors ml-2 shrink-0 cursor-pointer"
+                              title="Delete Partner Logo"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 2: PARTNER LEADS INQUIRIES */}
+              {partnerSubTab === "leads" && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search partner applications by company, person, email, or partnership type..."
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="text-xs text-slate-500 font-medium">
+                      Showing <strong className="text-slate-900">{partnerSubmissions.length}</strong> partner inquiries
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                          <th className="py-3 px-4">Company Name</th>
+                          <th className="py-3 px-4">Contact Person</th>
+                          <th className="py-3 px-4">Email & Phone</th>
+                          <th className="py-3 px-4">Partnership Type</th>
+                          <th className="py-3 px-4">Industry / Location</th>
+                          <th className="py-3 px-4">Submitted Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {partnerSubmissions
+                          .filter(
+                            (sub) =>
+                              sub.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              sub.contact_person?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              sub.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              sub.partnership_type?.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .map((sub) => (
+                            <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-3.5 px-4 font-bold text-slate-900">
+                                <div>{sub.company_name}</div>
+                                {sub.website && (
+                                  <a href={sub.website} target="_blank" rel="noreferrer" className="text-[10px] text-cyan-600 hover:underline">
+                                    {sub.website}
+                                  </a>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <div className="font-semibold text-slate-800">{sub.contact_person}</div>
+                                <div className="text-[10px] text-slate-500">{sub.designation}</div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <div className="text-slate-900 font-mono">{sub.email}</div>
+                                <div className="text-[10px] text-slate-500">{sub.phone}</div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-extrabold text-cyan-800 border border-cyan-200">
+                                  {sub.partnership_type}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600">
+                                <div>{sub.industry}</div>
+                                <div className="text-[10px] text-slate-400">{sub.location}</div>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                                {sub.created_at ? new Date(sub.created_at).toLocaleDateString() : "Recent"}
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedPartnerLeadDetail(sub)}
+                                    className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer"
+                                    title="View Full Application Details"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeletePartnerSubmission(sub.id)}
+                                    className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                    title="Delete Submission"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: EXECUTIVE TALKS MAGAZINE CMS */}
+          {activeTab === "magazines" && (
+            <div className="space-y-6">
+              {/* Header Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                    <BookOpen className="h-6 w-6 text-purple-600" />
+                    Executive Talks Magazine CMS
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Upload cover images, PDF downloads, and flipbook page spreads for Executive Talks Magazine digital editions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Publish Form */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <PlusCircle className="h-5 w-5 text-purple-600" />
+                    {editingMag ? "Edit Magazine Edition" : "Publish New Magazine Edition"}
+                  </h3>
+
+                  <form onSubmit={handleAddMagazine} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Edition Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Leading Beyond Today"
+                        value={newMagForm.title}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, title: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Issue Number *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Issue 29"
+                          value={newMagForm.issue}
+                          onChange={(e) => setNewMagForm({ ...newMagForm, issue: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Month / Date *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. October 2026"
+                          value={newMagForm.month}
+                          onChange={(e) => setNewMagForm({ ...newMagForm, month: e.target.value, date: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Category *
+                      </label>
+                      <select
+                        value={newMagForm.category}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, category: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                      >
+                        <option value="Leadership">Leadership</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Technology">Technology</option>
+                        <option value="GCC">GCC</option>
+                        <option value="Startup">Startup</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                      </select>
+                    </div>
+
+                    {/* Cover Image Upload / Input */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Cover Image (Upload or URL) *
+                      </label>
+                      
+                      <div className="mb-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
+                          <Upload className="h-4 w-4 text-purple-600" />
+                          <span>Choose Cover Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const formDataUpload = new FormData();
+                              formDataUpload.append("image", file);
+                              try {
+                                toast.loading("Uploading cover...");
+                                const res = await fetch("/api/admin/upload", {
+                                  method: "POST",
+                                  headers: { Authorization: `Bearer ${token}` },
+                                  body: formDataUpload,
+                                });
+                                const uploadRes = await res.json();
+                                toast.dismiss();
+                                if (uploadRes.success) {
+                                  setNewMagForm((prev) => ({ ...prev, cover: uploadRes.url }));
+                                  toast.success("Cover image uploaded!");
+                                } else {
+                                  toast.error(uploadRes.message || "Upload failed");
+                                }
+                              } catch (err) {
+                                toast.dismiss();
+                                toast.error("File upload error");
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      <input
+                        type="text"
+                        required
+                        placeholder="Or enter Cover Image URL"
+                        value={newMagForm.cover}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, cover: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* PDF URL Input */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        PDF Download Link / File URL
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://example.com/magazine.pdf"
+                        value={newMagForm.pdf_url}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, pdf_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Pages List Input */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Page Images (Comma-separated URLs for Flipbook)
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="e.g. /uploads/p1.png, /uploads/p2.png, /uploads/p3.png"
+                        value={newMagForm.pages_list}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, pages_list: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Featured Checkbox */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="mag_featured"
+                        checked={newMagForm.is_featured}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, is_featured: e.target.checked })}
+                        className="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <label htmlFor="mag_featured" className="text-xs font-bold text-slate-800 cursor-pointer">
+                        Set as Featured Cover Issue on Hero
+                      </label>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      {editingMag && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMag(null);
+                            setNewMagForm({
+                              issue: "Issue 29",
+                              title: "",
+                              date: "October 2026",
+                              month: "October 2026",
+                              cover: "",
+                              pdf_url: "",
+                              pages_list: "",
+                              category: "Leadership",
+                              is_featured: false,
+                            });
+                          }}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={magUploading}
+                        className="flex-1 rounded-2xl bg-purple-600 py-3 text-xs font-bold text-white shadow-md hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {magUploading ? "Saving..." : editingMag ? "Update Magazine Edition" : "Publish Magazine Edition"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Published Magazines Display */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                    <span>Published Magazine Editions ({cmsMagazines.length})</span>
+                    <span className="text-xs text-slate-500 font-normal">Active in Executive Library</span>
+                  </h3>
+
+                  {cmsMagazines.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-xs">
+                      No magazine editions published yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {cmsMagazines.map((mag) => (
+                        <div
+                          key={mag.id}
+                          className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-purple-400 transition-all space-y-3"
+                        >
+                          <div className="flex gap-3">
+                            <img
+                              src={mag.cover}
+                              alt={mag.title}
+                              className="h-24 w-18 rounded-xl object-cover border border-slate-300 shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                                  {mag.issue}
+                                </span>
+                                {mag.is_featured ? (
+                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                    ★ Featured
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              <h4 className="font-bold text-slate-900 text-sm truncate">
+                                {mag.title}
+                              </h4>
+                              
+                              <p className="text-[11px] text-slate-500 font-medium">
+                                {mag.month || mag.date} · {mag.category}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleMagFeatured(mag)}
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                                mag.is_featured
+                                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300"
+                              }`}
+                            >
+                              {mag.is_featured ? "Featured ★" : "Make Featured"}
+                            </button>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingMag(mag);
+                                  setNewMagForm({
+                                    issue: mag.issue,
+                                    title: mag.title,
+                                    date: mag.date,
+                                    month: mag.month || mag.date,
+                                    cover: mag.cover,
+                                    pdf_url: mag.pdf_url || "",
+                                    pages_list: Array.isArray(mag.pages_list)
+                                      ? mag.pages_list.join(", ")
+                                      : mag.pages_list || "",
+                                    category: mag.category || "Leadership",
+                                    is_featured: Boolean(mag.is_featured),
+                                  });
+                                }}
+                                className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+                                title="Edit Edition"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMagazine(mag.id)}
+                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="Delete Edition"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: CAREERS & JOBS CMS */}
+          {activeTab === "careers" && (
+            <div className="space-y-6">
+              {/* Sub-tabs Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCareersSubTab("jobs")}
+                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                      careersSubTab === "jobs"
+                        ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    <span>Job Openings CMS ({cmsJobs.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCareersSubTab("applicants")}
+                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                      careersSubTab === "applicants"
+                        ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Applicant Resumes Inbox</span>
+                    {jobApplications.length > 0 && (
+                      <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-extrabold border border-cyan-200">
+                        {jobApplications.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-500 font-medium">
+                  {careersSubTab === "jobs"
+                    ? "Manage open positions & close hiring status"
+                    : "Review candidate applications & download PDF resumes"}
+                </div>
+              </div>
+
+              {/* Sub-tab 1: Job Openings CMS */}
+              {careersSubTab === "jobs" && (
+                <div className="grid gap-8 lg:grid-cols-3">
+                  {/* Job Form (Add / Edit) */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                      <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <PlusCircle className="h-5 w-5 text-cyan-600" />
+                        <span>{editingJob ? "Edit Job Position" : "Add New Job Position"}</span>
+                      </h3>
+                      {editingJob && (
+                        <span className="text-[10px] font-mono font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                          {editingJob.id}
+                        </span>
+                      )}
+                    </div>
+
+                    <form onSubmit={handleAddJob} className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Job Title *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Senior Conference Producer"
+                          value={newJobForm.title}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, title: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Department *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Conference Production"
+                            value={newJobForm.department}
+                            onChange={(e) => setNewJobForm({ ...newJobForm, department: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Experience *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. 3 — 5 Years"
+                            value={newJobForm.experience}
+                            onChange={(e) => setNewJobForm({ ...newJobForm, experience: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Location *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Hyderabad (Hybrid)"
+                            value={newJobForm.location}
+                            onChange={(e) => setNewJobForm({ ...newJobForm, location: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Hiring Status *
+                          </label>
+                          <select
+                            value={newJobForm.status}
+                            onChange={(e) => setNewJobForm({ ...newJobForm, status: e.target.value as "Open" | "Closed" })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                          >
+                            <option value="Open">Open (Active Hiring)</option>
+                            <option value="Closed">Closed (Hiring Closed)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Role Overview / Description *
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          placeholder="Brief overview of the role, team goals, and expectations..."
+                          value={newJobForm.description}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, description: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Responsibilities (One per line or comma-separated)
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="Recruit CXO keynotes&#10;Research industry trends&#10;Drive stage program execution"
+                          value={newJobForm.responsibilities}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, responsibilities: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Qualifications (One per line or comma-separated)
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="3+ years in B2B conference production&#10;Exceptional communication skills&#10;Proven track record"
+                          value={newJobForm.qualifications}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, qualifications: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Perks & Benefits (One per line or comma-separated)
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="Competitive salary with performance bonus&#10;Comprehensive health insurance&#10;Hybrid work flexibility"
+                          value={newJobForm.benefits}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, benefits: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        {editingJob && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingJob(null);
+                              setNewJobForm({
+                                id: "",
+                                title: "",
+                                department: "Conference Production",
+                                location: "Hyderabad (Hybrid)",
+                                experience: "3 — 5 Years",
+                                description: "",
+                                responsibilities: "",
+                                qualifications: "",
+                                benefits: "",
+                                status: "Open",
+                              });
+                            }}
+                            className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={jobUploading}
+                          className="flex-1 rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {jobUploading ? "Saving..." : editingJob ? "Update Job Position" : "Publish Job Position"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Active Job Openings List */}
+                  <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                      <span>Current Job Openings ({cmsJobs.length})</span>
+                      <span className="text-xs text-slate-500 font-normal">Active on Careers Portal</span>
+                    </h3>
+
+                    {cmsJobs.length === 0 ? (
+                      <div className="py-12 text-center text-slate-500 text-xs">
+                        No active job openings created yet.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {cmsJobs.map((job) => {
+                          const isOpen = job.status !== "Closed";
+                          return (
+                            <div
+                              key={job.id}
+                              className={`flex flex-col justify-between p-5 rounded-2xl border transition-all space-y-4 ${
+                                isOpen
+                                  ? "border-slate-200 bg-slate-50 hover:border-cyan-400"
+                                  : "border-slate-200 bg-slate-100/70 opacity-80"
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-mono font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                                      {job.id}
+                                    </span>
+                                    <span className="text-xs font-extrabold text-slate-700">
+                                      {job.department}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-base font-extrabold text-slate-900">
+                                    {job.title}
+                                  </h4>
+                                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                    📍 {job.location} · 💼 {job.experience}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-bold border ${
+                                      isOpen
+                                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                        : "bg-slate-200 text-slate-700 border-slate-300"
+                                    }`}
+                                  >
+                                    {isOpen ? "🟢 Open for Applicants" : "🔴 Hiring Closed"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-slate-600 leading-relaxed font-sans line-clamp-2">
+                                {job.description}
+                              </p>
+
+                              <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleJobStatus(job)}
+                                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                    isOpen
+                                      ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                                      : "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                  }`}
+                                >
+                                  {isOpen ? "Close Hiring" : "Reopen Hiring"}
+                                </button>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingJob(job);
+                                      setNewJobForm({
+                                        id: job.id,
+                                        title: job.title,
+                                        department: job.department,
+                                        location: job.location,
+                                        experience: job.experience,
+                                        description: job.description,
+                                        responsibilities: Array.isArray(job.responsibilities)
+                                          ? job.responsibilities.join("\n")
+                                          : job.responsibilities || "",
+                                        qualifications: Array.isArray(job.qualifications)
+                                          ? job.qualifications.join("\n")
+                                          : job.qualifications || "",
+                                        benefits: Array.isArray(job.benefits)
+                                          ? job.benefits.join("\n")
+                                          : job.benefits || "",
+                                        status: (job.status as "Open" | "Closed") || "Open",
+                                      });
+                                    }}
+                                    className="p-2 rounded-xl bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
+                                    title="Edit Position"
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                    <span>Edit</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteJob(job.id)}
+                                    className="p-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
+                                    title="Delete Position"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-tab 2: Applicant Resumes Inbox */}
+              {careersSubTab === "applicants" && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search candidate by name, email, phone, or job title..."
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                      <span>Total Applications: <strong className="text-slate-900">{jobApplications.length}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                          <th className="py-3 px-4">Candidate Name</th>
+                          <th className="py-3 px-4">Applied Role</th>
+                          <th className="py-3 px-4">Contact Details</th>
+                          <th className="py-3 px-4">Experience</th>
+                          <th className="py-3 px-4">Resume File</th>
+                          <th className="py-3 px-4">Applied Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {jobApplications
+                          .filter(
+                            (app) =>
+                              app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              app.job_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              app.phone.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .map((app) => (
+                            <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-4 px-4 font-bold text-slate-900">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
+                                    {app.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <span className="block font-bold text-slate-900">{app.name}</span>
+                                    <span className="text-[11px] text-slate-400 font-mono">ID: {app.id}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-slate-700">
+                                <div className="flex flex-col">
+                                  <span className="font-extrabold text-cyan-800">{app.job_title}</span>
+                                  <span className="text-[10px] font-mono text-slate-400">{app.job_id}</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-slate-700">
+                                <div className="flex flex-col">
+                                  <span className="flex items-center gap-1.5 text-slate-900 font-medium">
+                                    <Mail className="h-3 w-3 text-cyan-600" /> {app.email}
+                                  </span>
+                                  <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
+                                    <Phone className="h-3 w-3 text-slate-400" /> {app.phone}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-800 border border-slate-200 font-medium">
+                                  {app.experience}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4">
+                                {app.resume_url ? (
+                                  <a
+                                    href={app.resume_url}
+                                    download
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-extrabold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs"
+                                  >
+                                    <Download className="h-3.5 w-3.5 text-cyan-600" />
+                                    <span>Download Resume</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">No file</span>
+                                )}
+                              </td>
+                              <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
+                                {app.created_at ? new Date(app.created_at).toLocaleString() : "Recently"}
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedApplicantDetail(app)}
+                                    className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors cursor-pointer"
+                                    title="View Details"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteJobApplication(app.id)}
+                                    className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                    title="Delete Applicant"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+
+                        {jobApplications.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="py-16 text-center text-slate-400">
+                              No job applications received yet. Submit an application on the Careers page to test!
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: MEDIA GALLERY CMS */}
+          {activeTab === "gallery" && (
+            <div className="space-y-6">
+              <div className="grid gap-8 lg:grid-cols-3">
+                {/* Form Column (Add / Edit Media Asset) */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <PlusCircle className="h-5 w-5 text-cyan-600" />
+                      <span>{editingGalleryItem ? "Edit Media Asset" : "Upload New Media Asset"}</span>
+                    </h3>
+                    {editingGalleryItem && (
+                      <span className="text-[10px] font-mono font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                        {editingGalleryItem.id}
+                      </span>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleAddGalleryItem} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Media Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. CXO Keynote & Panel Highlights"
+                        value={newGalleryForm.title}
+                        onChange={(e) => setNewGalleryForm({ ...newGalleryForm, title: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Media Type *
+                        </label>
+                        <select
+                          value={newGalleryForm.type}
+                          onChange={(e) => setNewGalleryForm({ ...newGalleryForm, type: e.target.value as "photo" | "video" })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                        >
+                          <option value="photo">📷 Photo Image</option>
+                          <option value="video">🎥 Video Embed</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Category *
+                        </label>
+                        <select
+                          value={newGalleryForm.category}
+                          onChange={(e) => setNewGalleryForm({ ...newGalleryForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        >
+                          <option value="Keynotes">Keynotes</option>
+                          <option value="Networking">Networking</option>
+                          <option value="Awards">Awards</option>
+                          <option value="Stage & AV">Stage & AV</option>
+                          <option value="Exhibitions">Exhibitions</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* File Upload Option */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Upload Media File or Enter URL *
+                      </label>
+                      
+                      <div className="mb-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
+                          <Upload className="h-4 w-4 text-cyan-600" />
+                          <span>Choose Media File</span>
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64Data = reader.result as string;
+                                setNewGalleryForm((prev) => ({ ...prev, url: base64Data }));
+                                try {
+                                  toast.loading("Uploading media...");
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({
+                                      imageBase64: base64Data,
+                                      filename: file.name,
+                                    }),
+                                  });
+                                  const uploadRes = await res.json();
+                                  toast.dismiss();
+                                  if (uploadRes.success) {
+                                    setNewGalleryForm((prev) => ({ ...prev, url: uploadRes.url, thumbnail_url: uploadRes.url }));
+                                    toast.success("Media file uploaded & attached!");
+                                  } else {
+                                    toast.success("Media preview loaded!");
+                                  }
+                                } catch (err) {
+                                  toast.dismiss();
+                                  toast.success("Media preview loaded!");
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      <input
+                        type="text"
+                        required
+                        placeholder={newGalleryForm.type === "video" ? "YouTube Embed Link (https://www.youtube.com/embed/...)" : "Or enter Image URL (https://...)"}
+                        value={newGalleryForm.url}
+                        onChange={(e) => setNewGalleryForm({ ...newGalleryForm, url: e.target.value, thumbnail_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Associated Summit Event
+                      </label>
+                      <select
+                        value={newGalleryForm.event_slug}
+                        onChange={(e) => {
+                          const slug = e.target.value;
+                          let title = "All Events";
+                          if (slug === "cfo-leadership-summit") title = "India CFO Leadership Summit 2026";
+                          else if (slug === "hr-excellence-awards") title = "HR Excellence & Leadership Conclave";
+                          else if (slug === "enterprise-tech-conclave") title = "National Enterprise Tech & AI Summit";
+                          setNewGalleryForm({ ...newGalleryForm, event_slug: slug, event_title: title });
+                        }}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      >
+                        <option value="all">All Events</option>
+                        <option value="cfo-leadership-summit">India CFO Leadership Summit 2026</option>
+                        <option value="hr-excellence-awards">HR Excellence & Leadership Conclave</option>
+                        <option value="enterprise-tech-conclave">National Enterprise Tech & AI Summit</option>
+                      </select>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      {editingGalleryItem && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingGalleryItem(null);
+                            setNewGalleryForm({
+                              title: "",
+                              type: "photo",
+                              url: "",
+                              thumbnail_url: "",
+                              category: "Keynotes",
+                              event_slug: "cfo-leadership-summit",
+                              event_title: "India CFO Leadership Summit 2026",
+                              aspect_ratio: "aspect-[16/9]",
+                            });
+                          }}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={galleryUploading}
+                        className="flex-1 rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {galleryUploading ? "Saving..." : editingGalleryItem ? "Update Media Asset" : "Publish Media Asset"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Media Assets Display Grid */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                    <span>Summit Media Assets ({cmsGalleryItems.length})</span>
+                    <span className="text-xs text-slate-500 font-normal">Active on Public Media Gallery</span>
+                  </h3>
+
+                  {cmsGalleryItems.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-xs">
+                      No media assets uploaded yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {cmsGalleryItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-cyan-400 transition-all space-y-3"
+                        >
+                          <div className="flex gap-3">
+                            <img
+                              src={item.thumbnail_url || item.url}
+                              alt={item.title}
+                              className="h-20 w-24 rounded-xl object-cover border border-slate-300 shrink-0 bg-slate-900"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                                  {item.category}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                  item.type === "video" ? "bg-purple-100 text-purple-800 border-purple-200" : "bg-slate-200 text-slate-700 border-slate-300"
+                                }`}>
+                                  {item.type === "video" ? "🎥 Video" : "📷 Photo"}
+                                </span>
+                              </div>
+
+                              <h4 className="font-bold text-slate-900 text-xs line-clamp-2">
+                                {item.title}
+                              </h4>
+                              
+                              <p className="text-[10px] text-slate-500 font-medium truncate">
+                                📍 {item.event_title || "All Events"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingGalleryItem(item);
+                                setNewGalleryForm({
+                                  title: item.title,
+                                  type: item.type || "photo",
+                                  url: item.url,
+                                  thumbnail_url: item.thumbnail_url || item.url,
+                                  category: item.category || "Keynotes",
+                                  event_slug: item.event_slug || "all",
+                                  event_title: item.event_title || "All Events",
+                                  aspect_ratio: item.aspect_ratio || "aspect-[16/9]",
+                                });
+                              }}
+                              className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
+                              title="Edit Media Item"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteGalleryItem(item.id)}
+                              className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
+                              title="Delete Media Item"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+      {/* PARTNER LEAD DETAILS MODAL */}
+      {selectedPartnerLeadDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900">
+            <button
+              type="button"
+              onClick={() => setSelectedPartnerLeadDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-700">
+              <Handshake className="h-4 w-4" />
+              <span>Partner Application Submission</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedPartnerLeadDetail.company_name}
+            </h3>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Submission ID: <span className="text-cyan-700 font-bold">{selectedPartnerLeadDetail.id}</span>
+            </p>
+
+            <div className="mt-6 space-y-4 text-xs">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Contact Person:</span>
+                    <strong className="text-slate-900 text-xs">{selectedPartnerLeadDetail.contact_person}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Designation:</span>
+                    <strong className="text-slate-900 text-xs">{selectedPartnerLeadDetail.designation}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Email:</span>
+                    <strong className="text-slate-900 text-xs font-mono">{selectedPartnerLeadDetail.email}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Phone:</span>
+                    <strong className="text-slate-900 text-xs font-mono">{selectedPartnerLeadDetail.phone}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Partnership Type:</span>
+                    <strong className="text-cyan-800 text-xs font-bold">{selectedPartnerLeadDetail.partnership_type}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Industry:</span>
+                    <strong className="text-slate-900 text-xs">{selectedPartnerLeadDetail.industry}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {selectedPartnerLeadDetail.message && (
+                <div className="rounded-2xl border border-slate-200 bg-cyan-50/50 p-4">
+                  <span className="text-[10px] font-bold uppercase text-cyan-800 tracking-wider block mb-1">
+                    Partnership Message / Objectives:
+                  </span>
+                  <p className="text-xs text-slate-800 leading-relaxed font-sans">
+                    {selectedPartnerLeadDetail.message}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedPartnerLeadDetail(null)}
+                className="rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========================================== */}
       {/* CONTACT ENQUIRY FULL DETAILS MODAL         */}
       {/* ========================================== */}
@@ -2913,6 +4922,109 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setSelectedCmsDelegateDetail(null)}
                 className="flex-1 rounded-xl bg-purple-600 py-3 text-xs font-bold text-white hover:bg-purple-700 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* JOB APPLICANT RESUME & DETAILS MODAL       */}
+      {/* ========================================== */}
+      {selectedApplicantDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setSelectedApplicantDetail(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+              <Briefcase className="h-4 w-4" />
+              <span>Candidate Job Application</span>
+            </div>
+
+            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+              {selectedApplicantDetail.name}
+            </h3>
+            <p className="text-xs text-cyan-700 font-extrabold mt-0.5">
+              Applied for: {selectedApplicantDetail.job_title} ({selectedApplicantDetail.job_id})
+            </p>
+
+            <div className="mt-6 space-y-4 text-xs">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Email Address:</span>
+                    <a href={`mailto:${selectedApplicantDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedApplicantDetail.email}</a>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Phone Number:</span>
+                    <strong className="text-slate-900">{selectedApplicantDetail.phone}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Years of Experience:</span>
+                    <strong className="text-slate-900">{selectedApplicantDetail.experience}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Application ID:</span>
+                    <strong className="text-slate-900 font-mono">{selectedApplicantDetail.id}</strong>
+                  </div>
+                </div>
+
+                {selectedApplicantDetail.portfolio_url && (
+                  <div className="pt-2 border-t border-slate-200">
+                    <span className="text-slate-400 block text-[10px]">Portfolio / Online Profile URL:</span>
+                    <a
+                      href={selectedApplicantDetail.portfolio_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-700 font-bold hover:underline truncate block text-xs"
+                    >
+                      {selectedApplicantDetail.portfolio_url}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Resume Download Box */}
+              {selectedApplicantDetail.resume_url && (
+                <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-extrabold text-cyan-900 block">Candidate PDF Resume Attached</span>
+                    <span className="text-[10px] text-slate-500 font-mono">{selectedApplicantDetail.resume_url}</span>
+                  </div>
+
+                  <a
+                    href={selectedApplicantDetail.resume_url}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download PDF</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <a
+                href={`mailto:${selectedApplicantDetail.email}?subject=Application for ${encodeURIComponent(selectedApplicantDetail.job_title)} - ET Media Hub`}
+                className="flex-1 text-center rounded-xl bg-cyan-600 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition-colors"
+              >
+                Contact Candidate
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedApplicantDetail(null)}
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 Close
               </button>

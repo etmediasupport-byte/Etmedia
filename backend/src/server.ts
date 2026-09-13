@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { initDatabase, pool, ensureEventsTable } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable } from "./db.js";
 
 dotenv.config();
 
@@ -80,6 +80,63 @@ ${supportEmail}`,
     return true;
   } catch (err: any) {
     console.error(`[Nodemailer] Error sending confirmation email to ${data.email}:`, err.message);
+    return false;
+  }
+}
+
+async function sendPartnerConfirmationEmail(data: {
+  contactPerson: string;
+  email: string;
+  companyName: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: data.email,
+    subject: `Partnership Interest Received — ET Media Business Intelligence`,
+    text: `Dear ${data.contactPerson},
+
+Thank you for expressing your interest in partnering with ET Media Business Intelligence.
+Our team will get in touch with you shortly.
+
+We will review your requirements and discuss the available branding, sponsorship and business engagement opportunities.
+
+We look forward to building a successful partnership with your organisation.
+
+Regards,
+ET Media Business Intelligence
+partner.support@etmedia.in
+www.etmedia.in`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #00AEEF;">
+          <h2 style="color: #00AEEF; margin: 0; font-size: 20px;">ET MEDIA BUSINESS INTELLIGENCE</h2>
+          <p style="color: #4B1FA7; font-weight: bold; margin-top: 5px; font-size: 13px;">Strategic Partnerships & Business Development</p>
+        </div>
+        <div style="padding: 25px 0; color: #334155; line-height: 1.6; font-size: 15px;">
+          <p>Dear <strong>${data.contactPerson}</strong>,</p>
+          <p>Thank you for expressing your interest in partnering with <strong>ET Media Business Intelligence</strong>.</p>
+          <p style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; color: #166534; font-weight: 600; border-radius: 8px;">
+            🤝 Our team will get in touch with you shortly.
+          </p>
+          <p>We will review your requirements and discuss the available branding, sponsorship and business engagement opportunities.</p>
+          <p>We look forward to building a successful partnership with your organisation.</p>
+        </div>
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; color: #64748b; font-size: 13px;">
+          <p style="margin: 0; font-weight: bold; color: #1e293b;">Regards,</p>
+          <p style="margin: 2px 0; font-weight: bold; color: #0f172a;">ET Media Business Intelligence</p>
+          <p style="margin: 4px 0 0 0;"><a href="mailto:partner.support@etmedia.in" style="color: #00AEEF; text-decoration: none;">partner.support@etmedia.in</a></p>
+          <p style="margin: 2px 0 0 0;"><a href="https://www.etmedia.in" style="color: #00AEEF; text-decoration: none;">www.etmedia.in</a></p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Partner confirmation email sent to ${data.email} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending partner email to ${data.email}:`, err.message);
     return false;
   }
 }
@@ -1031,6 +1088,640 @@ app.patch("/api/admin/events/:id/featured", authenticateAdmin, async (req, res) 
   } catch (err) {
     console.error("Featured Toggle Error:", err);
     return res.status(500).json({ success: false, message: "Failed to update featured state." });
+  }
+});
+
+// ==========================================
+// PARTNERS & COLLABORATORS API ENDPOINTS
+// ==========================================
+
+// Get all partners (Public for carousel)
+app.get("/api/partners", async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM partners ORDER BY created_at DESC");
+      return res.json({ success: true, partners: rows });
+    }
+    return res.json({ success: true, partners: [] });
+  } catch (err: any) {
+    console.error("Fetch Partners Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch partners" });
+  }
+});
+
+// Admin upload/create partner
+app.post("/api/admin/partners", authenticateAdmin, async (req, res) => {
+  const { brand_name, logo, website, category } = req.body;
+  if (!brand_name || !logo) {
+    return res.status(400).json({ success: false, message: "Brand name and logo are required" });
+  }
+
+  const id = `PTR-${Date.now().toString().slice(-6)}`;
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO partners (id, brand_name, logo, website, category) VALUES (?, ?, ?, ?, ?)",
+        [id, brand_name, logo, website || "", category || "Strategic Partner"]
+      );
+    }
+    const newPartner = { id, brand_name, logo, website: website || "", category: category || "Strategic Partner", created_at: new Date() };
+    io.emit("partner_updated", { type: "add", partner: newPartner });
+    return res.json({ success: true, partner: newPartner, message: "Partner collaborator added successfully!" });
+  } catch (err: any) {
+    console.error("Create Partner Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create partner" });
+  }
+});
+
+// Admin delete partner
+app.delete("/api/admin/partners/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM partners WHERE id = ?", [id]);
+    }
+    io.emit("partner_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Partner deleted successfully" });
+  } catch (err: any) {
+    console.error("Delete Partner Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete partner" });
+  }
+});
+
+// Submit Partner Form (Public)
+app.post("/api/partners/submit", async (req, res) => {
+  const {
+    company_name,
+    website,
+    industry,
+    location,
+    contact_person,
+    designation,
+    email,
+    phone,
+    partnership_type,
+    message,
+  } = req.body;
+
+  if (!company_name || !industry || !location || !contact_person || !designation || !email || !phone || !partnership_type) {
+    return res.status(400).json({ success: false, message: "Please fill in all required fields marked with *" });
+  }
+
+  const id = `PRT-SUB-${Date.now().toString().slice(-6)}`;
+  const submissionData = {
+    id,
+    company_name,
+    website: website || "",
+    industry,
+    location,
+    contact_person,
+    designation,
+    email,
+    phone,
+    partnership_type,
+    message: message || "",
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    if (pool) {
+      await pool.query(
+        `INSERT INTO partner_submissions (id, company_name, website, industry, location, contact_person, designation, email, phone, partnership_type, message)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, company_name, website || "", industry, location, contact_person, designation, email, phone, partnership_type, message || ""]
+      );
+    }
+
+    io.emit("new_partner_submission", submissionData);
+
+    // Send auto confirmation email async
+    sendPartnerConfirmationEmail({
+      contactPerson: contact_person,
+      email,
+      companyName: company_name,
+    }).catch(err => console.error("Partner email sending error:", err));
+
+    return res.json({
+      success: true,
+      message: "Partner application submitted successfully!",
+      submission: submissionData,
+    });
+  } catch (err: any) {
+    console.error("Partner Submission Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to submit partner application." });
+  }
+});
+
+// Admin fetch partner submissions
+app.get("/api/admin/partner-submissions", authenticateAdmin, async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM partner_submissions ORDER BY created_at DESC");
+      return res.json({ success: true, submissions: rows });
+    }
+    return res.json({ success: true, submissions: [] });
+  } catch (err: any) {
+    console.error("Fetch Partner Submissions Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch partner submissions" });
+  }
+});
+
+// Admin delete partner submission
+app.delete("/api/admin/partner-submissions/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM partner_submissions WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Partner inquiry deleted" });
+  } catch (err: any) {
+    console.error("Delete Partner Submission Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete submission" });
+  }
+});
+
+// ==========================================
+// EXECUTIVE TALKS MAGAZINE API ENDPOINTS
+// ==========================================
+
+// Get all magazines (Public)
+app.get("/api/magazines", async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM magazines ORDER BY is_featured DESC, created_at DESC");
+      return res.json({ success: true, magazines: rows });
+    }
+    return res.json({ success: true, magazines: [] });
+  } catch (err: any) {
+    console.error("Fetch Magazines Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch magazines" });
+  }
+});
+
+// Admin create magazine issue
+app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
+  const { issue, title, date, month, cover, pdf_url, pages_list, category, is_featured } = req.body;
+  if (!title || !cover) {
+    return res.status(400).json({ success: false, message: "Title and Cover image are required" });
+  }
+
+  const id = `MAG-${Date.now().toString().slice(-6)}`;
+  const pagesJson = typeof pages_list === "string" ? pages_list : JSON.stringify(pages_list || [cover]);
+
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          id,
+          issue || "Special Issue",
+          title,
+          date || "2026",
+          month || date || "2026",
+          cover,
+          pdf_url || "",
+          pagesJson,
+          category || "Leadership",
+          is_featured ? 1 : 0,
+        ]
+      );
+    }
+    const newMag = {
+      id,
+      issue: issue || "Special Issue",
+      title,
+      date: date || "2026",
+      month: month || date || "2026",
+      cover,
+      pdf_url: pdf_url || "",
+      pages_list: pagesJson,
+      category: category || "Leadership",
+      is_featured: is_featured ? 1 : 0,
+      created_at: new Date(),
+    };
+    io.emit("magazine_updated", { type: "add", magazine: newMag });
+    return res.json({ success: true, magazine: newMag, message: "Magazine issue published successfully!" });
+  } catch (err: any) {
+    console.error("Create Magazine Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create magazine" });
+  }
+});
+
+// Admin update magazine issue
+app.put("/api/admin/magazines/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { issue, title, date, month, cover, pdf_url, pages_list, category, is_featured } = req.body;
+
+  const pagesJson = typeof pages_list === "string" ? pages_list : JSON.stringify(pages_list || [cover]);
+
+  try {
+    if (pool) {
+      await pool.query(
+        "UPDATE magazines SET issue = ?, title = ?, date = ?, month = ?, cover = ?, pdf_url = ?, pages_list = ?, category = ?, is_featured = ? WHERE id = ?",
+        [
+          issue,
+          title,
+          date,
+          month || date,
+          cover,
+          pdf_url || "",
+          pagesJson,
+          category || "Leadership",
+          is_featured ? 1 : 0,
+          id,
+        ]
+      );
+    }
+    io.emit("magazine_updated", { type: "update", id });
+    return res.json({ success: true, message: "Magazine issue updated successfully!" });
+  } catch (err: any) {
+    console.error("Update Magazine Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update magazine" });
+  }
+});
+
+// Admin delete magazine issue
+app.delete("/api/admin/magazines/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM magazines WHERE id = ?", [id]);
+    }
+    io.emit("magazine_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Magazine issue deleted" });
+  } catch (err: any) {
+    console.error("Delete Magazine Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete magazine" });
+  }
+});
+
+// Admin toggle featured state
+app.patch("/api/admin/magazines/:id/featured", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { is_featured } = req.body;
+  try {
+    if (pool) {
+      await pool.query("UPDATE magazines SET is_featured = ? WHERE id = ?", [is_featured ? 1 : 0, id]);
+    }
+    io.emit("magazine_updated", { type: "featured", id, is_featured });
+    return res.json({ success: true, message: "Featured state updated" });
+  } catch (err: any) {
+    console.error("Toggle Magazine Featured Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to toggle featured state" });
+  }
+});
+
+// ==========================================
+// CAREERS & JOBS API ENDPOINTS
+// ==========================================
+
+// Public PDF Resume Upload Handler
+app.post("/api/upload-resume", async (req, res) => {
+  try {
+    const publicPath = path.join(__dirname, "..", "public");
+    const resumesDir = path.join(publicPath, "uploads", "resumes");
+    if (!fs.existsSync(resumesDir)) {
+      fs.mkdirSync(resumesDir, { recursive: true });
+    }
+
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end", () => {
+      const buffer = Buffer.concat(chunks);
+      const filename = `resume-${Date.now()}-${Math.random().toString(36).substring(7)}.pdf`;
+      const filePath = path.join(resumesDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      const resumeUrl = `/uploads/resumes/${filename}`;
+      return res.json({ success: true, url: resumeUrl, message: "Resume uploaded successfully!" });
+    });
+  } catch (err: any) {
+    console.error("Resume Upload Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to upload resume file." });
+  }
+});
+
+// Get all jobs (Public)
+app.get("/api/jobs", async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM jobs ORDER BY created_at DESC");
+      return res.json({ success: true, jobs: rows });
+    }
+    return res.json({ success: true, jobs: [] });
+  } catch (err: any) {
+    console.error("Fetch Jobs Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch job openings" });
+  }
+});
+
+// Get single job details (Public)
+app.get("/api/jobs/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM jobs WHERE id = ?", [id]);
+      if (rows.length > 0) {
+        return res.json({ success: true, job: rows[0] });
+      }
+    }
+    return res.status(404).json({ success: false, message: "Job opening not found" });
+  } catch (err: any) {
+    console.error("Fetch Job Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch job" });
+  }
+});
+
+// Admin create job opening
+app.post("/api/admin/jobs", authenticateAdmin, async (req, res) => {
+  const { title, department, location, experience, description, responsibilities, qualifications, benefits, status } = req.body;
+  if (!title || !department || !location || !experience || !description) {
+    return res.status(400).json({ success: false, message: "Please complete all required job fields" });
+  }
+
+  const id = `JOB-${Date.now().toString().slice(-6)}`;
+  const respJson = typeof responsibilities === "string" ? responsibilities : JSON.stringify(responsibilities || []);
+  const qualJson = typeof qualifications === "string" ? qualifications : JSON.stringify(qualifications || []);
+  const benJson = typeof benefits === "string" ? benefits : JSON.stringify(benefits || []);
+
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO jobs (id, title, department, location, experience, description, responsibilities, qualifications, benefits, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, title, department, location, experience, description, respJson, qualJson, benJson, status || "Open"]
+      );
+    }
+    const newJob = {
+      id,
+      title,
+      department,
+      location,
+      experience,
+      description,
+      responsibilities: respJson,
+      qualifications: qualJson,
+      benefits: benJson,
+      status: status || "Open",
+      created_at: new Date(),
+    };
+    io.emit("job_updated", { type: "add", job: newJob });
+    return res.json({ success: true, job: newJob, message: "Job opening published successfully!" });
+  } catch (err: any) {
+    console.error("Create Job Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create job" });
+  }
+});
+
+// Admin update job opening
+app.put("/api/admin/jobs/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, department, location, experience, description, responsibilities, qualifications, benefits, status } = req.body;
+
+  const respJson = typeof responsibilities === "string" ? responsibilities : JSON.stringify(responsibilities || []);
+  const qualJson = typeof qualifications === "string" ? qualifications : JSON.stringify(qualifications || []);
+  const benJson = typeof benefits === "string" ? benefits : JSON.stringify(benefits || []);
+
+  try {
+    if (pool) {
+      await pool.query(
+        "UPDATE jobs SET title = ?, department = ?, location = ?, experience = ?, description = ?, responsibilities = ?, qualifications = ?, benefits = ?, status = ? WHERE id = ?",
+        [title, department, location, experience, description, respJson, qualJson, benJson, status || "Open", id]
+      );
+    }
+    io.emit("job_updated", { type: "update", id });
+    return res.json({ success: true, message: "Job opening updated!" });
+  } catch (err: any) {
+    console.error("Update Job Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update job" });
+  }
+});
+
+// Admin toggle hiring status (Open / Closed)
+app.patch("/api/admin/jobs/:id/status", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (pool) {
+      await pool.query("UPDATE jobs SET status = ? WHERE id = ?", [status, id]);
+    }
+    io.emit("job_updated", { type: "status", id, status });
+    return res.json({ success: true, message: `Job hiring status set to ${status}` });
+  } catch (err: any) {
+    console.error("Toggle Job Status Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to toggle status" });
+  }
+});
+
+// Admin delete job opening
+app.delete("/api/admin/jobs/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM jobs WHERE id = ?", [id]);
+    }
+    io.emit("job_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Job opening deleted" });
+  } catch (err: any) {
+    console.error("Delete Job Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete job" });
+  }
+});
+
+// Submit Candidate Job Application (Public)
+app.post("/api/jobs/apply", async (req, res) => {
+  const { job_id, job_title, name, email, phone, experience, resume_url, portfolio_url } = req.body;
+  if (!job_id || !name || !email || !phone || !experience || !resume_url) {
+    return res.status(400).json({ success: false, message: "Please complete all required application fields and upload your resume PDF" });
+  }
+
+  const id = `APP-${Date.now().toString().slice(-6)}`;
+  const appData = {
+    id,
+    job_id,
+    job_title: job_title || "General Application",
+    name,
+    email,
+    phone,
+    experience,
+    resume_url,
+    portfolio_url: portfolio_url || "",
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    if (pool) {
+      await pool.query(
+        "INSERT INTO job_applications (id, job_id, job_title, name, email, phone, experience, resume_url, portfolio_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, job_id, job_title || "General Application", name, email, phone, experience, resume_url, portfolio_url || ""]
+      );
+    }
+    io.emit("new_job_application", appData);
+    return res.json({ success: true, application: appData, message: "Job application submitted successfully!" });
+  } catch (err: any) {
+    console.error("Job Application Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to submit application." });
+  }
+});
+
+// Admin Get All Job Applications
+app.get("/api/admin/job-applications", authenticateAdmin, async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM job_applications ORDER BY created_at DESC");
+      return res.json({ success: true, applications: rows });
+    }
+    return res.json({ success: true, applications: [] });
+  } catch (err: any) {
+    console.error("Fetch Job Applications Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch job applications" });
+  }
+});
+
+// Admin Delete Job Application
+app.delete("/api/admin/job-applications/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM job_applications WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Applicant submission deleted" });
+  } catch (err: any) {
+    console.error("Delete Job Application Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete application" });
+  }
+});
+
+// ==========================================
+// MEDIA GALLERY API ENDPOINTS
+// ==========================================
+
+// Get all gallery media items (Public with filter support)
+app.get("/api/gallery", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureGalleryTable();
+      const { category, event_slug, type } = req.query;
+      let query = "SELECT * FROM gallery_items WHERE 1=1";
+      const queryParams: any[] = [];
+
+      if (category && category !== "all" && category !== "All") {
+        query += " AND category = ?";
+        queryParams.push(category);
+      }
+
+      if (event_slug && event_slug !== "all" && event_slug !== "All") {
+        query += " AND event_slug = ?";
+        queryParams.push(event_slug);
+      }
+
+      if (type && type !== "all" && type !== "All") {
+        query += " AND type = ?";
+        queryParams.push(type);
+      }
+
+      query += " ORDER BY created_at DESC";
+
+      const [rows]: any = await pool.query(query, queryParams);
+      return res.json({ success: true, items: rows });
+    }
+    return res.json({ success: true, items: [] });
+  } catch (err: any) {
+    console.error("Fetch Gallery Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch gallery items" });
+  }
+});
+
+// Admin Create / Upload Gallery Media Item
+app.post("/api/admin/gallery", authenticateAdmin, async (req, res) => {
+  const { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
+  if (!title || !url) {
+    return res.status(400).json({ success: false, message: "Media Title and URL are required" });
+  }
+
+  const id = `GAL-${Date.now().toString().slice(-6)}`;
+  try {
+    if (pool) {
+      await ensureGalleryTable();
+      await pool.query(
+        "INSERT INTO gallery_items (id, title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          id,
+          title,
+          type || "photo",
+          url,
+          thumbnail_url || url,
+          category || "Keynotes",
+          event_slug || "all",
+          event_title || "All Events",
+          aspect_ratio || "aspect-[16/9]",
+        ]
+      );
+    }
+
+    const newItem = {
+      id,
+      title,
+      type: type || "photo",
+      url,
+      thumbnail_url: thumbnail_url || url,
+      category: category || "Keynotes",
+      event_slug: event_slug || "all",
+      event_title: event_title || "All Events",
+      aspect_ratio: aspect_ratio || "aspect-[16/9]",
+      created_at: new Date().toISOString(),
+    };
+
+    io.emit("gallery_updated", { type: "add", item: newItem });
+    return res.json({ success: true, item: newItem, message: "Gallery item added successfully!" });
+  } catch (err: any) {
+    console.error("Create Gallery Item Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create gallery item" });
+  }
+});
+
+// Admin Update Gallery Media Item
+app.put("/api/admin/gallery/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
+
+  try {
+    if (pool) {
+      await ensureGalleryTable();
+      await pool.query(
+        "UPDATE gallery_items SET title = ?, type = ?, url = ?, thumbnail_url = ?, category = ?, event_slug = ?, event_title = ?, aspect_ratio = ? WHERE id = ?",
+        [
+          title,
+          type || "photo",
+          url,
+          thumbnail_url || url,
+          category || "Keynotes",
+          event_slug || "all",
+          event_title || "All Events",
+          aspect_ratio || "aspect-[16/9]",
+          id,
+        ]
+      );
+    }
+    io.emit("gallery_updated", { type: "update", id });
+    return res.json({ success: true, message: "Gallery item updated successfully!" });
+  } catch (err: any) {
+    console.error("Update Gallery Item Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update gallery item" });
+  }
+});
+
+// Admin Delete Gallery Media Item
+app.delete("/api/admin/gallery/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureGalleryTable();
+      await pool.query("DELETE FROM gallery_items WHERE id = ?", [id]);
+    }
+    io.emit("gallery_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Gallery item deleted" });
+  } catch (err: any) {
+    console.error("Delete Gallery Item Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete gallery item" });
   }
 });
 

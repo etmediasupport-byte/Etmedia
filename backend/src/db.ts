@@ -149,6 +149,22 @@ export async function initDatabase() {
     // Create events table for Dynamic CMS management
     await ensureEventsTable();
 
+    // Create partners and partner_submissions tables
+    await ensurePartnersTables();
+    await seedDefaultPartners();
+
+    // Create magazines table for Executive Talks Magazine CMS
+    await ensureMagazinesTable();
+    await seedDefaultMagazines();
+
+    // Create jobs and job_applications tables for Careers CMS
+    await ensureJobsTables();
+    await seedDefaultJobs();
+
+    // Create gallery_items table and seed default media
+    await ensureGalleryTable();
+    await seedDefaultGalleryItems();
+
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
     if (existingEvents[0]?.count === 0) {
@@ -283,6 +299,445 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN venue_address TEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating events table:", err);
+  }
+}
+
+export async function ensurePartnersTables() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS partners (
+        id VARCHAR(100) PRIMARY KEY,
+        brand_name VARCHAR(255) NOT NULL,
+        logo TEXT NOT NULL,
+        website VARCHAR(255),
+        category VARCHAR(100) DEFAULT 'Strategic Partner',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS partner_submissions (
+        id VARCHAR(100) PRIMARY KEY,
+        company_name VARCHAR(255) NOT NULL,
+        website VARCHAR(255),
+        industry VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        contact_person VARCHAR(255) NOT NULL,
+        designation VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(100) NOT NULL,
+        partnership_type VARCHAR(255) NOT NULL,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating partners tables:", err);
+  }
+}
+
+export async function seedDefaultPartners() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM partners");
+    if (existing[0]?.count === 0) {
+      const defaultPartners = [
+        {
+          id: "PTR-101",
+          brand_name: "NorthBridge Capital",
+          logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+          website: "https://northbridge.com",
+          category: "Strategic Partner",
+        },
+        {
+          id: "PTR-102",
+          brand_name: "Vantage Systems",
+          logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?auto=format&fit=crop&q=80&w=300",
+          website: "https://vantage.com",
+          category: "Tech Partner",
+        },
+        {
+          id: "PTR-103",
+          brand_name: "Axiom Cloud",
+          logo: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=300",
+          website: "https://axiomcloud.com",
+          category: "Media Partner",
+        },
+        {
+          id: "PTR-104",
+          brand_name: "Helix Enterprise",
+          logo: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=300",
+          website: "https://helixent.com",
+          category: "Award Partner",
+        },
+      ];
+
+      for (const ptr of defaultPartners) {
+        await pool.query(
+          "INSERT INTO partners (id, brand_name, logo, website, category) VALUES (?, ?, ?, ?, ?)",
+          [ptr.id, ptr.brand_name, ptr.logo, ptr.website, ptr.category]
+        );
+      }
+      console.log("[MySQL] Seeded initial default partner collaborators!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding partners:", err);
+  }
+}
+
+export async function ensureMagazinesTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS magazines (
+        id VARCHAR(100) PRIMARY KEY,
+        issue VARCHAR(100) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        date VARCHAR(100) NOT NULL,
+        month VARCHAR(100),
+        cover VARCHAR(255) NOT NULL,
+        pdf_url TEXT,
+        pages_list LONGTEXT,
+        category VARCHAR(100) DEFAULT 'Leadership',
+        is_featured TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating magazines table:", err);
+  }
+}
+
+export async function seedDefaultMagazines() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM magazines");
+    if (existing[0]?.count === 0) {
+      const defaultMagazines = [
+        {
+          id: "MAG-101",
+          issue: "Issue 28",
+          title: "Leading Beyond Today",
+          date: "September 2026",
+          month: "September 2026",
+          cover: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800",
+          pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+          pages_list: JSON.stringify([
+            "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800",
+          ]),
+          category: "Leadership",
+          is_featured: 1,
+        },
+        {
+          id: "MAG-102",
+          issue: "Issue 27",
+          title: "The Talent Equation",
+          date: "July 2026",
+          month: "July 2026",
+          cover: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800",
+          pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+          pages_list: JSON.stringify([
+            "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=800",
+          ]),
+          category: "HR",
+          is_featured: 0,
+        },
+        {
+          id: "MAG-103",
+          issue: "Issue 26",
+          title: "Capital & Confidence",
+          date: "May 2026",
+          month: "May 2026",
+          cover: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+          pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+          pages_list: JSON.stringify([
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+            "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=800",
+          ]),
+          category: "Finance",
+          is_featured: 0,
+        },
+      ];
+
+      for (const mag of defaultMagazines) {
+        await pool.query(
+          "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [mag.id, mag.issue, mag.title, mag.date, mag.month, mag.cover, mag.pdf_url, mag.pages_list, mag.category, mag.is_featured]
+        );
+      }
+      console.log("[MySQL] Seeded initial default magazine issues!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding magazines:", err);
+  }
+}
+
+export async function ensureJobsTables() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS jobs (
+        id VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        location VARCHAR(100) NOT NULL,
+        experience VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        responsibilities LONGTEXT,
+        qualifications LONGTEXT,
+        benefits LONGTEXT,
+        status VARCHAR(50) DEFAULT 'Open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS job_applications (
+        id VARCHAR(100) PRIMARY KEY,
+        job_id VARCHAR(100) NOT NULL,
+        job_title VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(100) NOT NULL,
+        experience VARCHAR(100) NOT NULL,
+        resume_url TEXT NOT NULL,
+        portfolio_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating jobs tables:", err);
+  }
+}
+
+export async function seedDefaultJobs() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM jobs");
+    if (existing[0]?.count === 0) {
+      const defaultJobs = [
+        {
+          id: "JOB-101",
+          title: "Senior Conference Producer",
+          department: "Conference Production",
+          location: "Hyderabad (Hybrid)",
+          experience: "3 — 5 Years",
+          description: "Lead the agenda creation, speaker curation, and editorial direction for national C-suite summits and leadership forums.",
+          responsibilities: JSON.stringify([
+            "Research industry trends across CFO, HR, and Enterprise AI verticals",
+            "Recruit CXO keynotes and VP-level panel speakers",
+            "Drive conference stage program execution and outcome reports",
+          ]),
+          qualifications: JSON.stringify([
+            "3+ years experience in B2B conference production or media leadership",
+            "Exceptional executive communication and editorial research skills",
+            "Proven track record of curating high-impact C-suite events",
+          ]),
+          benefits: JSON.stringify([
+            "Competitive salary with performance bonuses",
+            "Comprehensive health insurance for self & dependents",
+            "Executive networking passes to all ET Media national summits",
+            "Hybrid work flexibility and fast-track leadership career path",
+          ]),
+          status: "Open",
+        },
+        {
+          id: "JOB-102",
+          title: "Corporate Sponsorship & Alliances Manager",
+          department: "Sales & Sponsorship",
+          location: "Bengaluru / Remote",
+          experience: "2 — 4 Years",
+          description: "Build strategic partnerships and drive corporate event sponsorship packages across enterprise software, BFSI, and technology brands.",
+          responsibilities: JSON.stringify([
+            "Engage CMOs, VP Marketing, and Alliance Leaders for title & platinum event sponsorships",
+            "Manage end-to-end B2B client proposals and partnership contracts",
+            "Collaborate with event operations to deliver maximum sponsor ROI",
+          ]),
+          qualifications: JSON.stringify([
+            "2+ years experience in B2B event sponsorship, media sales, or corporate alliances",
+            "Strong network across enterprise marketing decision-makers",
+            "Excellent negotiation, presentation, and pipeline management skills",
+          ]),
+          benefits: JSON.stringify([
+            "High uncapped commission structure on top of base salary",
+            "Executive travel allowances and luxury venue access",
+            "Health & wellness perks",
+          ]),
+          status: "Open",
+        },
+        {
+          id: "JOB-103",
+          title: "Senior Event Operations Lead",
+          department: "Event Operations",
+          location: "Hyderabad",
+          experience: "4 — 6 Years",
+          description: "Oversee venue setup, AV technology, VIP delegate hospitality, and logistics execution across major 5-star hotel summits.",
+          responsibilities: JSON.stringify([
+            "Manage 5-star hotel convention logistics, stage AV, and booth setups",
+            "Coordinate VIP delegate check-ins and executive hospitality teams",
+            "Ensure flawless timing and vendor management on event days",
+          ]),
+          qualifications: JSON.stringify([
+            "4+ years experience managing large-scale B2B corporate events or luxury hotel summits",
+            "Strong vendor negotiation, stage AV, and team leadership skills",
+          ]),
+          benefits: JSON.stringify([
+            "Competitive pay & event milestone incentives",
+            "Full travel & accommodation coverage for outstation events",
+            "Comprehensive medical coverage",
+          ]),
+          status: "Open",
+        },
+      ];
+
+      for (const j of defaultJobs) {
+        await pool.query(
+          "INSERT INTO jobs (id, title, department, location, experience, description, responsibilities, qualifications, benefits, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [j.id, j.title, j.department, j.location, j.experience, j.description, j.responsibilities, j.qualifications, j.benefits, j.status]
+        );
+      }
+      console.log("[MySQL] Seeded initial default career job openings!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding jobs:", err);
+  }
+}
+
+export async function ensureGalleryTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS gallery_items (
+        id VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        type ENUM('photo', 'video') DEFAULT 'photo',
+        url TEXT NOT NULL,
+        thumbnail_url TEXT,
+        category VARCHAR(100) DEFAULT 'Keynotes',
+        event_slug VARCHAR(255) DEFAULT 'all',
+        event_title VARCHAR(255) DEFAULT 'All Events',
+        aspect_ratio VARCHAR(50) DEFAULT 'aspect-square',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating gallery_items table:", err);
+  }
+}
+
+export async function seedDefaultGalleryItems() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM gallery_items");
+    if (existing[0]?.count === 0) {
+      const defaultGallery = [
+        {
+          id: "GAL-101",
+          title: "India CFO Leadership Summit Keynote Stage",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=400&auto=format&fit=crop",
+          category: "Keynotes",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          aspect_ratio: "aspect-[4/3]",
+        },
+        {
+          id: "GAL-102",
+          title: "CXO Networking & Executive Gala Dinner",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=400&auto=format&fit=crop",
+          category: "Networking",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          aspect_ratio: "aspect-[16/9]",
+        },
+        {
+          id: "GAL-103",
+          title: "HR Excellence Leadership Awards Night",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=400&auto=format&fit=crop",
+          category: "Awards",
+          event_slug: "hr-excellence-awards",
+          event_title: "HR Excellence & Leadership Conclave",
+          aspect_ratio: "aspect-[3/4]",
+        },
+        {
+          id: "GAL-104",
+          title: "Enterprise AI & Tech Leaders Panel Discussion",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=400&auto=format&fit=crop",
+          category: "Keynotes",
+          event_slug: "enterprise-tech-conclave",
+          event_title: "National Enterprise Tech & AI Summit",
+          aspect_ratio: "aspect-[16/9]",
+        },
+        {
+          id: "GAL-105",
+          title: "C-Suite Fireside Chat Highlights Video",
+          type: "video",
+          url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+          thumbnail_url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop",
+          category: "Keynotes",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          aspect_ratio: "aspect-[16/9]",
+        },
+        {
+          id: "GAL-106",
+          title: "Luxury 5-Star Hotel Stage & AV Production Setup",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=400&auto=format&fit=crop",
+          category: "Stage & AV",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          aspect_ratio: "aspect-[4/3]",
+        },
+        {
+          id: "GAL-107",
+          title: "Title Sponsors & Corporate Booth Exhibition",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=400&auto=format&fit=crop",
+          category: "Exhibitions",
+          event_slug: "enterprise-tech-conclave",
+          event_title: "National Enterprise Tech & AI Summit",
+          aspect_ratio: "aspect-[16/9]",
+        },
+        {
+          id: "GAL-108",
+          title: "Executive Networking Lunch & Coffee Lounge",
+          type: "photo",
+          url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=1200&auto=format&fit=crop",
+          thumbnail_url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=400&auto=format&fit=crop",
+          category: "Networking",
+          event_slug: "hr-excellence-awards",
+          event_title: "HR Excellence & Leadership Conclave",
+          aspect_ratio: "aspect-[3/4]",
+        },
+      ];
+
+      for (const g of defaultGallery) {
+        await pool.query(
+          "INSERT INTO gallery_items (id, title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [g.id, g.title, g.type, g.url, g.thumbnail_url, g.category, g.event_slug, g.event_title, g.aspect_ratio]
+        );
+      }
+      console.log("[MySQL] Seeded initial default gallery media items!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding gallery items:", err);
   }
 }
 
