@@ -11,8 +11,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
 }) => {
   const location = useLocation();
-  const token = localStorage.getItem("et_admin_token");
-  const adminRaw = localStorage.getItem("et_admin_user");
+  const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
+  const adminRaw = localStorage.getItem("etmedia_admin_user") || localStorage.getItem("et_admin_user");
 
   if (!token) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;

@@ -2083,6 +2083,7 @@ export default function AdminDashboardPage() {
     { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
     { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
     { id: "partner-requests", label: "Partner Requests", icon: Building, count: partnerSubmissions.length },
+    { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
     { id: "career-jobs", label: "Career Jobs", icon: Briefcase, count: cmsJobs.length },
     { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
     { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
@@ -2092,41 +2093,39 @@ export default function AdminDashboardPage() {
     { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
     { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
     { id: "settings", label: "Website Settings", icon: Settings },
-    { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-    { id: "database", label: "MySQL Database", icon: Database },
   ];
 
   return (
-    <div className="relative flex min-h-screen bg-slate-100 text-slate-800 selection:bg-cyan-500/30 selection:text-cyan-900 font-sans">
+    <div className="relative flex h-screen w-full overflow-hidden bg-slate-100 text-slate-800 selection:bg-cyan-500/30 selection:text-cyan-900 font-sans">
       <GlowBackdrop />
 
       {/* ========================================== */}
       {/* 1. LEFT SIDEBAR CONTAINER                  */}
       {/* ========================================== */}
 
-      {/* Mobile Backdrop */}
+      {/* Mobile Backdrop Overlay */}
       {mobileSidebarOpen && (
         <div
           onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden transition-opacity"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col justify-between border-r border-slate-200 bg-white p-5 shadow-sm transition-transform duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col justify-between border-r border-slate-200 bg-white p-4 shadow-xs transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="space-y-6">
+        <div className="flex flex-col h-full overflow-hidden space-y-4">
           {/* Brand Logo & Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between shrink-0 pb-2">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-slate-50 p-1.5 border border-slate-200 shadow-sm">
+              <div className="rounded-full bg-slate-50 p-1.5 border border-slate-200 shadow-xs">
                 <img src={logo} alt="ET Media" className="h-6 w-auto object-contain" />
               </div>
               <div>
-                <h2 className="text-sm font-extrabold text-slate-900 tracking-wide">ET Media Hub</h2>
-                <p className="text-[11px] text-cyan-700 font-extrabold uppercase tracking-wider">
+                <h2 className="text-xs font-extrabold text-slate-900 tracking-wide">ET Media Hub</h2>
+                <p className="text-[10px] text-cyan-700 font-extrabold uppercase tracking-wider">
                   Admin Control Center
                 </p>
               </div>
@@ -2134,16 +2133,16 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => setMobileSidebarOpen(false)}
-              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 md:hidden"
+              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="h-px w-full bg-slate-200" />
+          <div className="h-px w-full bg-slate-200 shrink-0" />
 
-          {/* Navigation Links */}
-          <nav className="space-y-1.5">
+          {/* Navigation Links - Scrollable if items overflow */}
+          <nav className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -2154,19 +2153,19 @@ export default function AdminDashboardPage() {
                     setActiveTab(item.id as TabType);
                     setMobileSidebarOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-bold transition-all ${
+                  className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all cursor-pointer ${
                     isActive
                       ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-500"}`} />
-                    <span>{item.label}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
+                    <span className="truncate">{item.label}</span>
                   </div>
                   {item.count !== undefined && item.count > 0 && (
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                      className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shrink-0 ${
                         isActive ? "bg-white/25 text-white" : "bg-cyan-50 text-cyan-700 border border-cyan-200"
                       }`}
                     >
@@ -2180,17 +2179,17 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Sidebar Footer Card */}
-        <div className="space-y-3 pt-6 border-t border-slate-200">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-100 font-bold text-cyan-800">
-                <Shield className="h-5 w-5" />
+        <div className="space-y-3 pt-4 border-t border-slate-200 shrink-0">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 font-bold text-cyan-800 text-xs">
+                <Shield className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-slate-900">
                   {adminUser?.name || "Super Admin"}
                 </p>
-                <p className="truncate text-[11px] text-slate-500 font-medium">
+                <p className="truncate text-[10px] text-slate-500 font-medium">
                   {adminUser?.email || "etmediaworld@gmail.com"}
                 </p>
               </div>
@@ -2201,7 +2200,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={fetchDashboardData}
               disabled={loading}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 shadow-sm"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-[11px] font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 shadow-xs cursor-pointer"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-cyan-600" : ""}`} />
               <span>Refresh</span>
@@ -2209,7 +2208,7 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 py-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 py-2 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span>Logout</span>
@@ -2221,47 +2220,53 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       {/* 2. RIGHT SIDE MAIN CONTENT CONTAINER        */}
       {/* ========================================== */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-6 py-4 backdrop-blur-xl shadow-sm">
+      <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
+        {/* Top Header Bar - Permanent Sticky Top Navbar */}
+        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 md:px-6 py-3.5 backdrop-blur-md shadow-xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 md:hidden"
+              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 hover:bg-slate-100 lg:hidden cursor-pointer"
+              title="Open Navigation Drawer"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             <div>
-              <h1 className="text-lg font-extrabold text-slate-900 tracking-tight capitalize">
-                {activeTab.replace("-", " ")}
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight capitalize">
+                  {activeTab.replace("-", " ")}
+                </h1>
+                <span className="hidden sm:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-700 border border-cyan-200 uppercase tracking-wider">
+                  CMS Module
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-md">
                 ET Media Business Intelligence Executive Workspace
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Live Socket Indicator */}
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 font-bold">
+            <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 font-bold">
               <Radio className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
               <span>Sockets: {stats.activeLiveUsers} Online</span>
             </div>
 
             {/* Quick Export Buttons */}
-            {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants") && (
+            {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants" || activeTab === "newsletter") && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => exportToExcel(activeTab as any)}
-                  className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-transform hover:scale-105 shadow-xs cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-xs cursor-pointer"
                 >
                   <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Export Excel</span>
                 </button>
                 <button
                   onClick={() => exportToCSV(activeTab as any)}
-                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-transform hover:scale-105 shadow-xs cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5 text-cyan-600" />
                   <span>Export CSV</span>
@@ -2272,41 +2277,11 @@ export default function AdminDashboardPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {/* OVERVIEW TAB: ANALYTICS WIDGETS & DASHBOARD BOARDS */}
           {activeTab === "overview" && (
             <div className="space-y-8">
-              {/* Top Banner / Welcome Bar */}
-              <div className="rounded-3xl gradient-brand p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-                <div className="relative z-10 space-y-2 max-w-xl">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold backdrop-blur-md border border-white/20">
-                    <Activity className="h-3.5 w-3.5 text-cyan-300 animate-pulse" />
-                    <span>Real-time Operations & Analytics Hub</span>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    ET Media Business Intelligence Executive Dashboard
-                  </h2>
-                  <p className="text-xs sm:text-sm text-cyan-100/90 leading-relaxed font-sans">
-                    Monitor summit registrations, partner enquiries, digital magazine readership, and live platform traffic.
-                  </p>
-                </div>
 
-                <div className="relative z-10 flex flex-wrap items-center gap-3">
-                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-200 block">Live WebSockets</span>
-                    <strong className="text-xl font-extrabold flex items-center justify-center gap-1.5 mt-0.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-                      {stats.activeLiveUsers} Online
-                    </strong>
-                  </div>
-                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-200 block">Server Status</span>
-                    <strong className="text-xl font-extrabold text-emerald-300 mt-0.5 block">
-                      Active (MySQL)
-                    </strong>
-                  </div>
-                </div>
-              </div>
 
               {/* 8 ANALYTICS WIDGETS GRID */}
               <div>
@@ -2401,26 +2376,6 @@ export default function AdminDashboardPage() {
                     <p className="mt-2 text-xs text-slate-500 font-medium">Collaborators & brand partners</p>
                   </div>
 
-                  {/* Widget 5: Magazine Views Counter */}
-                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-rose-400 hover:shadow-md">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        Magazine Views
-                      </span>
-                      <div className="rounded-2xl bg-rose-50 p-3 text-rose-600 group-hover:scale-110 transition-transform">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
-                        {cmsMagazines.reduce((acc, m) => acc + (m.views || 1240), 0).toLocaleString()}
-                      </div>
-                      <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200">
-                        Flipbook Reads
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Digital edition page views</p>
-                  </div>
 
                   {/* Widget 6: Newsletter Subscribers Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
@@ -2597,28 +2552,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Magazine Views Chart */}
-                  <div className="pt-4 border-t border-slate-200">
-                    <div className="flex items-center justify-between pb-3 mb-3">
-                      <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-rose-600" />
-                        <span>Magazine Readership Views (Bar Chart)</span>
-                      </h3>
-                      <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-                        {cmsMagazines.length} Editions Published
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-4 gap-2 text-center pt-2">
-                      {cmsMagazines.slice(0, 4).map((mag, idx) => (
-                        <div key={mag.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-1">
-                          <span className="text-[10px] font-bold text-slate-500 block truncate">{mag.title}</span>
-                          <strong className="text-sm font-extrabold text-rose-700 block">{(mag.views || 1240).toLocaleString()}</strong>
-                          <span className="text-[9px] text-slate-400 block font-mono">Views</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -2759,7 +2693,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="mt-6 overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[950px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                       <th className="py-3 px-4">Name</th>
@@ -2902,7 +2836,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="mt-6 overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[850px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                       <th className="py-3 px-4">Delegate Name</th>
@@ -3029,7 +2963,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="mt-6 overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[850px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                       <th className="py-3 px-4">Status</th>
@@ -3335,39 +3269,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* DATABASE TAB */}
-          {activeTab === "database" && (
-            <div className="space-y-6">
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                <div className="flex items-center gap-4 pb-6 border-b border-slate-200">
-                  <div className="rounded-2xl bg-cyan-50 p-4 text-cyan-600">
-                    <Database className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">Laragon MySQL Engine</h2>
-                    <p className="text-xs text-slate-500 font-medium">Local MySQL Server Connection Specifications</p>
-                  </div>
-                </div>
 
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-xs">
-                  <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200 space-y-1">
-                    <span className="text-slate-500">Host Address</span>
-                    <p className="text-sm font-mono font-bold text-slate-900">127.0.0.1:3306</p>
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200 space-y-1">
-                    <span className="text-slate-500">Database Name</span>
-                    <p className="text-sm font-mono font-bold text-slate-900">etmedia_db</p>
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200 space-y-1">
-                    <span className="text-slate-500">Active Tables</span>
-                    <p className="text-sm font-mono font-bold text-slate-900">admins, registrations, contacts, events</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </main>
       </div>
 
@@ -6071,7 +5973,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full min-w-[800px] text-left text-xs">
                       <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
                         <tr>
                           <th className="py-3 px-4">Company</th>
@@ -6343,7 +6245,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="mt-6 overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full min-w-[900px] text-left text-xs">
                     <thead>
                       <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                         <th className="py-3 px-4">Candidate Name</th>
@@ -6774,7 +6676,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full min-w-[650px] text-left text-xs">
                       <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
                         <tr>
                           <th className="py-3 px-4">Email Address</th>
