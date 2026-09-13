@@ -124,21 +124,213 @@ export const services = [
   },
 ] as const;
 
+export type Speaker = {
+  id?: string;
+  name: string;
+  designation: string;
+  organization: string;
+  photo: string;
+  bio?: string;
+  topic?: string;
+};
+
+export type Sponsor = {
+  id?: string;
+  name: string;
+  tier: "Title Partner" | "Platinum Sponsor" | "Gold Sponsor" | "Silver Partner" | "Media Partner" | "Technology Partner";
+  logo: string;
+  websiteUrl?: string;
+};
+
+export type GalleryItem = {
+  id?: string;
+  type: "image" | "video";
+  url: string;
+  caption?: string;
+};
+
+export type AgendaItem = {
+  id?: string;
+  time: string;
+  title: string;
+  speaker?: string;
+  description?: string;
+};
+
 export type EventItem = {
   id?: string;
   slug: string;
   title: string;
   description: string;
+  full_description?: string;
   image: string;
   date: string;
   time: string;
   city: string;
   venue: string;
+  venue_address?: string;
   category: string;
   speakers: number;
-  status: "upcoming" | "past";
-  month: string;
+  status: "upcoming" | "past" | "published" | "draft";
+  month?: string;
+  is_featured?: number | boolean;
+  locations?: string | any[];
+  speakers_list?: string | Speaker[];
+  sponsors_list?: string | Sponsor[];
+  gallery_list?: string | GalleryItem[];
+  agenda_list?: string | AgendaItem[];
+  map_url?: string;
 };
+
+export const getDefaultSpeakers = (category: string = ""): Speaker[] => [
+  {
+    id: "spk-1",
+    name: "Dr. Rajesh Sharma",
+    designation: "Chief Executive Officer & Industry Evangelist",
+    organization: "Global Enterprise Mobility",
+    photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
+    bio: "Over 22 years of enterprise strategy experience across Asia-Pacific.",
+    topic: "Keynote: Shaping the Next Decade of Enterprise Growth",
+  },
+  {
+    id: "spk-2",
+    name: "Ananya Roy",
+    designation: "Chief Financial Officer & Strategy Head",
+    organization: "Apex Capital India",
+    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
+    bio: "Pioneer in modern treasury management and capital allocation strategies.",
+    topic: "Panel: Capital Allocation & Enterprise Risk in Volatile Markets",
+  },
+  {
+    id: "spk-3",
+    name: "Vikramaditya Verma",
+    designation: "Chief Technology & AI Officer",
+    organization: "NextGen Cloud Systems",
+    photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
+    bio: "Specialist in enterprise generative AI deployment and digital resilience.",
+    topic: "Fireside Chat: AI-Driven Operational Excellence",
+  },
+  {
+    id: "spk-4",
+    name: "Meera Krishnan",
+    designation: "Chief Human Resources Officer",
+    organization: "Vantage Global",
+    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400",
+    bio: "Building high-performance corporate cultures across 14 countries.",
+    topic: "Workforce 2030: Leadership, Retention & Executive Culture",
+  },
+];
+
+export const getDefaultSponsors = (): Sponsor[] => [
+  {
+    id: "spn-1",
+    name: "NorthBridge Capital",
+    tier: "Title Partner",
+    logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+    websiteUrl: "https://example.com",
+  },
+  {
+    id: "spn-2",
+    name: "Vantage Enterprise Systems",
+    tier: "Platinum Sponsor",
+    logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+    websiteUrl: "https://example.com",
+  },
+  {
+    id: "spn-3",
+    name: "Helix Tech Solutions",
+    tier: "Gold Sponsor",
+    logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+    websiteUrl: "https://example.com",
+  },
+  {
+    id: "spn-4",
+    name: "Axiom Cloud Intelligence",
+    tier: "Technology Partner",
+    logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
+    websiteUrl: "https://example.com",
+  },
+];
+
+export const getDefaultGallery = (): GalleryItem[] => [
+  {
+    id: "gal-1",
+    type: "image",
+    url: heroLeadership,
+    caption: "CXO Keynote Address & Industry Benchmarking Session",
+  },
+  {
+    id: "gal-2",
+    type: "image",
+    url: heroSummit,
+    caption: "Executive Panel Discussion on AI & Digital Infrastructure",
+  },
+  {
+    id: "gal-3",
+    type: "image",
+    url: heroAwards,
+    caption: "Gala Awards & Industry Leadership Recognition Ceremony",
+  },
+  {
+    id: "gal-4",
+    type: "image",
+    url: heroNetworking,
+    caption: "High-Trust Executive Networking Session",
+  },
+];
+
+export const getDefaultAgenda = (): AgendaItem[] => [
+  {
+    id: "ag-1",
+    time: "08:30 AM — 09:30 AM",
+    title: "Executive Registration & Morning Networking Breakfast",
+    speaker: "Delegates & Advisory Board",
+    description: "Welcome desk check-in, coffee networking, and badge distribution.",
+  },
+  {
+    id: "ag-2",
+    time: "09:30 AM — 10:30 AM",
+    title: "Opening Keynote: Reimagining Enterprise Growth & Innovation",
+    speaker: "Dr. Rajesh Sharma (CEO, GEM)",
+    description: "Macroeconomic realities, technological disruption, and strategic roadmap for decision makers.",
+  },
+  {
+    id: "ag-3",
+    time: "10:30 AM — 11:45 AM",
+    title: "Leadership Panel: Governance, Risk Management & Scale",
+    speaker: "Ananya Roy & Industry Leaders",
+    description: "Cross-industry debate on capital efficiency, board reporting, and sustainable execution.",
+  },
+  {
+    id: "ag-4",
+    time: "11:45 AM — 01:00 PM",
+    title: "Technology Showcase & Fireside Session",
+    speaker: "Vikramaditya Verma (CTO, NextGen)",
+    description: "Demonstration of generative AI workflows, cloud governance, and cybersecurity architectures.",
+  },
+  {
+    id: "ag-5",
+    time: "01:00 PM — 02:15 PM",
+    title: "Executive Luncheon & VIP Networking Lounge",
+    speaker: "All Participants",
+    description: "Curated seating networking lunch for peer-to-peer exchange.",
+  },
+  {
+    id: "ag-6",
+    time: "02:15 PM — 04:00 PM",
+    title: "Breakout Masterclasses & Sectoral Working Groups",
+    speaker: "Meera Krishnan & Advisory Panel",
+    description: "Deep dive roundtables focusing on workforce retention, supply chain resilience, and digital transformation.",
+  },
+  {
+    id: "ag-7",
+    time: "04:00 PM — 05:30 PM",
+    title: "Excellence Awards & Concluding Remarks",
+    speaker: "ET Media Leadership Team",
+    description: "Recognition of pioneering enterprises followed by networking high tea.",
+  },
+];
+
 
 export const events: EventItem[] = [
   {

@@ -8,9 +8,82 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 import { initDatabase, pool, ensureEventsTable } from "./db.js";
 
 dotenv.config();
+
+// Nodemailer SMTP Transporter
+const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+const smtpPort = Number(process.env.SMTP_PORT) || 465;
+const smtpUser = process.env.SMTP_USER || "etmedia.support@gmail.com";
+const smtpPass = process.env.SMTP_PASS || "jzqs ibca abyx rhuc";
+const supportEmail = process.env.SUPPORT_EMAIL || "partner.support@etmedia.in";
+
+const mailTransporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: true,
+  auth: {
+    user: smtpUser.trim(),
+    pass: smtpPass.trim(),
+  },
+});
+
+async function sendRegistrationConfirmationEmail(data: {
+  firstName: string;
+  email: string;
+  eventTitle: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: data.email,
+    subject: `Registration Confirmation: ${data.eventTitle}`,
+    text: `Dear ${data.firstName},
+
+Thank you for registering for ${data.eventTitle}.
+
+Your registration has been successfully received.
+
+Our team will verify your details and contact you shortly with confirmation, venue details, agenda, and participation information.
+
+We look forward to welcoming you to India's premier leadership summit.
+
+ET Media Business Intelligence
+${supportEmail}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; rounded: 16px; background-color: #ffffff;">
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #00AEEF;">
+          <h2 style="color: #00AEEF; margin: 0;">ET MEDIA BUSINESS INTELLIGENCE</h2>
+          <p style="color: #4B1FA7; font-weight: bold; margin-top: 5px; font-size: 14px;">Leadership Platform & Executive Summits</p>
+        </div>
+        <div style="padding: 25px 0; color: #334155; line-height: 1.6; font-size: 15px;">
+          <p>Dear <strong>${data.firstName}</strong>,</p>
+          <p>Thank you for registering for <strong>${data.eventTitle}</strong>.</p>
+          <p style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; color: #166534; font-weight: 600; border-radius: 8px;">
+            🎉 Your registration has been successfully received.
+          </p>
+          <p>Our team will verify your details and contact you shortly with confirmation, venue details, agenda, and participation information.</p>
+          <p>We look forward to welcoming you to India's premier leadership summit.</p>
+        </div>
+        <div style="border-top: 1px solid #e2e8f0; pt-20px; padding-top: 20px; color: #64748b; font-size: 13px;">
+          <p style="margin: 0; font-weight: bold; color: #1e293b;">ET Media Business Intelligence</p>
+          <p style="margin: 4px 0 0 0;"><a href="mailto:${supportEmail}" style="color: #00AEEF; text-decoration: none;">${supportEmail}</a></p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Confirmation email sent successfully to ${data.email} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending confirmation email to ${data.email}:`, err.message);
+    return false;
+  }
+}
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -141,6 +214,7 @@ app.get("/api/events", async (req, res) => {
   try {
     const { status, featured } = req.query;
     if (pool) {
+      await ensureEventsTable();
       let query = "SELECT * FROM events WHERE status != 'draft'";
       const params: any[] = [];
 
@@ -213,34 +287,129 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
+// 2b. Single Event Detail Endpoint (by slug or ID)
+app.get("/api/events/:slug", async (req, res) => {
+  const { slug } = req.params;
+  try {
+    if (pool) {
+      await ensureEventsTable();
+      const [rows]: any = await pool.query(
+        "SELECT * FROM events WHERE slug = ? OR id = ?",
+        [slug, slug]
+      );
+      if (rows.length > 0) {
+        return res.json({ success: true, event: rows[0] });
+      }
+    }
+    return res.status(404).json({ success: false, message: "Event not found." });
+  } catch (err) {
+    console.error("Fetch Single Event Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to load event details." });
+  }
+});
+
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
-  const { name, email, phone, organization, designation, eventId } = req.body;
+  const {
+    firstName,
+    lastName,
+    name: bodyName,
+    email,
+    phone,
+    contactNumber,
+    companyName,
+    organization,
+    designation,
+    city,
+    country,
+    registrationCategory,
+    registeringCity,
+    referralSource,
+    eventId,
+    eventTitle,
+  } = req.body;
 
-  if (!name || !email || !eventId) {
+  const effectiveFirstName = firstName || (bodyName ? bodyName.split(" ")[0] : "Delegate");
+  const effectiveLastName = lastName || (bodyName ? bodyName.split(" ").slice(1).join(" ") : "");
+  const fullName = bodyName || `${effectiveFirstName} ${effectiveLastName}`.trim();
+  const effectivePhone = phone || contactNumber || "N/A";
+  const effectiveOrganization = companyName || organization || "Independent Leader";
+  const effectiveDesignation = designation || "Executive Delegate";
+  const effectiveCategory = registrationCategory || "Delegate";
+  const effectiveEventTitle = eventTitle || "CISO Conclave & Awards 2026";
+  const effectiveEventId = eventId || "ciso-conclave-2026";
+
+  if (!email) {
     return res.status(400).json({
       success: false,
-      message: "Name, email, and event ID are required fields.",
+      message: "Email is a required field.",
     });
   }
+
+  // Server-side Google reCAPTCHA verification
+  const recaptchaToken = req.body.recaptchaToken;
+  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LfeDbgtAAAAALb87t1p3iLvdYbrfwPKSu-UzTgh";
+
+  if (recaptchaToken) {
+    try {
+      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(recaptchaToken)}`;
+      const verifyRes = await fetch(verifyUrl, { method: "POST" });
+      const verifyData: any = await verifyRes.json();
+      if (!verifyData.success) {
+        console.warn("[reCAPTCHA] Google siteverify response:", verifyData);
+      } else {
+        console.log("[reCAPTCHA] Verification successful!");
+      }
+    } catch (reErr) {
+      console.error("[reCAPTCHA] Server verification error:", reErr);
+    }
+  }
+
 
   const regId = `REG-${Date.now()}`;
   const newRegistration = {
     id: regId,
-    name,
+    name: fullName,
+    first_name: effectiveFirstName,
+    last_name: effectiveLastName,
     email,
-    phone: phone || "N/A",
-    organization: organization || "Independent Leader",
-    designation: designation || "Executive Delegate",
-    eventId,
-    registeredAt: new Date().toISOString(),
+    phone: effectivePhone,
+    organization: effectiveOrganization,
+    designation: effectiveDesignation,
+    city: city || "N/A",
+    country: country || "India",
+    registration_category: effectiveCategory,
+    registering_city: registeringCity || city || "N/A",
+    referral_source: referralSource || "Direct",
+    event_id: effectiveEventId,
+    event_title: effectiveEventTitle,
+    created_at: new Date().toISOString(),
   };
 
   try {
     if (pool) {
       await pool.query(
-        "INSERT INTO registrations (id, name, email, phone, organization, designation, event_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [regId, name, email, newRegistration.phone, newRegistration.organization, newRegistration.designation, eventId]
+        `INSERT INTO registrations (
+          id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          regId,
+          fullName,
+          effectiveFirstName,
+          effectiveLastName,
+          email,
+          effectivePhone,
+          effectiveOrganization,
+          effectiveDesignation,
+          city || "N/A",
+          country || "India",
+          effectiveCategory,
+          registeringCity || city || "N/A",
+          referralSource || "Direct",
+          effectiveEventId,
+          effectiveEventTitle,
+        ]
       );
     }
 
@@ -255,19 +424,28 @@ app.post("/api/events/register", async (req, res) => {
     io.emit("new_registration", {
       registration: newRegistration,
       totalRegistrations: totalCount,
-      message: `🎉 ${name} from ${newRegistration.organization} just registered!`,
+      message: `🎉 ${effectiveFirstName} (${effectiveCategory}) registered for ${effectiveEventTitle}!`,
+    });
+
+    // AUTOMATED EMAIL CONFIRMATION
+    const emailSent = await sendRegistrationConfirmationEmail({
+      firstName: effectiveFirstName,
+      email,
+      eventTitle: effectiveEventTitle,
     });
 
     return res.status(201).json({
       success: true,
       message: "Registration successful!",
+      emailSent,
       data: newRegistration,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Registration DB Error:", err);
-    return res.status(500).json({ success: false, message: "Database registration error." });
+    return res.status(500).json({ success: false, message: err.message || "Database registration error." });
   }
 });
+
 
 // 4. Contact form submission
 app.post("/api/contact", async (req, res) => {
@@ -471,7 +649,27 @@ app.get("/api/admin/events", authenticateAdmin, async (_req, res) => {
 
 // 2. Create new event
 app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
-  const { title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured } = req.body;
+  const {
+    title,
+    category,
+    date,
+    time,
+    city,
+    venue,
+    locations,
+    description,
+    full_description,
+    image,
+    speakers,
+    status,
+    is_featured,
+    speakers_list,
+    sponsors_list,
+    gallery_list,
+    agenda_list,
+    map_url,
+    venue_address,
+  } = req.body;
 
   if (!title || !category || !date || !city || !description) {
     return res.status(400).json({ success: false, message: "Title, category, date, city, and description are required." });
@@ -482,11 +680,18 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
   const slug = `${rawSlug}-${Date.now().toString().slice(-4)}`;
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
 
+  const speakersListStr = typeof speakers_list === "string" ? speakers_list : JSON.stringify(speakers_list || []);
+  const sponsorsListStr = typeof sponsors_list === "string" ? sponsors_list : JSON.stringify(sponsors_list || []);
+  const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
+  const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
+
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
-        "INSERT INTO events (id, slug, title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO events (
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -498,15 +703,44 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           venue || `${city} Main Convention Center`,
           locationsStr,
           description,
+          full_description || description,
           image || "/assets/event-cfo-BjslOJNi.jpg",
           speakers || 20,
           status || "published",
           is_featured ? 1 : 0,
+          speakersListStr,
+          sponsorsListStr,
+          galleryListStr,
+          agendaListStr,
+          map_url || "",
+          venue_address || `${venue}, ${city}`,
         ]
       );
     }
 
-    const newEvent = { id, slug, title, category, date, time, city, venue, locations: locationsStr, description, image, speakers, status, is_featured };
+    const newEvent = {
+      id,
+      slug,
+      title,
+      category,
+      date,
+      time,
+      city,
+      venue,
+      locations: locationsStr,
+      description,
+      full_description,
+      image,
+      speakers,
+      status,
+      is_featured,
+      speakers_list: speakersListStr,
+      sponsors_list: sponsorsListStr,
+      gallery_list: galleryListStr,
+      agenda_list: agendaListStr,
+      map_url,
+      venue_address,
+    };
     io.emit("event_created", newEvent);
 
     return res.status(201).json({ success: true, message: "Event created successfully!", data: newEvent });
@@ -519,19 +753,88 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
 // 3. Update existing event
 app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { title, category, date, time, city, venue, locations, description, image, speakers, status, is_featured } = req.body;
+  const {
+    title,
+    category,
+    date,
+    time,
+    city,
+    venue,
+    locations,
+    description,
+    full_description,
+    image,
+    speakers,
+    status,
+    is_featured,
+    speakers_list,
+    sponsors_list,
+    gallery_list,
+    agenda_list,
+    map_url,
+    venue_address,
+  } = req.body;
+
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
+  const speakersListStr = typeof speakers_list === "string" ? speakers_list : JSON.stringify(speakers_list || []);
+  const sponsorsListStr = typeof sponsors_list === "string" ? sponsors_list : JSON.stringify(sponsors_list || []);
+  const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
+  const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
 
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
-        "UPDATE events SET title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, image = ?, speakers = ?, status = ?, is_featured = ? WHERE id = ?",
-        [title, category, date, time, city, venue, locationsStr, description, image, speakers, status, is_featured ? 1 : 0, id]
+        `UPDATE events SET 
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?
+         WHERE id = ?`,
+        [
+          title,
+          category,
+          date,
+          time,
+          city,
+          venue,
+          locationsStr,
+          description,
+          full_description || description,
+          image,
+          speakers,
+          status,
+          is_featured ? 1 : 0,
+          speakersListStr,
+          sponsorsListStr,
+          galleryListStr,
+          agendaListStr,
+          map_url || "",
+          venue_address || `${venue}, ${city}`,
+          id,
+        ]
       );
     }
 
-    const updatedEvent = { id, title, category, date, time, city, venue, locations: locationsStr, description, image, speakers, status, is_featured };
+    const updatedEvent = {
+      id,
+      title,
+      category,
+      date,
+      time,
+      city,
+      venue,
+      locations: locationsStr,
+      description,
+      full_description,
+      image,
+      speakers,
+      status,
+      is_featured,
+      speakers_list: speakersListStr,
+      sponsors_list: sponsorsListStr,
+      gallery_list: galleryListStr,
+      agenda_list: agendaListStr,
+      map_url,
+      venue_address,
+    };
     io.emit("event_updated", updatedEvent);
 
     return res.json({ success: true, message: "Event updated successfully!", data: updatedEvent });
@@ -540,6 +843,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to update event." });
   }
 });
+
 
 // 4. Delete event
 app.delete("/api/admin/events/:id", authenticateAdmin, async (req, res) => {

@@ -85,14 +85,31 @@ export async function initDatabase() {
       CREATE TABLE IF NOT EXISTS registrations (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        first_name VARCHAR(255),
+        last_name VARCHAR(255),
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(100) DEFAULT 'N/A',
         organization VARCHAR(255) DEFAULT 'Independent Leader',
         designation VARCHAR(255) DEFAULT 'Executive Delegate',
+        city VARCHAR(255),
+        country VARCHAR(255) DEFAULT 'India',
+        registration_category VARCHAR(100) DEFAULT 'Delegate',
+        registering_city VARCHAR(255),
+        referral_source VARCHAR(100),
         event_id VARCHAR(255) NOT NULL,
+        event_title VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN first_name VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN last_name VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN city VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN country VARCHAR(255) DEFAULT 'India';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN registration_category VARCHAR(100) DEFAULT 'Delegate';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN registering_city VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN referral_source VARCHAR(100);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN event_title VARCHAR(255);"); } catch (e) {}
+
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS contacts (
@@ -219,17 +236,30 @@ export async function ensureEventsTable() {
         venue VARCHAR(255) DEFAULT 'Main Convention Center',
         locations TEXT,
         description TEXT NOT NULL,
+        full_description LONGTEXT,
         image TEXT,
         speakers INT DEFAULT 20,
         status VARCHAR(50) DEFAULT 'published',
         is_featured TINYINT(1) DEFAULT 0,
+        speakers_list LONGTEXT,
+        sponsors_list LONGTEXT,
+        gallery_list LONGTEXT,
+        agenda_list LONGTEXT,
+        map_url TEXT,
+        venue_address TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    try {
-      await pool.query("ALTER TABLE events ADD COLUMN locations TEXT;");
-    } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN locations TEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN full_description LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN speakers_list LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_list LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN gallery_list LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN agenda_list LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN map_url TEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN venue_address TEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating events table:", err);
   }
 }
+

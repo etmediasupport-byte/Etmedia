@@ -172,7 +172,7 @@ export function GlobeInteractive({
       init();
     } else {
       const ro = new ResizeObserver((entries) => {
-        if (entries[0]?.contentRect.width > 0) {
+        if ((entries[0]?.contentRect.width ?? 0) > 0) {
           ro.disconnect();
           init();
         }
@@ -208,7 +208,9 @@ export function GlobeInteractive({
         .map((m) => (
           <div
             key={m.id}
-            ref={(el) => (labelRefs.current[m.id] = el)}
+            ref={(el) => {
+              labelRefs.current[m.id] = el;
+            }}
             onClick={() => setSelectedMarker(m)}
             className="absolute z-20 flex flex-col items-center pointer-events-auto cursor-pointer transition-shadow duration-200"
             style={{

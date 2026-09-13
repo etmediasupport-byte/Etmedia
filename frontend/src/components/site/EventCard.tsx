@@ -98,10 +98,12 @@ export function EventCard({ event }: { event: any }) {
           </Link>
         </MagneticButton>
         <Link
-          to={`/events/${event.slug}`}
+          to={`/events/${event.slug || event.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors font-btn text-center"
         >
-          Learn More
+          Learn More ↗
         </Link>
       </div>
     </MouseTiltCard>

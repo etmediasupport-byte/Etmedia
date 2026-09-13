@@ -4,8 +4,9 @@ import { PageHero } from "@/components/site/PageHero";
 import { EventCard } from "@/components/site/EventCard";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { events as defaultEvents, EventItem, images } from "@/lib/site-data";
+import { RegisterModal } from "@/components/site/RegisterModal";
 import { socket } from "@/lib/socket";
-import { Filter, Radio, Sparkles, UserCheck, X, Loader2 } from "lucide-react";
+import { Filter, Radio, Sparkles, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EventsPage() {
@@ -192,76 +193,11 @@ export default function EventsPage() {
       </section>
 
       {/* Real-time Event Registration Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="glass-card relative w-full max-w-lg rounded-3xl p-8 shadow-2xl">
-            <button
-              onClick={() => setSelectedEvent(null)}
-              className="absolute top-6 right-6 rounded-full bg-muted/60 p-2 hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <h3 className="text-xl font-bold">Delegate Registration</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{selectedEvent.title}</p>
-
-            <form onSubmit={handleRegisterSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={regForm.name}
-                  onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
-                  placeholder="John Doe"
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase">Work Email</label>
-                <input
-                  type="email"
-                  required
-                  value={regForm.email}
-                  onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                  placeholder="john@company.com"
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase">Organization</label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.organization}
-                    onChange={(e) => setRegForm({ ...regForm, organization: e.target.value })}
-                    placeholder="Acme Corp"
-                    className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase">Designation</label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.designation}
-                    onChange={(e) => setRegForm({ ...regForm, designation: e.target.value })}
-                    placeholder="VP / Director"
-                    className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="gradient-brand mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
-              >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Real-time Registration"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <RegisterModal
+        isOpen={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        event={selectedEvent}
+      />
     </div>
   );
 }
