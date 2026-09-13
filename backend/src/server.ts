@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables } from "./db.js";
 
 dotenv.config();
 
@@ -1722,6 +1722,282 @@ app.delete("/api/admin/gallery/:id", authenticateAdmin, async (req, res) => {
   } catch (err: any) {
     console.error("Delete Gallery Item Error:", err);
     return res.status(500).json({ success: false, message: "Failed to delete gallery item" });
+  }
+});
+
+// ==========================================
+// TESTIMONIALS API ENDPOINTS
+// ==========================================
+
+// Get all testimonials (Public)
+app.get("/api/testimonials", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM testimonials ORDER BY is_featured DESC, created_at DESC");
+      return res.json({ success: true, testimonials: rows });
+    }
+    return res.json({ success: true, testimonials: [] });
+  } catch (err: any) {
+    console.error("Fetch Testimonials Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch testimonials" });
+  }
+});
+
+// Admin create testimonial
+app.post("/api/admin/testimonials", authenticateAdmin, async (req, res) => {
+  const { name, designation, company, quote, avatar, rating, is_featured } = req.body;
+  if (!name || !designation || !company || !quote) {
+    return res.status(400).json({ success: false, message: "Name, designation, company, and quote are required" });
+  }
+
+  const id = `TST-${Date.now().toString().slice(-6)}`;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query(
+        "INSERT INTO testimonials (id, name, designation, company, quote, avatar, rating, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0]
+      );
+    }
+    const newTest = { id, name, designation, company, quote, avatar, rating: rating || 5, is_featured: is_featured ? 1 : 0, created_at: new Date() };
+    io.emit("testimonial_updated", { type: "add", testimonial: newTest });
+    return res.json({ success: true, testimonial: newTest, message: "Testimonial created successfully!" });
+  } catch (err: any) {
+    console.error("Create Testimonial Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create testimonial" });
+  }
+});
+
+// Admin update testimonial
+app.put("/api/admin/testimonials/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { name, designation, company, quote, avatar, rating, is_featured } = req.body;
+
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query(
+        "UPDATE testimonials SET name = ?, designation = ?, company = ?, quote = ?, avatar = ?, rating = ?, is_featured = ? WHERE id = ?",
+        [name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0, id]
+      );
+    }
+    io.emit("testimonial_updated", { type: "update", id });
+    return res.json({ success: true, message: "Testimonial updated successfully!" });
+  } catch (err: any) {
+    console.error("Update Testimonial Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update testimonial" });
+  }
+});
+
+// Admin delete testimonial
+app.delete("/api/admin/testimonials/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query("DELETE FROM testimonials WHERE id = ?", [id]);
+    }
+    io.emit("testimonial_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Testimonial deleted successfully" });
+  } catch (err: any) {
+    console.error("Delete Testimonial Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete testimonial" });
+  }
+});
+
+// ==========================================
+// NEWSLETTER SUBSCRIBERS API ENDPOINTS
+// ==========================================
+
+// Subscribe to newsletter (Public)
+app.post("/api/newsletter/subscribe", async (req, res) => {
+  const { email, source } = req.body;
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ success: false, message: "Valid email address is required" });
+  }
+
+  const id = `SUB-${Date.now().toString().slice(-6)}`;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query(
+        "INSERT INTO newsletter_subscribers (id, email, source) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE email=email",
+        [id, email, source || "Website Footer"]
+      );
+    }
+    const newSub = { id, email, source: source || "Website Footer", created_at: new Date() };
+    io.emit("new_newsletter_subscriber", newSub);
+    return res.json({ success: true, message: "Subscribed to Executive Talks newsletter!" });
+  } catch (err: any) {
+    console.error("Newsletter Subscribe Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to subscribe" });
+  }
+});
+
+// Admin fetch newsletter subscribers
+app.get("/api/admin/newsletter", authenticateAdmin, async (req, res) => {
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM newsletter_subscribers ORDER BY created_at DESC");
+      return res.json({ success: true, subscribers: rows });
+    }
+    return res.json({ success: true, subscribers: [] });
+  } catch (err: any) {
+    console.error("Fetch Newsletter Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch subscribers" });
+  }
+});
+
+// Admin delete newsletter subscriber
+app.delete("/api/admin/newsletter/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query("DELETE FROM newsletter_subscribers WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Subscriber deleted" });
+  } catch (err: any) {
+    console.error("Delete Subscriber Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete subscriber" });
+  }
+});
+
+// ==========================================
+// SEO META TAGS API ENDPOINTS
+// ==========================================
+
+// Get SEO meta tags (Public)
+app.get("/api/seo", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM seo_settings");
+      return res.json({ success: true, seo: rows });
+    }
+    return res.json({ success: true, seo: [] });
+  } catch (err: any) {
+    console.error("Fetch SEO Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch SEO settings" });
+  }
+});
+
+// Admin update SEO meta tag
+app.put("/api/admin/seo/:page_key", authenticateAdmin, async (req, res) => {
+  const { page_key } = req.params;
+  const { title, description, keywords } = req.body;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query(
+        "INSERT INTO seo_settings (page_key, title, description, keywords) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=?, description=?, keywords=?",
+        [page_key, title, description, keywords || "", title, description, keywords || ""]
+      );
+    }
+    return res.json({ success: true, message: `SEO meta tags updated for page '${page_key}'` });
+  } catch (err: any) {
+    console.error("Update SEO Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update SEO settings" });
+  }
+});
+
+// ==========================================
+// ADMIN USERS MANAGEMENT API ENDPOINTS
+// ==========================================
+
+// Admin get list of admin users
+app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT id, name, email, role, created_at FROM admins ORDER BY created_at DESC");
+      return res.json({ success: true, users: rows });
+    }
+    return res.json({ success: true, users: [] });
+  } catch (err: any) {
+    console.error("Fetch Admin Users Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch admin users" });
+  }
+});
+
+// Admin create new admin user
+app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ success: false, message: "Name, email, and password are required" });
+  }
+
+  try {
+    if (pool) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await pool.query(
+        "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)",
+        [name, email, hashedPassword, role || "admin"]
+      );
+    }
+    return res.json({ success: true, message: `Admin user '${name}' created successfully!` });
+  } catch (err: any) {
+    console.error("Create Admin User Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create admin user" });
+  }
+});
+
+// Admin delete admin user
+app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM admins WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Admin user deleted" });
+  } catch (err: any) {
+    console.error("Delete Admin User Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete admin user" });
+  }
+});
+
+// ==========================================
+// WEBSITE SETTINGS API ENDPOINTS
+// ==========================================
+
+// Get site settings (Public)
+app.get("/api/settings", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM website_settings");
+      const settingsMap: Record<string, string> = {};
+      for (const row of rows) {
+        settingsMap[row.setting_key] = row.setting_value;
+      }
+      return res.json({ success: true, settings: settingsMap });
+    }
+    return res.json({ success: true, settings: {} });
+  } catch (err: any) {
+    console.error("Fetch Settings Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch settings" });
+  }
+});
+
+// Admin update site settings
+app.put("/api/admin/settings", authenticateAdmin, async (req, res) => {
+  const settingsObj = req.body;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      for (const [key, val] of Object.entries(settingsObj)) {
+        await pool.query(
+          "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+          [key, String(val), String(val)]
+        );
+      }
+    }
+    io.emit("settings_updated", settingsObj);
+    return res.json({ success: true, message: "Website settings saved successfully!" });
+  } catch (err: any) {
+    console.error("Update Settings Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update settings" });
   }
 });
 

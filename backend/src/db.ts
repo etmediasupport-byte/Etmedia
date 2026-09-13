@@ -165,6 +165,10 @@ export async function initDatabase() {
     await ensureGalleryTable();
     await seedDefaultGalleryItems();
 
+    // Create new admin modules tables (testimonials, newsletter, seo, settings)
+    await ensureNewAdminTables();
+    await seedNewAdminTables();
+
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
     if (existingEvents[0]?.count === 0) {
@@ -738,6 +742,155 @@ export async function seedDefaultGalleryItems() {
     }
   } catch (err) {
     console.error("[MySQL] Error seeding gallery items:", err);
+  }
+}
+
+export async function ensureNewAdminTables() {
+  if (!pool) return;
+  try {
+    // 1. Testimonials Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS testimonials (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        designation VARCHAR(255) NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        quote TEXT NOT NULL,
+        avatar VARCHAR(255),
+        rating INT DEFAULT 5,
+        is_featured TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 2. Newsletter Subscribers Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+        id VARCHAR(100) PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        source VARCHAR(100) DEFAULT 'Footer',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 3. SEO Meta Settings Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS seo_settings (
+        page_key VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        keywords TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 4. Website Settings Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS website_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value TEXT NOT NULL
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error creating new admin tables:", err);
+  }
+}
+
+export async function seedNewAdminTables() {
+  if (!pool) return;
+  try {
+    // Seed Testimonials
+    const [testCount]: any = await pool.query("SELECT COUNT(*) as count FROM testimonials");
+    if (testCount[0]?.count === 0) {
+      const defaultTestimonials = [
+        {
+          id: "TST-101",
+          name: "Vikramaditya Rao",
+          designation: "Chief Financial Officer",
+          company: "Reliance Retail Digital",
+          quote: "ET Media Business Intelligence brings together the finest CFO minds in India. The quality of strategic discussion and peer networking at the CFO Summit is second to none.",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+          rating: 5,
+          is_featured: 1,
+        },
+        {
+          id: "TST-102",
+          name: "Sunita Krishnamurthy",
+          designation: "VP & Head of HR",
+          company: "Infosys Enterprise Services",
+          quote: "Winning the HR Excellence Award from ET Media was a huge milestone for our organization. The level of panel insights on workforce transformation was truly inspirational.",
+          avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop",
+          rating: 5,
+          is_featured: 1,
+        },
+        {
+          id: "TST-103",
+          name: "Anand Deshmukh",
+          designation: "Chief Technology Officer",
+          company: "HDFC Bank Digital",
+          quote: "The Enterprise AI & Tech Conclave is the premier platform for enterprise tech leaders to align on AI compliance, cloud governance, and cybersecurity.",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop",
+          rating: 5,
+          is_featured: 1,
+        },
+      ];
+
+      for (const t of defaultTestimonials) {
+        await pool.query(
+          "INSERT INTO testimonials (id, name, designation, company, quote, avatar, rating, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          [t.id, t.name, t.designation, t.company, t.quote, t.avatar, t.rating, t.is_featured]
+        );
+      }
+      console.log("[MySQL] Seeded default testimonials!");
+    }
+
+    // Seed SEO Meta Tags
+    const [seoCount]: any = await pool.query("SELECT COUNT(*) as count FROM seo_settings");
+    if (seoCount[0]?.count === 0) {
+      const defaultSeo = [
+        { page_key: "home", title: "ET Media Business Intelligence | India's Premier CXO Leadership Summit", description: "Curated C-suite summits, corporate awards, Executive Talks Magazine, and executive networking for enterprise leaders.", keywords: "CFO summit, HR awards, CXO conference, ET Media" },
+        { page_key: "about", title: "About Us | ET Media Business Intelligence", description: "Learn how ET Media builds India's most credible leadership platforms and enterprise summits.", keywords: "About ET Media, B2B media, leadership platforms" },
+        { page_key: "events", title: "Conferences & Summits Directory | ET Media", description: "Browse upcoming India CFO Summits, HR Excellence Awards, and Enterprise AI Conclaves.", keywords: "Conferences, business summits, delegate passes" },
+        { page_key: "magazine", title: "Executive Talks Magazine | ET Media", description: "Read Executive Talks Magazine featuring C-suite interviews, leadership insights, and digital flipbooks.", keywords: "Executive Talks, business magazine, CXO interviews" },
+        { page_key: "careers", title: "Careers at ET Media | Join Our Team", description: "Explore open career opportunities at ET Media in conference production, sponsorship sales, and event operations.", keywords: "ET Media careers, event jobs, media hiring" },
+        { page_key: "gallery", title: "Summit Media Gallery | ET Media", description: "High-definition photos and video highlights from ET Media national summits and gala awards.", keywords: "Summit gallery, event photos, CXO videos" },
+        { page_key: "contact", title: "Contact Us | ET Media Business Intelligence", description: "Reach out to ET Media for sponsorship, delegate passes, magazine features, or speaker nominations.", keywords: "Contact ET Media, office address, phone number" },
+      ];
+
+      for (const s of defaultSeo) {
+        await pool.query(
+          "INSERT INTO seo_settings (page_key, title, description, keywords) VALUES (?, ?, ?, ?)",
+          [s.page_key, s.title, s.description, s.keywords]
+        );
+      }
+      console.log("[MySQL] Seeded default SEO meta tags!");
+    }
+
+    // Seed Website Settings
+    const [settCount]: any = await pool.query("SELECT COUNT(*) as count FROM website_settings");
+    if (settCount[0]?.count === 0) {
+      const defaultSettings = [
+        { setting_key: "site_title", setting_value: "ET Media Business Intelligence" },
+        { setting_key: "support_phone_1", setting_value: "+91 91002 66777" },
+        { setting_key: "support_phone_2", setting_value: "+91 94930 87788" },
+        { setting_key: "support_email_1", setting_value: "contact@etmedia.in" },
+        { setting_key: "support_email_2", setting_value: "registration@etmedia.in" },
+        { setting_key: "whatsapp_link", setting_value: "https://wa.me/919100266777" },
+        { setting_key: "office_address", setting_value: "Unit No-1012, 10th Floor, Manjeera Trinity Corporate, JNTU-Hitech Road, KPHB, Hyderabad, Telangana 500072, India" },
+        { setting_key: "office_hours", setting_value: "Monday to Sunday · 9 AM — 9 PM" },
+        { setting_key: "maintenance_mode", setting_value: "false" },
+      ];
+
+      for (const set of defaultSettings) {
+        await pool.query(
+          "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?)",
+          [set.setting_key, set.setting_value]
+        );
+      }
+      console.log("[MySQL] Seeded default website settings!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding new admin tables:", err);
   }
 }
 

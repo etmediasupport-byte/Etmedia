@@ -53,6 +53,18 @@ import {
   BookOpen,
   Film,
   Image as ImageIcon,
+  Quote,
+  MailCheck,
+  Settings,
+  UserCheck,
+  SearchCode,
+  FileText,
+  CheckCircle2,
+  ExternalLink,
+  ChevronRight,
+  UserPlus,
+  Sliders,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery } from "@/lib/site-data";
@@ -107,7 +119,78 @@ interface CmsDelegateRegistration {
   created_at: string;
 }
 
-type TabType = "overview" | "event-registrations" | "cms-delegates" | "contacts" | "events" | "database" | "partners" | "magazines" | "careers" | "gallery";
+interface TestimonialItem {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  avatar: string;
+  quote: string;
+  rating: number;
+  category: string;
+  event_slug: string;
+  created_at?: string;
+}
+
+interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  source: string;
+  created_at: string;
+}
+
+interface SeoSettingItem {
+  page_key: string;
+  title: string;
+  description: string;
+  keywords: string;
+  og_image: string;
+  updated_at?: string;
+}
+
+interface AdminUserItem {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
+interface WebsiteSettings {
+  site_name: string;
+  support_email: string;
+  support_phone: string;
+  whatsapp_number: string;
+  office_address: string;
+  office_hours: string;
+  facebook_url: string;
+  twitter_url: string;
+  linkedin_url: string;
+  instagram_url: string;
+  youtube_url: string;
+  google_maps_url: string;
+  maintenance_mode: boolean;
+}
+
+type TabType =
+  | "overview"
+  | "events"
+  | "magazines"
+  | "partners"
+  | "partner-requests"
+  | "event-registrations"
+  | "cms-delegates"
+  | "career-jobs"
+  | "career-applicants"
+  | "gallery"
+  | "testimonials"
+  | "newsletter"
+  | "contacts"
+  | "seo"
+  | "users"
+  | "settings"
+  | "careers"
+  | "database";
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -188,6 +271,66 @@ export default function AdminDashboardPage() {
     aspect_ratio: "aspect-[16/9]",
   });
   const [galleryUploading, setGalleryUploading] = useState(false);
+
+  // Testimonials CMS State
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
+  const [editingTestimonial, setEditingTestimonial] = useState<TestimonialItem | null>(null);
+  const [newTestimonialForm, setNewTestimonialForm] = useState({
+    id: "",
+    name: "",
+    role: "CFO & VP Finance",
+    company: "",
+    avatar: "",
+    quote: "",
+    rating: 5,
+    category: "CFO Leadership",
+    event_slug: "cfo-leadership-summit",
+  });
+  const [testimonialUploading, setTestimonialUploading] = useState(false);
+
+  // Newsletter State
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
+
+  // SEO Settings State
+  const [seoSettings, setSeoSettings] = useState<SeoSettingItem[]>([]);
+  const [activeSeoPage, setActiveSeoPage] = useState<string>("home");
+  const [seoForm, setSeoForm] = useState<SeoSettingItem>({
+    page_key: "home",
+    title: "ET Media Hub | India's Premier B2B Executive Summits",
+    description: "Discover premier executive leadership conclaves, CFO summits, tech forums, and CXO intelligence across India.",
+    keywords: "ET Media, CFO Summit, Business Intelligence, Leadership Forums, India",
+    og_image: "/assets/hero-banner.jpg",
+  });
+  const [seoSaving, setSeoSaving] = useState(false);
+
+  // Admin Users State
+  const [adminUsers, setAdminUsers] = useState<AdminUserItem[]>([]);
+  const [newUserForm, setNewUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [userCreating, setUserCreating] = useState(false);
+
+  // Website Settings State
+  const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
+    site_name: "ET Media Hub",
+    support_email: "partner.support@etmedia.in",
+    support_phone: "+91 98765 43210",
+    whatsapp_number: "+91 98765 43210",
+    office_address: "ET Media Business Intelligence, Cyber City, Hyderabad, India",
+    office_hours: "Mon - Fri: 9:00 AM - 6:00 PM IST",
+    facebook_url: "https://facebook.com/etmediahub",
+    twitter_url: "https://twitter.com/etmediahub",
+    linkedin_url: "https://linkedin.com/company/etmediahub",
+    instagram_url: "https://instagram.com/etmediahub",
+    youtube_url: "https://youtube.com/c/etmediahub",
+    google_maps_url: "https://maps.google.com",
+    maintenance_mode: false,
+  });
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
@@ -380,6 +523,67 @@ export default function AdminDashboardPage() {
       } catch (e) {
         setCmsGalleryItems(getDefaultMediaGallery());
       }
+
+      // 11. Fetch Testimonials
+      try {
+        const tstRes = await fetch("/api/testimonials");
+        const tstData = await tstRes.json();
+        if (tstData.success && Array.isArray(tstData.testimonials)) {
+          setTestimonials(tstData.testimonials);
+        }
+      } catch (e) {
+        console.warn("Could not fetch testimonials", e);
+      }
+
+      // 12. Fetch Newsletter Subscribers
+      try {
+        const nslRes = await fetch("/api/admin/newsletter", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const nslData = await nslRes.json();
+        if (nslData.success && Array.isArray(nslData.subscribers)) {
+          setNewsletterSubscribers(nslData.subscribers);
+        }
+      } catch (e) {
+        console.warn("Could not fetch subscribers", e);
+      }
+
+      // 13. Fetch SEO Settings
+      try {
+        const seoRes = await fetch("/api/seo");
+        const seoData = await seoRes.json();
+        if (seoData.success && Array.isArray(seoData.seo)) {
+          setSeoSettings(seoData.seo);
+          const current = seoData.seo.find((s: any) => s.page_key === activeSeoPage);
+          if (current) setSeoForm(current);
+        }
+      } catch (e) {
+        console.warn("Could not fetch SEO settings", e);
+      }
+
+      // 14. Fetch Admin Users
+      try {
+        const usrRes = await fetch("/api/admin/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const usrData = await usrRes.json();
+        if (usrData.success && Array.isArray(usrData.users)) {
+          setAdminUsers(usrData.users);
+        }
+      } catch (e) {
+        console.warn("Could not fetch admin users", e);
+      }
+
+      // 15. Fetch Website Settings
+      try {
+        const stgRes = await fetch("/api/settings");
+        const stgData = await stgRes.json();
+        if (stgData.success && stgData.settings) {
+          setSiteSettings(stgData.settings);
+        }
+      } catch (e) {
+        console.warn("Could not fetch settings", e);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to load dashboard data.");
@@ -443,6 +647,24 @@ export default function AdminDashboardPage() {
       fetchDashboardData();
     };
 
+    const onTestimonialUpdate = () => {
+      fetchDashboardData();
+    };
+
+    const onNewSubscriber = (data: any) => {
+      toast.success(`📧 New Newsletter Subscriber: ${data.subscriber?.email || "New user"}`);
+      if (data.subscriber) {
+        setNewsletterSubscribers((prev) => [data.subscriber, ...prev]);
+      }
+    };
+
+    const onSettingsUpdate = (data: any) => {
+      if (data.settings) {
+        setSiteSettings(data.settings);
+        toast.info("⚙️ Website settings updated");
+      }
+    };
+
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
     socket.on("new_contact_enquiry", onNewEnquiry);
@@ -452,6 +674,9 @@ export default function AdminDashboardPage() {
     socket.on("job_updated", onJobUpdate);
     socket.on("new_job_application", onNewJobApplication);
     socket.on("gallery_updated", onGalleryUpdate);
+    socket.on("testimonial_updated", onTestimonialUpdate);
+    socket.on("new_newsletter_subscriber", onNewSubscriber);
+    socket.on("settings_updated", onSettingsUpdate);
 
     return () => {
       socket.off("live_users_update", onLiveUsers);
@@ -463,8 +688,243 @@ export default function AdminDashboardPage() {
       socket.off("job_updated", onJobUpdate);
       socket.off("new_job_application", onNewJobApplication);
       socket.off("gallery_updated", onGalleryUpdate);
+      socket.off("testimonial_updated", onTestimonialUpdate);
+      socket.off("new_newsletter_subscriber", onNewSubscriber);
+      socket.off("settings_updated", onSettingsUpdate);
     };
   }, [token]);
+
+  // --- TESTIMONIALS CMS HANDLERS ---
+  const handleSaveTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTestimonialForm.name || !newTestimonialForm.quote) {
+      toast.error("Name and Quote are required.");
+      return;
+    }
+    setTestimonialUploading(true);
+    try {
+      const url = editingTestimonial
+        ? `/api/admin/testimonials/${editingTestimonial.id}`
+        : "/api/admin/testimonials";
+      const method = editingTestimonial ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newTestimonialForm),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(editingTestimonial ? "Testimonial updated!" : "Testimonial published!");
+        setEditingTestimonial(null);
+        setNewTestimonialForm({
+          id: "",
+          name: "",
+          role: "CFO & VP Finance",
+          company: "",
+          avatar: "",
+          quote: "",
+          rating: 5,
+          category: "CFO Leadership",
+          event_slug: "cfo-leadership-summit",
+        });
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save testimonial.");
+      }
+    } catch (err) {
+      toast.error("Network error saving testimonial.");
+    } finally {
+      setTestimonialUploading(false);
+    }
+  };
+
+  const handleDeleteTestimonial = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this testimonial?")) return;
+    try {
+      const res = await fetch(`/api/admin/testimonials/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Testimonial deleted.");
+        setTestimonials((prev) => prev.filter((t) => t.id !== id));
+      } else {
+        toast.error("Failed to delete testimonial.");
+      }
+    } catch (err) {
+      toast.error("Network error deleting testimonial.");
+    }
+  };
+
+  // --- NEWSLETTER SUBSCRIBERS HANDLERS ---
+  const handleDeleteSubscriber = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this subscriber?")) return;
+    try {
+      const res = await fetch(`/api/admin/newsletter/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Subscriber removed.");
+        setNewsletterSubscribers((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        toast.error("Failed to remove subscriber.");
+      }
+    } catch (err) {
+      toast.error("Network error deleting subscriber.");
+    }
+  };
+
+  const exportNewsletterCSV = () => {
+    if (newsletterSubscribers.length === 0) {
+      toast.error("No subscribers to export.");
+      return;
+    }
+    const headers = ["ID", "Email", "Source", "Subscribed At"];
+    const rows = newsletterSubscribers.map((s) => [
+      s.id,
+      s.email,
+      `"${s.source || "Website Footer"}"`,
+      s.created_at,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `et_media_newsletter_subscribers_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Exported newsletter subscribers to CSV!");
+  };
+
+  // --- SEO HANDLERS ---
+  const handleSelectSeoPage = (pageKey: string) => {
+    setActiveSeoPage(pageKey);
+    const existing = seoSettings.find((s) => s.page_key === pageKey);
+    if (existing) {
+      setSeoForm(existing);
+    } else {
+      setSeoForm({
+        page_key: pageKey,
+        title: `${pageKey.charAt(0).toUpperCase() + pageKey.slice(1)} | ET Media Hub`,
+        description: `Official ${pageKey} page of ET Media Business Intelligence - India's premier B2B executive summits & leadership forums.`,
+        keywords: "ET Media, Business Intelligence, Leadership Summits, CXO Forums, India",
+        og_image: "/assets/hero-banner.jpg",
+      });
+    }
+  };
+
+  const handleSaveSeo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSeoSaving(true);
+    try {
+      const res = await fetch(`/api/admin/seo/${seoForm.page_key}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(seoForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`SEO meta tags saved for page: ${seoForm.page_key}`);
+        fetchDashboardData();
+      } else {
+        toast.error("Failed to save SEO meta tags.");
+      }
+    } catch (err) {
+      toast.error("Network error saving SEO tags.");
+    } finally {
+      setSeoSaving(false);
+    }
+  };
+
+  // --- USER MANAGEMENT HANDLERS ---
+  const handleCreateAdminUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserForm.name || !newUserForm.email || !newUserForm.password) {
+      toast.error("All fields are required.");
+      return;
+    }
+    setUserCreating(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newUserForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("New admin user created successfully!");
+        setShowAddUserModal(false);
+        setNewUserForm({ name: "", email: "", password: "", role: "admin" });
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to create user.");
+      }
+    } catch (err) {
+      toast.error("Network error creating user.");
+    } finally {
+      setUserCreating(false);
+    }
+  };
+
+  const handleDeleteAdminUser = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this admin user?")) return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Admin user deleted.");
+        setAdminUsers((prev) => prev.filter((u) => u.id !== id));
+      } else {
+        toast.error(data.message || "Failed to delete user.");
+      }
+    } catch (err) {
+      toast.error("Network error deleting user.");
+    }
+  };
+
+  // --- WEBSITE SETTINGS HANDLERS ---
+  const handleSaveSiteSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(siteSettings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Website settings updated successfully!");
+      } else {
+        toast.error("Failed to update settings.");
+      }
+    } catch (err) {
+      toast.error("Network error updating settings.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("etmedia_admin_token");
@@ -1337,16 +1797,23 @@ export default function AdminDashboardPage() {
   }
 
   const navItems: NavItem[] = [
-    { id: "overview", label: "Overview & Analytics", icon: LayoutDashboard },
-    { id: "event-registrations", label: "Event Registrations", icon: Calendar, count: eventRegistrationsList.length },
-    { id: "cms-delegates", label: "Corporate Delegate Forms", icon: Users, count: cmsDelegates.length },
-    { id: "contacts", label: "Contact Messages", icon: MessageSquare, count: contacts.length },
-    { id: "events", label: "Events Directory", icon: Award },
-    { id: "partners", label: "Partners & Collaborators", icon: Handshake, count: partnerSubmissions.length },
-    { id: "magazines", label: "Executive Talks Magazine", icon: BookOpen, count: cmsMagazines.length },
-    { id: "careers", label: "Careers & Jobs CMS", icon: Briefcase, count: jobApplications.length },
-    { id: "gallery", label: "Media Gallery CMS", icon: Film, count: cmsGalleryItems.length },
-    { id: "database", label: "Laragon MySQL Engine", icon: Database },
+    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+    { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+    { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
+    { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
+    { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+    { id: "partner-requests", label: "Partner Requests", icon: Building, count: partnerSubmissions.length },
+    { id: "career-jobs", label: "Career Jobs", icon: Briefcase, count: cmsJobs.length },
+    { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
+    { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+    { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
+    { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
+    { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
+    { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
+    { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
+    { id: "settings", label: "Website Settings", icon: Settings },
+    { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+    { id: "database", label: "MySQL Database", icon: Database },
   ];
 
   return (
@@ -4600,6 +5067,1110 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* PARTNER REQUESTS & INQUIRIES TAB           */}
+          {/* ========================================== */}
+          {activeTab === "partner-requests" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Partner Requests & Applications</h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Strategic partnership enquiries, branding, sponsorship, and speaking proposals
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800">
+                    Total Inquiries: {partnerSubmissions.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+                {partnerSubmissions.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 text-xs">
+                    No partner requests submitted yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4">Company</th>
+                          <th className="py-3 px-4">Contact Person</th>
+                          <th className="py-3 px-4">Partnership Type</th>
+                          <th className="py-3 px-4">Email / Phone</th>
+                          <th className="py-3 px-4">Submitted Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {partnerSubmissions.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-cyan-50/30 transition-colors">
+                            <td className="py-3 px-4 font-extrabold text-slate-900">
+                              <div>{sub.company_name}</div>
+                              {sub.website && (
+                                <a href={sub.website} target="_blank" rel="noreferrer" className="text-[10px] text-cyan-700 hover:underline">
+                                  {sub.website}
+                                </a>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-slate-900 font-bold">{sub.contact_person}</div>
+                              <div className="text-[10px] text-slate-500">{sub.designation}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 px-2.5 py-0.5 text-[10px] font-bold">
+                                {sub.partnership_type || sub.industry}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div>{sub.email}</div>
+                              <div className="text-[10px] text-slate-500">{sub.phone}</div>
+                            </td>
+                            <td className="py-3 px-4 text-[10px] text-slate-400 font-mono">
+                              {new Date(sub.created_at || Date.now()).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={() => setSelectedPartnerLeadDetail(sub)}
+                                className="rounded-xl bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* CAREER JOBS TAB                            */}
+          {/* ========================================== */}
+          {activeTab === "career-jobs" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Career Job Postings CMS</h2>
+                  <p className="text-xs text-slate-500 font-medium">Manage active positions, job requirements, and hiring status</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Job Form */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 h-fit">
+                  <h3 className="text-base font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-cyan-600" />
+                    <span>{editingJob ? `Edit Job: ${editingJob.title}` : "Post New Job Opportunity"}</span>
+                  </h3>
+
+                  <form onSubmit={handleAddJob} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Job Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Senior Conference Producer"
+                        value={newJobForm.title}
+                        onChange={(e) => setNewJobForm({ ...newJobForm, title: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Department</label>
+                        <select
+                          value={newJobForm.department}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, department: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        >
+                          <option value="Conference Production">Conference Production</option>
+                          <option value="Delegate Sales & Acquisition">Delegate Sales</option>
+                          <option value="Sponsorship & Partnership Sales">Sponsorship Sales</option>
+                          <option value="Corporate Marketing & PR">Marketing & PR</option>
+                          <option value="Event Operations & Logistics">Operations & Logistics</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Location</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Hyderabad (Hybrid)"
+                          value={newJobForm.location}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, location: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Experience</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 3 — 5 Years"
+                          value={newJobForm.experience}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, experience: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status</label>
+                        <select
+                          value={newJobForm.status}
+                          onChange={(e) => setNewJobForm({ ...newJobForm, status: e.target.value as "Open" | "Closed" })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                        >
+                          <option value="Open">🟢 Open</option>
+                          <option value="Closed">🔴 Closed</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Overview Description *</label>
+                      <textarea
+                        required
+                        rows={3}
+                        placeholder="Brief overview..."
+                        value={newJobForm.description}
+                        onChange={(e) => setNewJobForm({ ...newJobForm, description: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      {editingJob && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingJob(null);
+                            setNewJobForm({
+                              id: "",
+                              title: "",
+                              department: "Conference Production",
+                              location: "Hyderabad (Hybrid)",
+                              experience: "3 — 5 Years",
+                              description: "",
+                              responsibilities: "",
+                              qualifications: "",
+                              benefits: "",
+                              status: "Open",
+                            });
+                          }}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={jobUploading}
+                        className="flex-1 rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50"
+                      >
+                        {jobUploading ? "Saving..." : editingJob ? "Update Job" : "Publish Job Posting"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Job Cards */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                    <span>Active Openings ({cmsJobs.length})</span>
+                    <span className="text-xs text-slate-500 font-normal">Live on Careers Portal</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {cmsJobs.map((job) => (
+                      <div key={job.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+                        <div>
+                          <h4 className="font-extrabold text-slate-900 text-sm">{job.title}</h4>
+                          <p className="text-xs text-slate-500">{job.department} · 📍 {job.location} · {job.experience}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleJobStatus(job)}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                              job.status !== "Closed" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            {job.status !== "Closed" ? "Open" : "Closed"}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* CAREER APPLICANTS TAB                      */}
+          {/* ========================================== */}
+          {activeTab === "career-applicants" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Job Applications & Resumes</h2>
+                  <p className="text-xs text-slate-500 font-medium">Review candidates, download PDF resumes, and contact applicants</p>
+                </div>
+                <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800">
+                  Total Applicants: {jobApplications.length}
+                </span>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+                {jobApplications.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 text-xs">
+                    No job applications received yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4">Candidate Name</th>
+                          <th className="py-3 px-4">Applied Job Title</th>
+                          <th className="py-3 px-4">Email / Phone</th>
+                          <th className="py-3 px-4">Experience</th>
+                          <th className="py-3 px-4">Applied Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {jobApplications.map((app) => (
+                          <tr key={app.id} className="hover:bg-cyan-50/30 transition-colors">
+                            <td className="py-3 px-4 font-bold text-slate-900">{app.name}</td>
+                            <td className="py-3 px-4 text-cyan-800 font-bold">{app.job_title}</td>
+                            <td className="py-3 px-4">
+                              <div>{app.email}</div>
+                              <div className="text-[10px] text-slate-500">{app.phone}</div>
+                            </td>
+                            <td className="py-3 px-4">{app.experience}</td>
+                            <td className="py-3 px-4 text-[10px] text-slate-400 font-mono">
+                              {new Date(app.created_at || Date.now()).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4 text-right space-x-2">
+                              {app.resume_url && (
+                                <a
+                                  href={app.resume_url}
+                                  download
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200 px-2.5 py-1 text-[11px] font-bold hover:bg-cyan-100"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  <span>Resume</span>
+                                </a>
+                              )}
+                              <button
+                                onClick={() => setSelectedApplicantDetail(app)}
+                                className="rounded-xl bg-slate-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-slate-800"
+                              >
+                                Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* CXO TESTIMONIALS TAB                       */}
+          {/* ========================================== */}
+          {activeTab === "testimonials" && (
+            <div className="space-y-8">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">CXO Testimonials & Reviews</h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Manage executive testimonials, attendee feedback, and star ratings across summits
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Testimonial Form */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4 h-fit">
+                  <h3 className="text-base font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <Quote className="h-4 w-4 text-cyan-600" />
+                    <span>{editingTestimonial ? "Edit Testimonial" : "Add New CXO Testimonial"}</span>
+                  </h3>
+
+                  <form onSubmit={handleSaveTestimonial} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Executive Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Rajesh Sharma"
+                        value={newTestimonialForm.name}
+                        onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, name: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Role / Title
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Chief Financial Officer"
+                          value={newTestimonialForm.role}
+                          onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, role: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Company / Org
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. TechCorp India"
+                          value={newTestimonialForm.company}
+                          onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, company: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Avatar Image URL / Base64
+                      </label>
+                      <div className="mb-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
+                          <Upload className="h-4 w-4 text-cyan-600" />
+                          <span>Choose Avatar Image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64Data = reader.result as string;
+                                setNewTestimonialForm((prev) => ({ ...prev, avatar: base64Data }));
+                                try {
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                  });
+                                  const uploadData = await res.json();
+                                  if (uploadData.success && uploadData.url) {
+                                    setNewTestimonialForm((prev) => ({ ...prev, avatar: uploadData.url }));
+                                    toast.success("Avatar uploaded!");
+                                  }
+                                } catch (err) {}
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="https://..."
+                        value={newTestimonialForm.avatar}
+                        onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, avatar: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Testimonial Quote *
+                      </label>
+                      <textarea
+                        required
+                        rows={4}
+                        placeholder="Enter full feedback or quote..."
+                        value={newTestimonialForm.quote}
+                        onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, quote: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Star Rating
+                        </label>
+                        <select
+                          value={newTestimonialForm.rating}
+                          onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, rating: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                        >
+                          <option value={5}>⭐⭐⭐⭐⭐ (5 Stars)</option>
+                          <option value={4}>⭐⭐⭐⭐ (4 Stars)</option>
+                          <option value={3}>⭐⭐⭐ (3 Stars)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Category
+                        </label>
+                        <select
+                          value={newTestimonialForm.category}
+                          onChange={(e) => setNewTestimonialForm({ ...newTestimonialForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        >
+                          <option value="CFO Leadership">CFO Leadership</option>
+                          <option value="HR Conclave">HR Conclave</option>
+                          <option value="Enterprise Tech">Enterprise Tech</option>
+                          <option value="Sponsorship">Sponsorship Partner</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      {editingTestimonial && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTestimonial(null);
+                            setNewTestimonialForm({
+                              id: "",
+                              name: "",
+                              role: "CFO & VP Finance",
+                              company: "",
+                              avatar: "",
+                              quote: "",
+                              rating: 5,
+                              category: "CFO Leadership",
+                              event_slug: "cfo-leadership-summit",
+                            });
+                          }}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={testimonialUploading}
+                        className="flex-1 rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {testimonialUploading ? "Saving..." : editingTestimonial ? "Update Testimonial" : "Publish Testimonial"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Testimonials List */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
+                    <span>Active Testimonials ({testimonials.length})</span>
+                    <span className="text-xs text-slate-500 font-normal">Displayed on Landing Pages</span>
+                  </h3>
+
+                  {testimonials.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-xs">
+                      No testimonials added yet. Use the form to publish CXO reviews.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {testimonials.map((t) => (
+                        <div key={t.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 flex flex-col justify-between hover:border-cyan-400 transition-all">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                                {"★".repeat(t.rating || 5)}
+                              </div>
+                              <span className="text-[10px] font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                                {t.category}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-700 italic leading-relaxed">
+                              "{t.quote}"
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-8 w-8 rounded-full bg-cyan-100 text-cyan-800 font-extrabold flex items-center justify-center text-xs overflow-hidden border border-slate-300">
+                                {t.avatar ? (
+                                  <img src={t.avatar} alt={t.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  t.name.charAt(0)
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-extrabold text-slate-900">{t.name}</h4>
+                                <p className="text-[10px] text-slate-500">{t.role} · {t.company}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingTestimonial(t);
+                                  setNewTestimonialForm({
+                                    id: t.id,
+                                    name: t.name,
+                                    role: t.role,
+                                    company: t.company,
+                                    avatar: t.avatar,
+                                    quote: t.quote,
+                                    rating: t.rating || 5,
+                                    category: t.category || "CFO Leadership",
+                                    event_slug: t.event_slug || "cfo-leadership-summit",
+                                  });
+                                }}
+                                className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer"
+                                title="Edit"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTestimonial(t.id)}
+                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* NEWSLETTER SUBSCRIBERS TAB                 */}
+          {/* ========================================== */}
+          {activeTab === "newsletter" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Newsletter Subscribers Inbox</h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Manage newsletter subscribers, real-time signups, and export subscriber lists
+                  </p>
+                </div>
+                <button
+                  onClick={exportNewsletterCSV}
+                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-cyan-600" />
+                  <span>Export Subscribers CSV</span>
+                </button>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+                {newsletterSubscribers.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 text-xs">
+                    No newsletter subscribers yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4">Email Address</th>
+                          <th className="py-3 px-4">Source Channel</th>
+                          <th className="py-3 px-4">Subscribed Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {newsletterSubscribers.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-cyan-50/30 transition-colors">
+                            <td className="py-3 px-4 font-bold text-slate-900">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3.5 w-3.5 text-cyan-600" />
+                                <span>{sub.email}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-[10px] font-bold border border-slate-200">
+                                {sub.source || "Website Footer"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-[10px] text-slate-400 font-mono">
+                              {new Date(sub.created_at || Date.now()).toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={() => handleDeleteSubscriber(sub.id)}
+                                className="rounded-lg p-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="Remove Subscriber"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* SEO META TAGS EDITOR TAB                   */}
+          {/* ========================================== */}
+          {activeTab === "seo" && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">SEO & Meta Tags Editor</h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Optimize Search Engine Optimization, meta titles, descriptions, and OpenGraph preview images
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Page Selection Sidebar */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm space-y-2 h-fit">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 block">
+                    Select Page
+                  </span>
+                  {[
+                    { key: "home", label: "Home Page" },
+                    { key: "events", label: "Events & Summits" },
+                    { key: "magazines", label: "Magazines" },
+                    { key: "partners", label: "Partners" },
+                    { key: "careers", label: "Careers Page" },
+                    { key: "contact", label: "Contact Us" },
+                    { key: "gallery", label: "Media Gallery" },
+                  ].map((pg) => (
+                    <button
+                      key={pg.key}
+                      onClick={() => handleSelectSeoPage(pg.key)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                        activeSeoPage === pg.key
+                          ? "bg-cyan-600 text-white shadow-sm"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{pg.label}</span>
+                      <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* SEO Form */}
+                <div className="lg:col-span-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 capitalize">
+                        {seoForm.page_key} Page Meta Configuration
+                      </h3>
+                      <p className="text-xs text-slate-500">Live search engine preview & social sharing meta tags</p>
+                    </div>
+                    <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800 uppercase font-mono">
+                      /{seoForm.page_key}
+                    </span>
+                  </div>
+
+                  <form onSubmit={handleSaveSeo} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Page Title (&lt;title&gt;)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={seoForm.title}
+                        onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Recommended length: 50–60 characters</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Meta Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={seoForm.description}
+                        onChange={(e) => setSeoForm({ ...seoForm, description: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Recommended length: 150–160 characters</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Keywords (Comma Separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={seoForm.keywords}
+                        onChange={(e) => setSeoForm({ ...seoForm, keywords: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        OpenGraph Preview Image URL (og:image)
+                      </label>
+                      <input
+                        type="text"
+                        value={seoForm.og_image}
+                        onChange={(e) => setSeoForm({ ...seoForm, og_image: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Live Preview Box */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        Google Search Result Live Preview
+                      </span>
+                      <div className="text-blue-800 font-bold text-sm hover:underline cursor-pointer">
+                        {seoForm.title || "ET Media Hub"}
+                      </div>
+                      <div className="text-emerald-700 text-xs font-mono">
+                        https://www.etmedia.in/{seoForm.page_key}
+                      </div>
+                      <div className="text-slate-600 text-xs line-clamp-2">
+                        {seoForm.description || "Official page of ET Media Hub..."}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={seoSaving}
+                      className="rounded-2xl bg-cyan-600 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {seoSaving ? "Saving..." : "Save SEO Meta Settings"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* ADMIN USER MANAGEMENT TAB                  */}
+          {/* ========================================== */}
+          {activeTab === "users" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Admin User Accounts</h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Manage system administrative access and add new platform administrators
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Create New Admin</span>
+                </button>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {adminUsers.map((u) => (
+                    <div key={u.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3 hover:border-cyan-400 transition-all">
+                      <div className="flex items-center justify-between">
+                        <span className="rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                          {u.role || "Super Admin"}
+                        </span>
+                        {adminUsers.length > 1 && (
+                          <button
+                            onClick={() => handleDeleteAdminUser(u.id)}
+                            className="rounded-lg p-1 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                            title="Remove Administrator"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-slate-900 text-white font-extrabold flex items-center justify-center text-sm">
+                          {u.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-slate-900">{u.name}</h4>
+                          <p className="text-xs text-slate-500">{u.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-slate-400 font-mono pt-2 border-t border-slate-200">
+                        Created: {new Date(u.created_at || Date.now()).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add Admin User Modal */}
+              {showAddUserModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                  <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 shadow-2xl space-y-4">
+                    <button
+                      onClick={() => setShowAddUserModal(false)}
+                      className="absolute top-4 right-4 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+
+                    <h3 className="text-lg font-extrabold text-slate-900">Create New Administrator</h3>
+
+                    <form onSubmit={handleCreateAdminUser} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newUserForm.name}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={newUserForm.email}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={newUserForm.password}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddUserModal(false)}
+                          className="flex-1 rounded-xl border border-slate-300 bg-slate-100 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={userCreating}
+                          className="flex-1 rounded-xl bg-cyan-600 py-2.5 text-xs font-bold text-white hover:bg-cyan-700 disabled:opacity-50 cursor-pointer"
+                        >
+                          {userCreating ? "Creating..." : "Create Admin Account"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* WEBSITE SETTINGS TAB                       */}
+          {/* ========================================== */}
+          {activeTab === "settings" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Website Settings & Configuration</h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Configure global site metadata, support contact numbers, social media links, and operational settings
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveSiteSettings} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Site Name / Organization Title
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={siteSettings.site_name}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, site_name: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Official Support Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={siteSettings.support_email}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, support_email: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Support Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.support_phone}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, support_phone: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      WhatsApp Contact Number
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.whatsapp_number}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, whatsapp_number: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Office Physical Address
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.office_address}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, office_address: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Office Working Hours
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.office_hours}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, office_hours: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Google Maps URL
+                    </label>
+                    <input
+                      type="text"
+                      value={siteSettings.google_maps_url}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, google_maps_url: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-5 space-y-4">
+                  <h4 className="text-xs font-black uppercase text-slate-500 tracking-wider">Social Media Links</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">LinkedIn URL</label>
+                      <input
+                        type="text"
+                        value={siteSettings.linkedin_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, linkedin_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Twitter / X URL</label>
+                      <input
+                        type="text"
+                        value={siteSettings.twitter_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, twitter_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Facebook URL</label>
+                      <input
+                        type="text"
+                        value={siteSettings.facebook_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, facebook_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Instagram URL</label>
+                      <input
+                        type="text"
+                        value={siteSettings.instagram_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, instagram_url: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={settingsSaving}
+                  className="rounded-2xl bg-cyan-600 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {settingsSaving ? "Saving..." : "Save Website Settings"}
+                </button>
+              </form>
             </div>
           )}
 
