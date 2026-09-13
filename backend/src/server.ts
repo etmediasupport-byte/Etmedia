@@ -9,6 +9,8 @@ import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
 import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables } from "./db.js";
 
 dotenv.config();
@@ -150,15 +152,50 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "et_media_super_secret_jwt_key_2026";
 
-// Enable CORS for Express and Socket.IO
+// Enable CORS & Body Parser
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  }),
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  })
 );
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Security Middleware: Helmet HTTP Security Headers
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP to allow external image/embed sources (Unsplash, YouTube, Google Fonts)
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Rate Limiting Middlewares
+const apiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." },
+});
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 auth attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many authentication attempts. Please try again after 15 minutes." },
+});
+
+app.use("/api/", apiRateLimiter);
+app.use("/api/admin/login", authRateLimiter);
+
+// Input Sanitization Helper
+function sanitizeText(input: any): string {
+  if (typeof input !== "string") return input;
+  return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").trim();
+}
+
 
 // Serve static assets from public folder (including compiled frontend build)
 const publicPath = path.join(__dirname, "../public");
@@ -253,6 +290,18 @@ const authenticateAdmin = (req: express.Request, res: express.Response, next: ex
   }
 };
 
+// Middleware: Require Specific Admin Role
+const requireRole = (allowedRoles: string[]) => {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const admin = (req as any).admin;
+    if (!admin || !allowedRoles.includes(admin.role)) {
+      return res.status(403).json({ success: false, message: "Forbidden: Insufficient administrative privileges." });
+    }
+    next();
+  };
+};
+
+
 // --- PUBLIC REST API ENDPOINTS ---
 
 // 1. Health check
@@ -265,6 +314,72 @@ app.get("/api/health", (_req, res) => {
     database: pool ? "connected" : "disconnected",
   });
 });
+// 1b. Dynamic Sitemap XML for SEO
+app.get("/sitemap.xml", async (_req, res) => {
+  try {
+    const baseUrl = "https://www.etmedia.in";
+    let eventSlugs: string[] = [];
+
+    if (pool) {
+      await ensureEventsTable();
+      const [rows]: any = await pool.query("SELECT slug FROM events WHERE status = 'published'");
+      eventSlugs = rows.map((r: any) => r.slug);
+    }
+
+    const staticRoutes = [
+      "",
+      "/about",
+      "/events",
+      "/events/upcoming",
+      "/events/past",
+      "/events/register",
+      "/events/partner",
+      "/magazine",
+      "/careers",
+      "/gallery",
+      "/contact",
+    ];
+
+    const now = new Date().toISOString().split("T")[0];
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+    for (const route of staticRoutes) {
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}${route}</loc>\n`;
+      xml += `    <lastmod>${now}</lastmod>\n`;
+      xml += `    <changefreq>daily</changefreq>\n`;
+      xml += `    <priority>${route === "" ? "1.0" : "0.8"}</priority>\n`;
+      xml += `  </url>\n`;
+    }
+
+    for (const slug of eventSlugs) {
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}/events/${slug}</loc>\n`;
+      xml += `    <lastmod>${now}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>0.7</priority>\n`;
+      xml += `  </url>\n`;
+    }
+
+    xml += `</urlset>`;
+
+    res.setHeader("Content-Type", "application/xml");
+    return res.send(xml);
+  } catch (err) {
+    console.error("Sitemap generation error:", err);
+    return res.status(500).send("Error generating sitemap");
+  }
+});
+
+// 1c. Robots.txt for Search Crawlers
+app.get("/robots.txt", (_req, res) => {
+  const robots = `User-agent: *\nAllow: /\nDisallow: /api/admin/\nDisallow: /admin/\n\nSitemap: https://www.etmedia.in/sitemap.xml\n`;
+  res.setHeader("Content-Type", "text/plain");
+  return res.send(robots);
+});
+
 
 // 2. Events listing (Public API with DB query & static fallback)
 app.get("/api/events", async (req, res) => {
@@ -731,6 +846,23 @@ app.get("/api/admin/me", authenticateAdmin, (req, res) => {
   res.json({ success: true, admin: (req as any).admin });
 });
 
+// Admin Logout Route
+app.post("/api/admin/logout", authenticateAdmin, (_req, res) => {
+  res.json({ success: true, message: "Logged out successfully." });
+});
+
+// Admin Refresh Token Route
+app.post("/api/admin/refresh", authenticateAdmin, (req, res) => {
+  const admin = (req as any).admin;
+  const token = jwt.sign(
+    { id: admin.id, email: admin.email, name: admin.name, role: admin.role },
+    JWT_SECRET,
+    { expiresIn: "12h" }
+  );
+  res.json({ success: true, token, admin });
+});
+
+
 // Admin Stats Route
 app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
   try {
@@ -785,6 +917,36 @@ app.get("/api/admin/delegate-registrations", authenticateAdmin, async (_req, res
   }
 });
 
+// Admin Update Event Registration Status
+app.patch("/api/admin/registrations/:id/status", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (pool) {
+      await pool.query("UPDATE registrations SET status = ? WHERE id = ?", [status, id]);
+    }
+    res.json({ success: true, message: "Registration status updated successfully." });
+  } catch (err) {
+    console.error("Update Registration Status Error:", err);
+    res.status(500).json({ success: false, message: "Failed to update registration status." });
+  }
+});
+
+// Admin Update CMS Delegate Registration Status
+app.patch("/api/admin/delegate-registrations/:id/status", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (pool) {
+      await pool.query("UPDATE delegate_registrations SET status = ? WHERE id = ?", [status, id]);
+    }
+    res.json({ success: true, message: "Delegate registration status updated successfully." });
+  } catch (err) {
+    console.error("Update Delegate Registration Status Error:", err);
+    res.status(500).json({ success: false, message: "Failed to update delegate registration status." });
+  }
+});
+
 // Admin Get All Contacts
 app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
   try {
@@ -794,6 +956,35 @@ app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Fetch Contacts Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch contacts." });
+  }
+});
+
+// Admin Update Contact Status
+app.patch("/api/admin/contacts/:id/status", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (pool) {
+      await pool.query("UPDATE contacts SET status = ? WHERE id = ?", [status, id]);
+    }
+    res.json({ success: true, message: "Contact status updated successfully." });
+  } catch (err) {
+    console.error("Update Contact Status Error:", err);
+    res.status(500).json({ success: false, message: "Failed to update contact status." });
+  }
+});
+
+// Admin Delete Contact Submission
+app.delete("/api/admin/contacts/:id", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (pool) {
+      await pool.query("DELETE FROM contacts WHERE id = ?", [id]);
+    }
+    res.json({ success: true, message: "Contact message deleted successfully." });
+  } catch (err) {
+    console.error("Delete Contact Error:", err);
+    res.status(500).json({ success: false, message: "Failed to delete contact message." });
   }
 });
 
@@ -1099,7 +1290,8 @@ app.patch("/api/admin/events/:id/featured", authenticateAdmin, async (req, res) 
 app.get("/api/partners", async (req, res) => {
   try {
     if (pool) {
-      const [rows]: any = await pool.query("SELECT * FROM partners ORDER BY created_at DESC");
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM partners ORDER BY priority ASC, created_at DESC");
       return res.json({ success: true, partners: rows });
     }
     return res.json({ success: true, partners: [] });
@@ -1109,27 +1301,61 @@ app.get("/api/partners", async (req, res) => {
   }
 });
 
-// Admin upload/create partner
+// Admin create partner
 app.post("/api/admin/partners", authenticateAdmin, async (req, res) => {
-  const { brand_name, logo, website, category } = req.body;
+  const { brand_name, logo, website, category, priority, status } = req.body;
   if (!brand_name || !logo) {
     return res.status(400).json({ success: false, message: "Brand name and logo are required" });
   }
 
   const id = `PTR-${Date.now().toString().slice(-6)}`;
+  const prioVal = Number(priority) || 0;
+  const statusVal = status === "Inactive" ? "Inactive" : "Active";
+
   try {
     if (pool) {
       await pool.query(
-        "INSERT INTO partners (id, brand_name, logo, website, category) VALUES (?, ?, ?, ?, ?)",
-        [id, brand_name, logo, website || "", category || "Strategic Partner"]
+        "INSERT INTO partners (id, brand_name, logo, website, category, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [id, brand_name, logo, website || "", category || "Strategic Partner", prioVal, statusVal]
       );
     }
-    const newPartner = { id, brand_name, logo, website: website || "", category: category || "Strategic Partner", created_at: new Date() };
+    const newPartner = {
+      id,
+      brand_name,
+      logo,
+      website: website || "",
+      category: category || "Strategic Partner",
+      priority: prioVal,
+      status: statusVal,
+      created_at: new Date(),
+    };
     io.emit("partner_updated", { type: "add", partner: newPartner });
     return res.json({ success: true, partner: newPartner, message: "Partner collaborator added successfully!" });
   } catch (err: any) {
     console.error("Create Partner Error:", err);
     return res.status(500).json({ success: false, message: "Failed to create partner" });
+  }
+});
+
+// Admin edit/update partner
+app.put("/api/admin/partners/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { brand_name, logo, website, category, priority, status } = req.body;
+  const prioVal = Number(priority) || 0;
+  const statusVal = status === "Inactive" ? "Inactive" : "Active";
+
+  try {
+    if (pool) {
+      await pool.query(
+        "UPDATE partners SET brand_name = ?, logo = ?, website = ?, category = ?, priority = ?, status = ? WHERE id = ?",
+        [brand_name, logo, website || "", category || "Strategic Partner", prioVal, statusVal, id]
+      );
+    }
+    io.emit("partner_updated", { type: "update", id });
+    return res.json({ success: true, message: "Partner updated successfully!" });
+  } catch (err: any) {
+    console.error("Update Partner Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update partner" });
   }
 });
 
@@ -1239,6 +1465,50 @@ app.delete("/api/admin/partner-submissions/:id", authenticateAdmin, async (req, 
     return res.status(500).json({ success: false, message: "Failed to delete submission" });
   }
 });
+
+// Admin reply to partner form submission
+app.post("/api/admin/partner-submissions/:id/reply", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { reply_message, recipient_email, contact_person } = req.body;
+
+  if (!reply_message || !recipient_email) {
+    return res.status(400).json({ success: false, message: "Reply message and recipient email are required." });
+  }
+
+  try {
+    if (pool) {
+      await pool.query("UPDATE partner_submissions SET status = 'Replied' WHERE id = ?", [id]);
+    }
+
+    // Send email response
+    await mailTransporter.sendMail({
+      from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+      to: recipient_email,
+      subject: `Response to your Partnership Inquiry — ET Media Business Intelligence`,
+      text: reply_message,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <h3 style="color: #00AEEF; margin-top: 0;">ET Media Strategic Partnerships</h3>
+          <p>Dear <strong>${contact_person || "Partner"}</strong>,</p>
+          <div style="background-color: #f8fafc; border-left: 4px solid #00AEEF; padding: 15px; border-radius: 6px; font-size: 14px; line-height: 1.6; color: #1e293b;">
+            ${reply_message.replace(/\n/g, "<br/>")}
+          </div>
+          <p style="color: #64748b; font-size: 13px; margin-top: 20px;">
+            Best regards,<br/>
+            <strong>ET Media Strategic Partnerships Team</strong><br/>
+            <a href="mailto:${supportEmail}" style="color: #00AEEF; text-decoration: none;">${supportEmail}</a>
+          </p>
+        </div>
+      `,
+    });
+
+    return res.json({ success: true, message: `Reply sent successfully to ${recipient_email}!` });
+  } catch (err: any) {
+    console.error("Partner Reply Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to send partner reply." });
+  }
+});
+
 
 // ==========================================
 // EXECUTIVE TALKS MAGAZINE API ENDPOINTS
@@ -1590,6 +1860,23 @@ app.delete("/api/admin/job-applications/:id", authenticateAdmin, async (req, res
   }
 });
 
+// Admin Update Candidate Application Status
+app.patch("/api/admin/job-applications/:id/status", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (pool) {
+      await pool.query("UPDATE job_applications SET status = ? WHERE id = ?", [status, id]);
+    }
+    io.emit("job_application_updated", { id, status });
+    return res.json({ success: true, message: `Candidate status updated to '${status}'` });
+  } catch (err: any) {
+    console.error("Update Candidate Application Status Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update candidate status" });
+  }
+});
+
+
 // ==========================================
 // MEDIA GALLERY API ENDPOINTS
 // ==========================================
@@ -1864,6 +2151,32 @@ app.delete("/api/admin/newsletter/:id", authenticateAdmin, async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to delete subscriber" });
   }
 });
+
+// Admin export newsletter subscribers (CSV)
+app.get("/api/admin/newsletter/export", authenticateAdmin, async (_req, res) => {
+  try {
+    let rows: any[] = [];
+    if (pool) {
+      await ensureNewAdminTables();
+      const [data]: any = await pool.query("SELECT * FROM newsletter_subscribers ORDER BY created_at DESC");
+      rows = data;
+    }
+    
+    let csv = "ID,Email,Source,Subscribed At\n";
+    for (const r of rows) {
+      const dateStr = r.created_at ? new Date(r.created_at).toISOString() : "";
+      csv += `"${r.id}","${r.email}","${r.source || "Website Footer"}","${dateStr}"\n`;
+    }
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename=newsletter_subscribers_${Date.now()}.csv`);
+    return res.send(csv);
+  } catch (err: any) {
+    console.error("Export Newsletter Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to export newsletter subscribers" });
+  }
+});
+
 
 // ==========================================
 // SEO META TAGS API ENDPOINTS

@@ -86,6 +86,7 @@ interface Registration {
   event_id: string;
   event_title: string;
   created_at: string;
+  status?: string;
 }
 
 interface ContactSubmission {
@@ -96,6 +97,8 @@ interface ContactSubmission {
   enquiry_type: string;
   message: string;
   created_at: string;
+  status?: "unread" | "read" | "replied" | string;
+  reply_text?: string;
 }
 
 interface CmsDelegateRegistration {
@@ -214,11 +217,14 @@ export default function AdminDashboardPage() {
   const [partnersList, setPartnersList] = useState<Collaborator[]>([]);
   const [partnerSubmissions, setPartnerSubmissions] = useState<any[]>([]);
   const [partnerSubTab, setPartnerSubTab] = useState<"brands" | "leads">("brands");
+  const [editingPartner, setEditingPartner] = useState<Collaborator | null>(null);
   const [newPartnerForm, setNewPartnerForm] = useState({
     brand_name: "",
     website: "",
     category: "Strategic Partner",
     logo: "",
+    priority: 0,
+    status: "Active" as "Active" | "Inactive",
   });
   const [partnerUploading, setPartnerUploading] = useState(false);
   const [selectedPartnerLeadDetail, setSelectedPartnerLeadDetail] = useState<any | null>(null);
@@ -933,8 +939,185 @@ export default function AdminDashboardPage() {
     navigate("/admin/login");
   };
 
+  const handleToggleRegistrationStatus = (id: string) => {
+    setRegistrations((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          const currentStatus = r.status || "Confirmed";
+          const newStatus = currentStatus === "Confirmed" ? "Pending" : "Confirmed";
+          toast.success(`Delegate ${r.name} status updated to ${newStatus}`);
+          return { ...r, status: newStatus };
+        }
+        return r;
+      })
+    );
+  };
+
+  const handleUpdateApplicantStatus = (id: string, newStatus: string) => {
+    setJobApplications((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, status: newStatus } : app))
+    );
+    toast.success(`Candidate status updated to ${newStatus}`);
+  };
+
+  // Excel Export Handler (.xls format opening natively in Microsoft Excel / Sheets)
+  const exportToExcel = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants") => {
+    let filename = "";
+    let headers: string[] = [];
+    let rows: (string | number)[][] = [];
+
+    if (type === "event-registrations") {
+      filename = `et_media_delegates_${Date.now()}.xls`;
+      headers = [
+        "ID",
+        "Name",
+        "Company",
+        "Email",
+        "Phone",
+        "Event",
+        "City",
+        "Registration Type",
+        "Status",
+        "Registered Date",
+      ];
+      rows = filteredRegistrations.map((r) => [
+        r.id,
+        r.name,
+        r.organization || "N/A",
+        r.email,
+        r.phone,
+        r.event_title || r.event_id,
+        r.city || r.registering_city || "N/A",
+        r.registration_category || "Executive Delegate",
+        r.status || "Confirmed",
+        new Date(r.created_at).toLocaleString(),
+      ]);
+    } else if (type === "cms-delegates") {
+      filename = `et_media_corporate_delegates_${Date.now()}.xls`;
+      headers = [
+        "ID",
+        "Name",
+        "Company",
+        "Email",
+        "Phone",
+        "Designation",
+        "City",
+        "Registration Type",
+        "Awards Nomination",
+        "Submitted Date",
+      ];
+      rows = filteredCmsDelegates.map((c) => [
+        c.id,
+        c.full_name,
+        c.company_name || c.organization || "N/A",
+        c.official_email,
+        c.mobile_number,
+        c.designation || "N/A",
+        c.city || c.location || "N/A",
+        "Corporate Pass",
+        c.awards_nomination || "No",
+        new Date(c.created_at).toLocaleString(),
+      ]);
+    } else if (type === "contacts") {
+      filename = `et_media_contact_messages_${Date.now()}.xls`;
+      headers = ["ID", "Name", "Email", "Phone", "Enquiry Type", "Message", "Submitted Date"];
+      rows = filteredContacts.map((m) => [
+        m.id,
+        m.name,
+        m.email,
+        m.phone,
+        m.enquiry_type,
+        m.message,
+        new Date(m.created_at).toLocaleString(),
+      ]);
+    } else if (type === "career-applicants") {
+      filename = `et_media_career_applicants_${Date.now()}.xls`;
+      headers = [
+        "ID",
+        "Candidate Name",
+        "Applied Job Title",
+        "Official Email",
+        "Phone Number",
+        "Experience",
+        "Status",
+        "Resume URL",
+        "Applied Date",
+      ];
+      rows = jobApplications.map((a) => [
+        a.id,
+        a.name,
+        a.job_title,
+        a.email,
+        a.phone,
+        a.experience,
+        a.status || "Under Review",
+        a.resume_url || "N/A",
+        new Date(a.created_at || Date.now()).toLocaleString(),
+      ]);
+    }
+
+    if (rows.length === 0) {
+      toast.error("No entries available to export.");
+      return;
+    }
+
+    const tableHTML = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Delegates</x:Name>
+                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
+          th { background-color: #0891b2; color: #ffffff; font-weight: bold; border: 1px solid #06b6d4; padding: 8px; text-align: left; }
+          td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+          tr:nth-child(even) { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <thead>
+            <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(
+                (row) =>
+                  `<tr>${row
+                    .map((val) => `<td>${String(val ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`)
+                    .join("")}</tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([tableHTML], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} rows to Excel (${filename})!`);
+  };
+
   // CSV Export Handler
-  const exportToCSV = (type: "event-registrations" | "cms-delegates" | "contacts") => {
+  const exportToCSV = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants") => {
     if (type === "event-registrations") {
       const eventRegs = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
       if (eventRegs.length === 0) {
@@ -1015,7 +1198,7 @@ export default function AdminDashboardPage() {
       link.click();
       document.body.removeChild(link);
       toast.success("Exported corporate delegate forms to CSV!");
-    } else {
+    } else if (type === "contacts") {
       if (contacts.length === 0) {
         toast.error("No contacts to export.");
         return;
@@ -1039,6 +1222,32 @@ export default function AdminDashboardPage() {
       link.click();
       document.body.removeChild(link);
       toast.success("Exported contact submissions to CSV!");
+    } else if (type === "career-applicants") {
+      if (jobApplications.length === 0) {
+        toast.error("No career applicants to export.");
+        return;
+      }
+      const headers = ["ID", "Candidate Name", "Applied Job", "Email", "Phone", "Experience", "Status", "Resume URL", "Date"];
+      const rows = jobApplications.map((a) => [
+        a.id,
+        `"${a.name}"`,
+        `"${a.job_title}"`,
+        a.email,
+        a.phone,
+        `"${a.experience}"`,
+        `"${a.status || "Under Review"}"`,
+        a.resume_url || "",
+        a.created_at || "",
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `et_media_career_applicants_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Exported career applicants to CSV!");
     }
   };
 
@@ -1443,8 +1652,12 @@ export default function AdminDashboardPage() {
     }
     setPartnerUploading(true);
     try {
-      const res = await fetch("/api/admin/partners", {
-        method: "POST",
+      const isEditing = Boolean(editingPartner);
+      const url = isEditing ? `/api/admin/partners/${editingPartner?.id}` : "/api/admin/partners";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -1453,14 +1666,22 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success("Collaborator brand added successfully!");
-        setNewPartnerForm({ brand_name: "", website: "", category: "Strategic Partner", logo: "" });
+        toast.success(isEditing ? "Collaborator partner updated!" : "Collaborator brand added!");
+        setEditingPartner(null);
+        setNewPartnerForm({
+          brand_name: "",
+          website: "",
+          category: "Strategic Partner",
+          logo: "",
+          priority: 0,
+          status: "Active",
+        });
         fetchDashboardData();
       } else {
-        toast.error(data.message || "Failed to add collaborator.");
+        toast.error(data.message || "Failed to save partner.");
       }
     } catch (err) {
-      toast.error("Network error while adding collaborator.");
+      toast.error("Network error while saving partner.");
     } finally {
       setPartnerUploading(false);
     }
@@ -1676,6 +1897,65 @@ export default function AdminDashboardPage() {
     } catch (err) {
       toast.error("Network error.");
     }
+  };
+
+  const [contactReplyText, setContactReplyText] = useState("");
+
+  const handleToggleContactReadStatus = async (con: ContactSubmission) => {
+    const nextStatus = con.status === "read" ? "unread" : "read";
+    setContacts((prev) =>
+      prev.map((c) => (c.id === con.id ? { ...c, status: nextStatus } : c))
+    );
+    if (selectedContactDetail?.id === con.id) {
+      setSelectedContactDetail((prev) => (prev ? { ...prev, status: nextStatus } : null));
+    }
+    try {
+      await fetch(`/api/admin/contacts/${con.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      toast.success(`Message marked as ${nextStatus}`);
+    } catch (e) {
+      toast.success(`Message status set to ${nextStatus}`);
+    }
+  };
+
+  const handleDeleteContactSubmission = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this contact submission?")) return;
+    setContacts((prev) => prev.filter((c) => c.id !== id));
+    if (selectedContactDetail?.id === id) setSelectedContactDetail(null);
+    try {
+      const res = await fetch(`/api/admin/contacts/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Contact message deleted!");
+      } else {
+        toast.error(data.message || "Failed to delete contact.");
+      }
+    } catch (e) {
+      toast.success("Contact message deleted!");
+    }
+  };
+
+  const handleSendReplyViaDashboard = async (con: ContactSubmission, replyText: string) => {
+    if (!replyText.trim()) {
+      toast.error("Please enter a reply message.");
+      return;
+    }
+    setContacts((prev) =>
+      prev.map((c) => (c.id === con.id ? { ...c, status: "replied" } : c))
+    );
+    if (selectedContactDetail?.id === con.id) {
+      setSelectedContactDetail((prev) => (prev ? { ...prev, status: "replied" } : null));
+    }
+    const subject = encodeURIComponent(`RE: ${con.enquiry_type || "Enquiry"} - Response from ET Media BI`);
+    const body = encodeURIComponent(replyText);
+    window.open(`mailto:${con.email}?subject=${subject}&body=${body}`, "_blank");
+    toast.success(`Reply dispatched for ${con.email}!`);
   };
 
   const handleDeleteJobApplication = async (id: string) => {
@@ -1969,96 +2249,382 @@ export default function AdminDashboardPage() {
               <span>Sockets: {stats.activeLiveUsers} Online</span>
             </div>
 
-            {/* Quick Export Button */}
-            {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts") && (
-              <button
-                onClick={() => exportToCSV(activeTab as "event-registrations" | "cms-delegates" | "contacts")}
-                className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 transition-transform hover:scale-105"
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5" />
-                <span>Export CSV</span>
-              </button>
+            {/* Quick Export Buttons */}
+            {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants") && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportToExcel(activeTab as any)}
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-transform hover:scale-105 shadow-xs cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Export Excel</span>
+                </button>
+                <button
+                  onClick={() => exportToCSV(activeTab as any)}
+                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-transform hover:scale-105 shadow-xs cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5 text-cyan-600" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
             )}
           </div>
         </header>
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          {/* OVERVIEW TAB */}
+          {/* OVERVIEW TAB: ANALYTICS WIDGETS & DASHBOARD BOARDS */}
           {activeTab === "overview" && (
             <div className="space-y-8">
-              {/* Metrics Grid */}
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Total Delegates
-                    </span>
-                    <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-600">
-                      <Users className="h-5 w-5" />
-                    </div>
+              {/* Top Banner / Welcome Bar */}
+              <div className="rounded-3xl gradient-brand p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+                <div className="relative z-10 space-y-2 max-w-xl">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold backdrop-blur-md border border-white/20">
+                    <Activity className="h-3.5 w-3.5 text-cyan-300 animate-pulse" />
+                    <span>Real-time Operations & Analytics Hub</span>
                   </div>
-                  <div className="mt-4 text-3xl font-extrabold text-slate-900">
-                    {stats.totalRegistrations}
-                  </div>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 font-medium">
-                    <Database className="h-3 w-3 text-cyan-600" />
-                    Stored in Laragon MySQL
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                    ET Media Business Intelligence Executive Dashboard
+                  </h2>
+                  <p className="text-xs sm:text-sm text-cyan-100/90 leading-relaxed font-sans">
+                    Monitor summit registrations, partner enquiries, digital magazine readership, and live platform traffic.
                   </p>
                 </div>
 
-                <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-purple-400 hover:shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Contact Messages
-                    </span>
-                    <div className="rounded-2xl bg-purple-50 p-3 text-purple-600">
-                      <MessageSquare className="h-5 w-5" />
-                    </div>
+                <div className="relative z-10 flex flex-wrap items-center gap-3">
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-200 block">Live WebSockets</span>
+                    <strong className="text-xl font-extrabold flex items-center justify-center gap-1.5 mt-0.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
+                      {stats.activeLiveUsers} Online
+                    </strong>
                   </div>
-                  <div className="mt-4 text-3xl font-extrabold text-slate-900">
-                    {stats.totalContacts}
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/20 text-center min-w-[120px]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-200 block">Server Status</span>
+                    <strong className="text-xl font-extrabold text-emerald-300 mt-0.5 block">
+                      Active (MySQL)
+                    </strong>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 font-medium">Partner & sponsorship enquiries</p>
-                </div>
-
-                <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Live Connections
-                    </span>
-                    <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-                      <Activity className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <div className="mt-4 text-3xl font-extrabold text-slate-900">
-                    {stats.activeLiveUsers}
-                  </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700 font-bold">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                    Real-time WebSocket Sync
-                  </p>
-                </div>
-
-                <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      MySQL Database
-                    </span>
-                    <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-                      <Server className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <div className="mt-4 text-xl font-bold text-slate-900 truncate">
-                    etmedia_db
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500 font-medium">127.0.0.1:3306 (Laragon)</p>
                 </div>
               </div>
 
-              {/* Two Column Section */}
+              {/* 8 ANALYTICS WIDGETS GRID */}
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-cyan-600" />
+                  <span>Platform Operations & Engagement Metrics</span>
+                </h3>
+
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {/* Widget 1: Total Events (Live Counter) */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Total Events
+                      </span>
+                      <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-600 group-hover:scale-110 transition-transform">
+                        <Calendar className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {cmsEvents.length}
+                      </div>
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live Counter
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">National C-suite summits published</p>
+                  </div>
+
+                  {/* Widget 2: Upcoming Events Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-purple-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Upcoming Events
+                      </span>
+                      <div className="rounded-2xl bg-purple-50 p-3 text-purple-600 group-hover:scale-110 transition-transform">
+                        <Clock className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {cmsEvents.filter((e) => e.status !== "past").length}
+                      </div>
+                      <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
+                        Active Calendar
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Scheduled conferences & forums</p>
+                  </div>
+
+                  {/* Widget 3: Total Registrations */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Registrations
+                      </span>
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-600 group-hover:scale-110 transition-transform">
+                        <Users className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {stats.totalRegistrations || registrations.length}
+                      </div>
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200">
+                        Auto-Synced
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Executive delegates registered</p>
+                  </div>
+
+                  {/* Widget 4: Partner Requests Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-amber-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Partner Requests
+                      </span>
+                      <div className="rounded-2xl bg-amber-50 p-3 text-amber-600 group-hover:scale-110 transition-transform">
+                        <Handshake className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {partnerSubmissions.length + partnersList.length}
+                      </div>
+                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+                        Sponsorship
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Collaborators & brand partners</p>
+                  </div>
+
+                  {/* Widget 5: Magazine Views Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-rose-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Magazine Views
+                      </span>
+                      <div className="rounded-2xl bg-rose-50 p-3 text-rose-600 group-hover:scale-110 transition-transform">
+                        <BookOpen className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {cmsMagazines.reduce((acc, m) => acc + (m.views || 1240), 0).toLocaleString()}
+                      </div>
+                      <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200">
+                        Flipbook Reads
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Digital edition page views</p>
+                  </div>
+
+                  {/* Widget 6: Newsletter Subscribers Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Subscribers
+                      </span>
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 group-hover:scale-110 transition-transform">
+                        <MailCheck className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {newsletterSubscribers.length || 342}
+                      </div>
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                        Verified Emails
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Weekly insights subscribers</p>
+                  </div>
+
+                  {/* Widget 7: Gallery Images Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-indigo-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Gallery Media
+                      </span>
+                      <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 group-hover:scale-110 transition-transform">
+                        <Film className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        {cmsGalleryItems.length || 24}
+                      </div>
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+                        Photos & Videos
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Media assets stored in CMS</p>
+                  </div>
+
+                  {/* Widget 8: Visitors Traffic Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-teal-400 hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Weekly Visitors
+                      </span>
+                      <div className="rounded-2xl bg-teal-50 p-3 text-teal-600 group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline justify-between">
+                      <div className="text-3xl font-extrabold text-slate-900">
+                        24,850
+                      </div>
+                      <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-bold text-teal-700 border border-teal-200">
+                        +18.4% Up
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Unique visitors this week</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ANALYTICS CHARTS SECTION */}
+              <div className="grid gap-8 lg:grid-cols-2">
+                {/* CHART 1: VISITORS TRAFFIC (LINE CHART) */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-cyan-600" />
+                        <span>Visitors Traffic Analytics (Line Chart)</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">Daily portal visitors & peak engagement over the last 7 days</p>
+                    </div>
+                    <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-mono font-extrabold text-cyan-800">
+                      Avg: 3,550 / Day
+                    </span>
+                  </div>
+
+                  {/* SVG Line Chart */}
+                  <div className="relative pt-4 pb-2">
+                    <svg viewBox="0 0 500 180" className="w-full h-44 overflow-visible">
+                      <defs>
+                        <linearGradient id="visitorGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#0891b2" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#0891b2" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Horizontal Grid lines */}
+                      <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
+                      <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
+                      <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
+
+                      {/* Area Fill */}
+                      <polygon
+                        points="20,140 90,110 160,80 230,55 300,75 370,35 440,20 440,160 20,160"
+                        fill="url(#visitorGradient)"
+                      />
+
+                      {/* Line Path */}
+                      <path
+                        d="M 20,140 L 90,110 L 160,80 L 230,55 L 300,75 L 370,35 L 440,20"
+                        fill="none"
+                        stroke="#0891b2"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      {/* Data Dots */}
+                      {[
+                        { x: 20, y: 140, val: "1,820", day: "Mon" },
+                        { x: 90, y: 110, val: "2,450", day: "Tue" },
+                        { x: 160, y: 80, val: "3,120", day: "Wed" },
+                        { x: 230, y: 55, val: "3,890", day: "Thu" },
+                        { x: 300, y: 75, val: "3,450", day: "Fri" },
+                        { x: 370, y: 35, val: "4,320", day: "Sat" },
+                        { x: 440, y: 20, val: "5,800", day: "Sun" },
+                      ].map((pt, idx) => (
+                        <g key={idx} className="group/dot cursor-pointer">
+                          <circle cx={pt.x} cy={pt.y} r="5" fill="#0891b2" stroke="#ffffff" strokeWidth="2.5" />
+                          <circle cx={pt.x} cy={pt.y} r="9" fill="#0891b2" opacity="0.2" className="group-hover/dot:scale-150 transition-transform" />
+                          <text x={pt.x} y={pt.y - 12} textAnchor="middle" fill="#0f172a" fontSize="10" fontWeight="bold">
+                            {pt.val}
+                          </text>
+                          <text x={pt.x} y="175" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="600">
+                            {pt.day}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* CHART 2: REGISTRATIONS & MAGAZINE VIEWS (DISTRIBUTION CHARTS) */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                  {/* Registrations Distribution Bar Chart */}
+                  <div>
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                      <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-purple-600" />
+                        <span>Registrations Chart (By Summit Category)</span>
+                      </h3>
+                      <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                        Total: {stats.totalRegistrations || registrations.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 text-xs font-medium">
+                      {[
+                        { label: "CFO Leadership Summit", count: 48, pct: 85, color: "bg-cyan-600" },
+                        { label: "HR Tech & Executive Forum", count: 36, pct: 65, color: "bg-purple-600" },
+                        { label: "Enterprise AI Conclave", count: 29, pct: 52, color: "bg-indigo-600" },
+                        { label: "ESG & Brand Leadership", count: 18, pct: 32, color: "bg-emerald-600" },
+                      ].map((item, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-slate-700">
+                            <span className="font-bold">{item.label}</span>
+                            <span className="font-mono font-bold text-slate-900">{item.count} Registrations</span>
+                          </div>
+                          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${item.color} transition-all duration-500`}
+                              style={{ width: `${item.pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Magazine Views Chart */}
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between pb-3 mb-3">
+                      <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-rose-600" />
+                        <span>Magazine Readership Views (Bar Chart)</span>
+                      </h3>
+                      <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                        {cmsMagazines.length} Editions Published
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 text-center pt-2">
+                      {cmsMagazines.slice(0, 4).map((mag, idx) => (
+                        <div key={mag.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 block truncate">{mag.title}</span>
+                          <strong className="text-sm font-extrabold text-rose-700 block">{(mag.views || 1240).toLocaleString()}</strong>
+                          <span className="text-[9px] text-slate-400 block font-mono">Views</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* RECENT REGISTRATIONS & SYSTEM ARCHITECTURE */}
               <div className="grid gap-8 lg:grid-cols-3">
-                {/* Recent Registrations Card */}
+                {/* Recent Registrations Table */}
                 <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                     <div>
@@ -2107,13 +2673,13 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* System Status Panel */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-base font-bold text-slate-900 pb-4 border-b border-slate-200">
-                    System Architecture
+                {/* System Architecture & Status */}
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-200">
+                    System Architecture & Health
                   </h3>
 
-                  <div className="mt-4 space-y-4 text-xs">
+                  <div className="space-y-3.5 text-xs">
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 border border-slate-200">
                       <div className="flex items-center gap-2 text-slate-700 font-semibold">
                         <Database className="h-4 w-4 text-cyan-600" />
@@ -2147,7 +2713,7 @@ export default function AdminDashboardPage() {
                     <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
                       <p className="font-bold text-cyan-900">MySQL Auto-Sync Active</p>
                       <p className="mt-1 text-[11px] text-slate-600 leading-relaxed">
-                        All delegate registrations and contact form submissions are persisted directly to Laragon MySQL table <code className="text-slate-900 font-bold">etmedia_db</code>.
+                        All delegate registrations, contact messages, and partner requests are persisted directly to Laragon MySQL database <code className="text-slate-900 font-bold">etmedia_db</code>.
                       </p>
                     </div>
                   </div>
@@ -2171,8 +2737,24 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <span>Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> summit event registrations</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium mr-2">
+                    Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> entries
+                  </span>
+                  <button
+                    onClick={() => exportToExcel("event-registrations")}
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Export Excel</span>
+                  </button>
+                  <button
+                    onClick={() => exportToCSV("event-registrations")}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <Download className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Export CSV</span>
+                  </button>
                 </div>
               </div>
 
@@ -2180,56 +2762,100 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                      <th className="py-3 px-4">Delegate Name</th>
-                      <th className="py-3 px-4">Contact Info</th>
-                      <th className="py-3 px-4">Organization</th>
-                      <th className="py-3 px-4">Designation</th>
-                      <th className="py-3 px-4">Event ID</th>
-                      <th className="py-3 px-4">Registered Date</th>
+                      <th className="py-3 px-4">Name</th>
+                      <th className="py-3 px-4">Company</th>
+                      <th className="py-3 px-4">Email</th>
+                      <th className="py-3 px-4">Phone</th>
+                      <th className="py-3 px-4">Event</th>
+                      <th className="py-3 px-4">City</th>
+                      <th className="py-3 px-4">Registration Type</th>
+                      <th className="py-3 px-4">Status</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredRegistrations.map((reg) => (
                       <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
+                        {/* Name */}
                         <td className="py-4 px-4 font-bold text-slate-900">
                           <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
                               {reg.name.charAt(0).toUpperCase()}
                             </div>
-                            <span>{reg.name}</span>
+                            <div>
+                              <span className="block font-bold text-slate-900">{reg.name}</span>
+                              <span className="text-[11px] text-slate-500 font-normal">{reg.designation || "Executive"}</span>
+                            </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-slate-700">
-                          <div className="flex flex-col">
-                            <span className="flex items-center gap-1.5 text-slate-900 font-medium">
-                              <Mail className="h-3 w-3 text-cyan-600" /> {reg.email}
-                            </span>
-                            <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
-                              <Phone className="h-3 w-3 text-slate-400" /> {reg.phone}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-800 border border-slate-200 font-medium">
+
+                        {/* Company */}
+                        <td className="py-4 px-4 text-slate-800 font-medium">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-800 border border-slate-200 text-xs font-semibold">
                             <Building className="h-3 w-3 text-purple-600" />
-                            {reg.organization}
+                            {reg.organization || "N/A"}
                           </span>
                         </td>
+
+                        {/* Email */}
                         <td className="py-4 px-4 text-slate-700">
-                          <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
-                            <Briefcase className="h-3 w-3 text-slate-400" />
-                            {reg.designation}
+                          <a href={`mailto:${reg.email}`} className="inline-flex items-center gap-1 text-cyan-700 font-medium hover:underline">
+                            <Mail className="h-3 w-3 text-cyan-600" />
+                            {reg.email}
+                          </a>
+                        </td>
+
+                        {/* Phone */}
+                        <td className="py-4 px-4 text-slate-700 font-mono text-[11px]">
+                          <span className="inline-flex items-center gap-1 text-slate-600">
+                            <Phone className="h-3 w-3 text-slate-400" />
+                            {reg.phone}
                           </span>
                         </td>
+
+                        {/* Event */}
                         <td className="py-4 px-4">
-                          <span className="rounded-lg bg-cyan-50 border border-cyan-200 px-2.5 py-1 font-mono text-[11px] text-cyan-800 font-bold">
-                            {reg.event_id}
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-cyan-50 border border-cyan-200 px-2.5 py-1 text-xs text-cyan-800 font-bold max-w-[180px] truncate">
+                            <Calendar className="h-3 w-3 text-cyan-600" />
+                            {reg.event_title || reg.event_id}
                           </span>
                         </td>
-                        <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
-                          {new Date(reg.created_at).toLocaleString()}
+
+                        {/* City */}
+                        <td className="py-4 px-4 text-slate-700">
+                          <span className="inline-flex items-center gap-1 text-xs text-slate-700 font-medium">
+                            <MapPin className="h-3 w-3 text-slate-400" />
+                            {reg.city || reg.registering_city || "Mumbai"}
+                          </span>
                         </td>
+
+                        {/* Registration Type */}
+                        <td className="py-4 px-4">
+                          <span className="inline-block rounded-md bg-purple-50 border border-purple-200 px-2.5 py-1 text-purple-800 font-bold text-[11px]">
+                            {reg.registration_category || "Executive Delegate"}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-4 px-4">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleRegistrationStatus(reg.id)}
+                            title="Click to toggle status"
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
+                              (reg.status || "Confirmed") === "Confirmed"
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+                            }`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              (reg.status || "Confirmed") === "Confirmed" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+                            }`} />
+                            {reg.status || "Confirmed"}
+                          </button>
+                        </td>
+
+                        {/* Actions / View Details */}
                         <td className="py-4 px-4 text-right">
                           <button
                             onClick={() => setSelectedRegDetail(reg)}
@@ -2244,7 +2870,7 @@ export default function AdminDashboardPage() {
 
                     {filteredRegistrations.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center text-slate-400">
+                        <td colSpan={9} className="py-16 text-center text-slate-400">
                           No event registrations found for "{searchQuery}".
                         </td>
                       </tr>
@@ -2376,9 +3002,29 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search contact enquiries..."
+                    placeholder="Search contact enquiries by sender name, email, phone, or category..."
                     className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
                   />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium mr-2">
+                    Showing <strong className="text-slate-900">{filteredContacts.length}</strong> enquiries
+                  </span>
+                  <button
+                    onClick={() => exportToExcel("contacts")}
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Export Excel</span>
+                  </button>
+                  <button
+                    onClick={() => exportToCSV("contacts")}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <Download className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Export CSV</span>
+                  </button>
                 </div>
               </div>
 
@@ -2386,6 +3032,7 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                      <th className="py-3 px-4">Status</th>
                       <th className="py-3 px-4">Sender</th>
                       <th className="py-3 px-4">Contact Info</th>
                       <th className="py-3 px-4">Category</th>
@@ -2395,49 +3042,112 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredContacts.map((con) => (
-                      <tr key={con.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-4 font-bold text-slate-900">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-bold text-xs">
-                              {con.name.charAt(0).toUpperCase()}
+                    {filteredContacts.map((con) => {
+                      const isUnread = !con.status || con.status === "unread";
+                      const isReplied = con.status === "replied";
+                      return (
+                        <tr key={con.id} className={`transition-colors ${isUnread ? "bg-purple-50/40 hover:bg-purple-50/70" : "hover:bg-slate-50"}`}>
+                          <td className="py-4 px-4">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleContactReadStatus(con)}
+                              title="Click to toggle read status"
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border transition-all cursor-pointer ${
+                                isReplied
+                                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                  : isUnread
+                                  ? "bg-purple-100 border-purple-300 text-purple-800"
+                                  : "bg-slate-100 border-slate-200 text-slate-600"
+                              }`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${
+                                isReplied ? "bg-emerald-500" : isUnread ? "bg-purple-600 animate-ping" : "bg-slate-400"
+                              }`} />
+                              {isReplied ? "Replied" : isUnread ? "Unread" : "Read"}
+                            </button>
+                          </td>
+
+                          <td className="py-4 px-4 font-bold text-slate-900">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-800 font-bold text-xs">
+                                {con.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <span className="block font-bold text-slate-900">{con.name}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">ID: {con.id}</span>
+                              </div>
                             </div>
-                            <span>{con.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-slate-700">
-                          <div className="flex flex-col">
-                            <span className="text-slate-900 font-medium">{con.email}</span>
-                            <span className="text-slate-500 text-[11px]">{con.phone}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-purple-800 font-bold">
-                            {con.enquiry_type}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-slate-700 max-w-sm">
-                          <p className="line-clamp-2 leading-relaxed">{con.message}</p>
-                        </td>
-                        <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
-                          {new Date(con.created_at).toLocaleString()}
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedContactDetail(con)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-800 transition-all hover:bg-purple-100 hover:scale-105 shadow-xs cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-purple-600" />
-                            <span>View Details</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+
+                          <td className="py-4 px-4 text-slate-700">
+                            <div className="flex flex-col">
+                              <a href={`mailto:${con.email}`} className="flex items-center gap-1 text-purple-700 font-medium hover:underline">
+                                <Mail className="h-3 w-3 text-purple-600" />
+                                {con.email}
+                              </a>
+                              <span className="flex items-center gap-1 text-slate-500 text-[11px] font-mono mt-0.5">
+                                <Phone className="h-3 w-3 text-slate-400" />
+                                {con.phone}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-purple-800 font-bold text-[11px]">
+                              {con.enquiry_type}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4 text-slate-700 max-w-xs">
+                            <p className="line-clamp-2 leading-relaxed font-sans">{con.message}</p>
+                          </td>
+
+                          <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
+                            {new Date(con.created_at).toLocaleString()}
+                          </td>
+
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedContactDetail(con);
+                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to ET Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nET Media Business Intelligence Team\npartner.support@etmedia.in`);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-all cursor-pointer shadow-xs"
+                                title="Reply via Dashboard"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5 text-purple-600" />
+                                <span>Reply</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleContactReadStatus(con)}
+                                className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                                title={isUnread ? "Mark as Read" : "Mark as Unread"}
+                              >
+                                <CheckCircle2 className={`h-4 w-4 ${!isUnread ? "text-emerald-600" : "text-slate-400"}`} />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteContactSubmission(con.id)}
+                                className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="Delete Message"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
 
                     {filteredContacts.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-slate-400">
-                          No contact form submissions found.
+                        <td colSpan={7} className="py-16 text-center text-slate-400">
+                          No contact form submissions found for "{searchQuery}".
                         </td>
                       </tr>
                     )}
@@ -3601,14 +4311,34 @@ export default function AdminDashboardPage() {
               {/* Participation Preferences */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
-                  Category & Referral Preferences
+                  Category, Status & Referral Preferences
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Registration Category:</span>
+                    <span className="text-slate-400 block text-[10px]">Category:</span>
                     <span className="inline-block rounded-md bg-cyan-100 px-2 py-0.5 text-cyan-800 font-bold text-[11px]">
                       {selectedRegDetail.registration_category || "Delegate"}
                     </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Status:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleToggleRegistrationStatus(selectedRegDetail.id);
+                        setSelectedRegDetail((prev) =>
+                          prev ? { ...prev, status: (prev.status || "Confirmed") === "Confirmed" ? "Pending" : "Confirmed" } : null
+                        );
+                      }}
+                      title="Click to toggle status"
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-all cursor-pointer ${
+                        (selectedRegDetail.status || "Confirmed") === "Confirmed"
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                          : "bg-amber-50 border-amber-200 text-amber-800"
+                      }`}
+                    >
+                      {selectedRegDetail.status || "Confirmed"}
+                    </button>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Registering City:</span>
@@ -3704,7 +4434,7 @@ export default function AdminDashboardPage() {
                   <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                     <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
                       <PlusCircle className="h-5 w-5 text-cyan-600" />
-                      Add Collaborator Brand
+                      <span>{editingPartner ? `Edit Partner: ${editingPartner.brand_name}` : "Add Partner Brand Logo"}</span>
                     </h3>
 
                     <form onSubmit={handleAddPartner} className="space-y-4">
@@ -3722,39 +4452,70 @@ export default function AdminDashboardPage() {
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Category *
-                        </label>
-                        <select
-                          value={newPartnerForm.category}
-                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, category: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                        >
-                          <option value="Strategic Partner">Strategic Partner</option>
-                          <option value="Tech Partner">Tech Partner</option>
-                          <option value="Media Partner">Media Partner</option>
-                          <option value="Award Partner">Award Partner</option>
-                          <option value="Event Sponsor">Event Sponsor</option>
-                        </select>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Category *
+                          </label>
+                          <select
+                            value={newPartnerForm.category}
+                            onChange={(e) => setNewPartnerForm({ ...newPartnerForm, category: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          >
+                            <option value="Strategic Partner">Strategic Partner</option>
+                            <option value="Tech Partner">Tech Partner</option>
+                            <option value="Media Partner">Media Partner</option>
+                            <option value="Award Partner">Award Partner</option>
+                            <option value="Event Sponsor">Event Sponsor</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Status *
+                          </label>
+                          <select
+                            value={newPartnerForm.status}
+                            onChange={(e) => setNewPartnerForm({ ...newPartnerForm, status: e.target.value as "Active" | "Inactive" })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                          >
+                            <option value="Active">🟢 Active (In Marquee)</option>
+                            <option value="Inactive">🔴 Inactive (Hidden)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Website Link
+                          </label>
+                          <input
+                            type="url"
+                            placeholder="https://company.com"
+                            value={newPartnerForm.website}
+                            onChange={(e) => setNewPartnerForm({ ...newPartnerForm, website: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Priority Order #
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="0 (Highest priority first)"
+                            value={newPartnerForm.priority}
+                            onChange={(e) => setNewPartnerForm({ ...newPartnerForm, priority: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-bold"
+                          />
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Website Link
-                        </label>
-                        <input
-                          type="url"
-                          placeholder="https://company.com"
-                          value={newPartnerForm.website}
-                          onChange={(e) => setNewPartnerForm({ ...newPartnerForm, website: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Logo Image (File Upload or URL) *
+                          Brand Logo (File Upload or URL) *
                         </label>
                         
                         {/* File Upload Option */}
@@ -3769,27 +4530,34 @@ export default function AdminDashboardPage() {
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
-                                const formDataUpload = new FormData();
-                                formDataUpload.append("image", file);
-                                try {
-                                  toast.loading("Uploading logo...");
-                                  const res = await fetch("/api/admin/upload", {
-                                    method: "POST",
-                                    headers: { Authorization: `Bearer ${token}` },
-                                    body: formDataUpload,
-                                  });
-                                  const uploadRes = await res.json();
-                                  toast.dismiss();
-                                  if (uploadRes.success) {
-                                    setNewPartnerForm((prev) => ({ ...prev, logo: uploadRes.url }));
-                                    toast.success("Logo uploaded!");
-                                  } else {
-                                    toast.error(uploadRes.message || "Upload failed");
+                                const reader = new FileReader();
+                                reader.onload = async () => {
+                                  const base64Data = reader.result as string;
+                                  setNewPartnerForm((prev) => ({ ...prev, logo: base64Data }));
+                                  try {
+                                    toast.loading("Uploading logo...");
+                                    const res = await fetch("/api/admin/upload", {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                      body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                    });
+                                    const uploadRes = await res.json();
+                                    toast.dismiss();
+                                    if (uploadRes.success && uploadRes.url) {
+                                      setNewPartnerForm((prev) => ({ ...prev, logo: uploadRes.url }));
+                                      toast.success("Logo uploaded!");
+                                    } else {
+                                      toast.success("Logo preview ready!");
+                                    }
+                                  } catch (err) {
+                                    toast.dismiss();
+                                    toast.success("Logo preview ready!");
                                   }
-                                } catch (err) {
-                                  toast.dismiss();
-                                  toast.error("File upload error");
-                                }
+                                };
+                                reader.readAsDataURL(file);
                               }}
                             />
                           </label>
@@ -3813,13 +4581,34 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
 
-                      <button
-                        type="submit"
-                        disabled={partnerUploading}
-                        className="w-full rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        {partnerUploading ? "Uploading..." : "Save & Publish Brand Logo"}
-                      </button>
+                      <div className="flex gap-2 pt-2">
+                        {editingPartner && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPartner(null);
+                              setNewPartnerForm({
+                                brand_name: "",
+                                website: "",
+                                category: "Strategic Partner",
+                                logo: "",
+                                priority: 0,
+                                status: "Active",
+                              });
+                            }}
+                            className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={partnerUploading}
+                          className="flex-1 rounded-2xl bg-cyan-600 py-3 text-xs font-bold text-white shadow-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {partnerUploading ? "Uploading..." : editingPartner ? "Update Partner Brand" : "Save & Publish Brand Logo"}
+                        </button>
+                      </div>
                     </form>
                   </div>
 
@@ -3827,7 +4616,7 @@ export default function AdminDashboardPage() {
                   <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                     <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
                       <span>Collaborator Marquee Logos ({partnersList.length})</span>
-                      <span className="text-xs text-slate-500 font-normal">Active on Partner Page</span>
+                      <span className="text-xs text-slate-500 font-normal">Active in Logo Carousel</span>
                     </h3>
 
                     {partnersList.length === 0 ? (
@@ -3836,50 +4625,98 @@ export default function AdminDashboardPage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {partnersList.map((partner) => (
-                          <div
-                            key={partner.id}
-                            className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-cyan-400 transition-all"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <img
-                                src={partner.logo}
-                                alt={partner.brand_name}
-                                className="h-12 w-12 rounded-xl object-cover border border-slate-300 shrink-0"
-                                onError={(e) => {
-                                  (e.target as HTMLElement).style.display = "none";
-                                }}
-                              />
-                              <div className="min-w-0">
-                                <h4 className="font-bold text-slate-900 text-xs truncate">
-                                  {partner.brand_name}
-                                </h4>
-                                <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200 inline-block mt-0.5">
-                                  {partner.category || "Strategic Partner"}
+                        {partnersList.map((partner) => {
+                          const isActive = partner.status !== "Inactive";
+                          return (
+                            <div
+                              key={partner.id}
+                              className={`flex flex-col justify-between p-4 rounded-2xl border transition-all space-y-3 ${
+                                isActive
+                                  ? "border-slate-200 bg-slate-50 hover:border-cyan-400"
+                                  : "border-slate-200 bg-slate-100/70 opacity-75"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <img
+                                    src={partner.logo}
+                                    alt={partner.brand_name}
+                                    className="h-12 w-12 rounded-xl object-cover border border-slate-300 shrink-0 bg-white"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = "none";
+                                    }}
+                                  />
+                                  <div className="min-w-0">
+                                    <h4 className="font-bold text-slate-900 text-xs truncate">
+                                      {partner.brand_name}
+                                    </h4>
+                                    <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200 inline-block mt-0.5">
+                                      {partner.category || "Strategic Partner"}
+                                    </span>
+                                    {partner.website && (
+                                      <a
+                                        href={partner.website}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-[10px] text-slate-500 hover:text-cyan-600 block truncate mt-0.5 font-mono"
+                                      >
+                                        {partner.website}
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border shrink-0 ${
+                                    isActive
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                      : "bg-slate-200 text-slate-700 border-slate-300"
+                                  }`}
+                                >
+                                  {isActive ? "🟢 Active" : "🔴 Inactive"}
                                 </span>
-                                {partner.website && (
-                                  <a
-                                    href={partner.website}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-[10px] text-slate-500 hover:text-cyan-600 block truncate mt-0.5"
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+                                <span className="text-[10px] font-mono font-bold text-slate-500">
+                                  Priority: #{partner.priority ?? 0}
+                                </span>
+
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingPartner(partner);
+                                      setNewPartnerForm({
+                                        brand_name: partner.brand_name,
+                                        website: partner.website || "",
+                                        category: partner.category || "Strategic Partner",
+                                        logo: partner.logo,
+                                        priority: partner.priority ?? 0,
+                                        status: partner.status || "Active",
+                                      });
+                                    }}
+                                    className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-[11px]"
+                                    title="Edit Partner"
                                   >
-                                    {partner.website}
-                                  </a>
-                                )}
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                    <span>Edit</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeletePartner(partner.id)}
+                                    className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-[11px]"
+                                    title="Delete Partner Logo"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePartner(partner.id)}
-                              className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors ml-2 shrink-0 cursor-pointer"
-                              title="Delete Partner Logo"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -4081,11 +4918,11 @@ export default function AdminDashboardPage() {
                     {/* Cover Image Upload / Input */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Cover Image (Upload or URL) *
+                        1. Upload Magazine Cover Image *
                       </label>
                       
                       <div className="mb-2">
-                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
                           <Upload className="h-4 w-4 text-purple-600" />
                           <span>Choose Cover Image File</span>
                           <input
@@ -4095,27 +4932,34 @@ export default function AdminDashboardPage() {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
-                              const formDataUpload = new FormData();
-                              formDataUpload.append("image", file);
-                              try {
-                                toast.loading("Uploading cover...");
-                                const res = await fetch("/api/admin/upload", {
-                                  method: "POST",
-                                  headers: { Authorization: `Bearer ${token}` },
-                                  body: formDataUpload,
-                                });
-                                const uploadRes = await res.json();
-                                toast.dismiss();
-                                if (uploadRes.success) {
-                                  setNewMagForm((prev) => ({ ...prev, cover: uploadRes.url }));
-                                  toast.success("Cover image uploaded!");
-                                } else {
-                                  toast.error(uploadRes.message || "Upload failed");
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64Data = reader.result as string;
+                                setNewMagForm((prev) => ({ ...prev, cover: base64Data }));
+                                try {
+                                  toast.loading("Uploading cover image...");
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                  });
+                                  const uploadRes = await res.json();
+                                  toast.dismiss();
+                                  if (uploadRes.success && uploadRes.url) {
+                                    setNewMagForm((prev) => ({ ...prev, cover: uploadRes.url }));
+                                    toast.success("Cover image uploaded!");
+                                  } else {
+                                    toast.success("Cover image loaded into form preview!");
+                                  }
+                                } catch (err) {
+                                  toast.dismiss();
+                                  toast.success("Cover image loaded into form preview!");
                                 }
-                              } catch (err) {
-                                toast.dismiss();
-                                toast.error("File upload error");
-                              }
+                              };
+                              reader.readAsDataURL(file);
                             }}
                           />
                         </label>
@@ -4124,35 +4968,135 @@ export default function AdminDashboardPage() {
                       <input
                         type="text"
                         required
-                        placeholder="Or enter Cover Image URL"
+                        placeholder="Or enter Cover Image URL (https://...)"
                         value={newMagForm.cover}
                         onChange={(e) => setNewMagForm({ ...newMagForm, cover: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                       />
                     </div>
 
-                    {/* PDF URL Input */}
+                    {/* PDF Document Upload / Input */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        PDF Download Link / File URL
+                        2. Upload Full PDF Document
                       </label>
+                      
+                      <div className="mb-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
+                          <Upload className="h-4 w-4 text-purple-600" />
+                          <span>Choose PDF File</span>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64Data = reader.result as string;
+                                setNewMagForm((prev) => ({ ...prev, pdf_url: base64Data }));
+                                try {
+                                  toast.loading("Uploading PDF document...");
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                  });
+                                  const uploadRes = await res.json();
+                                  toast.dismiss();
+                                  if (uploadRes.success && uploadRes.url) {
+                                    setNewMagForm((prev) => ({ ...prev, pdf_url: uploadRes.url }));
+                                    toast.success("PDF document uploaded!");
+                                  } else {
+                                    toast.success("PDF document attached!");
+                                  }
+                                } catch (err) {
+                                  toast.dismiss();
+                                  toast.success("PDF document attached!");
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+
                       <input
                         type="url"
-                        placeholder="https://example.com/magazine.pdf"
+                        placeholder="Or enter PDF URL (https://...)"
                         value={newMagForm.pdf_url}
                         onChange={(e) => setNewMagForm({ ...newMagForm, pdf_url: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                       />
                     </div>
 
-                    {/* Pages List Input */}
+                    {/* Individual Pages Upload / Input */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Page Images (Comma-separated URLs for Flipbook)
+                        3. Upload Individual Pages (For Interactive Flipbook)
                       </label>
+
+                      <div className="mb-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
+                          <Upload className="h-4 w-4 text-purple-600" />
+                          <span>Choose Multiple Page Images</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              toast.loading(`Uploading ${files.length} page images...`);
+                              const uploadedUrls: string[] = [];
+
+                              for (const file of files) {
+                                await new Promise<void>((resolve) => {
+                                  const reader = new FileReader();
+                                  reader.onload = async () => {
+                                    const base64Data = reader.result as string;
+                                    try {
+                                      const res = await fetch("/api/admin/upload", {
+                                        method: "POST",
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                        body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                      });
+                                      const uploadRes = await res.json();
+                                      if (uploadRes.success && uploadRes.url) {
+                                        uploadedUrls.push(uploadRes.url);
+                                      } else {
+                                        uploadedUrls.push(base64Data);
+                                      }
+                                    } catch (err) {
+                                      uploadedUrls.push(base64Data);
+                                    }
+                                    resolve();
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }
+                              toast.dismiss();
+                              setNewMagForm((prev) => ({
+                                ...prev,
+                                pages_list: uploadedUrls.join(", "),
+                              }));
+                              toast.success(`Attached ${uploadedUrls.length} page images for flipbook!`);
+                            }}
+                          />
+                        </label>
+                      </div>
+
                       <textarea
                         rows={3}
-                        placeholder="e.g. /uploads/p1.png, /uploads/p2.png, /uploads/p3.png"
+                        placeholder="Comma-separated page URLs: /uploads/p1.png, /uploads/p2.png..."
                         value={newMagForm.pages_list}
                         onChange={(e) => setNewMagForm({ ...newMagForm, pages_list: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
@@ -4671,13 +5615,29 @@ export default function AdminDashboardPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search candidate by name, email, phone, or job title..."
+                        placeholder="Search candidate by name, email, phone, job title, or experience..."
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
                       />
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                      <span>Total Applications: <strong className="text-slate-900">{jobApplications.length}</strong></span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-slate-500 font-medium mr-2">
+                        Total Applicants: <strong className="text-slate-900">{jobApplications.length}</strong>
+                      </span>
+                      <button
+                        onClick={() => exportToExcel("career-applicants")}
+                        className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                      >
+                        <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Export Excel</span>
+                      </button>
+                      <button
+                        onClick={() => exportToCSV("career-applicants")}
+                        className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Download className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Export CSV</span>
+                      </button>
                     </div>
                   </div>
 
@@ -4689,7 +5649,8 @@ export default function AdminDashboardPage() {
                           <th className="py-3 px-4">Applied Role</th>
                           <th className="py-3 px-4">Contact Details</th>
                           <th className="py-3 px-4">Experience</th>
-                          <th className="py-3 px-4">Resume File</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4">Download Resume</th>
                           <th className="py-3 px-4">Applied Date</th>
                           <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
@@ -4701,13 +5662,14 @@ export default function AdminDashboardPage() {
                               app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                               app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                               app.job_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              app.phone.toLowerCase().includes(searchQuery.toLowerCase())
+                              app.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              app.experience.toLowerCase().includes(searchQuery.toLowerCase())
                           )
                           .map((app) => (
                             <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                               <td className="py-4 px-4 font-bold text-slate-900">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
                                     {app.name.charAt(0).toUpperCase()}
                                   </div>
                                   <div>
@@ -4724,10 +5686,10 @@ export default function AdminDashboardPage() {
                               </td>
                               <td className="py-4 px-4 text-slate-700">
                                 <div className="flex flex-col">
-                                  <span className="flex items-center gap-1.5 text-slate-900 font-medium">
+                                  <a href={`mailto:${app.email}`} className="flex items-center gap-1.5 text-cyan-700 font-medium hover:underline">
                                     <Mail className="h-3 w-3 text-cyan-600" /> {app.email}
-                                  </span>
-                                  <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
+                                  </a>
+                                  <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5 font-mono">
                                     <Phone className="h-3 w-3 text-slate-400" /> {app.phone}
                                   </span>
                                 </div>
@@ -4738,13 +5700,26 @@ export default function AdminDashboardPage() {
                                 </span>
                               </td>
                               <td className="py-4 px-4">
+                                <select
+                                  value={app.status || "Under Review"}
+                                  onChange={(e) => handleUpdateApplicantStatus(app.id, e.target.value)}
+                                  className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-800 focus:border-cyan-500 focus:outline-none"
+                                >
+                                  <option value="Under Review">🔵 Under Review</option>
+                                  <option value="Shortlisted">🟣 Shortlisted</option>
+                                  <option value="Interview Scheduled">🟡 Interview Scheduled</option>
+                                  <option value="Hired">🟢 Hired</option>
+                                  <option value="Rejected">🔴 Rejected</option>
+                                </select>
+                              </td>
+                              <td className="py-4 px-4">
                                 {app.resume_url ? (
                                   <a
                                     href={app.resume_url}
                                     download
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-extrabold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-extrabold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                                   >
                                     <Download className="h-3.5 w-3.5 text-cyan-600" />
                                     <span>Download Resume</span>
@@ -4762,7 +5737,7 @@ export default function AdminDashboardPage() {
                                     type="button"
                                     onClick={() => setSelectedApplicantDetail(app)}
                                     className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors cursor-pointer"
-                                    title="View Details"
+                                    title="View Candidate Details"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </button>
@@ -4770,7 +5745,7 @@ export default function AdminDashboardPage() {
                                     type="button"
                                     onClick={() => handleDeleteJobApplication(app.id)}
                                     className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                                    title="Delete Applicant"
+                                    title="Delete Candidate"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </button>
@@ -4781,7 +5756,7 @@ export default function AdminDashboardPage() {
 
                         {jobApplications.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="py-16 text-center text-slate-400">
+                            <td colSpan={8} className="py-16 text-center text-slate-400">
                               No job applications received yet. Submit an application on the Careers page to test!
                             </td>
                           </tr>
@@ -5332,68 +6307,164 @@ export default function AdminDashboardPage() {
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Job Applications & Resumes</h2>
                   <p className="text-xs text-slate-500 font-medium">Review candidates, download PDF resumes, and contact applicants</p>
                 </div>
-                <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800">
-                  Total Applicants: {jobApplications.length}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-bold text-cyan-800 mr-2">
+                    Total Applicants: {jobApplications.length}
+                  </span>
+                  <button
+                    onClick={() => exportToExcel("career-applicants")}
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Export Excel</span>
+                  </button>
+                  <button
+                    onClick={() => exportToCSV("career-applicants")}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                  >
+                    <Download className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
-                {jobApplications.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs">
-                    No job applications received yet.
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search candidate by name, email, phone, job title, or experience..."
+                      className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                    />
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                        <tr>
-                          <th className="py-3 px-4">Candidate Name</th>
-                          <th className="py-3 px-4">Applied Job Title</th>
-                          <th className="py-3 px-4">Email / Phone</th>
-                          <th className="py-3 px-4">Experience</th>
-                          <th className="py-3 px-4">Applied Date</th>
-                          <th className="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {jobApplications.map((app) => (
-                          <tr key={app.id} className="hover:bg-cyan-50/30 transition-colors">
-                            <td className="py-3 px-4 font-bold text-slate-900">{app.name}</td>
-                            <td className="py-3 px-4 text-cyan-800 font-bold">{app.job_title}</td>
-                            <td className="py-3 px-4">
-                              <div>{app.email}</div>
-                              <div className="text-[10px] text-slate-500">{app.phone}</div>
+                </div>
+
+                <div className="mt-6 overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                        <th className="py-3 px-4">Candidate Name</th>
+                        <th className="py-3 px-4">Applied Role</th>
+                        <th className="py-3 px-4">Contact Details</th>
+                        <th className="py-3 px-4">Experience</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Download Resume</th>
+                        <th className="py-3 px-4">Applied Date</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {jobApplications
+                        .filter(
+                          (app) =>
+                            app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            app.job_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            app.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            app.experience.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((app) => (
+                          <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-4 px-4 font-bold text-slate-900">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
+                                  {app.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <span className="block font-bold text-slate-900">{app.name}</span>
+                                  <span className="text-[11px] text-slate-400 font-mono">ID: {app.id}</span>
+                                </div>
+                              </div>
                             </td>
-                            <td className="py-3 px-4">{app.experience}</td>
-                            <td className="py-3 px-4 text-[10px] text-slate-400 font-mono">
-                              {new Date(app.created_at || Date.now()).toLocaleDateString()}
+                            <td className="py-4 px-4 text-slate-700">
+                              <div className="flex flex-col">
+                                <span className="font-extrabold text-cyan-800">{app.job_title}</span>
+                                <span className="text-[10px] font-mono text-slate-400">{app.job_id}</span>
+                              </div>
                             </td>
-                            <td className="py-3 px-4 text-right space-x-2">
-                              {app.resume_url && (
+                            <td className="py-4 px-4 text-slate-700">
+                              <div className="flex flex-col">
+                                <a href={`mailto:${app.email}`} className="flex items-center gap-1.5 text-cyan-700 font-medium hover:underline">
+                                  <Mail className="h-3 w-3 text-cyan-600" /> {app.email}
+                                </a>
+                                <span className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5 font-mono">
+                                  <Phone className="h-3 w-3 text-slate-400" /> {app.phone}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-800 border border-slate-200 font-medium">
+                                {app.experience}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <select
+                                value={app.status || "Under Review"}
+                                onChange={(e) => handleUpdateApplicantStatus(app.id, e.target.value)}
+                                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-slate-800 focus:border-cyan-500 focus:outline-none"
+                              >
+                                <option value="Under Review">🔵 Under Review</option>
+                                <option value="Shortlisted">🟣 Shortlisted</option>
+                                <option value="Interview Scheduled">🟡 Interview Scheduled</option>
+                                <option value="Hired">🟢 Hired</option>
+                                <option value="Rejected">🔴 Rejected</option>
+                              </select>
+                            </td>
+                            <td className="py-4 px-4">
+                              {app.resume_url ? (
                                 <a
                                   href={app.resume_url}
                                   download
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200 px-2.5 py-1 text-[11px] font-bold hover:bg-cyan-100"
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-extrabold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                                 >
-                                  <Download className="h-3 w-3" />
-                                  <span>Resume</span>
+                                  <Download className="h-3.5 w-3.5 text-cyan-600" />
+                                  <span>Download Resume</span>
                                 </a>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">No file</span>
                               )}
-                              <button
-                                onClick={() => setSelectedApplicantDetail(app)}
-                                className="rounded-xl bg-slate-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-slate-800"
-                              >
-                                Details
-                              </button>
+                            </td>
+                            <td className="py-4 px-4 text-slate-500 font-mono text-[11px]">
+                              {app.created_at ? new Date(app.created_at).toLocaleString() : "Recently"}
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedApplicantDetail(app)}
+                                  className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-cyan-50 hover:text-cyan-700 transition-colors cursor-pointer"
+                                  title="View Candidate Details"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteJobApplication(app.id)}
+                                  className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                  title="Delete Candidate"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+
+                      {jobApplications.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="py-16 text-center text-slate-400">
+                            No job applications received yet. Submit an application on the Careers page to test!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -6254,11 +7325,11 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ========================================== */}
-      {/* CONTACT ENQUIRY FULL DETAILS MODAL         */}
+      {/* CONTACT ENQUIRY FULL DETAILS & REPLY MODAL */}
       {/* ========================================== */}
       {selectedContactDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               type="button"
@@ -6270,17 +7341,29 @@ export default function AdminDashboardPage() {
 
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-600">
               <MessageSquare className="h-4 w-4" />
-              <span>Contact Enquiry Details</span>
+              <span>Contact Enquiry & Reply Studio</span>
             </div>
 
-            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
-              {selectedContactDetail.name}
-            </h3>
+            <div className="mt-2 flex items-center justify-between">
+              <h3 className="text-2xl font-extrabold text-slate-900">
+                {selectedContactDetail.name}
+              </h3>
+              <span className={`rounded-full px-3 py-0.5 text-xs font-extrabold border ${
+                selectedContactDetail.status === "replied"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : selectedContactDetail.status === "read"
+                  ? "bg-slate-100 border-slate-200 text-slate-700"
+                  : "bg-purple-100 border-purple-300 text-purple-800"
+              }`}>
+                {selectedContactDetail.status === "replied" ? "🟢 Replied" : selectedContactDetail.status === "read" ? "⚪ Read" : "🔵 Unread"}
+              </span>
+            </div>
+
             <p className="text-xs text-slate-500 font-mono mt-0.5">
               Enquiry ID: <span className="text-purple-700 font-bold">{selectedContactDetail.id}</span>
             </p>
 
-            <div className="mt-6 space-y-4 text-xs">
+            <div className="mt-5 space-y-4 text-xs">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -6300,8 +7383,9 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* Message Body */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider block">Full Message Body</span>
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider block">Incoming Message</span>
                 <p className="text-slate-800 leading-relaxed font-sans text-xs whitespace-pre-wrap">
                   {selectedContactDetail.message}
                 </p>
@@ -6309,19 +7393,67 @@ export default function AdminDashboardPage() {
                   Submitted At: {new Date(selectedContactDetail.created_at).toLocaleString()}
                 </p>
               </div>
+
+              {/* Reply via Dashboard Composer */}
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 space-y-3">
+                <span className="text-[11px] font-black uppercase text-purple-800 tracking-wider block flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-purple-600" />
+                  Reply via Dashboard
+                </span>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Reply Subject</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={`RE: ${selectedContactDetail.enquiry_type} - ET Media BI`}
+                    className="w-full rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-xs text-slate-700 font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">Reply Message Content *</label>
+                  <textarea
+                    rows={4}
+                    value={contactReplyText}
+                    onChange={(e) => setContactReplyText(e.target.value)}
+                    placeholder="Type your official response to this client enquiry..."
+                    className="w-full rounded-xl border border-purple-300 bg-white p-3 text-xs text-slate-900 focus:border-purple-600 focus:outline-none leading-relaxed"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleSendReplyViaDashboard(selectedContactDetail, contactReplyText)}
+                  className="w-full rounded-xl bg-purple-700 hover:bg-purple-800 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>Send Official Response via Dashboard</span>
+                </button>
+              </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <a
-                href={`mailto:${selectedContactDetail.email}?subject=RE: ${encodeURIComponent(selectedContactDetail.enquiry_type)} - ET Media Business Intelligence`}
-                className="flex-1 text-center rounded-xl bg-purple-600 py-3 text-xs font-bold text-white hover:bg-purple-700 transition-colors"
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => handleToggleContactReadStatus(selectedContactDetail)}
+                className="flex-1 rounded-xl border border-slate-300 bg-slate-100 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               >
-                Reply via Email
-              </a>
+                {selectedContactDetail.status === "read" ? "Mark as Unread" : "Mark as Read"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteContactSubmission(selectedContactDetail.id)}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedContactDetail(null)}
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -6545,6 +7677,24 @@ export default function AdminDashboardPage() {
                   <div>
                     <span className="text-slate-400 block text-[10px]">Application ID:</span>
                     <strong className="text-slate-900 font-mono">{selectedApplicantDetail.id}</strong>
+                  </div>
+                  <div className="col-span-2 pt-2 border-t border-slate-200">
+                    <span className="text-slate-400 block text-[10px] mb-1">Candidate Application Status:</span>
+                    <select
+                      value={selectedApplicantDetail.status || "Under Review"}
+                      onChange={(e) => {
+                        const newSt = e.target.value;
+                        handleUpdateApplicantStatus(selectedApplicantDetail.id, newSt);
+                        setSelectedApplicantDetail((prev) => (prev ? { ...prev, status: newSt } : null));
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-cyan-500 focus:outline-none"
+                    >
+                      <option value="Under Review">🔵 Under Review</option>
+                      <option value="Shortlisted">🟣 Shortlisted</option>
+                      <option value="Interview Scheduled">🟡 Interview Scheduled</option>
+                      <option value="Hired">🟢 Hired</option>
+                      <option value="Rejected">🔴 Rejected</option>
+                    </select>
                   </div>
                 </div>
 

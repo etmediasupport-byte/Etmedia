@@ -47,6 +47,7 @@ import { ImageZoomCard } from "@/components/ui/ImageZoomCard";
 import { HeroSection } from "@/components/site/HeroSection";
 import { InteractiveMapSection } from "@/components/site/InteractiveMapSection";
 import { StatisticsSection } from "@/components/site/StatisticsSection";
+import { SEOHead } from "@/components/site/SEOHead";
 import { toast } from "sonner";
 
 const iconMap = {
@@ -430,70 +431,137 @@ function MagazineSection() {
 // SECTION 8: OUR COLLABORATORS
 function CollaboratorsMarquee() {
   return (
-    <section className="bg-surface py-16">
+    <section className="bg-surface py-16 overflow-hidden border-y border-slate-200/80 dark:border-slate-800">
       <div className="container-x">
         <p className="text-muted-foreground text-center text-xs font-bold tracking-[0.28em] uppercase font-btn">
           Trusted By Industry Leaders & Corporate Sponsors
         </p>
       </div>
-      <div className="mt-10 overflow-hidden">
-        <div className="marquee-track flex w-max gap-16">
-          {[...partners, ...partners].map((p, i) => (
+      <div className="mt-10 overflow-hidden relative">
+        {/* Gradient Fade Masks on sides */}
+        <div className="absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-surface to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-surface to-transparent z-10 pointer-events-none" />
+
+        <motion.div
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 25, ease: "linear", repeat: Infinity }}
+          whileHover={{ animationPlayState: "paused" }}
+          className="flex w-max gap-16 items-center"
+        >
+          {[...partners, ...partners, ...partners, ...partners].map((p, i) => (
             <span
               key={`${p}-${i}`}
-              className="text-muted-foreground/50 hover:text-gradient text-2xl font-bold font-display tracking-[0.2em] whitespace-nowrap grayscale transition-all duration-300 hover:grayscale-0 cursor-default"
+              className="text-muted-foreground/60 hover:text-gradient text-2xl font-bold font-display tracking-[0.2em] whitespace-nowrap grayscale transition-all duration-300 hover:grayscale-0 cursor-default hover:scale-105"
             >
               {p}
             </span>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
 
-// SECTION 9: STATISTICS SECTION (Rendered via imported StatisticsSection component)
-
 // SECTION 10: TESTIMONIALS
 function TestimonialsSection() {
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const nextSlide = () => setActiveIdx((prev) => (prev + 1) % testimonials.length);
+  const prevSlide = () => setActiveIdx((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
+
   return (
-    <section className="section bg-surface">
+    <section className="section bg-surface overflow-hidden">
       <div className="container-x">
         <SectionHeading
           kicker="Testimonials"
           title="What Industry Leaders Say"
           description="Hear from C-Suite executives who participate in ET Media platforms."
         />
-        <div className="mt-16 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-6 md:grid md:grid-cols-3 md:overflow-visible">
-          {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 0.08} className="w-[88vw] shrink-0 snap-start md:w-auto">
-              <MouseTiltCard maxTilt={10} className="glass-card h-full overflow-hidden rounded-3xl border border-border/80">
-                <div className="relative aspect-video">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${t.videoId}`}
-                    title={`${t.name} testimonial`}
-                    loading="lazy"
-                    allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0 h-full w-full"
-                  />
-                </div>
-                <div className="p-7">
-                  <Quote className="text-brand-blue h-6 w-6" />
-                  <p className="mt-3 text-sm leading-relaxed text-foreground/90">{t.quote}</p>
-                  <div className="mt-5 flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, s) => (
-                      <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
-                    ))}
-                  </div>
-                  <p className="mt-4 font-bold font-display text-foreground">{t.name}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {t.role}, {t.company}
-                  </p>
-                </div>
-              </MouseTiltCard>
-            </Reveal>
-          ))}
+
+        <div className="mt-16 relative max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeIdx}
+              initial={{ opacity: 0, x: 50, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -50, scale: 0.96 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {(() => {
+                const t = testimonials[activeIdx]!;
+                return (
+                  <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-3xl border border-border/80 shadow-2xl p-8 sm:p-12">
+                    <div className="grid gap-8 lg:grid-cols-12 items-center">
+                      <div className="lg:col-span-6 relative aspect-video rounded-2xl overflow-hidden shadow-lg border border-border">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${t.videoId}`}
+                          title={`${t.name} testimonial`}
+                          loading="lazy"
+                          allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+                          allowFullScreen
+                          className="absolute inset-0 h-full w-full"
+                        />
+                      </div>
+
+                      <div className="lg:col-span-6 space-y-4">
+                        <Quote className="text-cyan-500 h-8 w-8 opacity-80" />
+                        <p className="text-base sm:text-lg leading-relaxed text-foreground font-sans font-medium italic">
+                          "{t.quote}"
+                        </p>
+                        <div className="flex items-center gap-1 pt-2">
+                          {Array.from({ length: 5 }).map((_, s) => (
+                            <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
+                          ))}
+                        </div>
+                        <div className="pt-2 border-t border-border/60">
+                          <p className="font-bold text-lg font-display text-foreground">{t.name}</p>
+                          <p className="text-muted-foreground text-sm font-btn">
+                            {t.role}, <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{t.company}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </MouseTiltCard>
+                );
+              })()}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Carousel Navigation Controls */}
+          <div className="mt-8 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Go to testimonial ${i + 1}`}
+                  onClick={() => setActiveIdx(i)}
+                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === activeIdx ? "w-8 gradient-brand" : "w-2.5 bg-slate-300 dark:bg-slate-700"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={prevSlide}
+                className="p-3 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-md"
+                aria-label="Previous Testimonial"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={nextSlide}
+                className="p-3 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-md"
+                aria-label="Next Testimonial"
+              >
+                →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -618,6 +686,11 @@ function NewsletterCta() {
 export default function HomePage() {
   return (
     <>
+      <SEOHead
+        title="ET Media Business Intelligence | India's Premier CXO Leadership Summit Platform"
+        description="ET Media Business Intelligence bridges C-Suite leaders, Global Capability Centers, and enterprise growth opportunities across India."
+        keywords="CFO Summit, HR Excellence Awards, Enterprise AI Conclave, CXO Conferences, Business Intelligence India"
+      />
       {/* 1. Hero Carousel (Premium Banners, 5s Auto Slide, 3D Globe) */}
       <HeroSection />
 

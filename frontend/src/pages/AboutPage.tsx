@@ -18,6 +18,7 @@ import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { ImageZoomCard } from "@/components/ui/ImageZoomCard";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
+import { Timeline } from "@/components/site/Timeline";
 
 const pillars = [
   {
@@ -188,6 +189,21 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* Timeline Growth Section */}
+      <section className="section bg-slate-900/5 dark:bg-slate-950/50 border-y border-slate-200 dark:border-slate-800">
+        <div className="container-x">
+          <SectionHeading
+            kicker="Our Journey"
+            title="Milestones of Leadership & Impact"
+            description="From our first CFO summit to national leadership platforms and cross-border expansion."
+          />
+          <div className="mt-10">
+            <Timeline />
+          </div>
+        </div>
+      </section>
+
 
       {lightbox ? (
         <div

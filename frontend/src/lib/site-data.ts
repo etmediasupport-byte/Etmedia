@@ -435,6 +435,7 @@ export type MagazineItem = {
   pages_list?: string | string[];
   category: string;
   is_featured?: boolean | number;
+  views?: number;
 };
 
 export const getDefaultMagazines = (): MagazineItem[] => [
@@ -634,6 +635,8 @@ export type Collaborator = {
   logo: string;
   website?: string;
   category?: string;
+  priority?: number;
+  status?: "Active" | "Inactive";
 };
 
 export const getDefaultCollaborators = (): Collaborator[] => [
@@ -705,6 +708,7 @@ export type JobApplication = {
   experience: string;
   resume_url: string;
   portfolio_url?: string;
+  status?: string;
   created_at?: string;
 };
 

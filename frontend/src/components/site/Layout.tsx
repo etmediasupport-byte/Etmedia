@@ -7,8 +7,11 @@ import { Footer } from "@/components/site/Footer";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { Toaster } from "@/components/ui/sonner";
 
+import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
+
 export function Layout() {
   const location = useLocation();
+
 
   // Lenis Smooth Scrolling Setup
   useEffect(() => {
@@ -32,6 +35,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-brand-blue/30 selection:text-brand-blue">
+      <ScrollProgressBar />
       <Navbar />
       <AnimatePresence mode="wait">
         <motion.main

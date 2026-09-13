@@ -13,14 +13,24 @@ import GalleryPage from "@/pages/GalleryPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminLoginPage from "@/pages/AdminLoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import { HelmetProvider } from "react-helmet-async";
+import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+    <HelmetProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -39,7 +49,8 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-  );
+  </HelmetProvider>
+);
 }
 
 

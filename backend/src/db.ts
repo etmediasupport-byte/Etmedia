@@ -109,6 +109,7 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN registering_city VARCHAR(255);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN referral_source VARCHAR(100);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN event_title VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
 
 
     await pool.query(`
@@ -168,6 +169,7 @@ export async function initDatabase() {
     // Create new admin modules tables (testimonials, newsletter, seo, settings)
     await ensureNewAdminTables();
     await seedNewAdminTables();
+    await ensureCollectionAliases();
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -316,9 +318,13 @@ export async function ensurePartnersTables() {
         logo TEXT NOT NULL,
         website VARCHAR(255),
         category VARCHAR(100) DEFAULT 'Strategic Partner',
+        priority INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'Active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE partners ADD COLUMN priority INT DEFAULT 0;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE partners ADD COLUMN status VARCHAR(50) DEFAULT 'Active';"); } catch (e) {}
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS partner_submissions (
@@ -893,4 +899,27 @@ export async function seedNewAdminTables() {
     console.error("[MySQL] Error seeding new admin tables:", err);
   }
 }
+
+export async function ensureCollectionAliases() {
+  if (!pool) return;
+  try {
+    // 1. eventRegistrations -> registrations
+    await pool.query(`CREATE TABLE IF NOT EXISTS eventRegistrations LIKE registrations;`).catch(() => {});
+    // 2. delegates -> delegate_registrations
+    await pool.query(`CREATE TABLE IF NOT EXISTS delegates LIKE delegate_registrations;`).catch(() => {});
+    // 3. collaborators -> partners
+    await pool.query(`CREATE TABLE IF NOT EXISTS collaborators LIKE partners;`).catch(() => {});
+    // 4. applications -> job_applications
+    await pool.query(`CREATE TABLE IF NOT EXISTS applications LIKE job_applications;`).catch(() => {});
+    // 5. gallery -> gallery_items
+    await pool.query(`CREATE TABLE IF NOT EXISTS gallery LIKE gallery_items;`).catch(() => {});
+    // 6. newsletter -> newsletter_subscribers
+    await pool.query(`CREATE TABLE IF NOT EXISTS newsletter LIKE newsletter_subscribers;`).catch(() => {});
+    // 7. settings -> website_settings
+    await pool.query(`CREATE TABLE IF NOT EXISTS settings LIKE website_settings;`).catch(() => {});
+  } catch (err) {
+    console.error("[MySQL] Error setting up collection aliases:", err);
+  }
+}
+
 

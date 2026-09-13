@@ -188,7 +188,9 @@ export default function PartnerWithUsPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.partners && data.partners.length > 0) {
-          setCollaborators(data.partners);
+          const activePartners = data.partners.filter((c: Collaborator) => c.status !== "Inactive");
+          activePartners.sort((a: Collaborator, b: Collaborator) => (a.priority ?? 0) - (b.priority ?? 0));
+          setCollaborators(activePartners);
           return;
         }
       }
