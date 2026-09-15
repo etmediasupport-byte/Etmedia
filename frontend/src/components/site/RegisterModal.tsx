@@ -965,70 +965,176 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
       {/* 2. SUCCESS MODAL (AFTER SUBMISSION) */}
       {successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl max-h-[94vh] flex flex-col rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(34,197,94,0.3)] bg-slate-900 border border-slate-800 text-slate-100 text-center animate-in zoom-in-95 duration-200 overflow-y-auto my-auto scrollbar-thin">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-3 sm:p-6 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-emerald-500/40 bg-slate-900/95 shadow-[0_25px_70px_-15px_rgba(16,185,129,0.35)] backdrop-blur-2xl overflow-hidden my-auto text-slate-100 animate-in zoom-in-95 duration-200">
             
-            {/* Animated Checkmark Icon */}
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-4 shadow-inner border border-emerald-500/30 shrink-0">
-              <CheckCircle2 className="h-8 w-8 animate-bounce text-emerald-400" />
-            </div>
-
-            <span className="inline-block mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              Registration Confirmed
-            </span>
-
-            <h3 className="mt-2 text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
-              Thank You, {submittedData?.firstName}!
-            </h3>
-
-            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-              Your registration for <strong className="text-cyan-400">{submittedData?.eventTitle}</strong> has been successfully received.
-            </p>
-
-            {/* Payment ID Badge if paid */}
-            {submittedData?.paymentId && (
-              <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-950/80 border border-cyan-500/40 px-3 py-1.5 text-xs font-mono font-bold text-cyan-300 mx-auto">
-                <ShieldCheck className="h-4 w-4 text-cyan-400" />
-                <span>Razorpay Payment ID: {submittedData.paymentId}</span>
-              </div>
-            )}
-
-            {/* Dispatched Email Box Preview */}
-            <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-left text-xs space-y-2">
-              <div className="flex items-center justify-between font-bold text-slate-200 border-b border-slate-800 pb-2">
-                <span className="flex items-center gap-1.5 text-cyan-400">
-                  <Mail className="h-4 w-4" /> Confirmation Email Sent
-                </span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-mono">Dispatched</span>
-              </div>
-              <p className="text-slate-400 font-mono text-[11px] pt-1">
-                To: {submittedData?.email}
-              </p>
-              <div className="bg-slate-900 rounded-xl p-3.5 border border-slate-800/80 font-sans text-xs space-y-2 text-slate-300 leading-relaxed">
-                <p><strong>Dear {submittedData?.firstName},</strong></p>
-                <p>Thank you for registering for {submittedData?.eventTitle}.</p>
-                <p>Your registration has been successfully received.</p>
-                {submittedData?.paymentId && (
-                  <p className="text-emerald-400 font-bold">Payment Verified (Razorpay ID: {submittedData.paymentId})</p>
-                )}
-                <p>Our team will verify your details and contact you shortly with confirmation, venue details, agenda, and participation information.</p>
-                <p className="pt-2 text-slate-400 font-medium">
-                  ET Media Business Intelligence<br />
-                  <a href="mailto:partner.support@etmedia.in" className="text-cyan-400 hover:underline">partner.support@etmedia.in</a>
-                </p>
-              </div>
-            </div>
-
+            {/* CLOSE 'X' BUTTON */}
             <button
               type="button"
               onClick={() => {
                 setSuccessModalOpen(false);
                 onClose();
               }}
-              className="mt-5 w-full py-3.5 px-6 rounded-xl font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer text-sm tracking-wide shrink-0"
+              className="absolute top-4 right-4 z-30 rounded-full bg-slate-800/90 p-2.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-xl cursor-pointer border border-slate-700"
+              aria-label="Close Registration Modal"
             >
-              Done & Close
+              <X className="h-5 w-5" />
             </button>
+
+            {/* BRAND HEADER BANNER */}
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-cyan-700 p-5 sm:p-6 text-white relative overflow-hidden flex-none">
+              <div className="flex flex-wrap items-center justify-between gap-4 pr-12 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-2 rounded-2xl shadow-md shrink-0">
+                    <img src={logoUrl} alt="ET Media Logo" className="h-9 w-auto object-contain" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black uppercase tracking-wider font-display">ET MEDIA BUSINESS INTELLIGENCE</h2>
+                    <p className="text-xs text-emerald-100 font-semibold tracking-wide uppercase">Official Executive Delegate Pass & Confirmation</p>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-950/40 border border-emerald-300/40 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-200 backdrop-blur-md shadow-lg shrink-0">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 animate-bounce" />
+                  <span>REGISTRATION CONFIRMED</span>
+                </div>
+              </div>
+            </div>
+
+            {/* MODAL SCROLLABLE BODY */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 scrollbar-thin">
+              
+              {/* TOP SALUTATION BANNER */}
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-black font-display text-white">
+                      Thank You, <span className="text-emerald-400 capitalize">{submittedData?.firstName}!</span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Your executive registration for <strong className="text-cyan-300">{submittedData?.eventTitle}</strong> has been successfully confirmed.
+                    </p>
+                  </div>
+                </div>
+
+                {submittedData?.paymentId && (
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 border border-cyan-500/40 px-3.5 py-2 text-xs font-mono font-bold text-cyan-300 shrink-0">
+                    <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                    <span>Razorpay ID: {submittedData.paymentId}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 2-COLUMN RESPONSIVE GRID */}
+              <div className="grid gap-6 md:grid-cols-2">
+                
+                {/* LEFT COLUMN: REGISTRATION & PAYMENT DETAILS */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2.5 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Registered Delegate Credentials</span>
+                  </h4>
+
+                  <div className="space-y-3 text-xs">
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Full Name:</span>
+                      <strong className="text-white font-bold capitalize">{submittedData?.firstName} {submittedData?.lastName}</strong>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Official Work Email:</span>
+                      <span className="text-cyan-300 font-mono font-semibold">{submittedData?.email}</span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Contact Number:</span>
+                      <span className="text-slate-200 font-mono">{submittedData?.contactNumber}</span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Designation:</span>
+                      <span className="text-slate-200 font-semibold">{submittedData?.designation || "Executive Delegate"}</span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Company / Organization:</span>
+                      <span className="text-slate-200 font-semibold">{submittedData?.companyName || "N/A"}</span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
+                      <span className="text-slate-400">Category & Location:</span>
+                      <span className="text-purple-300 font-semibold">{submittedData?.registrationCategory || "Delegate"} ({submittedData?.registeringCity || submittedData?.city})</span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-slate-400">Payment Summary:</span>
+                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                        submittedData?.totalPaid > 0
+                          ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
+                          : "bg-blue-500/20 border border-blue-500/40 text-blue-300"
+                      }`}>
+                        {submittedData?.totalPaid > 0 ? `Paid ₹${submittedData.totalPaid.toLocaleString("en-IN")}` : "Free Pass"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: DISPATCHED EMAIL PREVIEW & TICKET INFO */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-purple-400 border-b border-slate-800 pb-2.5 flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>Confirmation Email & Scannable Pass Dispatched</span>
+                  </h4>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 text-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-slate-400 font-mono text-[11px]">Recipient: <strong className="text-cyan-300">{submittedData?.email}</strong></span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold">Dispatched</span>
+                    </div>
+
+                    <div className="space-y-2 text-slate-300 leading-relaxed text-xs">
+                      <p>Dear <strong>{submittedData?.firstName}</strong>,</p>
+                      <p>Your registration for <strong>{submittedData?.eventTitle}</strong> has been successfully confirmed.</p>
+                      <p className="text-slate-400 text-[11px]">
+                        📱 A high-resolution scannable QR Delegate Pass has been generated and sent directly to your email inbox (<span className="text-cyan-300">{submittedData?.email}</span>) and admin record.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>Support: <a href="mailto:registration@etmedia.in" className="text-cyan-400 hover:underline">registration@etmedia.in</a></span>
+                      <span className="font-semibold text-slate-300">www.etmedia.in</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* STICKY FOOTER ACTION BAR */}
+            <div className="flex-none border-t border-slate-800 p-4 sm:p-5 bg-slate-950/95 flex items-center justify-between gap-4">
+              <span className="text-xs text-slate-400 hidden sm:inline-block font-mono">
+                ET Media Business Intelligence Executive Committee
+              </span>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSuccessModalOpen(false);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  <span>Done & Close</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
