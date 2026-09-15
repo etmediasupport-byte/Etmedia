@@ -97,10 +97,10 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+          "fixed inset-x-0 top-0 z-50 bg-white border-b border-slate-200 transition-all duration-300",
           scrolled
-            ? "bg-white/95 backdrop-blur-2xl border-b border-slate-200 py-2.5 shadow-md shadow-slate-200/50"
-            : "bg-white/80 backdrop-blur-xl border-b border-slate-200/80 py-3.5 shadow-sm"
+            ? "py-2.5 shadow-md shadow-slate-200/50"
+            : "py-3.5 shadow-sm"
         )}
       >
         <nav className="container-x flex items-center justify-between gap-2 lg:gap-4">
@@ -244,12 +244,7 @@ export function Navbar() {
               type="button"
               aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className={cn(
-                "p-2 sm:p-2.5 rounded-full border lg:hidden cursor-pointer transition-colors",
-                scrolled
-                  ? "border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                  : "border-slate-300/80 bg-white/90 text-slate-800 shadow-sm hover:bg-slate-100"
-              )}
+              className="p-2 sm:p-2.5 rounded-full border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 lg:hidden cursor-pointer transition-colors"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -266,7 +261,7 @@ export function Navbar() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="container-x overflow-hidden lg:hidden"
             >
-              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white/98 p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
+              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
                 {[
                   { to: "/", label: "Home" },
                   { to: "/about", label: "About Us" },
