@@ -256,6 +256,26 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
         const activeKey = (paymentConfig?.razorpay_key_id || razorpayKey).trim();
         const logoUrl = typeof window !== "undefined" ? `${window.location.origin}/logo.jpeg` : "/logo.jpeg";
 
+        // Create Order on backend first to get a valid Razorpay order_id
+        let razorpayOrderId: string | null = null;
+        try {
+          const orderRes = await fetch("/api/payments/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amount: pricing.totalPayable,
+              currency: paymentConfig?.currency || "INR",
+              receipt: `rcpt_${Date.now()}`,
+            }),
+          });
+          const orderData = await orderRes.json();
+          if (orderData.success && orderData.order?.id) {
+            razorpayOrderId = orderData.order.id;
+          }
+        } catch (oErr) {
+          console.warn("Could not pre-create Razorpay order ID:", oErr);
+        }
+
         // Options for Razorpay Checkout Modal
         const options: any = {
           key: activeKey,
@@ -264,6 +284,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           name: "ET Media Business Intelligence",
           description: `${formData.registrationCategory} Pass: ${event.title}`,
           image: logoUrl,
+          order_id: razorpayOrderId || undefined,
           prefill: {
             name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
             email: formData.email.trim(),
@@ -284,9 +305,26 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                 paymentAmount: pricing.totalPayable,
                 paymentStatus: "Paid",
                 paymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id || null,
+                razorpayOrderId: response.razorpay_order_id || razorpayOrderId || null,
                 couponApplied: appliedCoupon?.code || null,
               };
+
+              // Optionally verify signature if order_id and signature are returned
+              if (response.razorpay_order_id && response.razorpay_signature) {
+                try {
+                  await fetch("/api/payments/verify-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_signature: response.razorpay_signature,
+                    }),
+                  });
+                } catch (vErr) {
+                  console.warn("Signature verification call error:", vErr);
+                }
+              }
 
               const res = await fetch("/api/events/register", {
                 method: "POST",
