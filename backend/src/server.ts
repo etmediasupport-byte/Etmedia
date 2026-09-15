@@ -13,6 +13,7 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
+import QRCode from "qrcode";
 import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable } from "./db.js";
 
 dotenv.config();
@@ -26,73 +27,307 @@ const razorpayClient = new Razorpay({
   key_secret: razorpayKeySecret,
 });
 
-// Nodemailer SMTP Transporter
-const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+// Hostinger SMTP Mailer Credentials & Nodemailer Setup
+const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
-const smtpUser = process.env.SMTP_USER || "etmedia.support@gmail.com";
-const smtpPass = process.env.SMTP_PASS || "jzqs ibca abyx rhuc";
-const supportEmail = process.env.SUPPORT_EMAIL || "partner.support@etmedia.in";
+const smtpUser = (process.env.SMTP_USER || "registration@etmedia.in").trim();
+const smtpPass = (process.env.SMTP_PASS || "Sri@199004").trim();
+const smtpFrom = process.env.SMTP_FROM || `"ET Media Business Intelligence" <${smtpUser}>`;
+const adminEmail = (process.env.ADMIN_EMAIL || "registration@etmedia.in").trim();
+const supportEmail = process.env.SUPPORT_EMAIL || "registration@etmedia.in";
 
 const mailTransporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
-  secure: true,
+  secure: smtpPort === 465 ? true : process.env.SMTP_SECURE !== "false",
   auth: {
-    user: smtpUser.trim(),
-    pass: smtpPass.trim(),
+    user: smtpUser,
+    pass: smtpPass,
+  },
+  tls: {
+    rejectUnauthorized: false, // Prevents SSL certificate validation issues on web hosts
   },
 });
 
-async function sendRegistrationConfirmationEmail(data: {
+interface RegistrationEmailPayload {
+  registrationId?: string;
   firstName: string;
+  lastName?: string;
+  fullName?: string;
   email: string;
-  eventTitle: string;
-}) {
-  const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
-    to: data.email,
-    subject: `Registration Confirmation: ${data.eventTitle}`,
-    text: `Dear ${data.firstName},
+  phone?: string;
+  organization?: string;
+  designation?: string;
+  city?: string;
+  country?: string;
+  registrationCategory?: string;
+  registeringCity?: string;
+  referralSource?: string;
+  eventId?: string;
+  eventTitle?: string;
+  paymentStatus?: string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  paymentAmount?: number;
+  couponApplied?: string;
+  createdAt?: string;
+}
 
-Thank you for registering for ${data.eventTitle}.
+async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload) {
+  const regId = data.registrationId || `REG-${Date.now()}`;
+  const effectiveFirstName = data.firstName || "Delegate";
+  const effectiveFullName = data.fullName || `${effectiveFirstName} ${data.lastName || ""}`.trim();
+  const eventName = data.eventTitle || "ET Media Executive Summit 2026";
+  const userEmail = data.email.trim();
+  const regCategory = data.registrationCategory || "Executive Delegate";
+  const regPhone = data.phone || "N/A";
+  const regOrg = data.organization || "N/A";
+  const regDesig = data.designation || "Delegate";
+  const regCity = data.city || "N/A";
+  const regCountry = data.country || "India";
+  const regTargetCity = data.registeringCity || regCity;
+  const regReferral = data.referralSource || "Direct";
+  const payStatus = data.paymentStatus || (data.paymentId ? "Paid" : (data.paymentAmount && data.paymentAmount > 0 ? "Pending" : "Free"));
+  const payId = data.paymentId || "N/A";
+  const razorpayOrderId = data.razorpayOrderId || "N/A";
+  const payAmount = data.paymentAmount !== undefined ? data.paymentAmount : 0;
+  const coupon = data.couponApplied || "None";
+  const regDate = data.createdAt || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-Your registration has been successfully received.
+  // Plain Text formatted payload stored inside the Scannable QR Code
+  const qrTextPayload = `
+========================================
+ET MEDIA BUSINESS INTELLIGENCE
+DELEGATE & REGISTRATION PASS
+========================================
+Registration ID: ${regId}
+Event Title: ${eventName}
 
-Our team will verify your details and contact you shortly with confirmation, venue details, agenda, and participation information.
+DELEGATE INFORMATION:
+Full Name: ${effectiveFullName}
+Email: ${userEmail}
+Contact Phone: ${regPhone}
+Designation: ${regDesig}
+Company / Organization: ${regOrg}
+City / Country: ${regCity}, ${regCountry}
+Category: ${regCategory}
+Registering City: ${regTargetCity}
+Referral Source: ${regReferral}
 
-We look forward to welcoming you to India's premier leadership summit.
+PAYMENT & TRANSACTION INFORMATION:
+Payment Status: ${payStatus.toUpperCase()}
+Payment ID: ${payId}
+Razorpay Order ID: ${razorpayOrderId}
+Amount Paid: ₹${payAmount}
+Coupon Applied: ${coupon}
+Registration Time: ${regDate}
+
+Verification Status: VERIFIED DELEGATE PASS
+Official Support Email: registration@etmedia.in
+========================================
+`.trim();
+
+  let qrCodeBuffer: Buffer | null = null;
+  try {
+    qrCodeBuffer = await QRCode.toBuffer(qrTextPayload, {
+      errorCorrectionLevel: "H",
+      type: "png",
+      width: 350,
+      margin: 2,
+      color: {
+        dark: "#0891B2",
+        light: "#FFFFFF",
+      },
+    });
+  } catch (qrErr) {
+    console.error("[Nodemailer] Error generating QR Code PNG Buffer:", qrErr);
+  }
+
+  // Recipients: User Email + registration@etmedia.in (Hostinger admin mailbox)
+  const recipientList: string[] = [userEmail];
+  if (adminEmail && !recipientList.includes(adminEmail)) {
+    recipientList.push(adminEmail);
+  }
+
+  const mailOptions: any = {
+    from: smtpFrom,
+    to: recipientList.join(", "),
+    subject: `🎉 Registration & Ticket Pass Confirmed: ${eventName} (${regId})`,
+    text: `
+Dear ${effectiveFullName},
+
+Thank you for registering for ${eventName} with ET Media Business Intelligence.
+
+YOUR REGISTRATION & TICKET DETAILS:
+- Registration ID: ${regId}
+- Event Title: ${eventName}
+- Pass Category: ${regCategory}
+- Full Name: ${effectiveFullName}
+- Email: ${userEmail}
+- Phone: ${regPhone}
+- Designation: ${regDesig}
+- Organization: ${regOrg}
+- Location: ${regCity}, ${regCountry}
+- Registering City: ${regTargetCity}
+- Referral Source: ${regReferral}
+
+PAYMENT DETAILS:
+- Payment Status: ${payStatus}
+- Payment ID: ${payId}
+- Razorpay Order ID: ${razorpayOrderId}
+- Amount Paid: ₹${payAmount}
+- Coupon Code: ${coupon}
+
+Scan the attached QR code to view all submitted registration and payment details.
+
+We look forward to welcoming you!
 
 ET Media Business Intelligence
-${supportEmail}`,
+registration@etmedia.in
+www.etmedia.in
+`,
     html: `
-      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; rounded: 16px; background-color: #ffffff;">
-        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #00AEEF;">
-          <h2 style="color: #00AEEF; margin: 0;">ET MEDIA BUSINESS INTELLIGENCE</h2>
-          <p style="color: #4B1FA7; font-weight: bold; margin-top: 5px; font-size: 14px;">Leadership Platform & Executive Summits</p>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+        
+        <!-- HEADER BANNER -->
+        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 30px 25px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">ET MEDIA BUSINESS INTELLIGENCE</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass & Confirmation</p>
         </div>
-        <div style="padding: 25px 0; color: #334155; line-height: 1.6; font-size: 15px;">
-          <p>Dear <strong>${data.firstName}</strong>,</p>
-          <p>Thank you for registering for <strong>${data.eventTitle}</strong>.</p>
-          <p style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; color: #166534; font-weight: 600; border-radius: 8px;">
-            🎉 Your registration has been successfully received.
-          </p>
-          <p>Our team will verify your details and contact you shortly with confirmation, venue details, agenda, and participation information.</p>
-          <p>We look forward to welcoming you to India's premier leadership summit.</p>
+
+        <div style="padding: 28px 25px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p style="margin-top: 0; font-size: 16px;">Dear <strong>${effectiveFullName}</strong>,</p>
+          <p style="margin-bottom: 20px;">Thank you for registering for <strong>${eventName}</strong>. Your registration details and payment confirmation have been recorded successfully.</p>
+
+          <!-- CONFIRMATION STATUS BADGE -->
+          <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-left: 5px solid #10b981; padding: 14px 18px; border-radius: 12px; margin-bottom: 25px;">
+            <p style="margin: 0; color: #065f46; font-weight: 700; font-size: 15px;">
+              ✅ Registration Status: <span style="text-transform: uppercase;">CONFIRMED & VERIFIED</span>
+            </p>
+            <p style="margin: 4px 0 0 0; color: #047857; font-size: 13px;">
+              Pass Category: <strong>${regCategory}</strong> | Reg ID: <strong>${regId}</strong>
+            </p>
+          </div>
+
+          <!-- DELEGATE DETAILS TABLE -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
+            <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              👤 Delegate & Executive Details
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Full Name:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${effectiveFullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Work Email:</td>
+                <td style="padding: 6px 0; color: #0891b2; font-weight: 600;"><a href="mailto:${userEmail}" style="color: #0891b2; text-decoration: none;">${userEmail}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Contact Phone:</td>
+                <td style="padding: 6px 0;">${regPhone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Designation:</td>
+                <td style="padding: 6px 0; font-weight: 600;">${regDesig}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Organization / Company:</td>
+                <td style="padding: 6px 0; font-weight: 600;">${regOrg}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">City & Country:</td>
+                <td style="padding: 6px 0;">${regCity}, ${regCountry}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Registering City:</td>
+                <td style="padding: 6px 0;">${regTargetCity}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Referral Source:</td>
+                <td style="padding: 6px 0;">${regReferral}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- PAYMENT SUMMARY TABLE -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 25px;">
+            <h3 style="margin: 0 0 12px 0; color: #4b1fa7; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              💳 Payment & Transaction Summary
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Payment Status:</td>
+                <td style="padding: 6px 0;">
+                  <span style="display: inline-block; background-color: ${payStatus.toLowerCase() === "paid" ? "#10b981" : "#3b82f6"}; color: #ffffff; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                    ${payStatus}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Payment ID:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${payId}</td>
+              </tr>
+              ${razorpayOrderId !== "N/A" ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Razorpay Order ID:</td>
+                <td style="padding: 6px 0; font-family: monospace;">${razorpayOrderId}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Amount Paid:</td>
+                <td style="padding: 6px 0; font-size: 15px; font-weight: 800; color: #047857;">₹${payAmount}</td>
+              </tr>
+              ${coupon !== "None" ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Coupon Code:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #d97706;">${coupon}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Timestamp:</td>
+                <td style="padding: 6px 0; color: #64748b;">${regDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- SCANNABLE QR CODE SECTION -->
+          ${qrCodeBuffer ? `
+          <div style="text-align: center; border: 2px dashed #0891b2; border-radius: 16px; padding: 22px; background-color: #f0fdf4; margin-bottom: 25px;">
+            <h4 style="margin: 0 0 6px 0; color: #0f172a; font-size: 15px; font-weight: 800;">📱 SCANNABLE DELEGATE PASS QR CODE</h4>
+            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 12px;">Scan this QR code using any smartphone camera or QR scanner app to view all submitted registration and payment details.</p>
+            <img src="cid:delegate-qrcode" alt="Registration QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto; border: 3px solid #0891b2; border-radius: 12px; padding: 8px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+            <p style="margin: 12px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
+          </div>
+          ` : ""}
+
+          <p style="margin-bottom: 0;">Our executive team will contact you shortly with agenda updates, venue access details, and networking session schedules.</p>
         </div>
-        <div style="border-top: 1px solid #e2e8f0; pt-20px; padding-top: 20px; color: #64748b; font-size: 13px;">
-          <p style="margin: 0; font-weight: bold; color: #1e293b;">ET Media Business Intelligence</p>
-          <p style="margin: 4px 0 0 0;"><a href="mailto:${supportEmail}" style="color: #00AEEF; text-decoration: none;">${supportEmail}</a></p>
+
+        <!-- FOOTER -->
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 25px; text-align: center; color: #64748b; font-size: 12px;">
+          <p style="margin: 0; font-weight: 700; color: #1e293b;">ET Media Business Intelligence</p>
+          <p style="margin: 4px 0 0 0;">Official Support Email: <a href="mailto:${smtpUser.trim()}" style="color: #0891b2; text-decoration: none; font-weight: 700;">${smtpUser.trim()}</a></p>
+          <p style="margin: 4px 0 0 0;">Website: <a href="https://www.etmedia.in" style="color: #0891b2; text-decoration: none;">www.etmedia.in</a></p>
         </div>
+
       </div>
     `,
+    attachments: qrCodeBuffer ? [
+      {
+        filename: `ETMedia-Pass-${regId}.png`,
+        content: qrCodeBuffer,
+        cid: "delegate-qrcode",
+      }
+    ] : [],
   };
 
   try {
     const info = await mailTransporter.sendMail(mailOptions);
-    console.log(`[Nodemailer] Confirmation email sent successfully to ${data.email} (${info.messageId})`);
+    console.log(`[Nodemailer] Confirmation & QR Email sent successfully to ${recipientList.join(", ")} (${info.messageId})`);
     return true;
   } catch (err: any) {
-    console.error(`[Nodemailer] Error sending confirmation email to ${data.email}:`, err.message);
+    console.error(`[Nodemailer] Error sending registration email to ${userEmail}:`, err.message);
     return false;
   }
 }
@@ -689,11 +924,29 @@ app.post("/api/events/register", async (req, res) => {
       message: `🎉 ${effectiveFirstName} (${effectiveCategory}) registered for ${effectiveEventTitle}!`,
     });
 
-    // AUTOMATED EMAIL CONFIRMATION
+    // AUTOMATED EMAIL CONFIRMATION WITH SCANNABLE QR CODE & PAYMENT DETAILS
     const emailSent = await sendRegistrationConfirmationEmail({
+      registrationId: regId,
       firstName: effectiveFirstName,
+      lastName: effectiveLastName,
+      fullName,
       email,
+      phone: effectivePhone,
+      organization: effectiveOrganization,
+      designation: effectiveDesignation,
+      city: city || "N/A",
+      country: country || "India",
+      registrationCategory: effectiveCategory,
+      registeringCity: registeringCity || city || "N/A",
+      referralSource: referralSource || "Direct",
+      eventId: effectiveEventId,
       eventTitle: effectiveEventTitle,
+      paymentStatus: effectivePaymentStatus,
+      paymentId: paymentId || undefined,
+      razorpayOrderId: razorpayOrderId || undefined,
+      paymentAmount: effectiveAmount,
+      couponApplied: couponApplied || undefined,
+      createdAt: newRegistration.created_at,
     });
 
     return res.status(201).json({
@@ -813,11 +1066,30 @@ app.post("/api/events/register", async (req, res) => {
         message: `🎉 Executive Delegate: ${fullName} (${companyName}) registered!`,
       });
 
-      // Email Confirmation
+      // Email Confirmation with QR Code & Full Delegate Details
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0] || fullName;
+      const lastName = nameParts.slice(1).join(" ") || "";
+
       const emailSent = await sendRegistrationConfirmationEmail({
-        firstName: fullName.split(" ")[0] || fullName,
+        registrationId: delId,
+        firstName,
+        lastName,
+        fullName,
         email: officialEmail,
-        eventTitle: `ET Media Executive Platform (${companyName})`,
+        phone: mobileNumber || "N/A",
+        organization: companyName || organization || "N/A",
+        designation: designation || "Executive Delegate",
+        city: city || "N/A",
+        country: "India",
+        registrationCategory: "Corporate Executive Delegate Pass",
+        registeringCity: location || city || "N/A",
+        referralSource: awardsNomination === "Yes" ? "Awards Nomination (Yes)" : "Direct Registration",
+        eventId: "delegate-executive-pass",
+        eventTitle: `Corporate Delegate Platform (${companyName})`,
+        paymentStatus: "Free",
+        paymentAmount: 0,
+        createdAt: timestamp,
       });
 
       return res.status(201).json({
