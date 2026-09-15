@@ -11,9 +11,10 @@ const backendPublic = path.resolve(__dirname, "public");
 console.log(`[Build Sync] Syncing frontend dist from: ${frontendDist} to ${backendPublic}`);
 
 if (fs.existsSync(frontendDist)) {
-  if (!fs.existsSync(backendPublic)) {
-    fs.mkdirSync(backendPublic, { recursive: true });
+  if (fs.existsSync(backendPublic)) {
+    fs.rmSync(backendPublic, { recursive: true, force: true });
   }
+  fs.mkdirSync(backendPublic, { recursive: true });
 
   // Copy recursive
   fs.cpSync(frontendDist, backendPublic, { recursive: true, force: true });

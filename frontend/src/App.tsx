@@ -16,6 +16,8 @@ import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 
+import VerifyPassPage from "@/pages/VerifyPassPage";
+
 export default function App() {
   return (
     <HelmetProvider>
@@ -31,6 +33,8 @@ export default function App() {
             }
           />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/verify-pass/:regId" element={<VerifyPassPage />} />
+          <Route path="/verify/:regId" element={<VerifyPassPage />} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />

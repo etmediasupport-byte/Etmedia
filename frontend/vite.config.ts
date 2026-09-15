@@ -10,8 +10,8 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   build: {
-    outDir: "../backend/public",
-    emptyOutDir: false,
+    outDir: "dist",
+    emptyOutDir: true,
   },
   server: {
     proxy: {
@@ -30,5 +30,3 @@ export default defineConfig({
     },
   },
 });
-
-

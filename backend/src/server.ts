@@ -94,45 +94,16 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const coupon = data.couponApplied || "None";
   const regDate = data.createdAt || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-  // Plain Text formatted payload stored inside the Scannable QR Code
-  const qrTextPayload = `
-========================================
-ET MEDIA BUSINESS INTELLIGENCE
-DELEGATE & REGISTRATION PASS
-========================================
-Registration ID: ${regId}
-Event Title: ${eventName}
-
-DELEGATE INFORMATION:
-Full Name: ${effectiveFullName}
-Email: ${userEmail}
-Contact Phone: ${regPhone}
-Designation: ${regDesig}
-Company / Organization: ${regOrg}
-City / Country: ${regCity}, ${regCountry}
-Category: ${regCategory}
-Registering City: ${regTargetCity}
-Referral Source: ${regReferral}
-
-PAYMENT & TRANSACTION INFORMATION:
-Payment Status: ${payStatus.toUpperCase()}
-Payment ID: ${payId}
-Razorpay Order ID: ${razorpayOrderId}
-Amount Paid: ₹${payAmount}
-Coupon Applied: ${coupon}
-Registration Time: ${regDate}
-
-Verification Status: VERIFIED DELEGATE PASS
-Official Support Email: registration@etmedia.in
-========================================
-`.trim();
+  // Direct clickable Verification URL encoded into the Scannable QR Code
+  const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.etmedia.in").replace(/\/$/, "");
+  const verifyPassUrl = `${baseUrl}/verify-pass/${encodeURIComponent(regId)}`;
 
   let qrCodeBuffer: Buffer | null = null;
   try {
-    qrCodeBuffer = await QRCode.toBuffer(qrTextPayload, {
-      errorCorrectionLevel: "H",
+    qrCodeBuffer = await QRCode.toBuffer(verifyPassUrl, {
+      errorCorrectionLevel: "M",
       type: "png",
-      width: 350,
+      width: 320,
       margin: 2,
       color: {
         dark: "#0891B2",
@@ -559,6 +530,64 @@ app.get("/api/health", (_req, res) => {
     activeSockets: liveActiveUsers,
     database: pool ? "connected" : "disconnected",
   });
+});
+
+// 1a. Public Registration Pass Verification Endpoint
+app.get("/api/verify-pass/:regId", async (req, res) => {
+  const { regId } = req.params;
+  try {
+    if (pool) {
+      // 1. Search registrations table
+      const [regRows]: any = await pool.query(
+        "SELECT * FROM registrations WHERE id = ? OR razorpay_order_id = ? OR payment_id = ?",
+        [regId, regId, regId]
+      );
+      if (regRows.length > 0) {
+        return res.json({ success: true, verified: true, data: regRows[0] });
+      }
+
+      // 2. Search delegate_registrations table
+      const [delRows]: any = await pool.query(
+        "SELECT * FROM delegate_registrations WHERE id = ?",
+        [regId]
+      );
+      if (delRows.length > 0) {
+        const d = delRows[0];
+        return res.json({
+          success: true,
+          verified: true,
+          data: {
+            id: d.id,
+            name: d.full_name,
+            first_name: d.full_name.split(" ")[0],
+            last_name: d.full_name.split(" ").slice(1).join(" "),
+            email: d.official_email,
+            phone: d.mobile_number,
+            organization: d.company_name || d.organization,
+            designation: d.designation,
+            city: d.city,
+            country: "India",
+            registration_category: "Corporate Executive Delegate Pass",
+            registering_city: d.location || d.city,
+            referral_source: d.awards_nomination === "Yes" ? "Awards Nomination (Yes)" : "Direct Registration",
+            event_title: `Corporate Delegate Platform (${d.company_name})`,
+            payment_status: "Free",
+            payment_amount: 0,
+            created_at: d.created_at,
+          },
+        });
+      }
+    }
+
+    return res.status(404).json({
+      success: false,
+      verified: false,
+      message: "Pass registration not found. Please verify the Registration ID.",
+    });
+  } catch (err: any) {
+    console.error("Verify Pass API Error:", err);
+    return res.status(500).json({ success: false, message: "Error verifying registration pass." });
+  }
 });
 // 1b. Dynamic Sitemap XML for SEO
 app.get("/sitemap.xml", async (_req, res) => {

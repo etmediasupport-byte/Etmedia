@@ -426,11 +426,11 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     <>
       {/* 1. REGISTRATION FORM & PAYMENT MODAL */}
       {!successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-950/85 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl lg:max-w-5xl max-h-[94vh] flex flex-col rounded-3xl bg-slate-900/95 border border-cyan-500/30 shadow-[0_25px_60px_-15px_rgba(0,174,239,0.35)] text-slate-100 backdrop-blur-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-6xl max-h-[92vh] flex flex-col rounded-3xl bg-slate-900/95 border border-cyan-500/30 shadow-[0_25px_60px_-15px_rgba(0,174,239,0.35)] text-slate-100 backdrop-blur-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
             
             {/* STICKY MODAL HEADER */}
-            <div className="flex-none border-b border-slate-800/80 p-4 sm:p-5 bg-slate-900/95 relative">
+            <div className="flex-none border-b border-slate-800/80 p-4 sm:p-5 bg-slate-900/95 relative z-10">
               {/* Close Button */}
               <button
                 type="button"
@@ -441,7 +441,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                 <X className="h-5 w-5" />
               </button>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pr-10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pr-10">
                 <div>
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-400">
                     <Sparkles className="h-4 w-4 animate-pulse" />
@@ -478,7 +478,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
             {/* STEP 1: FORM INPUTS VIEW */}
             {modalStep === "form" && (
-              <form onSubmit={handleProceedToPayment} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+              <form onSubmit={handleProceedToPayment} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0">
                 
                 {/* Section 1: Personal & Executive Details (4 Columns on Desktop) */}
                 <div className="space-y-3">
@@ -557,7 +557,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                         required
                         value={formData.designation}
                         onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                        placeholder="e.g. CISO / VP Security"
+                        placeholder="e.g. Chief Financial Officer"
                         className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
                       />
                     </div>
@@ -571,7 +571,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                         required
                         value={formData.companyName}
                         onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                        placeholder="e.g. Vantage Enterprises"
+                        placeholder="e.g. Reliance Industries"
                         className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
                       />
                     </div>
@@ -592,7 +592,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-300 mb-1">
-                        Country *
+                        Country
                       </label>
                       <select
                         value={formData.country}
@@ -755,9 +755,9 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
               </form>
             )}
 
-            {/* STEP 2: ORDER SUMMARY & PAYMENT DETAILS */}
+            {/* STEP 2: ORDER SUMMARY & PAYMENT DETAILS (WIDE 2-COLUMN RESPONSIVE LAYOUT) */}
             {modalStep === "payment" && (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0">
                 {/* Top Step Header */}
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-400">
@@ -773,166 +773,190 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                   </button>
                 </div>
 
-                {/* Delegate & Event Recap Card */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 grid gap-3 sm:grid-cols-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Delegate Name</span>
-                    <strong className="text-slate-100 text-sm">{formData.firstName} {formData.lastName}</strong>
-                    <span className="block text-slate-400">{formData.designation} at {formData.companyName}</span>
-                    <span className="block text-cyan-400 font-mono text-[11px]">{formData.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Event & Category</span>
-                    <strong className="text-cyan-300 text-sm line-clamp-1">{event.title}</strong>
-                    <span className="block text-purple-300 font-semibold mt-0.5">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
-                  </div>
-                </div>
-
-                {/* ADMIN-CONFIGURED PRICING BREAKDOWN CARD */}
-                {(() => {
-                  const pricing = getPricing();
-                  return (
-                    <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 space-y-4 shadow-xl">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-cyan-400" />
-                        <span>Admin-Configured Registration Fee Breakdown</span>
-                      </h4>
-
-                      <div className="space-y-2 text-xs">
-                        {/* Base Category Price */}
-                        <div className="flex justify-between text-slate-300">
-                          <span>Base Fee ({formData.registrationCategory}):</span>
-                          <span className="font-mono font-bold text-slate-100">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
-                        </div>
-
-                        {/* Early Bird Discount */}
-                        {pricing.earlyBirdDiscount > 0 && (
-                          <div className="flex justify-between text-purple-300">
-                            <span className="flex items-center gap-1">
-                              <Sparkles className="h-3 w-3 text-purple-400" />
-                              Early Bird Promotional Discount:
-                            </span>
-                            <span className="font-mono font-bold text-purple-300">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
-                          </div>
-                        )}
-
-                        {/* Coupon Discount */}
-                        {pricing.couponDiscount > 0 && (
-                          <div className="flex justify-between text-emerald-400 font-bold">
-                            <span className="flex items-center gap-1">
-                              <Tag className="h-3 w-3 text-emerald-400" />
-                              Coupon Discount ({appliedCoupon?.code}):
-                            </span>
-                            <span className="font-mono">- ₹{pricing.couponDiscount.toLocaleString("en-IN")}</span>
-                          </div>
-                        )}
-
-                        {/* GST Tax */}
-                        <div className="flex justify-between text-slate-400">
-                          <span>GST ({pricing.gstPct}% Tax):</span>
-                          <span className="font-mono text-cyan-300">
-                            {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
-                          </span>
-                        </div>
-
-                        <div className="h-px bg-slate-800 my-2" />
-
-                        {/* Total Payable */}
-                        <div className="flex justify-between items-baseline pt-1">
-                          <div>
-                            <span className="text-xs uppercase tracking-wider text-slate-400 block font-bold">Total Amount Payable</span>
-                            <span className="text-[10px] text-slate-500 font-medium">Includes event pass, access to sessions & networking</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-black font-mono text-cyan-400">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
-                            <span className="block text-[10px] text-emerald-400 font-bold">Razorpay Test Gateway Enabled</span>
-                          </div>
-                        </div>
+                {/* Side-by-Side Grid Layout: Left Details (col-span-5) & Right Pricing Breakdown (col-span-7) */}
+                <div className="grid gap-5 lg:grid-cols-12 items-start">
+                  
+                  {/* LEFT COLUMN: DELEGATE & EVENT RECAP CARD */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 space-y-3.5 text-xs shadow-inner">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Delegate Name</span>
+                        <strong className="text-slate-100 text-sm">{formData.firstName} {formData.lastName}</strong>
+                        <span className="block text-slate-300 mt-0.5">{formData.designation}</span>
+                        <span className="block text-slate-400">{formData.companyName}</span>
+                        <span className="block text-cyan-400 font-mono text-[11px] mt-1">{formData.email}</span>
+                        <span className="block text-slate-400 text-[11px]">Phone: {formData.contactNumber}</span>
                       </div>
 
-                      {/* PROMO COUPON CODE SECTION */}
-                      <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
-                        <label className="block text-[11px] font-bold text-slate-300">Have a Promo / Discount Coupon?</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={couponInput}
-                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                            placeholder="e.g. EARLY50 or CXO2026"
-                            className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono font-bold text-white uppercase placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
-                          />
+                      <div className="border-t border-slate-800/80 pt-3">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Event & Category</span>
+                        <strong className="text-cyan-300 text-sm block mt-0.5 leading-snug">{event.title}</strong>
+                        <span className="block text-purple-300 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
+                        <span className="block text-slate-400 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
+                      </div>
+                    </div>
+
+                    {/* Security & Verification Card */}
+                    <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-slate-950 p-4 text-xs space-y-2">
+                      <div className="flex items-center gap-2 text-cyan-300 font-bold">
+                        <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
+                        <span>Instant Ticket & Verification</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-300 font-mono">{formData.email}</span> and <span className="text-cyan-300 font-mono">registration@etmedia.in</span>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: PRICING BREAKDOWN, PROMO COUPON & PAY BUTTON */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {(() => {
+                      const pricing = getPricing();
+                      return (
+                        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 space-y-4 shadow-xl">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-cyan-400" />
+                            <span>Registration Fee Breakdown</span>
+                          </h4>
+
+                          <div className="space-y-2 text-xs">
+                            {/* Base Category Price */}
+                            <div className="flex justify-between text-slate-300">
+                              <span>Base Fee ({formData.registrationCategory}):</span>
+                              <span className="font-mono font-bold text-slate-100">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
+                            </div>
+
+                            {/* Early Bird Discount */}
+                            {pricing.earlyBirdDiscount > 0 && (
+                              <div className="flex justify-between text-purple-300">
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="h-3 w-3 text-purple-400" />
+                                  Early Bird Promotional Discount:
+                                </span>
+                                <span className="font-mono font-bold text-purple-300">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+
+                            {/* Coupon Discount */}
+                            {pricing.couponDiscount > 0 && (
+                              <div className="flex justify-between text-emerald-400 font-bold">
+                                <span className="flex items-center gap-1">
+                                  <Tag className="h-3 w-3 text-emerald-400" />
+                                  Coupon Discount ({appliedCoupon?.code}):
+                                </span>
+                                <span className="font-mono">- ₹{pricing.couponDiscount.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+
+                            {/* GST Tax */}
+                            <div className="flex justify-between text-slate-400">
+                              <span>GST ({pricing.gstPct}% Tax):</span>
+                              <span className="font-mono text-cyan-300">
+                                {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
+                              </span>
+                            </div>
+
+                            <div className="h-px bg-slate-800 my-2" />
+
+                            {/* Total Payable */}
+                            <div className="flex justify-between items-baseline pt-1">
+                              <div>
+                                <span className="text-xs uppercase tracking-wider text-slate-400 block font-bold">Total Amount Payable</span>
+                                <span className="text-[10px] text-slate-500 font-medium">Includes event pass & networking access</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-400">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
+                                <span className="block text-[10px] text-emerald-400 font-bold">Razorpay Test Gateway Enabled</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* PROMO COUPON CODE SECTION */}
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                            <label className="block text-[11px] font-bold text-slate-300">Have a Promo / Discount Coupon?</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={couponInput}
+                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                placeholder="e.g. EARLY50 or CXO2026"
+                                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono font-bold text-white uppercase placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleApplyCoupon}
+                                className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all cursor-pointer"
+                              >
+                                Apply Coupon
+                              </button>
+                            </div>
+
+                            {/* Active Coupons Quick Fill Badges */}
+                            {(() => {
+                              let sampleCoupons: any[] = [];
+                              if (typeof paymentConfig?.coupons === "string") {
+                                try { sampleCoupons = JSON.parse(paymentConfig.coupons); } catch(e) {}
+                              } else if (Array.isArray(paymentConfig?.coupons)) {
+                                sampleCoupons = paymentConfig.coupons;
+                              }
+                              if (sampleCoupons.length === 0) {
+                                sampleCoupons = [
+                                  { code: "EARLY50", type: "percentage", value: 20 },
+                                  { code: "CXO2026", type: "flat", value: 1000 },
+                                ];
+                              }
+                              return (
+                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                  <span className="text-[10px] text-slate-400">Available Promo Codes:</span>
+                                  {sampleCoupons.map((cp: any, idx: number) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => {
+                                        setCouponInput(cp.code);
+                                        setAppliedCoupon(cp);
+                                        toast.success(`Applied promo code ${cp.code}!`);
+                                      }}
+                                      className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
+                                    >
+                                      {cp.code} ({cp.type === "percentage" ? `${cp.value}% Off` : `₹${cp.value} Off`})
+                                    </button>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          {/* FINAL PAY BUTTON */}
                           <button
                             type="button"
-                            onClick={handleApplyCoupon}
-                            className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all cursor-pointer"
+                            onClick={handleFinalCheckoutAndRegister}
+                            disabled={submitting}
+                            className="w-full rounded-xl py-3.5 px-6 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
                           >
-                            Apply Coupon
+                            {submitting ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                <span>Processing Registration...</span>
+                              </>
+                            ) : pricing.totalPayable > 0 ? (
+                              <>
+                                <ShieldCheck className="h-4.5 w-4.5 text-white" />
+                                <span>Proceed to Pay ₹{pricing.totalPayable.toLocaleString("en-IN")} via Razorpay</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
+                                <span>Complete Free Registration</span>
+                              </>
+                            )}
                           </button>
                         </div>
+                      );
+                    })()}
+                  </div>
 
-                        {/* Active Coupons Quick Fill Badges */}
-                        {(() => {
-                          let sampleCoupons: any[] = [];
-                          if (typeof paymentConfig?.coupons === "string") {
-                            try { sampleCoupons = JSON.parse(paymentConfig.coupons); } catch(e) {}
-                          } else if (Array.isArray(paymentConfig?.coupons)) {
-                            sampleCoupons = paymentConfig.coupons;
-                          }
-                          if (sampleCoupons.length === 0) {
-                            sampleCoupons = [
-                              { code: "EARLY50", type: "percentage", value: 20 },
-                              { code: "CXO2026", type: "flat", value: 1000 },
-                            ];
-                          }
-                          return (
-                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                              <span className="text-[10px] text-slate-400">Available Promo Codes:</span>
-                              {sampleCoupons.map((cp: any, idx: number) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => {
-                                    setCouponInput(cp.code);
-                                    setAppliedCoupon(cp);
-                                    toast.success(`Applied promo code ${cp.code}!`);
-                                  }}
-                                  className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
-                                >
-                                  {cp.code} ({cp.type === "percentage" ? `${cp.value}% Off` : `₹${cp.value} Off`})
-                                </button>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* FINAL PAY BUTTON */}
-                      <button
-                        type="button"
-                        onClick={handleFinalCheckoutAndRegister}
-                        disabled={submitting}
-                        className="w-full rounded-xl py-3.5 px-6 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin text-white" />
-                            <span>Processing Registration...</span>
-                          </>
-                        ) : pricing.totalPayable > 0 ? (
-                          <>
-                            <ShieldCheck className="h-4.5 w-4.5 text-white" />
-                            <span>Proceed to Pay ₹{pricing.totalPayable.toLocaleString("en-IN")} via Razorpay</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
-                            <span>Complete Free Registration</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })()}
+                </div>
               </div>
             )}
           </div>
@@ -941,15 +965,15 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
       {/* 2. SUCCESS MODAL (AFTER SUBMISSION) */}
       {successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(34,197,94,0.3)] bg-slate-900 border border-slate-800 text-slate-100 text-center animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl max-h-[94vh] flex flex-col rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(34,197,94,0.3)] bg-slate-900 border border-slate-800 text-slate-100 text-center animate-in zoom-in-95 duration-200 overflow-y-auto my-auto scrollbar-thin">
             
             {/* Animated Checkmark Icon */}
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-4 shadow-inner border border-emerald-500/30">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-4 shadow-inner border border-emerald-500/30 shrink-0">
               <CheckCircle2 className="h-8 w-8 animate-bounce text-emerald-400" />
             </div>
 
-            <span className="inline-block rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+            <span className="inline-block mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-0.5 text-xs font-bold text-emerald-400 uppercase tracking-wider">
               Registration Confirmed
             </span>
 
@@ -963,7 +987,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
             {/* Payment ID Badge if paid */}
             {submittedData?.paymentId && (
-              <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-950/80 border border-cyan-500/40 px-3 py-1.5 text-xs font-mono font-bold text-cyan-300">
+              <div className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-950/80 border border-cyan-500/40 px-3 py-1.5 text-xs font-mono font-bold text-cyan-300 mx-auto">
                 <ShieldCheck className="h-4 w-4 text-cyan-400" />
                 <span>Razorpay Payment ID: {submittedData.paymentId}</span>
               </div>
@@ -1001,7 +1025,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                 setSuccessModalOpen(false);
                 onClose();
               }}
-              className="mt-5 w-full py-3 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-sm"
+              className="mt-5 w-full py-3.5 px-6 rounded-xl font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer text-sm tracking-wide shrink-0"
             >
               Done & Close
             </button>
