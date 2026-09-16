@@ -883,7 +883,10 @@ app.post("/api/events/register", async (req, res) => {
     }
   }
 
-  const regId = `REG-${Date.now()}`;
+  const reqRegId = req.body.id;
+  const regId = reqRegId || `REG-${Date.now()}`;
+  let finalRegId = regId;
+
   const newRegistration = {
     id: regId,
     name: fullName,
@@ -910,33 +913,69 @@ app.post("/api/events/register", async (req, res) => {
 
   try {
     if (pool) {
-      await pool.query(
-        `INSERT INTO registrations (
-          id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          regId,
-          fullName,
-          effectiveFirstName,
-          effectiveLastName,
-          email,
-          effectivePhone,
-          effectiveOrganization,
-          effectiveDesignation,
-          city || "N/A",
-          country || "India",
-          effectiveCategory,
-          registeringCity || city || "N/A",
-          referralSource || "Direct",
-          effectiveEventId,
-          effectiveEventTitle,
-          effectivePaymentStatus,
-          paymentId || null,
-          razorpayOrderId || null,
-          effectiveAmount,
-          couponApplied || null,
-        ]
+      const [existing]: any = await pool.query(
+        "SELECT id FROM registrations WHERE id = ? OR (email = ? AND event_id = ? AND payment_status = 'Pending')",
+        [regId, email.trim(), effectiveEventId]
       );
+
+      if (existing && existing.length > 0) {
+        finalRegId = existing[0].id;
+        newRegistration.id = finalRegId;
+        await pool.query(
+          `UPDATE registrations SET
+            name = ?, first_name = ?, last_name = ?, phone = ?, organization = ?, designation = ?,
+            city = ?, country = ?, registration_category = ?, registering_city = ?, referral_source = ?,
+            payment_status = ?, payment_id = ?, razorpay_order_id = ?, payment_amount = ?, coupon_applied = ?
+          WHERE id = ?`,
+          [
+            fullName,
+            effectiveFirstName,
+            effectiveLastName,
+            effectivePhone,
+            effectiveOrganization,
+            effectiveDesignation,
+            city || "N/A",
+            country || "India",
+            effectiveCategory,
+            registeringCity || city || "N/A",
+            referralSource || "Direct",
+            effectivePaymentStatus,
+            paymentId || null,
+            razorpayOrderId || null,
+            effectiveAmount,
+            couponApplied || null,
+            finalRegId,
+          ]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO registrations (
+            id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            finalRegId,
+            fullName,
+            effectiveFirstName,
+            effectiveLastName,
+            email,
+            effectivePhone,
+            effectiveOrganization,
+            effectiveDesignation,
+            city || "N/A",
+            country || "India",
+            effectiveCategory,
+            registeringCity || city || "N/A",
+            referralSource || "Direct",
+            effectiveEventId,
+            effectiveEventTitle,
+            effectivePaymentStatus,
+            paymentId || null,
+            razorpayOrderId || null,
+            effectiveAmount,
+            couponApplied || null,
+          ]
+        );
+      }
     }
 
     // Get total count
@@ -953,30 +992,33 @@ app.post("/api/events/register", async (req, res) => {
       message: `🎉 ${effectiveFirstName} (${effectiveCategory}) registered for ${effectiveEventTitle}!`,
     });
 
-    // AUTOMATED EMAIL CONFIRMATION WITH SCANNABLE QR CODE & PAYMENT DETAILS
-    const emailSent = await sendRegistrationConfirmationEmail({
-      registrationId: regId,
-      firstName: effectiveFirstName,
-      lastName: effectiveLastName,
-      fullName,
-      email,
-      phone: effectivePhone,
-      organization: effectiveOrganization,
-      designation: effectiveDesignation,
-      city: city || "N/A",
-      country: country || "India",
-      registrationCategory: effectiveCategory,
-      registeringCity: registeringCity || city || "N/A",
-      referralSource: referralSource || "Direct",
-      eventId: effectiveEventId,
-      eventTitle: effectiveEventTitle,
-      paymentStatus: effectivePaymentStatus,
-      paymentId: paymentId || undefined,
-      razorpayOrderId: razorpayOrderId || undefined,
-      paymentAmount: effectiveAmount,
-      couponApplied: couponApplied || undefined,
-      createdAt: newRegistration.created_at,
-    });
+    // AUTOMATED EMAIL CONFIRMATION (Sent only if payment is complete / free pass)
+    let emailSent = false;
+    if (effectivePaymentStatus !== "Pending") {
+      emailSent = await sendRegistrationConfirmationEmail({
+        registrationId: finalRegId,
+        firstName: effectiveFirstName,
+        lastName: effectiveLastName,
+        fullName,
+        email,
+        phone: effectivePhone,
+        organization: effectiveOrganization,
+        designation: effectiveDesignation,
+        city: city || "N/A",
+        country: country || "India",
+        registrationCategory: effectiveCategory,
+        registeringCity: registeringCity || city || "N/A",
+        referralSource: referralSource || "Direct",
+        eventId: effectiveEventId,
+        eventTitle: effectiveEventTitle,
+        paymentStatus: effectivePaymentStatus,
+        paymentId: paymentId || undefined,
+        razorpayOrderId: razorpayOrderId || undefined,
+        paymentAmount: effectiveAmount,
+        couponApplied: couponApplied || undefined,
+        createdAt: newRegistration.created_at,
+      });
+    }
 
     return res.status(201).json({
       success: true,

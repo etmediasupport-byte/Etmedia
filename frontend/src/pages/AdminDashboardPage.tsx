@@ -9038,14 +9038,19 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-bold mb-1">Currency</label>
-                    <input
-                      type="text"
+                    <label className="block text-slate-700 font-bold mb-1">Currency *</label>
+                    <select
                       value={paymentForm.currency || "INR"}
                       onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                      placeholder="e.g. INR / USD"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold"
-                    />
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value="INR">INR (₹ - Indian Rupee)</option>
+                      <option value="USD">USD ($ - US Dollar)</option>
+                      <option value="EUR">EUR (€ - Euro)</option>
+                      <option value="GBP">GBP (£ - British Pound)</option>
+                      <option value="AED">AED (AED - UAE Dirham)</option>
+                      <option value="SGD">SGD (S$ - Singapore Dollar)</option>
+                    </select>
                   </div>
 
                   <div>

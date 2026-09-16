@@ -48,12 +48,15 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     };
   }, [isOpen]);
 
+  const [pendingRegId, setPendingRegId] = useState<string | null>(null);
+
   // Auto-select event details & fetch payment configuration when event changes
   useEffect(() => {
     if (event) {
       setModalStep("form");
       setAppliedCoupon(null);
       setCouponInput("");
+      setPendingRegId(null);
 
       let cities: string[] = [];
       try {
@@ -89,7 +92,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
   if (!isOpen || !event) return null;
 
-  // Extract cities list for dropdown
+  // Extract cities list for dropdown - ONLY from Admin added Event Schedules & Cities
   let eventCities: string[] = [];
   try {
     if (typeof event.locations === "string") {
@@ -102,8 +105,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
   if (eventCities.length === 0 && event.city) {
     eventCities = [event.city];
   }
-  const defaultCities = ["Mumbai", "Bengaluru", "Hyderabad", "New Delhi", "Pune", "Chennai", "Kolkata"];
-  const finalCityOptions = Array.from(new Set([...eventCities, ...defaultCities]));
+  const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [event.city || "Mumbai"]));
 
   // Calculate pricing breakdown
   const getPricing = () => {
@@ -185,8 +187,8 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     }
   };
 
-  // Step 1: Form Validation & Proceed to Payment Summary
-  const handleProceedToPayment = (e: React.FormEvent) => {
+  // Step 1: Form Validation, Save Lead into DB Immediately & Proceed to Payment Summary
+  const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
@@ -217,6 +219,33 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     if (!verifiedCaptcha) {
       toast.error("Please complete the Google reCAPTCHA verification.");
       return;
+    }
+
+    // Save lead details into DB immediately with paymentStatus: "Pending"
+    const pricing = getPricing();
+    try {
+      const payload = {
+        ...formData,
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        phone: formData.contactNumber,
+        organization: formData.companyName,
+        eventId: event.id || event.slug,
+        eventTitle: event.title,
+        paymentAmount: pricing.totalPayable,
+        paymentStatus: "Pending",
+      };
+
+      const res = await fetch("/api/events/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success && data.data?.id) {
+        setPendingRegId(data.data.id);
+      }
+    } catch (leadErr) {
+      console.warn("Could not pre-save pending registration lead:", leadErr);
     }
 
     setModalStep("payment");
@@ -296,6 +325,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           handler: async function (response: any) {
             try {
               const payload = {
+                id: pendingRegId || undefined,
                 ...formData,
                 name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
                 phone: formData.contactNumber,
