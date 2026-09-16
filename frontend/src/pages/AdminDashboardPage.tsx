@@ -905,27 +905,8 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const exportNewsletterCSV = () => {
-    if (newsletterSubscribers.length === 0) {
-      toast.error("No subscribers to export.");
-      return;
-    }
-    const headers = ["ID", "Email", "Source", "Subscribed At"];
-    const rows = newsletterSubscribers.map((s) => [
-      s.id,
-      s.email,
-      `"${s.source || "Website Footer"}"`,
-      s.created_at,
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `et_media_newsletter_subscribers_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Exported newsletter subscribers to CSV!");
+  const exportNewsletterPDF = () => {
+    exportToPDF("newsletter");
   };
 
   // --- SEO HANDLERS ---
@@ -1489,139 +1470,274 @@ export default function AdminDashboardPage() {
     toast.success(`Exported ${rows.length} rows to Excel (${filename})!`);
   };
 
-  // CSV Export Handler
-  const exportToCSV = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants") => {
-    if (type === "event-registrations") {
-      const eventRegs = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
-      if (eventRegs.length === 0) {
-        toast.error("No event registrations to export.");
+  // PDF Export Handler
+  const exportToPDF = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants" | "newsletter" | "registrations") => {
+    let title = "Executive Data Report";
+    let headers: string[] = [];
+    let rows: (string | number)[][] = [];
+
+    if (type === "event-registrations" || type === "registrations") {
+      const list = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
+      if (list.length === 0) {
+        toast.error("No event registrations available to export.");
         return;
       }
-      const headers = ["ID", "Name", "Email", "Phone", "Organization", "Designation", "Event ID", "Date"];
-      const rows = eventRegs.map((r) => [
-        r.id,
-        `"${r.name}"`,
-        r.email,
-        r.phone,
-        `"${r.organization}"`,
-        `"${r.designation}"`,
-        r.event_id,
-        r.created_at,
+      title = "Event Registrations Report";
+      headers = ["#", "Name", "Email", "Phone", "Organization", "Designation", "Event", "Date"];
+      rows = list.map((r, idx) => [
+        idx + 1,
+        r.name || "N/A",
+        r.email || "N/A",
+        r.phone || "N/A",
+        r.organization || "N/A",
+        r.designation || "N/A",
+        r.event_id || "N/A",
+        r.created_at ? new Date(r.created_at).toLocaleDateString() : "N/A",
       ]);
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `et_media_event_registrations_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Exported event registrations to CSV!");
     } else if (type === "cms-delegates") {
       if (cmsDelegates.length === 0) {
-        toast.error("No corporate delegate forms to export.");
+        toast.error("No corporate delegate forms available to export.");
         return;
       }
-      const headers = [
-        "ID",
-        "Full Name",
-        "Designation",
-        "Organisation",
-        "Official Email",
-        "Mobile Number",
-        "City",
-        "Awards Nomination",
-        "Company Name",
-        "Website",
-        "Industry",
-        "Location",
-        "GST Number",
-        "Contact Person Name",
-        "Contact Person Designation",
-        "Contact Person Email",
-        "Contact Person Phone",
-        "Created At",
-      ];
-      const rows = cmsDelegates.map((c) => [
-        c.id,
-        `"${c.full_name}"`,
-        `"${c.designation}"`,
-        `"${c.organization}"`,
-        c.official_email,
-        c.mobile_number,
-        `"${c.city}"`,
-        `"${c.awards_nomination}"`,
-        `"${c.company_name}"`,
-        `"${c.website}"`,
-        `"${c.industry}"`,
-        `"${c.location}"`,
-        `"${c.gst_number}"`,
-        `"${c.contact_person_name}"`,
-        `"${c.contact_person_designation}"`,
-        c.contact_person_email,
-        c.contact_person_phone,
-        c.created_at,
+      title = "Corporate Delegate Registrations Report";
+      headers = ["#", "Full Name", "Designation", "Organization", "Email", "Phone", "City", "Company", "Industry", "Date"];
+      rows = cmsDelegates.map((c, idx) => [
+        idx + 1,
+        c.full_name || "N/A",
+        c.designation || "N/A",
+        c.organization || "N/A",
+        c.official_email || "N/A",
+        c.mobile_number || "N/A",
+        c.city || "N/A",
+        c.company_name || "N/A",
+        c.industry || "N/A",
+        c.created_at ? new Date(c.created_at).toLocaleDateString() : "N/A",
       ]);
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `et_media_corporate_delegates_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Exported corporate delegate forms to CSV!");
     } else if (type === "contacts") {
       if (contacts.length === 0) {
-        toast.error("No contacts to export.");
+        toast.error("No contact enquiries available to export.");
         return;
       }
-      const headers = ["ID", "Name", "Email", "Phone", "Enquiry Type", "Message", "Date"];
-      const rows = contacts.map((c) => [
-        c.id,
-        `"${c.name}"`,
-        c.email,
-        c.phone,
-        `"${c.enquiry_type}"`,
-        `"${c.message.replace(/"/g, '""')}"`,
-        c.created_at,
+      title = "Contact & Partner Requests Report";
+      headers = ["#", "Name", "Email", "Phone", "Enquiry Type", "Message", "Date"];
+      rows = contacts.map((c, idx) => [
+        idx + 1,
+        c.name || "N/A",
+        c.email || "N/A",
+        c.phone || "N/A",
+        c.enquiry_type || "General",
+        c.message || "",
+        c.created_at ? new Date(c.created_at).toLocaleDateString() : "N/A",
       ]);
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `et_media_contacts_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Exported contact submissions to CSV!");
     } else if (type === "career-applicants") {
       if (jobApplications.length === 0) {
-        toast.error("No career applicants to export.");
+        toast.error("No career applicants available to export.");
         return;
       }
-      const headers = ["ID", "Candidate Name", "Applied Job", "Email", "Phone", "Experience", "Status", "Resume URL", "Date"];
-      const rows = jobApplications.map((a) => [
-        a.id,
-        `"${a.name}"`,
-        `"${a.job_title}"`,
-        a.email,
-        a.phone,
-        `"${a.experience}"`,
-        `"${a.status || "Under Review"}"`,
-        a.resume_url || "",
-        a.created_at || "",
+      title = "Career Applicants Report";
+      headers = ["#", "Candidate Name", "Applied Job", "Email", "Phone", "Experience", "Status", "Date"];
+      rows = jobApplications.map((a, idx) => [
+        idx + 1,
+        a.name || "N/A",
+        a.job_title || "N/A",
+        a.email || "N/A",
+        a.phone || "N/A",
+        a.experience || "N/A",
+        a.status || "Under Review",
+        a.created_at ? new Date(a.created_at).toLocaleDateString() : "N/A",
       ]);
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `et_media_career_applicants_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Exported career applicants to CSV!");
+    } else if (type === "newsletter") {
+      if (newsletterSubscribers.length === 0) {
+        toast.error("No newsletter subscribers available to export.");
+        return;
+      }
+      title = "Newsletter Subscribers Report";
+      headers = ["#", "Email Address", "Source", "Subscribed At"];
+      rows = newsletterSubscribers.map((s, idx) => [
+        idx + 1,
+        s.email || "N/A",
+        s.source || "Website Footer",
+        s.created_at ? new Date(s.created_at).toLocaleDateString() : "N/A",
+      ]);
+    } else {
+      toast.error("Unsupported export section.");
+      return;
     }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to download PDF.");
+      return;
+    }
+
+    const generatedTime = new Date().toLocaleString("en-US", {
+      dateStyle: "full",
+      timeStyle: "medium",
+    });
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title} - ET Media Hub</title>
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 12mm;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              color: #0f172a;
+              margin: 0;
+              padding: 16px;
+              background: #ffffff;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 3px solid #0284c7;
+              padding-bottom: 12px;
+              margin-bottom: 16px;
+            }
+            .brand-title {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: -0.5px;
+            }
+            .brand-subtitle {
+              font-size: 10px;
+              font-weight: 700;
+              color: #0284c7;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            .report-info {
+              text-align: right;
+              font-size: 10px;
+              color: #64748b;
+            }
+            .report-title-bar {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 8px 14px;
+              margin-bottom: 16px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .report-name {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .count-badge {
+              background: #e0f2fe;
+              color: #0369a1;
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: 700;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+              margin-bottom: 16px;
+            }
+            th {
+              background-color: #0f172a !important;
+              color: #ffffff !important;
+              text-align: left;
+              padding: 8px 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              font-size: 9px;
+              letter-spacing: 0.5px;
+              border: 1px solid #0f172a;
+            }
+            td {
+              padding: 8px 10px;
+              border: 1px solid #e2e8f0;
+              color: #334155;
+              vertical-align: top;
+              word-break: break-word;
+            }
+            tr:nth-child(even) {
+              background-color: #f8fafc !important;
+            }
+            .footer {
+              margin-top: 24px;
+              padding-top: 10px;
+              border-top: 1px solid #e2e8f0;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 10px;
+              color: #94a3b8;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="brand-title">ET MEDIA HUB</div>
+              <div class="brand-subtitle">Business Intelligence & Executive Events</div>
+            </div>
+            <div class="report-info">
+              <div>Generated: ${generatedTime}</div>
+              <div>Confidential - Internal Admin Document</div>
+            </div>
+          </div>
+
+          <div class="report-title-bar">
+            <div class="report-name">${title}</div>
+            <div class="count-badge">Total Entries: ${rows.length}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                ${headers.map((h) => `<th>${h}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (row) => `
+                <tr>
+                  ${row.map((cell) => `<td>${cell !== undefined && cell !== null ? String(cell) : ""}</td>`).join("")}
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <div>© ${new Date().getFullYear()} ET Media Business Intelligence. All rights reserved.</div>
+            <div>ET Media Control Center</div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 300);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    toast.success(`Generated ${title} PDF!`);
   };
 
   // --- EVENT FILE UPLOAD HANDLER ---
@@ -2645,11 +2761,11 @@ export default function AdminDashboardPage() {
                   <span>Export Excel</span>
                 </button>
                 <button
-                  onClick={() => exportToCSV(activeTab as any)}
+                  onClick={() => exportToPDF(activeTab as any)}
                   className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                 >
-                  <Download className="h-3.5 w-3.5 text-cyan-600" />
-                  <span>Export CSV</span>
+                  <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                  <span>Download PDF</span>
                 </button>
               </div>
             )}
@@ -3500,11 +3616,11 @@ export default function AdminDashboardPage() {
                     <span>Export Excel</span>
                   </button>
                   <button
-                    onClick={() => exportToCSV("event-registrations")}
+                    onClick={() => exportToPDF("event-registrations")}
                     className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
                   >
-                    <Download className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Export CSV</span>
+                    <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Download PDF</span>
                   </button>
                 </div>
               </div>
@@ -3606,27 +3722,15 @@ export default function AdminDashboardPage() {
                           </button>
                         </td>
 
-                        {/* Actions / View Details & Send Email Pass */}
+                        {/* Actions / View Details */}
                         <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleSendPassEmail(reg.id, reg.email)}
-                              title="Send / Resend Ticket Pass Email with QR Code"
-                              className="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-100 hover:scale-105 shadow-xs cursor-pointer"
-                            >
-                              <Mail className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>Send Email Pass</span>
-                            </button>
-
-                            <button
-                              onClick={() => setSelectedRegDetail(reg)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                              <span>View Details</span>
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setSelectedRegDetail(reg)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                            <span>View Details</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -3782,11 +3886,11 @@ export default function AdminDashboardPage() {
                     <span>Export Excel</span>
                   </button>
                   <button
-                    onClick={() => exportToCSV("contacts")}
+                    onClick={() => exportToPDF("contacts")}
                     className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
                   >
-                    <Download className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Export CSV</span>
+                    <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Download PDF</span>
                   </button>
                 </div>
               </div>
@@ -6351,11 +6455,11 @@ export default function AdminDashboardPage() {
                         <span>Export Excel</span>
                       </button>
                       <button
-                        onClick={() => exportToCSV("career-applicants")}
+                        onClick={() => exportToPDF("career-applicants")}
                         className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
                       >
-                        <Download className="h-3.5 w-3.5 text-cyan-600" />
-                        <span>Export CSV</span>
+                        <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Download PDF</span>
                       </button>
                     </div>
                   </div>
@@ -7198,11 +7302,11 @@ export default function AdminDashboardPage() {
                     <span>Export Excel</span>
                   </button>
                   <button
-                    onClick={() => exportToCSV("career-applicants")}
+                    onClick={() => exportToPDF("career-applicants")}
                     className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
                   >
-                    <Download className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Export CSV</span>
+                    <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Download PDF</span>
                   </button>
                 </div>
               </div>
@@ -7626,11 +7730,11 @@ export default function AdminDashboardPage() {
                   Manage executive newsletter subscribers, real-time signups, and export subscriber lists
                 </p>
                 <button
-                  onClick={exportNewsletterCSV}
+                  onClick={() => exportToPDF("newsletter")}
                   className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer"
                 >
-                  <FileSpreadsheet className="h-4 w-4 text-cyan-600" />
-                  <span>Export Subscribers CSV</span>
+                  <FileText className="h-4 w-4 text-cyan-600" />
+                  <span>Download Subscribers PDF</span>
                 </button>
               </div>
 
