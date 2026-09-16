@@ -149,6 +149,18 @@ PAYMENT DETAILS:
 - Amount Paid: ₹${payAmount}
 - Coupon Code: ${coupon}
 
+EVENT TERMS & CONDITIONS:
+• Registration: Registration is subject to confirmation by ET Media Business Intelligence.
+• Valid ID Proof: Participants must carry a valid government-issued photo ID for identity verification at the venue.
+• Entry & Pass: Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.
+• Right of Admission: ET Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.
+• Code of Conduct: All participants must maintain professional and respectful conduct throughout the event.
+• Event Changes: ET Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.
+• Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.
+• Event Timing & Grace Period: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.
+• Personal Belongings: Participants are responsible for their personal belongings during the event.
+• Acceptance: By registering for the event, participants confirm that they have read, understood and agreed to these Terms & Conditions.
+
 Scan the attached QR code to view all submitted registration and payment details.
 
 We look forward to welcoming you!
@@ -271,6 +283,25 @@ www.etmedia.in
             <p style="margin: 12px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
           </div>
           ` : ""}
+
+          <!-- TERMS & CONDITIONS SECTION -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 25px;">
+            <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              📋 Event Terms & Conditions
+            </h3>
+            <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #475569; line-height: 1.7;">
+              <li style="margin-bottom: 6px;"><strong>Registration:</strong> Registration is subject to confirmation by ET Media Business Intelligence.</li>
+              <li style="margin-bottom: 6px;"><strong>Valid ID Proof:</strong> Participants must carry a valid government-issued photo ID for identity verification at the venue.</li>
+              <li style="margin-bottom: 6px;"><strong>Entry & Pass:</strong> Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.</li>
+              <li style="margin-bottom: 6px;"><strong>Right of Admission:</strong> ET Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.</li>
+              <li style="margin-bottom: 6px;"><strong>Code of Conduct:</strong> All participants must maintain professional and respectful conduct throughout the event.</li>
+              <li style="margin-bottom: 6px;"><strong>Event Changes:</strong> ET Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.</li>
+              <li style="margin-bottom: 6px;"><strong>Health & Safety:</strong> Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.</li>
+              <li style="margin-bottom: 6px;"><strong>Event Timing & Grace Period:</strong> Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.</li>
+              <li style="margin-bottom: 6px;"><strong>Personal Belongings:</strong> Participants are responsible for their personal belongings during the event.</li>
+              <li style="margin-bottom: 0px;"><strong>Acceptance:</strong> By registering for the event, participants confirm that they have read, understood and agreed to these Terms & Conditions.</li>
+            </ul>
+          </div>
 
           <p style="margin-bottom: 0;">Our executive team will contact you shortly with agenda updates, venue access details, and networking session schedules.</p>
         </div>
