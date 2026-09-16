@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "@/components/site/Layout";
 import HomePage from "@/pages/HomePage";
 import AboutPage from "@/pages/AboutPage";
@@ -15,13 +16,27 @@ import AdminLoginPage from "@/pages/AdminLoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
-
 import VerifyPassPage from "@/pages/VerifyPassPage";
+
+function PageTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: location.pathname }),
+    }).catch(() => {});
+  }, [location.pathname]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
+        <PageTracker />
         <Routes>
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route

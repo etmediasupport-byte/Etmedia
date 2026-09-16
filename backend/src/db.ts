@@ -821,6 +821,16 @@ export async function ensureNewAdminTables() {
         setting_value LONGTEXT NOT NULL
       );
     `);
+
+    // 5. Site Pageviews Analytics Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS site_pageviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        page_path VARCHAR(255) NOT NULL,
+        ip_address VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     try { await pool.query("ALTER TABLE testimonials MODIFY COLUMN avatar LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE seo_settings ADD COLUMN og_image LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE seo_settings MODIFY COLUMN og_image LONGTEXT;"); } catch (e) {}
