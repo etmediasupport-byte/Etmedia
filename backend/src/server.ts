@@ -3184,9 +3184,12 @@ app.put("/api/admin/settings", authenticateAdmin, async (req, res) => {
       }
     }
     io.emit("settings_updated", settingsObj);
-    return res.json({ success: true, message: "Website settings saved successfully!" });
   } catch (err: any) {
     console.error("Update Settings Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update settings" });
+  }
+});
+
 // ==========================================
 // VISITOR ANALYTICS API ENDPOINTS
 // ==========================================
