@@ -1338,6 +1338,199 @@ app.patch("/api/admin/delegate-registrations/:id/status", authenticateAdmin, asy
   }
 });
 
+// Admin Grant Free Event Access & Send Confirmation Email
+app.post("/api/admin/grant-access", authenticateAdmin, async (req, res) => {
+  const {
+    name,
+    email,
+    phone,
+    organization,
+    designation,
+    city,
+    country,
+    registrationCategory,
+    eventId,
+    eventTitle,
+    notes,
+  } = req.body;
+
+  if (!email || !name) {
+    return res.status(400).json({ success: false, message: "Name and Email are required to grant access." });
+  }
+
+  const effectiveFirstName = name.trim().split(" ")[0];
+  const effectiveLastName = name.trim().split(" ").slice(1).join(" ");
+  const effectivePhone = phone || "N/A";
+  const effectiveOrg = organization || "VIP Guest / Partner";
+  const effectiveDesig = designation || "Executive Pass Holder";
+  const effectiveCategory = registrationCategory || "VIP Free Pass";
+  const effectiveEventTitle = eventTitle || "India CFO Leadership Summit 2026";
+  const effectiveEventId = eventId || "cfo-leadership-summit";
+
+  const regId = `REG-VIP-${Date.now()}`;
+  const newRegistration = {
+    id: regId,
+    name: name.trim(),
+    first_name: effectiveFirstName,
+    last_name: effectiveLastName,
+    email: email.trim(),
+    phone: effectivePhone,
+    organization: effectiveOrg,
+    designation: effectiveDesig,
+    city: city || "Mumbai",
+    country: country || "India",
+    registration_category: effectiveCategory,
+    registering_city: city || "Mumbai",
+    referral_source: "Admin Granted Access",
+    event_id: effectiveEventId,
+    event_title: effectiveEventTitle,
+    payment_status: "Approved (Free Pass)",
+    payment_id: "ADMIN-COMPLIMENTARY-PASS",
+    razorpay_order_id: null,
+    payment_amount: 0,
+    coupon_applied: notes || "Admin Free Pass",
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    if (pool) {
+      await pool.query(
+        `INSERT INTO registrations (
+          id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          regId,
+          name.trim(),
+          effectiveFirstName,
+          effectiveLastName,
+          email.trim(),
+          effectivePhone,
+          effectiveOrg,
+          effectiveDesig,
+          city || "Mumbai",
+          country || "India",
+          effectiveCategory,
+          city || "Mumbai",
+          "Admin Granted Access",
+          effectiveEventId,
+          effectiveEventTitle,
+          "Approved (Free Pass)",
+          "ADMIN-COMPLIMENTARY-PASS",
+          null,
+          0,
+          notes || "Admin Free Pass",
+        ]
+      );
+    }
+
+    // REALTIME BROADCAST
+    let totalCount = 1;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM registrations");
+      totalCount = rows[0]?.count || 1;
+    }
+
+    io.emit("new_registration", {
+      registration: newRegistration,
+      totalRegistrations: totalCount,
+      message: `🎟️ Admin granted ${effectiveCategory} to ${name.trim()} for ${effectiveEventTitle}!`,
+    });
+
+    // AUTOMATED EMAIL CONFIRMATION WITH SCANNABLE QR CODE
+    const emailSent = await sendRegistrationConfirmationEmail({
+      registrationId: regId,
+      firstName: effectiveFirstName,
+      lastName: effectiveLastName,
+      fullName: name.trim(),
+      email: email.trim(),
+      phone: effectivePhone,
+      organization: effectiveOrg,
+      designation: effectiveDesig,
+      city: city || "Mumbai",
+      country: country || "India",
+      registrationCategory: effectiveCategory,
+      registeringCity: city || "Mumbai",
+      referralSource: "Admin Granted Access",
+      eventId: effectiveEventId,
+      eventTitle: effectiveEventTitle,
+      paymentStatus: "Approved (Free Pass)",
+      paymentId: "ADMIN-COMPLIMENTARY-PASS",
+      paymentAmount: 0,
+      couponApplied: notes || "Admin Free Pass",
+      createdAt: newRegistration.created_at,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: emailSent
+        ? `🎉 Access granted & ticket email sent to ${email}!`
+        : `Access granted for ${email} (email delivery pending SMTP config).`,
+      emailSent,
+      data: newRegistration,
+    });
+  } catch (err: any) {
+    console.error("Grant Access Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to grant access." });
+  }
+});
+
+// Admin Resend / Send Registration Pass Email
+app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    let reg: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [id]);
+      if (rows && rows.length > 0) {
+        reg = rows[0];
+      }
+    }
+    if (!reg) {
+      return res.status(404).json({ success: false, message: "Registration not found." });
+    }
+
+    // Update status to Approved (Free Pass) if not already paid
+    if (pool && (!reg.payment_status || reg.payment_status === "Pending")) {
+      await pool.query("UPDATE registrations SET payment_status = 'Approved (Free Pass)' WHERE id = ?", [id]);
+      reg.payment_status = "Approved (Free Pass)";
+    }
+
+    const emailSent = await sendRegistrationConfirmationEmail({
+      registrationId: reg.id,
+      firstName: reg.first_name || reg.name.split(" ")[0],
+      lastName: reg.last_name || "",
+      fullName: reg.name,
+      email: reg.email,
+      phone: reg.phone,
+      organization: reg.organization,
+      designation: reg.designation,
+      city: reg.city,
+      country: reg.country,
+      registrationCategory: reg.registration_category,
+      registeringCity: reg.registering_city,
+      referralSource: reg.referral_source,
+      eventId: reg.event_id,
+      eventTitle: reg.event_title,
+      paymentStatus: reg.payment_status || "Approved (Free Pass)",
+      paymentId: reg.payment_id || "ADMIN-GRANTED",
+      paymentAmount: reg.payment_amount || 0,
+      couponApplied: reg.coupon_applied,
+      createdAt: reg.created_at,
+    });
+
+    return res.json({
+      success: true,
+      emailSent,
+      message: emailSent
+        ? `📧 Ticket pass email sent to ${reg.email}!`
+        : `Email delivery attempt completed for ${reg.email}.`,
+    });
+  } catch (err: any) {
+    console.error("Send Registration Email Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to send email pass." });
+  }
+});
+
 // Admin Get All Contacts
 app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
   try {

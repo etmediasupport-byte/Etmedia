@@ -378,6 +378,22 @@ export default function AdminDashboardPage() {
   const [bulkGstValue, setBulkGstValue] = useState<number>(18);
   const [showBulkGstModal, setShowBulkGstModal] = useState(false);
 
+  // Grant Access & Email Pass State
+  const [showGrantAccessModal, setShowGrantAccessModal] = useState(false);
+  const [grantAccessForm, setGrantAccessForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    organization: "",
+    designation: "",
+    city: "Mumbai",
+    registrationCategory: "VIP Pass",
+    eventId: "",
+    eventTitle: "",
+    notes: "Complimentary Admin Pass",
+  });
+  const [grantingAccess, setGrantingAccess] = useState(false);
+
   const [paymentForm, setPaymentForm] = useState<any>({
     event_id: "",
     event_title: "",
@@ -1223,6 +1239,76 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error executing bulk action.");
+    }
+  };
+
+  const handleGrantFreeAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!grantAccessForm.name || !grantAccessForm.email) {
+      toast.error("Name and Email are required.");
+      return;
+    }
+    setGrantingAccess(true);
+    try {
+      const selectedEvt = cmsEvents.find((evt) => (evt.id || evt.slug) === grantAccessForm.eventId);
+      const payload = {
+        ...grantAccessForm,
+        eventTitle: selectedEvt ? selectedEvt.title : grantAccessForm.eventTitle || "Executive Leadership Summit 2026",
+        eventId: selectedEvt ? (selectedEvt.id || selectedEvt.slug) : grantAccessForm.eventId || "cfo-leadership-summit",
+      };
+
+      const res = await fetch("/api/admin/grant-access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Free Event Pass granted & confirmation email sent!");
+        setShowGrantAccessModal(false);
+        setGrantAccessForm({
+          name: "",
+          email: "",
+          phone: "",
+          organization: "",
+          designation: "",
+          city: "Mumbai",
+          registrationCategory: "VIP Pass",
+          eventId: "",
+          eventTitle: "",
+          notes: "Complimentary Admin Pass",
+        });
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to grant access.");
+      }
+    } catch (err) {
+      toast.error("Network error granting event access.");
+    } finally {
+      setGrantingAccess(false);
+    }
+  };
+
+  const handleSendPassEmail = async (regId: string, email: string) => {
+    toast.info(`Sending ticket pass email to ${email}...`);
+    try {
+      const res = await fetch(`/api/admin/registrations/${regId}/send-email`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `Ticket pass email sent to ${email}!`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to send email pass.");
+      }
+    } catch (err) {
+      toast.error("Network error sending email pass.");
     }
   };
 
@@ -3391,6 +3477,22 @@ export default function AdminDashboardPage() {
                     Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> entries
                   </span>
                   <button
+                    type="button"
+                    onClick={() => {
+                      const defaultEvt = cmsEvents[0] || {};
+                      setGrantAccessForm((prev) => ({
+                        ...prev,
+                        eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
+                        eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
+                      }));
+                      setShowGrantAccessModal(true);
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20 hover:scale-105"
+                  >
+                    <Ticket className="h-3.5 w-3.5" />
+                    <span>+ Grant Free Event Pass</span>
+                  </button>
+                  <button
                     onClick={() => exportToExcel("event-registrations")}
                     className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
                   >
@@ -3504,15 +3606,27 @@ export default function AdminDashboardPage() {
                           </button>
                         </td>
 
-                        {/* Actions / View Details */}
+                        {/* Actions / View Details & Send Email Pass */}
                         <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedRegDetail(reg)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                            <span>View Details</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSendPassEmail(reg.id, reg.email)}
+                              title="Send / Resend Ticket Pass Email with QR Code"
+                              className="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 transition-all hover:bg-emerald-100 hover:scale-105 shadow-xs cursor-pointer"
+                            >
+                              <Mail className="h-3.5 w-3.5 text-emerald-600" />
+                              <span>Send Email Pass</span>
+                            </button>
+
+                            <button
+                              onClick={() => setSelectedRegDetail(reg)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                              <span>View Details</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -9362,6 +9476,169 @@ export default function AdminDashboardPage() {
                 Apply GST %
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* GRANT FREE EVENT ACCESS MODAL */}
+      {showGrantAccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setShowGrantAccessModal(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+          />
+
+          <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 animate-in fade-in-0 zoom-in-95 duration-200 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 font-bold">
+                  <Ticket className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 font-display">
+                    Grant Free Event Pass
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Issue VIP / complimentary access & send ticket QR email directly
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGrantAccessModal(false)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGrantFreeAccess} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Select Event Summit *</label>
+                <select
+                  value={grantAccessForm.eventId}
+                  onChange={(e) => {
+                    const selected = cmsEvents.find((evt) => (evt.id || evt.slug) === e.target.value);
+                    setGrantAccessForm({
+                      ...grantAccessForm,
+                      eventId: e.target.value,
+                      eventTitle: selected ? selected.title : grantAccessForm.eventTitle,
+                    });
+                  }}
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                >
+                  {cmsEvents.map((evt) => (
+                    <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
+                      {evt.title} ({evt.city || "Multi-City"})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Delegate Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dr. Rajesh Sharma"
+                    value={grantAccessForm.name}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, name: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Work Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. rajesh@company.com"
+                    value={grantAccessForm.email}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, email: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +91 98765 43210"
+                    value={grantAccessForm.phone}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, phone: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Designation</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. VP & Chief Financial Officer"
+                    value={grantAccessForm.designation}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, designation: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Company / Organization</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Reliance / Tata Consultancy"
+                    value={grantAccessForm.organization}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, organization: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Pass Category *</label>
+                  <select
+                    value={grantAccessForm.registrationCategory}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, registrationCategory: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                  >
+                    <option value="VIP Pass">VIP Pass (Complimentary)</option>
+                    <option value="Executive Delegate Pass">Executive Delegate Pass</option>
+                    <option value="Keynote Speaker Pass">Keynote Speaker Pass</option>
+                    <option value="Sponsor Pass">Sponsor Pass</option>
+                    <option value="Media & Press Pass">Media & Press Pass</option>
+                    <option value="Honorary Guest">Honorary Guest</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Admin Notes / Access Reason</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Special invitation by ET Media Management"
+                  value={grantAccessForm.notes}
+                  onChange={(e) => setGrantAccessForm({ ...grantAccessForm, notes: e.target.value })}
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGrantAccessModal(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={grantingAccess}
+                  className="flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 font-bold text-white hover:bg-purple-700 transition-all shadow-md shadow-purple-500/20 disabled:opacity-50"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>{grantingAccess ? "Granting Access & Sending Email..." : "Grant Access & Send Email Pass"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
