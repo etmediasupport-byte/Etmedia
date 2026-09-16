@@ -4293,7 +4293,7 @@ export default function AdminDashboardPage() {
                           ...prev,
                           agenda_list: [
                             ...prev.agenda_list,
-                            { id: `ag-${Date.now()}`, time: "10:00 AM — 11:00 AM", title: "New Keynote Session", speaker: "Session Speaker", description: "Session summary..." },
+                            { id: `ag-${Date.now()}`, time: "", title: "", speaker: "", description: "" },
                           ],
                         }))
                       }
@@ -4413,11 +4413,11 @@ export default function AdminDashboardPage() {
                             ...prev.speakers_list,
                             {
                               id: `spk-${Date.now()}`,
-                              name: "New Speaker",
-                              designation: "Executive Director",
-                              organization: "Company Name",
-                              photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
-                              topic: "Speaker Keynote Topic",
+                              name: "",
+                              designation: "",
+                              organization: "",
+                              photo: "",
+                              topic: "",
                             },
                           ],
                         }))
@@ -4460,6 +4460,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, speakers_list: updated };
                               })
                             }
+                            placeholder="e.g. Dr. Rajesh Sharma"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4476,6 +4477,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, speakers_list: updated };
                               })
                             }
+                            placeholder="e.g. Executive Director / VP"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4492,6 +4494,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, speakers_list: updated };
                               })
                             }
+                            placeholder="e.g. ET Media Hub"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4508,6 +4511,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, speakers_list: updated };
                               })
                             }
+                            placeholder="e.g. https://... or image URL"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4551,10 +4555,10 @@ export default function AdminDashboardPage() {
                             ...prev.sponsors_list,
                             {
                               id: `spn-${Date.now()}`,
-                              name: "Partner Brand",
+                              name: "",
                               tier: "Gold Sponsor",
-                              logo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=300",
-                              websiteUrl: "https://example.com",
+                              logo: "",
+                              websiteUrl: "",
                             },
                           ],
                         }))
@@ -4597,6 +4601,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, sponsors_list: updated };
                               })
                             }
+                            placeholder="e.g. Partner Brand Name"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4635,6 +4640,7 @@ export default function AdminDashboardPage() {
                                 return { ...prev, sponsors_list: updated };
                               })
                             }
+                            placeholder="e.g. https://... or logo link"
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
                           />
                         </div>
@@ -4662,8 +4668,8 @@ export default function AdminDashboardPage() {
                             {
                               id: `gal-${Date.now()}`,
                               type: "image",
-                              url: "/assets/hero-leadership.jpg",
-                              caption: "Executive Conclave Highlight",
+                              url: "",
+                              caption: "",
                             },
                           ],
                         }))
