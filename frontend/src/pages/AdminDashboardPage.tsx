@@ -2724,29 +2724,29 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white px-4 md:px-6 py-3.5 shadow-xs">
-          <div className="flex items-center gap-3 shrink-0">
+        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white px-2.5 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-hidden min-w-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
             <button
               onClick={() => setMobileSidebarOpen(true)}
               className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
               title="Open Navigation Drawer"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4.5 w-4.5" />
             </button>
 
             {(() => {
               const activeNav = navItems.find((n) => n.id === activeTab) || navItems[0] || { label: "Dashboard", icon: LayoutDashboard };
               const IconComp = activeNav.icon || LayoutDashboard;
               return (
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 font-bold shadow-2xs">
-                    <IconComp className="h-4.5 w-4.5" />
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+                  <div className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 font-bold shadow-2xs">
+                    <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                    <h1 className="text-sm sm:text-lg font-extrabold text-slate-900 tracking-tight truncate min-w-0 flex-1">
                       {activeNav.label}
                     </h1>
-                    <span className="hidden sm:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 border border-cyan-200 uppercase tracking-wider shrink-0">
+                    <span className="hidden md:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 border border-cyan-200 uppercase tracking-wider shrink-0">
                       CMS Control
                     </span>
                   </div>
@@ -2755,16 +2755,16 @@ export default function AdminDashboardPage() {
             })()}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
             {/* Live Socket Indicator */}
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-800 font-bold">
-              <Radio className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
-              <span className="whitespace-nowrap">Sockets: {stats.activeLiveUsers} Online</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 sm:px-3 py-1 text-[11px] sm:text-xs text-emerald-800 font-bold shrink-0">
+              <Radio className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-emerald-600 animate-pulse shrink-0" />
+              <span className="whitespace-nowrap"><span className="hidden xs:inline">Sockets: </span>{stats.activeLiveUsers} Online</span>
             </div>
 
             {/* Quick Export Buttons */}
             {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants" || activeTab === "newsletter") && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => exportToExcel(activeTab as any)}
                   className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-xs cursor-pointer"
@@ -2774,10 +2774,10 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   onClick={() => exportToPDF(activeTab as any)}
-                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
+                  className="flex items-center gap-1 rounded-xl border border-cyan-200 bg-cyan-50 px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer shrink-0"
                 >
-                  <FileText className="h-3.5 w-3.5 text-cyan-600" />
-                  <span>Download PDF</span>
+                  <FileText className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
+                  <span className="hidden xs:inline">Download </span><span>PDF</span>
                 </button>
               </div>
             )}
@@ -2785,7 +2785,7 @@ export default function AdminDashboardPage() {
         </header>
 
         {/* Main Content Area */}
-        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8">
           {/* OVERVIEW TAB: ANALYTICS WIDGETS & DASHBOARD BOARDS */}
           {activeTab === "overview" && (
             <div className="space-y-8">
@@ -4059,7 +4059,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Events Cards Grid */}
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {cmsEvents.map((evt) => {
                   let parsedLocs: any[] = [];
                   try {
@@ -4074,11 +4074,11 @@ export default function AdminDashboardPage() {
                   return (
                     <div
                       key={evt.id || evt.slug}
-                      className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-xl"
+                      className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-xl min-w-0 overflow-hidden"
                     >
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4 min-w-0">
                         {/* Image Banner & Badges */}
-                        <div className="relative h-48 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                        <div className="relative h-40 sm:h-48 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                           <img
                             src={evt.image}
                             alt={evt.title}
@@ -4087,15 +4087,15 @@ export default function AdminDashboardPage() {
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-black/10" />
 
                           {/* Top Badges */}
-                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                            <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold text-cyan-800 border border-cyan-500/30 backdrop-blur-md max-w-[60%] truncate whitespace-nowrap shadow-sm">
+                          <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 right-2.5 sm:right-3 flex items-center justify-between gap-1">
+                            <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-extrabold text-cyan-800 border border-cyan-500/30 backdrop-blur-md max-w-[55%] truncate shadow-xs">
                               {evt.category}
                             </span>
 
                             <button
                               onClick={() => handleToggleFeatured(evt)}
                               title={evt.is_featured ? "Featured on Homepage" : "Set as Featured"}
-                              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold backdrop-blur-md transition-all ${
+                              className={`flex items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md transition-all shrink-0 ${
                                 evt.is_featured === 1 || evt.is_featured === true
                                   ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
                                   : "bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-sm"
@@ -4107,9 +4107,9 @@ export default function AdminDashboardPage() {
                           </div>
 
                           {/* Status Overlay Badge */}
-                          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                          <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 flex items-center gap-2">
                             <span
-                              className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold backdrop-blur-md border ${
+                              className={`flex items-center gap-1 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md border ${
                                 evt.status === "published"
                                   ? "bg-emerald-500/90 text-white border-emerald-400"
                                   : "bg-amber-500/90 text-slate-950 border-amber-400"
@@ -4126,11 +4126,11 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Event Details */}
-                        <div>
-                          <h3 className="text-base font-bold text-slate-900 line-clamp-1 group-hover:text-cyan-700 transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-2 group-hover:text-cyan-700 transition-colors break-words">
                             {evt.title}
                           </h3>
-                          <p className="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed break-words">
                             {evt.description}
                           </p>
                         </div>
@@ -6944,48 +6944,48 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* 4 Metric KPI Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
-                    <Handshake className="h-5 w-5" />
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                    <Handshake className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Inquiries</p>
-                    <p className="text-lg font-black text-slate-900">{partnerSubmissions.length}</p>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Total Inquiries">Total Inquiries</p>
+                    <p className="text-base sm:text-lg font-black text-slate-900">{partnerSubmissions.length}</p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
-                    <Award className="h-5 w-5" />
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                    <Award className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sponsorships</p>
-                    <p className="text-lg font-black text-slate-900">
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Sponsorships">Sponsorships</p>
+                    <p className="text-base sm:text-lg font-black text-slate-900">
                       {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("sponsor") || (p.partnership_type || "").toLowerCase().includes("brand")).length || 1}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
-                    <Users className="h-5 w-5" />
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Speaking Proposals</p>
-                    <p className="text-lg font-black text-slate-900">
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Speaking Proposals">Speaking Proposals</p>
+                    <p className="text-base sm:text-lg font-black text-slate-900">
                       {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("speak") || (p.partnership_type || "").toLowerCase().includes("keynote")).length || 1}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <Building className="h-5 w-5" />
+                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <Building className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exhibit & PR</p>
-                    <p className="text-lg font-black text-slate-900">
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Exhibit & PR">Exhibit & PR</p>
+                    <p className="text-base sm:text-lg font-black text-slate-900">
                       {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("media") || (p.partnership_type || "").toLowerCase().includes("exhibit")).length || 1}
                     </p>
                   </div>
