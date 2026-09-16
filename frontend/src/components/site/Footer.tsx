@@ -174,7 +174,6 @@ export function Footer() {
               <div className="flex flex-wrap gap-2.5">
                 {[
                   { href: socialLinks.linkedin, Icon: Linkedin, label: "LinkedIn", color: "hover:bg-blue-600" },
-                  { href: socialLinks.twitter, Icon: Twitter, label: "Twitter / X", color: "hover:bg-slate-700" },
                   { href: socialLinks.instagram, Icon: Instagram, label: "Instagram", color: "hover:bg-rose-600" },
                   { href: socialLinks.youtube, Icon: Youtube, label: "YouTube", color: "hover:bg-red-600" },
                   { href: socialLinks.facebook, Icon: Facebook, label: "Facebook", color: "hover:bg-blue-700" },
