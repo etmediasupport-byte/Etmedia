@@ -689,7 +689,7 @@ export default function AdminDashboardPage() {
         const stgRes = await fetch("/api/settings");
         const stgData = await stgRes.json();
         if (stgData.success && stgData.settings) {
-          setSiteSettings(stgData.settings);
+          setSiteSettings((prev) => ({ ...prev, ...stgData.settings }));
         }
       } catch (e) {
         console.warn("Could not fetch settings", e);
@@ -8418,6 +8418,17 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setSiteSettings({ ...siteSettings, instagram_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
                         placeholder="https://instagram.com/etmedia"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">YouTube Channel Link</label>
+                      <input
+                        type="text"
+                        value={siteSettings.youtube_url}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, youtube_url: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                        placeholder="https://youtube.com/@etmedia"
                       />
                     </div>
                   </div>

@@ -34,8 +34,51 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [realtimeNotification, setRealtimeNotification] = useState<string | null>(null);
+  const [socialLinks, setSocialLinks] = useState({
+    linkedin: contact.linkedin,
+    instagram: contact.instagram,
+    youtube: contact.youtube,
+    whatsapp: contact.whatsapp,
+    twitter: "https://x.com/etmedia",
+    facebook: "https://facebook.com/etmedia",
+  });
 
   useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setSocialLinks((prev) => ({
+            ...prev,
+            linkedin: data.settings.linkedin_url || prev.linkedin,
+            instagram: data.settings.instagram_url || prev.instagram,
+            youtube: data.settings.youtube_url || prev.youtube,
+            twitter: data.settings.twitter_url || prev.twitter,
+            facebook: data.settings.facebook_url || prev.facebook,
+            whatsapp: data.settings.whatsapp_number ? `https://wa.me/${data.settings.whatsapp_number.replace(/\D/g, "")}` : prev.whatsapp,
+          }));
+        }
+      } catch (e) {
+        console.warn("Contact settings fetch error:", e);
+      }
+    };
+    fetchSettings();
+
+    const onSettingsUpdate = (updated: Record<string, string>) => {
+      setSocialLinks((prev) => ({
+        ...prev,
+        linkedin: updated.linkedin_url || prev.linkedin,
+        instagram: updated.instagram_url || prev.instagram,
+        youtube: updated.youtube_url || prev.youtube,
+        twitter: updated.twitter_url || prev.twitter,
+        facebook: updated.facebook_url || prev.facebook,
+        whatsapp: updated.whatsapp_number ? `https://wa.me/${updated.whatsapp_number.replace(/\D/g, "")}` : prev.whatsapp,
+      }));
+    };
+
+    socket.on("settings_updated", onSettingsUpdate);
+
     // Listen for real-time socket events from backend
     const onLiveUsers = (data: { activeUsers: number }) => {
       setActiveUsers(data.activeUsers);
@@ -50,6 +93,7 @@ export default function ContactPage() {
     socket.on("new_contact_enquiry", onNewEnquiry);
 
     return () => {
+      socket.off("settings_updated", onSettingsUpdate);
       socket.off("live_users_update", onLiveUsers);
       socket.off("new_contact_enquiry", onNewEnquiry);
     };
@@ -479,7 +523,7 @@ export default function ContactPage() {
                 {/* SOCIAL ICONS GRID */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <a
-                    href={contact.linkedin}
+                    href={socialLinks.linkedin}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 hover:border-cyan-400 transition-all text-xs font-bold text-slate-800 dark:text-slate-200 group"
@@ -491,7 +535,7 @@ export default function ContactPage() {
                   </a>
 
                   <a
-                    href={contact.instagram}
+                    href={socialLinks.instagram}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-400 transition-all text-xs font-bold text-slate-800 dark:text-slate-200 group"
@@ -503,10 +547,10 @@ export default function ContactPage() {
                   </a>
 
                   <a
-                    href={contact.youtube}
+                    href={socialLinks.youtube}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-400 transition-all text-xs font-bold text-slate-800 dark:text-slate-200 group"
+                    className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:bg-red-50 dark:hover:bg-red-950/40 hover:border-red-400 transition-all text-xs font-bold text-slate-800 dark:text-slate-200 group"
                   >
                     <span className="p-2 rounded-xl bg-red-600 text-white shadow-xs group-hover:scale-110 transition-transform">
                       <Youtube className="h-4 w-4" />
@@ -515,7 +559,7 @@ export default function ContactPage() {
                   </a>
 
                   <a
-                    href={contact.whatsapp}
+                    href={socialLinks.whatsapp}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-400 transition-all text-xs font-bold text-slate-800 dark:text-slate-200 group"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Instagram,
@@ -16,14 +16,66 @@ import {
   BookOpen,
   Calendar,
   Layers,
+  Globe,
+  Twitter,
+  Facebook,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { contact } from "@/lib/site-data";
+import { socket } from "@/lib/socket";
 
 export function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [socialLinks, setSocialLinks] = useState({
+    linkedin: contact.linkedin,
+    instagram: contact.instagram,
+    youtube: contact.youtube,
+    whatsapp: contact.whatsapp,
+    twitter: "https://x.com/etmedia",
+    facebook: "https://facebook.com/etmedia",
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        if (data.success && data.settings) {
+          setSocialLinks((prev) => ({
+            ...prev,
+            linkedin: data.settings.linkedin_url || prev.linkedin,
+            instagram: data.settings.instagram_url || prev.instagram,
+            youtube: data.settings.youtube_url || prev.youtube,
+            twitter: data.settings.twitter_url || prev.twitter,
+            facebook: data.settings.facebook_url || prev.facebook,
+            whatsapp: data.settings.whatsapp_number ? `https://wa.me/${data.settings.whatsapp_number.replace(/\D/g, "")}` : prev.whatsapp,
+          }));
+        }
+      } catch (e) {
+        console.warn("Footer settings fetch error:", e);
+      }
+    };
+    fetchSettings();
+
+    const onSettingsUpdate = (updated: Record<string, string>) => {
+      setSocialLinks((prev) => ({
+        ...prev,
+        linkedin: updated.linkedin_url || prev.linkedin,
+        instagram: updated.instagram_url || prev.instagram,
+        youtube: updated.youtube_url || prev.youtube,
+        twitter: updated.twitter_url || prev.twitter,
+        facebook: updated.facebook_url || prev.facebook,
+        whatsapp: updated.whatsapp_number ? `https://wa.me/${updated.whatsapp_number.replace(/\D/g, "")}` : prev.whatsapp,
+      }));
+    };
+
+    socket.on("settings_updated", onSettingsUpdate);
+    return () => {
+      socket.off("settings_updated", onSettingsUpdate);
+    };
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,12 +171,14 @@ export function Footer() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2 font-display">
                 Follow Us
               </span>
-              <div className="flex gap-2.5">
+              <div className="flex flex-wrap gap-2.5">
                 {[
-                  { href: contact.linkedin, Icon: Linkedin, label: "LinkedIn", color: "hover:bg-blue-600" },
-                  { href: contact.instagram, Icon: Instagram, label: "Instagram", color: "hover:bg-rose-600" },
-                  { href: contact.youtube, Icon: Youtube, label: "YouTube", color: "hover:bg-red-600" },
-                  { href: contact.whatsapp, Icon: MessageCircle, label: "WhatsApp", color: "hover:bg-emerald-600" },
+                  { href: socialLinks.linkedin, Icon: Linkedin, label: "LinkedIn", color: "hover:bg-blue-600" },
+                  { href: socialLinks.twitter, Icon: Twitter, label: "Twitter / X", color: "hover:bg-slate-700" },
+                  { href: socialLinks.instagram, Icon: Instagram, label: "Instagram", color: "hover:bg-rose-600" },
+                  { href: socialLinks.youtube, Icon: Youtube, label: "YouTube", color: "hover:bg-red-600" },
+                  { href: socialLinks.facebook, Icon: Facebook, label: "Facebook", color: "hover:bg-blue-700" },
+                  { href: socialLinks.whatsapp, Icon: MessageCircle, label: "WhatsApp", color: "hover:bg-emerald-600" },
                 ].map(({ href, Icon, label, color }) => (
                   <a
                     key={label}
