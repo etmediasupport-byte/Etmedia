@@ -16,6 +16,7 @@ import {
   Maximize2,
   Award,
   ExternalLink,
+  Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
@@ -549,7 +550,20 @@ export default function EventDetailPage() {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <h4 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{speaker.name}</h4>
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{speaker.name}</h4>
+                      {(speaker.linkedin_url || speaker.linkedinUrl) && (
+                        <a
+                          href={speaker.linkedin_url || speaker.linkedinUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full bg-[#0077b5]/10 border border-[#0077b5]/30 p-1.5 text-[#0077b5] hover:bg-[#0077b5] hover:text-white transition-all shadow-xs shrink-0"
+                          title={`${speaker.name}'s LinkedIn Profile`}
+                        >
+                          <Linkedin className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </div>
                     <p className="text-xs font-semibold text-primary mt-0.5">{speaker.designation}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 font-medium">{speaker.organization}</p>
                     {speaker.topic && (

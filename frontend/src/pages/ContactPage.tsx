@@ -32,6 +32,17 @@ export default function ContactPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+
+  const validatePhone = (p: string) => {
+    const cleaned = p.trim();
+    const digits = cleaned.replace(/\D/g, "");
+    if (!cleaned) return "Phone number is required.";
+    if (digits.length < 10) return "Please enter a valid 10-digit phone number (e.g. +91 98765 43210).";
+    if (digits.length > 15) return "Phone number cannot exceed 15 digits.";
+    return "";
+  };
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [realtimeNotification, setRealtimeNotification] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState({
@@ -101,6 +112,15 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const pErr = validatePhone(formData.phone);
+    if (pErr) {
+      setPhoneTouched(true);
+      setPhoneError(pErr);
+      toast.error(pErr);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -446,17 +466,41 @@ export default function ContactPage() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                          Phone Number *
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                          <span>Phone Number *</span>
+                          {phoneTouched && !phoneError && formData.phone && (
+                            <span className="text-[10px] font-extrabold text-emerald-500 flex items-center gap-1">
+                              ✓ Valid phone number
+                            </span>
+                          )}
                         </label>
                         <input
                           type="tel"
                           required
                           value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          onChange={(e) => {
+                            const cleanVal = e.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+                            setFormData({ ...formData, phone: cleanVal });
+                            if (phoneTouched) setPhoneError(validatePhone(cleanVal));
+                          }}
+                          onBlur={() => {
+                            setPhoneTouched(true);
+                            setPhoneError(validatePhone(formData.phone));
+                          }}
                           placeholder="+91 98765 43210"
-                          className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none transition-colors"
+                          className={`w-full rounded-2xl border bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                            phoneTouched && phoneError
+                              ? "border-rose-500 focus:border-rose-500"
+                              : phoneTouched && !phoneError && formData.phone
+                              ? "border-emerald-500 focus:border-emerald-500"
+                              : "border-slate-300 dark:border-slate-700 focus:border-cyan-500"
+                          }`}
                         />
+                        {phoneTouched && phoneError && (
+                          <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in">
+                            <span>⚠️</span> {phoneError}
+                          </p>
+                        )}
                       </div>
                     </div>
 

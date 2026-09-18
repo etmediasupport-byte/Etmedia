@@ -52,6 +52,11 @@ import {
   Globe,
   BookOpen,
   Film,
+  Video as VideoIcon,
+  Youtube,
+  Instagram,
+  Play,
+  PlayCircle,
   Image as ImageIcon,
   Quote,
   MailCheck,
@@ -62,6 +67,8 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   UserPlus,
   Sliders,
   ShieldCheck,
@@ -80,6 +87,7 @@ import {
   Copy,
   Save,
   Loader2,
+  Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
@@ -207,6 +215,7 @@ type TabType =
   | "career-jobs"
   | "career-applicants"
   | "gallery"
+  | "videos"
   | "testimonials"
   | "newsletter"
   | "contacts"
@@ -306,6 +315,22 @@ export default function AdminDashboardPage() {
     aspect_ratio: "aspect-[16/9]",
   });
   const [galleryUploading, setGalleryUploading] = useState(false);
+
+  // YouTube & Instagram Videos CMS State
+  const [editingVideoItem, setEditingVideoItem] = useState<MediaGalleryItem | null>(null);
+  const [newVideoForm, setNewVideoForm] = useState({
+    title: "",
+    platform: "youtube" as "youtube" | "instagram",
+    url: "",
+    thumbnail_url: "",
+    category: "Highlights",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    is_featured: false,
+  });
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoFilterPlatform, setVideoFilterPlatform] = useState<"all" | "youtube" | "instagram">("all");
+  const [selectedVideoPreview, setSelectedVideoPreview] = useState<MediaGalleryItem | null>(null);
 
   // Testimonials CMS State
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
@@ -454,6 +479,13 @@ export default function AdminDashboardPage() {
   const [submittingEvent, setSubmittingEvent] = useState(false);
 
   const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue">("basic");
+  const [openLocationSlots, setOpenLocationSlots] = useState<number[]>([0]);
+
+  const toggleLocationSlot = (index: number) => {
+    setOpenLocationSlots((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
 
   // Sub-modal states for Speaker, Sponsor, Agenda, and Gallery
   const [speakerModalOpen, setSpeakerModalOpen] = useState(false);
@@ -465,6 +497,7 @@ export default function AdminDashboardPage() {
     organization: "",
     photo: "",
     topic: "",
+    linkedin_url: "",
   });
   const [uploadingSpeakerImg, setUploadingSpeakerImg] = useState(false);
 
@@ -1887,6 +1920,7 @@ export default function AdminDashboardPage() {
 
   // --- MULTI-LOCATION SLOT HANDLERS ---
   const handleAddLocationSlot = () => {
+    const newIdx = eventForm.locations.length;
     setEventForm((prev) => ({
       ...prev,
       locations: [
@@ -1894,6 +1928,7 @@ export default function AdminDashboardPage() {
         { city: "", venue: "", date: "", time: "", address: "", map_url: "" },
       ],
     }));
+    setOpenLocationSlots((prev) => [...prev, newIdx]);
   };
 
   const handleRemoveLocationSlot = (index: number) => {
@@ -1930,6 +1965,7 @@ export default function AdminDashboardPage() {
       organization: "",
       photo: "",
       topic: "",
+      linkedin_url: "",
     });
     setSpeakerModalOpen(true);
   };
@@ -1938,7 +1974,10 @@ export default function AdminDashboardPage() {
     const spk = eventForm.speakers_list[index];
     if (spk) {
       setEditingSpeakerIndex(index);
-      setSpeakerForm({ ...spk });
+      setSpeakerForm({
+        ...spk,
+        linkedin_url: spk.linkedin_url || spk.linkedinUrl || "",
+      });
       setSpeakerModalOpen(true);
     }
   };
@@ -2247,6 +2286,7 @@ export default function AdminDashboardPage() {
       map_url: "",
       venue_address: "",
     });
+    setOpenLocationSlots([0]);
     setEventModalOpen(true);
   };
 
@@ -2326,6 +2366,7 @@ export default function AdminDashboardPage() {
       map_url: evt.map_url || "",
       venue_address: evt.venue_address || "",
     });
+    setOpenLocationSlots([0]);
     setEventModalOpen(true);
   };
 
@@ -2914,6 +2955,121 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // --- YOUTUBE & INSTAGRAM VIDEOS CMS HANDLERS ---
+  const parseVideoInput = (rawUrl: string, selectedPlatform: string = "youtube") => {
+    let cleaned = rawUrl.trim();
+    let platform = selectedPlatform;
+    let embedUrl = cleaned;
+    let thumbnailUrl = "";
+
+    if (cleaned.includes("<iframe") && cleaned.includes("src=")) {
+      const match = cleaned.match(/src=["']([^"']+)["']/);
+      if (match && match[1]) cleaned = match[1];
+    }
+
+    if (cleaned.includes("youtube.com") || cleaned.includes("youtu.be")) {
+      platform = "youtube";
+      let videoId = "";
+      if (cleaned.includes("youtube.com/watch")) {
+        const parts = cleaned.split("v=");
+        videoId = parts[1]?.split("&")[0] || "";
+      } else if (cleaned.includes("youtu.be/")) {
+        const parts = cleaned.split("youtu.be/");
+        videoId = parts[1]?.split("?")[0]?.split("/")[0] || "";
+      } else if (cleaned.includes("youtube.com/shorts/")) {
+        const parts = cleaned.split("youtube.com/shorts/");
+        videoId = parts[1]?.split("?")[0]?.split("/")[0] || "";
+      } else if (cleaned.includes("youtube.com/embed/")) {
+        const parts = cleaned.split("youtube.com/embed/");
+        videoId = parts[1]?.split("?")[0]?.split("/")[0] || "";
+      }
+      if (videoId) {
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      }
+    } else if (cleaned.includes("instagram.com")) {
+      platform = "instagram";
+      let reelId = "";
+      if (cleaned.includes("/reel/")) {
+        reelId = cleaned.split("/reel/")[1]?.split("/")[0] || "";
+      } else if (cleaned.includes("/p/")) {
+        reelId = cleaned.split("/p/")[1]?.split("/")[0] || "";
+      } else if (cleaned.includes("/tv/")) {
+        reelId = cleaned.split("/tv/")[1]?.split("/")[0] || "";
+      }
+      if (reelId) {
+        embedUrl = `https://www.instagram.com/reel/${reelId}/embed`;
+      } else if (!cleaned.endsWith("/embed")) {
+        embedUrl = `${cleaned.replace(/\/$/, "")}/embed`;
+      }
+    }
+
+    return { platform, embedUrl, thumbnailUrl };
+  };
+
+  const handleAddOrUpdateVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newVideoForm.title.trim() || !newVideoForm.url.trim()) {
+      toast.error("Video Title and YouTube or Instagram Video URL / Embed code are required!");
+      return;
+    }
+
+    const { platform, embedUrl, thumbnailUrl } = parseVideoInput(newVideoForm.url, newVideoForm.platform);
+    const finalThumb = newVideoForm.thumbnail_url.trim() || thumbnailUrl || "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop";
+
+    const payload = {
+      title: newVideoForm.title.trim(),
+      type: "video",
+      url: embedUrl,
+      thumbnail_url: finalThumb,
+      category: newVideoForm.category,
+      event_slug: newVideoForm.event_slug,
+      event_title: newVideoForm.event_title,
+      aspect_ratio: platform === "instagram" ? "aspect-[9/16]" : "aspect-[16/9]",
+      platform,
+      is_featured: newVideoForm.is_featured,
+    };
+
+    setVideoUploading(true);
+    try {
+      const isEditing = Boolean(editingVideoItem);
+      const url = isEditing ? `/api/admin/gallery/${editingVideoItem?.id}` : "/api/admin/gallery";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(isEditing ? "Video URL updated!" : `New ${platform === "instagram" ? "Instagram Reel" : "YouTube Video"} published!`);
+        setNewVideoForm({
+          title: "",
+          platform: "youtube",
+          url: "",
+          thumbnail_url: "",
+          category: "Highlights",
+          event_slug: "cfo-leadership-summit",
+          event_title: "India CFO Leadership Summit 2026",
+          is_featured: false,
+        });
+        setEditingVideoItem(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save video URL.");
+      }
+    } catch (err) {
+      toast.error("Network error while saving video.");
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
   const eventRegistrationsList = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
 
   const filteredRegistrations = eventRegistrationsList.filter(
@@ -2960,6 +3116,7 @@ export default function AdminDashboardPage() {
     { id: "career-jobs", label: "Career Jobs", icon: Briefcase, count: cmsJobs.length },
     { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
     { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+    { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
     { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
     { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
     { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
@@ -4772,128 +4929,178 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="space-y-5">
-                      {eventForm.locations.map((loc, idx) => (
-                        <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/90 p-5 space-y-4 shadow-xs hover:border-slate-300 transition-all">
-                          {/* Slot Header */}
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-cyan-900 text-sm">
-                                Slot #{idx + 1}: {loc.city ? loc.city : "New Schedule Slot"}
-                              </span>
-                              {idx === 0 && (
-                                <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
-                                  Primary Location
+                      {eventForm.locations.map((loc, idx) => {
+                        const isOpen = openLocationSlots.includes(idx);
+                        return (
+                          <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/90 p-4 space-y-3 shadow-xs hover:border-slate-300 transition-all">
+                            {/* Slot Header with Open / Close Toggle */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                              <div
+                                onClick={() => toggleLocationSlot(idx)}
+                                className="flex items-center gap-2 cursor-pointer select-none group"
+                              >
+                                <button
+                                  type="button"
+                                  className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 group-hover:bg-cyan-50 group-hover:text-cyan-700 transition-colors"
+                                >
+                                  {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </button>
+
+                                <span className="font-extrabold text-cyan-900 text-sm group-hover:text-cyan-700">
+                                  Slot #{idx + 1}: {loc.city ? loc.city : "New Schedule Slot"}
                                 </span>
-                              )}
+
+                                {idx === 0 && (
+                                  <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
+                                    Primary Location
+                                  </span>
+                                )}
+
+                                {!isOpen && loc.city && (
+                                  <span className="text-[11px] font-semibold text-slate-500 ml-2 truncate max-w-xs">
+                                    📍 {loc.city} {loc.date ? `· 📅 ${loc.date}` : ""} {loc.venue ? `· 🏢 ${loc.venue}` : ""}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleLocationSlot(idx)}
+                                  className="flex items-center gap-1 text-xs font-bold text-cyan-700 hover:text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
+                                >
+                                  {isOpen ? (
+                                    <>
+                                      <ChevronUp className="h-3.5 w-3.5" /> Collapse Slot
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronDown className="h-3.5 w-3.5" /> Open Slot
+                                    </>
+                                  )}
+                                </button>
+
+                                {eventForm.locations.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveLocationSlot(idx)}
+                                    className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
+                                  >
+                                    <X className="h-3.5 w-3.5" /> Remove Slot
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
-                            {eventForm.locations.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveLocationSlot(idx)}
-                                className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
-                              >
-                                <X className="h-3.5 w-3.5" /> Remove Slot
-                              </button>
+                            {/* Collapsible Body Content */}
+                            {isOpen && (
+                              <div className="space-y-4 pt-2">
+                                {/* Schedule Inputs */}
+                                <div className="grid gap-3.5 sm:grid-cols-3">
+                                  <div>
+                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                      <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      required
+                                      value={loc.city}
+                                      onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
+                                      placeholder="e.g. Visakhapatnam / Hyderabad"
+                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                      <Calendar className="h-3.5 w-3.5 text-cyan-600" /> Date *
+                                    </label>
+                                    <input
+                                      type="date"
+                                      required
+                                      value={loc.date}
+                                      onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
+                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                      <Clock className="h-3.5 w-3.5 text-cyan-600" /> Timing *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      required
+                                      value={loc.time}
+                                      onChange={(e) => handleUpdateLocationSlot(idx, "time", e.target.value)}
+                                      placeholder="e.g. 09:00 AM — 06:00 PM"
+                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Dynamic Matching Venue Block Section */}
+                                <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-3">
+                                  <h5 className="font-extrabold text-xs text-cyan-900 flex items-center gap-2">
+                                    <Building className="h-4 w-4 text-cyan-600" />
+                                    <span>Venue for Slot {idx + 1} – {loc.city ? loc.city : `City #${idx + 1}`}</span>
+                                  </h5>
+
+                                  <div className="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                      <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                        Venue Name / Hotel *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        required
+                                        value={loc.venue || ""}
+                                        onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
+                                        placeholder="e.g. Novotel Visakhapatnam Varun Beach / Taj Krishna"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                        Custom Venue Address *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        required
+                                        value={loc.address || ""}
+                                        onChange={(e) => handleUpdateLocationSlot(idx, "address", e.target.value)}
+                                        placeholder="e.g. Beach Rd, Maharani Peta, Visakhapatnam, AP 530002"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                      />
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                      <label className="block text-slate-700 font-bold text-[11px] mb-1 flex items-center justify-between">
+                                        <span>Google Maps Embed iframe URL *</span>
+                                        <span className="text-[10px] text-slate-500 font-normal">Standard Google Maps Embed iframe src URL or paste full &lt;iframe&gt; code</span>
+                                      </label>
+                                      <textarea
+                                        rows={2}
+                                        required
+                                        value={loc.map_url || ""}
+                                        onChange={(e) => {
+                                          let val = e.target.value;
+                                          if (val.includes("<iframe") && val.includes("src=")) {
+                                            const match = val.match(/src=["']([^"']+)["']/);
+                                            if (match && match[1]) val = match[1];
+                                          }
+                                          handleUpdateLocationSlot(idx, "map_url", val);
+                                        }}
+                                        placeholder="https://www.google.com/maps/embed?pb=... or paste full <iframe src='...'> code"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
-
-                          {/* Schedule Inputs */}
-                          <div className="grid gap-3.5 sm:grid-cols-3">
-                            <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
-                              </label>
-                              <input
-                                type="text"
-                                required
-                                value={loc.city}
-                                onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
-                                placeholder="e.g. Visakhapatnam / Hyderabad"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-cyan-600" /> Date *
-                              </label>
-                              <input
-                                type="date"
-                                required
-                                value={loc.date}
-                                onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                <Clock className="h-3.5 w-3.5 text-cyan-600" /> Timing *
-                              </label>
-                              <input
-                                type="text"
-                                required
-                                value={loc.time}
-                                onChange={(e) => handleUpdateLocationSlot(idx, "time", e.target.value)}
-                                placeholder="e.g. 09:00 AM — 06:00 PM"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Dynamic Matching Venue Block Section */}
-                          <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-3">
-                            <h5 className="font-extrabold text-xs text-cyan-900 flex items-center gap-2">
-                              <Building className="h-4 w-4 text-cyan-600" />
-                              <span>Venue for Slot {idx + 1} – {loc.city ? loc.city : `City #${idx + 1}`}</span>
-                            </h5>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div>
-                                <label className="block text-slate-700 font-bold text-[11px] mb-1">
-                                  Venue Name / Hotel *
-                                </label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={loc.venue || ""}
-                                  onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
-                                  placeholder="e.g. Novotel Visakhapatnam Varun Beach / Taj Krishna"
-                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-slate-700 font-bold text-[11px] mb-1">
-                                  Custom Venue Address *
-                                </label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={loc.address || ""}
-                                  onChange={(e) => handleUpdateLocationSlot(idx, "address", e.target.value)}
-                                  placeholder="e.g. Beach Rd, Maharani Peta, Visakhapatnam, AP 530002"
-                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                />
-                              </div>
-
-                              <div className="sm:col-span-2">
-                                <label className="block text-slate-700 font-bold text-[11px] mb-1 flex items-center justify-between">
-                                  <span>Google Maps Embed iframe URL *</span>
-                                  <span className="text-[10px] text-slate-500 font-normal">Standard Google Maps Embed iframe src URL</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={loc.map_url || ""}
-                                  onChange={(e) => handleUpdateLocationSlot(idx, "map_url", e.target.value)}
-                                  placeholder="https://www.google.com/maps/embed?pb=..."
-                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -5035,7 +5242,21 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
+                          <div className="flex items-center gap-1.5">
+                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
+                            {(spk.linkedin_url || spk.linkedinUrl) && (
+                              <a
+                                href={spk.linkedin_url || spk.linkedinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[#0077b5] hover:opacity-80 shrink-0"
+                                title="LinkedIn Profile"
+                              >
+                                <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
+                              </a>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-600 font-medium truncate">{spk.designation}</p>
                           <p className="text-[11px] text-cyan-800 font-bold truncate">{spk.organization}</p>
                         </div>
@@ -5376,6 +5597,20 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
                   placeholder="e.g. Keynote: AI Transformation in Enterprise Finance"
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
+                  <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                  <span>LinkedIn Profile URL</span>
+                </label>
+                <input
+                  type="url"
+                  value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
+                  onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
+                  placeholder="e.g. https://www.linkedin.com/in/username"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none"
                 />
               </div>
 
@@ -7517,6 +7752,512 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ========================================== */}
+          {/* YOUTUBE & INSTAGRAM VIDEOS CMS TAB         */}
+          {/* ========================================== */}
+          {activeTab === "videos" && (
+            <div className="space-y-6">
+              {/* Header Title Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <div className="space-y-1">
+                  <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2 font-display">
+                    <PlayCircle className="h-5 w-5 text-red-600" />
+                    <span>YouTube & Instagram Video CMS</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Add, edit, manage and preview YouTube Videos, Shorts, and Instagram Reels for frontend display across event detail pages and summit video galleries.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-red-50 border border-red-200 px-3.5 py-1.5 text-xs font-extrabold text-red-800 shadow-2xs">
+                    Total Videos: {cmsGalleryItems.filter((i) => i.type === "video").length}
+                  </span>
+                </div>
+              </div>
+
+              {/* 4 Metric KPI Cards */}
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-200">
+                    <Youtube className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">YouTube Videos</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {cmsGalleryItems.filter((i) => i.type === "video" && (i.platform === "youtube" || i.url.includes("youtube") || i.url.includes("youtu.be"))).length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-600 border border-pink-200">
+                    <Instagram className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Instagram Reels</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {cmsGalleryItems.filter((i) => i.type === "video" && (i.platform === "instagram" || i.url.includes("instagram"))).length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Featured Videos</p>
+                    <p className="text-lg font-black text-slate-900">
+                      {cmsGalleryItems.filter((i) => i.type === "video" && i.is_featured).length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex items-center gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-200">
+                    <Film className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">All Media</p>
+                    <p className="text-lg font-black text-slate-900">{cmsGalleryItems.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2-Column Main CMS Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Add / Edit Video Link Form */}
+                <div className="lg:col-span-1 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+                      <PlusCircle className="h-4 w-4 text-cyan-600" />
+                      <span>{editingVideoItem ? "Edit Video URL" : "Publish Video URL"}</span>
+                    </h4>
+                    {editingVideoItem && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingVideoItem(null);
+                          setNewVideoForm({
+                            title: "",
+                            platform: "youtube",
+                            url: "",
+                            thumbnail_url: "",
+                            category: "Highlights",
+                            event_slug: "cfo-leadership-summit",
+                            event_title: "India CFO Leadership Summit 2026",
+                            is_featured: false,
+                          });
+                        }}
+                        className="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleAddOrUpdateVideo} className="space-y-4 text-xs">
+                    {/* Platform Selector Buttons */}
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1.5">Select Video Platform *</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewVideoForm({ ...newVideoForm, platform: "youtube" })}
+                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${
+                            newVideoForm.platform === "youtube"
+                              ? "bg-red-600 text-white border-red-600 shadow-sm"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Youtube className="h-4 w-4" />
+                          <span>YouTube Video</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setNewVideoForm({ ...newVideoForm, platform: "instagram" })}
+                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${
+                            newVideoForm.platform === "instagram"
+                              ? "bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white border-pink-600 shadow-sm"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Instagram className="h-4 w-4" />
+                          <span>Instagram Reel</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Video Title / Headline */}
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Video Title / Headline *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newVideoForm.title}
+                        onChange={(e) => setNewVideoForm({ ...newVideoForm, title: e.target.value })}
+                        placeholder="e.g. India CFO Leadership Summit Keynote Session"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Video Link or Embed Code Textarea */}
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                        <span>{newVideoForm.platform === "instagram" ? "Instagram Reel / Post Link *" : "YouTube Video / Shorts Link *"}</span>
+                        <span className="text-[10px] text-cyan-700 font-mono">Auto-detects embed URL</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={newVideoForm.url}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = parseVideoInput(val, newVideoForm.platform);
+                          setNewVideoForm({
+                            ...newVideoForm,
+                            url: val,
+                            platform: parsed.platform as "youtube" | "instagram",
+                            thumbnail_url: newVideoForm.thumbnail_url || parsed.thumbnailUrl,
+                          });
+                        }}
+                        placeholder={
+                          newVideoForm.platform === "instagram"
+                            ? "https://www.instagram.com/reel/C328hJ9L-88/ or paste full <iframe> code"
+                            : "https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://youtu.be/... or <iframe> code"
+                        }
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Supported: YouTube watch link, Shorts, Embed URL, Instagram Reel, Post URL, or raw &lt;iframe&gt; HTML paste.
+                      </p>
+                    </div>
+
+                    {/* Video Thumbnail Image (Upload File or Image URL option) */}
+                    <div className="space-y-2.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                      <label className="block text-slate-700 font-bold text-xs">
+                        Custom Thumbnail Image (Upload File or Image URL)
+                      </label>
+
+                      <div className="space-y-2">
+                        <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50/80 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs shadow-xs">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>{videoUploading ? "Uploading Image..." : "Upload Thumbnail Image"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setVideoUploading(true);
+                              try {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  setNewVideoForm({ ...newVideoForm, thumbnail_url: reader.result as string });
+                                  setVideoUploading(false);
+                                  toast.success("Thumbnail uploaded!");
+                                };
+                                reader.readAsDataURL(file);
+                              } catch (err) {
+                                toast.error("Failed to read image file.");
+                                setVideoUploading(false);
+                              }
+                            }}
+                            disabled={videoUploading}
+                            className="hidden"
+                          />
+                        </label>
+
+                        <input
+                          type="text"
+                          value={newVideoForm.thumbnail_url}
+                          onChange={(e) => setNewVideoForm({ ...newVideoForm, thumbnail_url: e.target.value })}
+                          placeholder="Or direct image URL (Auto-generated for YouTube if empty)"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[10px]"
+                        />
+                      </div>
+
+                      {/* Live Thumbnail Preview */}
+                      {newVideoForm.thumbnail_url && (
+                        <div className="relative h-20 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-900">
+                          <img
+                            src={newVideoForm.thumbnail_url}
+                            alt="Thumbnail Preview"
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop";
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white shadow-md">
+                              <Play className="h-4 w-4 fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Category & Associated Event */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Category / Tag</label>
+                        <select
+                          value={newVideoForm.category}
+                          onChange={(e) => setNewVideoForm({ ...newVideoForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                        >
+                          <option value="Highlights">Highlights</option>
+                          <option value="Keynotes">Keynotes</option>
+                          <option value="Networking">Networking</option>
+                          <option value="Interviews">Interviews</option>
+                          <option value="Reels">Reels</option>
+                          <option value="Awards">Awards</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Summit Event</label>
+                        <select
+                          value={newVideoForm.event_slug}
+                          onChange={(e) => {
+                            const slug = e.target.value;
+                            const evt = cmsEvents.find((x) => x.slug === slug);
+                            setNewVideoForm({
+                              ...newVideoForm,
+                              event_slug: slug,
+                              event_title: evt ? evt.title : "India CFO Leadership Summit 2026",
+                            });
+                          }}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
+                        >
+                          <option value="cfo-leadership-summit">India CFO Leadership Summit</option>
+                          <option value="hr-excellence-awards">HR Excellence & Leadership</option>
+                          <option value="enterprise-tech-conclave">National Enterprise Tech & AI</option>
+                          <option value="gcc-global-capability-summit">GCC Capability Expansion Summit</option>
+                          {cmsEvents.map((evt) => (
+                            <option key={evt.id} value={evt.slug}>
+                              {evt.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Featured Checkbox */}
+                    <label className="flex items-center gap-2 cursor-pointer pt-1">
+                      <input
+                        type="checkbox"
+                        checked={newVideoForm.is_featured}
+                        onChange={(e) => setNewVideoForm({ ...newVideoForm, is_featured: e.target.checked })}
+                        className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 h-4 w-4 cursor-pointer"
+                      />
+                      <span className="font-bold text-slate-800 text-xs">Mark as Featured Video (Shows in Hero / Highlight Reels)</span>
+                    </label>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={videoUploading}
+                      className="w-full rounded-xl bg-gradient-to-r from-red-600 to-rose-600 py-3 text-xs font-extrabold text-white shadow-md hover:from-red-700 hover:to-rose-700 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <PlayCircle className="h-4 w-4" />
+                      <span>{editingVideoItem ? "Save Changes" : `Publish ${newVideoForm.platform === "instagram" ? "Instagram Reel" : "YouTube Video"}`}</span>
+                    </button>
+                  </form>
+                </div>
+
+                {/* Right Column: Video Gallery Cards Grid */}
+                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+                      <span>Video Highlights & Reels ({cmsGalleryItems.filter((i) => i.type === "video").length})</span>
+                    </h3>
+
+                    {/* Platform Filter Buttons */}
+                    <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setVideoFilterPlatform("all")}
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                          videoFilterPlatform === "all" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        All Videos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVideoFilterPlatform("youtube")}
+                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                          videoFilterPlatform === "youtube" ? "bg-red-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        <Youtube className="h-3 w-3" />
+                        <span>YouTube</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVideoFilterPlatform("instagram")}
+                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                          videoFilterPlatform === "instagram" ? "bg-pink-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        <Instagram className="h-3 w-3" />
+                        <span>Instagram Reels</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const videoItems = cmsGalleryItems.filter((item) => {
+                      if (item.type !== "video") return false;
+                      if (videoFilterPlatform === "youtube") return item.platform === "youtube" || item.url.includes("youtube") || item.url.includes("youtu.be");
+                      if (videoFilterPlatform === "instagram") return item.platform === "instagram" || item.url.includes("instagram");
+                      return true;
+                    });
+
+                    if (videoItems.length === 0) {
+                      return (
+                        <div className="py-16 text-center space-y-2">
+                          <PlayCircle className="h-10 w-10 text-slate-300 mx-auto" />
+                          <p className="text-xs font-bold text-slate-600">No videos published in this view yet.</p>
+                          <p className="text-[11px] text-slate-400">Use the form on the left to add YouTube videos or Instagram Reels!</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="max-h-[calc(100vh-210px)] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {videoItems.map((item) => {
+                            const isInsta = item.platform === "instagram" || item.url.includes("instagram");
+                            return (
+                              <div
+                                key={item.id}
+                                className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${
+                                  editingVideoItem?.id === item.id
+                                    ? "border-red-600 ring-2 ring-red-500/20 shadow-md"
+                                    : "border-slate-200 hover:border-slate-400 hover:shadow-md"
+                                }`}
+                              >
+                                {/* Video Thumbnail Card Header */}
+                                <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
+                                  <img
+                                    src={item.thumbnail_url || item.url}
+                                    alt={item.title}
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 opacity-80 group-hover:opacity-90"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = "none";
+                                    }}
+                                  />
+
+                                  {/* Play Overlay Button */}
+                                  <div
+                                    onClick={() => setSelectedVideoPreview(item)}
+                                    className="absolute inset-0 flex items-center justify-center cursor-pointer group/play"
+                                  >
+                                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-xl backdrop-blur-md group-hover/play:scale-115 transition-transform ${
+                                      isInsta ? "bg-gradient-to-r from-purple-600 to-pink-600" : "bg-red-600"
+                                    }`}>
+                                      <Play className="h-5 w-5 fill-white ml-0.5" />
+                                    </div>
+                                  </div>
+
+                                  {/* Platform Badge Overlay */}
+                                  <div className="absolute top-2.5 left-2.5 z-10">
+                                    <span className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${
+                                      isInsta
+                                        ? "bg-gradient-to-r from-purple-900/90 to-pink-900/90 text-pink-200 border-pink-400/40"
+                                        : "bg-red-950/90 text-red-200 border-red-500/40"
+                                    }`}>
+                                      {isInsta ? <Instagram className="h-3 w-3" /> : <Youtube className="h-3 w-3" />}
+                                      <span>{isInsta ? "Instagram Reel" : "YouTube Video"}</span>
+                                    </span>
+                                  </div>
+
+                                  {/* Category / Featured Overlay */}
+                                  <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10">
+                                    {item.is_featured && (
+                                      <span className="text-[10px] font-extrabold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
+                                        <Star className="h-3 w-3 fill-slate-950" /> Featured
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] font-mono font-bold text-white bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20">
+                                      {item.category}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Video Card Info */}
+                                <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                                  <div className="space-y-1.5">
+                                    <h4 className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2" title={item.title}>
+                                      {item.title}
+                                    </h4>
+
+                                    <p className="text-[11px] text-slate-600 font-medium flex items-center gap-1 truncate">
+                                      <span className="text-cyan-600 font-bold">📍</span>
+                                      <span className="truncate">{item.event_title || "All Events"}</span>
+                                    </p>
+
+                                    <p className="text-[10px] font-mono text-slate-400 truncate" title={item.url}>
+                                      {item.url}
+                                    </p>
+                                  </div>
+
+                                  {/* Action Bar */}
+                                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs mt-2 gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedVideoPreview(item)}
+                                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-slate-600" />
+                                      <span>Preview</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingVideoItem(item);
+                                        setNewVideoForm({
+                                          title: item.title,
+                                          platform: (item.platform || (item.url.includes("instagram") ? "instagram" : "youtube")) as any,
+                                          url: item.url,
+                                          thumbnail_url: item.thumbnail_url || item.url,
+                                          category: item.category || "Highlights",
+                                          event_slug: item.event_slug || "cfo-leadership-summit",
+                                          event_title: item.event_title || "India CFO Leadership Summit 2026",
+                                          is_featured: Boolean(item.is_featured),
+                                        });
+                                      }}
+                                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-xl bg-cyan-50 border border-cyan-200 px-2.5 py-1.5 text-[11px] font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5 text-cyan-600" />
+                                      <span>Edit</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteGalleryItem(item.id)}
+                                      className="inline-flex items-center justify-center gap-1 rounded-xl bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
           {/* PARTNER REQUESTS & INQUIRIES TAB           */}
           {/* ========================================== */}
           {activeTab === "partner-requests" && (
@@ -8541,15 +9282,58 @@ export default function AdminDashboardPage() {
                     {/* OpenGraph Image */}
                     <div className="space-y-1.5">
                       <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-                        Social Share Banner Image URL (og:image)
+                        Social Share Banner Image (Upload File or Image URL)
                       </label>
-                      <input
-                        type="text"
-                        value={seoForm.og_image}
-                        onChange={(e) => setSeoForm({ ...seoForm, og_image: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://images.unsplash.com/..."
-                      />
+                      <div className="flex items-center gap-3">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors shadow-2xs shrink-0">
+                          <Upload className="h-4 w-4 text-cyan-600" />
+                          <span>Choose Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64Data = reader.result as string;
+                                setSeoForm((prev) => ({ ...prev, og_image: base64Data }));
+                                try {
+                                  toast.loading("Uploading OG image...");
+                                  const res = await fetch("/api/admin/upload", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                  });
+                                  const uploadRes = await res.json();
+                                  toast.dismiss();
+                                  if (uploadRes.success && uploadRes.url) {
+                                    setSeoForm((prev) => ({ ...prev, og_image: uploadRes.url }));
+                                    toast.success("OG share image uploaded!");
+                                  } else {
+                                    toast.success("Image preview loaded!");
+                                  }
+                                } catch (err) {
+                                  toast.dismiss();
+                                  toast.success("Image preview loaded!");
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          value={seoForm.og_image}
+                          onChange={(e) => setSeoForm({ ...seoForm, og_image: e.target.value })}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="Or enter Image URL (https://...)"
+                        />
+                      </div>
                     </div>
 
                     {/* Live Preview Cards Grid */}
@@ -10367,6 +11151,49 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* VIDEO PREVIEW MODAL */}
+      {selectedVideoPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-md">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/20 bg-slate-900 shadow-2xl text-white">
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-slate-950">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-red-500/20 px-3 py-0.5 text-[11px] font-black uppercase text-red-300 border border-red-500/30">
+                  {selectedVideoPreview.platform === "instagram" || selectedVideoPreview.url.includes("instagram") ? "Instagram Reel" : "YouTube Video"}
+                </span>
+                <h4 className="font-extrabold text-sm truncate max-w-md">{selectedVideoPreview.title}</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedVideoPreview(null)}
+                className="rounded-full p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="relative flex items-center justify-center bg-black min-h-[350px] max-h-[70vh]">
+              <iframe
+                src={selectedVideoPreview.url}
+                title={selectedVideoPreview.title}
+                className="w-full min-h-[420px] max-h-[70vh] border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+
+            <div className="p-4 bg-slate-950 border-t border-white/10 flex items-center justify-between text-xs">
+              <span className="text-slate-400">📍 {selectedVideoPreview.event_title || "All Events"}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedVideoPreview(null)}
+                className="rounded-xl bg-white/10 px-4 py-2 font-bold text-white hover:bg-white/20 transition-colors"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

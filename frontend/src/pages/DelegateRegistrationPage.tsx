@@ -52,6 +52,17 @@ export default function DelegateRegistrationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [mobileTouched, setMobileTouched] = useState(false);
+  const [mobileError, setMobileError] = useState("");
+
+  const validateMobile = (phone: string) => {
+    const cleaned = phone.trim();
+    const digits = cleaned.replace(/\D/g, "");
+    if (!cleaned) return "Mobile number is required.";
+    if (digits.length < 10) return "Please enter a valid 10-digit mobile number (e.g. +91 98765 43210).";
+    if (digits.length > 15) return "Mobile number cannot exceed 15 digits.";
+    return "";
+  };
 
   const industryOptions = [
     "Technology & IT",
@@ -89,8 +100,11 @@ export default function DelegateRegistrationPage() {
       toast.error("Please enter Official Work Email.");
       return;
     }
-    if (!formData.mobileNumber.trim()) {
-      toast.error("Please enter Mobile Number.");
+    const mErr = validateMobile(formData.mobileNumber);
+    if (mErr) {
+      setMobileTouched(true);
+      setMobileError(mErr);
+      toast.error(mErr);
       return;
     }
     if (!formData.city.trim()) {
@@ -245,17 +259,41 @@ export default function DelegateRegistrationPage() {
 
                   {/* Mobile Number */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                      Mobile Number *
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>Mobile Number *</span>
+                      {mobileTouched && !mobileError && formData.mobileNumber && (
+                        <span className="text-[10px] font-extrabold text-emerald-400 flex items-center gap-1">
+                          ✓ Valid mobile number
+                        </span>
+                      )}
                     </label>
                     <input
                       type="tel"
                       required
                       value={formData.mobileNumber}
-                      onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                      onChange={(e) => {
+                        const cleanVal = e.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+                        setFormData({ ...formData, mobileNumber: cleanVal });
+                        if (mobileTouched) setMobileError(validateMobile(cleanVal));
+                      }}
+                      onBlur={() => {
+                        setMobileTouched(true);
+                        setMobileError(validateMobile(formData.mobileNumber));
+                      }}
                       placeholder="+91 98765 43210"
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                      className={`w-full rounded-xl border px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                        mobileTouched && mobileError
+                          ? "border-rose-500 bg-rose-950/20 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                          : mobileTouched && !mobileError && formData.mobileNumber
+                          ? "border-emerald-500/80 bg-slate-950/70 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          : "border-slate-800 bg-slate-950/70 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                      }`}
                     />
+                    {mobileTouched && mobileError && (
+                      <p className="text-[11px] font-semibold text-rose-400 mt-1 flex items-center gap-1 animate-in fade-in">
+                        <span>⚠️</span> {mobileError}
+                      </p>
+                    )}
                   </div>
 
                   {/* City */}

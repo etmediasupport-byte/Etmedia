@@ -50,6 +50,23 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
   }, [isOpen]);
 
   const [pendingRegId, setPendingRegId] = useState<string | null>(null);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+
+  const validatePhoneNumber = (phone: string) => {
+    const cleaned = phone.trim();
+    const digits = cleaned.replace(/\D/g, "");
+    if (!cleaned) {
+      return "Contact number is required.";
+    }
+    if (digits.length < 10) {
+      return "Please enter a valid 10-digit contact number (e.g. +91 98765 43210).";
+    }
+    if (digits.length > 15) {
+      return "Contact number cannot exceed 15 digits.";
+    }
+    return "";
+  };
 
   // Auto-select event details & fetch payment configuration when event changes
   useEffect(() => {
@@ -58,6 +75,8 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
       setAppliedCoupon(null);
       setCouponInput("");
       setPendingRegId(null);
+      setPhoneTouched(false);
+      setPhoneError("");
 
       let cities: string[] = [];
       try {
@@ -202,8 +221,11 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
       return;
     }
 
-    if (!formData.contactNumber.trim()) {
-      toast.error("Please enter a valid contact number.");
+    const phoneErr = validatePhoneNumber(formData.contactNumber);
+    if (phoneErr) {
+      setPhoneTouched(true);
+      setPhoneError(phoneErr);
+      toast.error(phoneErr);
       return;
     }
 
@@ -563,17 +585,41 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
-                        Contact Number *
+                      <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center justify-between">
+                        <span>Contact Number *</span>
+                        {phoneTouched && !phoneError && formData.contactNumber && (
+                          <span className="text-[10px] font-extrabold text-emerald-400 flex items-center gap-1">
+                            ✓ Valid contact number
+                          </span>
+                        )}
                       </label>
                       <input
                         type="tel"
                         required
                         value={formData.contactNumber}
-                        onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                        onChange={(e) => {
+                          const cleanVal = e.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+                          setFormData({ ...formData, contactNumber: cleanVal });
+                          if (phoneTouched) setPhoneError(validatePhoneNumber(cleanVal));
+                        }}
+                        onBlur={() => {
+                          setPhoneTouched(true);
+                          setPhoneError(validatePhoneNumber(formData.contactNumber));
+                        }}
                         placeholder="+91 98765 43210"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className={`w-full rounded-xl border px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                          phoneTouched && phoneError
+                            ? "border-rose-500 bg-rose-950/20 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                            : phoneTouched && !phoneError && formData.contactNumber
+                            ? "border-emerald-500/80 bg-slate-950/70 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            : "border-slate-800 bg-slate-950/70 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        }`}
                       />
+                      {phoneTouched && phoneError && (
+                        <p className="text-[11px] font-semibold text-rose-400 mt-1 flex items-center gap-1 animate-in fade-in">
+                          <span>⚠️</span> {phoneError}
+                        </p>
+                      )}
                     </div>
                   </div>
 

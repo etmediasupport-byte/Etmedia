@@ -132,6 +132,8 @@ export type Speaker = {
   photo: string;
   bio?: string;
   topic?: string;
+  linkedin_url?: string;
+  linkedinUrl?: string;
 };
 
 export type Sponsor = {
@@ -800,6 +802,8 @@ export type MediaGalleryItem = {
   event_slug?: string;
   event_title?: string;
   aspect_ratio?: string;
+  platform?: "youtube" | "instagram" | string;
+  is_featured?: boolean;
   created_at?: string;
 };
 
@@ -850,17 +854,32 @@ export const getDefaultMediaGallery = (): MediaGalleryItem[] => [
   },
   {
     id: "GAL-105",
-    title: "C-Suite Fireside Chat Highlights Video",
+    title: "India CFO Leadership Summit 2026 — Official Keynote Video",
     type: "video",
+    platform: "youtube",
     url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    thumbnail_url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop",
+    thumbnail_url: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
     category: "Keynotes",
     event_slug: "cfo-leadership-summit",
     event_title: "India CFO Leadership Summit 2026",
     aspect_ratio: "aspect-[16/9]",
+    is_featured: true,
   },
   {
     id: "GAL-106",
+    title: "CXO Networking Highlights — Instagram Reel",
+    type: "video",
+    platform: "instagram",
+    url: "https://www.instagram.com/reel/C328hJ9L-88/embed",
+    thumbnail_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop",
+    category: "Networking",
+    event_slug: "cfo-leadership-summit",
+    event_title: "India CFO Leadership Summit 2026",
+    aspect_ratio: "aspect-[9/16]",
+    is_featured: true,
+  },
+  {
+    id: "GAL-107",
     title: "Luxury 5-Star Hotel Stage & AV Production Setup",
     type: "photo",
     url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop",
@@ -871,7 +890,7 @@ export const getDefaultMediaGallery = (): MediaGalleryItem[] => [
     aspect_ratio: "aspect-[4/3]",
   },
   {
-    id: "GAL-107",
+    id: "GAL-108",
     title: "Title Sponsors & Corporate Booth Exhibition",
     type: "photo",
     url: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?q=80&w=1200&auto=format&fit=crop",
@@ -882,7 +901,7 @@ export const getDefaultMediaGallery = (): MediaGalleryItem[] => [
     aspect_ratio: "aspect-[16/9]",
   },
   {
-    id: "GAL-108",
+    id: "GAL-109",
     title: "Executive Networking Lunch & Coffee Lounge",
     type: "photo",
     url: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?q=80&w=1200&auto=format&fit=crop",
