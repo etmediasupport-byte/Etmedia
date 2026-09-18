@@ -68,12 +68,12 @@ export default function ContactPage() {
     const onSettingsUpdate = (updated: Record<string, string>) => {
       setSocialLinks((prev) => ({
         ...prev,
-        linkedin: updated.linkedin_url || prev.linkedin,
-        instagram: updated.instagram_url || prev.instagram,
-        youtube: updated.youtube_url || prev.youtube,
-        twitter: updated.twitter_url || prev.twitter,
-        facebook: updated.facebook_url || prev.facebook,
-        whatsapp: updated.whatsapp_number ? `https://wa.me/${updated.whatsapp_number.replace(/\D/g, "")}` : prev.whatsapp,
+        linkedin: updated["linkedin_url"] || prev.linkedin,
+        instagram: updated["instagram_url"] || prev.instagram,
+        youtube: updated["youtube_url"] || prev.youtube,
+        twitter: updated["twitter_url"] || prev.twitter,
+        facebook: updated["facebook_url"] || prev.facebook,
+        whatsapp: updated["whatsapp_number"] ? `https://wa.me/${updated["whatsapp_number"].replace(/\D/g, "")}` : prev.whatsapp,
       }));
     };
 

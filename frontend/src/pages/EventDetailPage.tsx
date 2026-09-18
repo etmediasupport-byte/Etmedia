@@ -186,6 +186,29 @@ export default function EventDetailPage() {
     }
   } catch (e) {}
 
+  // Parse Locations saved by admin in DB
+  let locationsList: { city: string; venue: string; date: string; time: string; address?: string; map_url?: string }[] = [];
+  try {
+    if (typeof event.locations === "string") {
+      locationsList = JSON.parse(event.locations);
+    } else if (Array.isArray(event.locations)) {
+      locationsList = event.locations;
+    }
+  } catch (e) {}
+
+  if (!locationsList || locationsList.length === 0) {
+    locationsList = [
+      {
+        city: cityText,
+        venue: venueText,
+        date: dateText,
+        time: event.time || "09:00 AM — 06:00 PM",
+        address: event.venue_address || `${venueText}, ${cityText}`,
+        map_url: event.map_url || `https://maps.google.com/maps?q=${encodeURIComponent(`${venueText}, ${cityText}`)}&t=&z=14&ie=UTF8&iwloc=&output=embed`,
+      },
+    ];
+  }
+
   // Google Maps embed URL
   const mapEmbedUrl =
     event.map_url ||
@@ -611,26 +634,60 @@ export default function EventDetailPage() {
           </Reveal>
         )}
 
-        {/* 10. LOCATION MAP */}
+        {/* 10. LOCATION MAP (ALL VENUES) */}
         {(activeTab === "venue" || activeTab as string === "all" || activeTab === "about") && (
           <Reveal>
-            <div className="glass-card rounded-3xl p-8 border border-border bg-card shadow-xl">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="glass-card rounded-3xl p-8 border border-border bg-card shadow-xl space-y-8">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
                 <div>
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Interactive Venue Map</span>
-                  <h3 className="text-2xl font-bold font-display text-foreground">Location & Access</h3>
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-primary">Interactive Venue Maps</span>
+                  <h3 className="text-2xl font-bold font-display text-foreground">Locations & Access ({locationsList.length} Cities)</h3>
                 </div>
                 <span className="text-sm font-semibold text-muted-foreground">{venueText}, {cityText}</span>
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-border h-96 bg-muted relative">
-                <iframe
-                  title="Event Venue Map"
-                  src={mapEmbedUrl}
-                  className="w-full h-full border-0"
-                  loading="lazy"
-                  allowFullScreen
-                />
+              <div className="space-y-8">
+                {locationsList.map((loc, idx) => {
+                  const locMapUrl =
+                    loc.map_url ||
+                    event.map_url ||
+                    `https://maps.google.com/maps?q=${encodeURIComponent(`${loc.venue || venueText}, ${loc.city || cityText}`)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+
+                  return (
+                    <div key={idx} className="rounded-2xl border border-border bg-muted/40 p-6 space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-3">
+                        <div>
+                          <span className="text-xs font-extrabold uppercase tracking-wider text-primary block">
+                            Slot #{idx + 1} • {loc.city || cityText}
+                          </span>
+                          <h4 className="text-lg font-bold text-foreground font-display">
+                            {loc.venue || venueText}
+                          </h4>
+                        </div>
+                        <div className="text-right text-xs text-muted-foreground font-medium">
+                          <p>📅 {loc.date || dateText}</p>
+                          <p>⏰ {loc.time || event.time || "09:00 AM — 06:00 PM"}</p>
+                        </div>
+                      </div>
+
+                      {loc.address && (
+                        <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                          📍 <span className="text-foreground">{loc.address}</span>
+                        </p>
+                      )}
+
+                      <div className="overflow-hidden rounded-xl border border-border h-80 bg-muted relative shadow-inner">
+                        <iframe
+                          title={`Venue Map - ${loc.city || idx + 1}`}
+                          src={locMapUrl}
+                          className="w-full h-full border-0"
+                          loading="lazy"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </Reveal>

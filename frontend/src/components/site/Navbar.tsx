@@ -83,7 +83,20 @@ export function Navbar() {
   const handleSearchResultClick = (path: string) => {
     setSearchOpen(false);
     setSearchQuery("");
+    if ((window as any).__lenis) {
+      (window as any).__lenis.scrollTo(0, { immediate: true });
+    }
+    window.scrollTo(0, 0);
     navigate(path);
+  };
+
+  const handleNavClick = () => {
+    setMobileMenuOpen(false);
+    setEventsMegaOpen(false);
+    if ((window as any).__lenis) {
+      (window as any).__lenis.scrollTo(0, { immediate: true });
+    }
+    window.scrollTo(0, 0);
   };
 
   const navLinkStyle = (isActive: boolean) =>
@@ -108,7 +121,7 @@ export function Navbar() {
           <Link
             to="/"
             className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.03]"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={handleNavClick}
           >
             <img
               src={logo}
@@ -121,11 +134,11 @@ export function Navbar() {
 
           {/* CENTER: Navigation Links Single Row */}
           <div className="hidden items-center gap-3 lg:gap-4 xl:gap-6 lg:flex">
-            <NavLink to="/" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Home
             </NavLink>
 
-            <NavLink to="/about" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/about" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               About Us
             </NavLink>
 
@@ -137,6 +150,7 @@ export function Navbar() {
             >
               <NavLink
                 to="/events"
+                onClick={handleNavClick}
                 className={({ isActive }) =>
                   cn(navLinkStyle(isActive), "inline-flex items-center gap-1")
                 }
@@ -168,6 +182,7 @@ export function Navbar() {
                       </div>
                       <Link
                         to="/events"
+                        onClick={handleNavClick}
                         className="text-xs font-bold text-cyan-700 hover:underline flex items-center gap-1"
                       >
                         All Events <ArrowRight className="h-3 w-3" />
@@ -179,7 +194,7 @@ export function Navbar() {
                         <Link
                           key={cat.to}
                           to={cat.to}
-                          onClick={() => setEventsMegaOpen(false)}
+                          onClick={handleNavClick}
                           className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-cyan-50/80 hover:border-cyan-300 transition-all duration-200 shadow-xs"
                         >
                           <div className="flex items-center gap-2.5">
@@ -201,23 +216,23 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <NavLink to="/partner" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/partner" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Partner With Us
             </NavLink>
 
-            <NavLink to="/magazine" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/magazine" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Executive Talks Magazine
             </NavLink>
 
-            <NavLink to="/delegate-registration" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/delegate-registration" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Delegate Registration
             </NavLink>
 
-            <NavLink to="/careers" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/careers" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Careers
             </NavLink>
 
-            <NavLink to="/contact" className={({ isActive }) => navLinkStyle(isActive)}>
+            <NavLink to="/contact" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Contact Us
             </NavLink>
           </div>
@@ -275,7 +290,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={handleNavClick}
                     className="block rounded-2xl px-4 py-2.5 text-sm font-semibold font-btn text-slate-800 hover:bg-cyan-50 hover:text-cyan-600 transition-colors"
                   >
                     {item.label}

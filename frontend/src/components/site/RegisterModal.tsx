@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import type { EventItem } from "@/lib/site-data";
+import logoUrl from "@/assets/logo.jpeg";
 
 interface RegisterModalProps {
   isOpen: boolean;

@@ -78,6 +78,8 @@ import {
   Unlock,
   Check,
   Copy,
+  Save,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
@@ -449,9 +451,53 @@ export default function AdminDashboardPage() {
   const [selectedContactDetail, setSelectedContactDetail] = useState<ContactSubmission | null>(null);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<number | null>(null);
+  const [submittingEvent, setSubmittingEvent] = useState(false);
 
   const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue">("basic");
+
+  // Sub-modal states for Speaker, Sponsor, Agenda, and Gallery
+  const [speakerModalOpen, setSpeakerModalOpen] = useState(false);
+  const [editingSpeakerIndex, setEditingSpeakerIndex] = useState<number | null>(null);
+  const [speakerForm, setSpeakerForm] = useState<Speaker>({
+    id: "",
+    name: "",
+    designation: "",
+    organization: "",
+    photo: "",
+    topic: "",
+  });
+  const [uploadingSpeakerImg, setUploadingSpeakerImg] = useState(false);
+
+  const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
+  const [editingSponsorIndex, setEditingSponsorIndex] = useState<number | null>(null);
+  const [sponsorForm, setSponsorForm] = useState<Sponsor>({
+    id: "",
+    name: "",
+    tier: "Gold Sponsor",
+    logo: "",
+    websiteUrl: "",
+  });
+  const [uploadingSponsorLogo, setUploadingSponsorLogo] = useState(false);
+
+  const [agendaModalOpen, setAgendaModalOpen] = useState(false);
+  const [editingAgendaIndex, setEditingAgendaIndex] = useState<number | null>(null);
+  const [agendaForm, setAgendaForm] = useState<AgendaItem>({
+    id: "",
+    time: "",
+    title: "",
+    speaker: "",
+    description: "",
+  });
+
+  const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+  const [editingGalleryIndex, setEditingGalleryIndex] = useState<number | null>(null);
+  const [galleryForm, setGalleryForm] = useState<GalleryItem>({
+    id: "",
+    type: "image",
+    url: "",
+    caption: "",
+  });
+  const [uploadingGalleryImg, setUploadingGalleryImg] = useState(false);
 
   const [eventForm, setEventForm] = useState<{
     title: string;
@@ -462,7 +508,7 @@ export default function AdminDashboardPage() {
     speakers: number;
     status: string;
     is_featured: boolean;
-    locations: { city: string; venue: string; date: string; time: string }[];
+    locations: { city: string; venue: string; date: string; time: string; address?: string; map_url?: string }[];
     speakers_list: Speaker[];
     sponsors_list: Sponsor[];
     gallery_list: GalleryItem[];
@@ -484,6 +530,8 @@ export default function AdminDashboardPage() {
         venue: "",
         date: "",
         time: "",
+        address: "",
+        map_url: "",
       },
     ],
     speakers_list: [],
@@ -1305,18 +1353,53 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleToggleRegistrationStatus = (id: string) => {
+  const getRegistrationStatus = (reg: any): "Confirmed" | "Pending" => {
+    if (!reg) return "Pending";
+    if (reg.status === "Confirmed" || reg.status === "Pending") {
+      return reg.status;
+    }
+    const pStatus = (reg.payment_status || "").toString().toLowerCase();
+    if (
+      pStatus === "paid" ||
+      pStatus === "completed" ||
+      pStatus === "approved" ||
+      pStatus.includes("approved") ||
+      pStatus.includes("free") ||
+      !!reg.payment_id
+    ) {
+      return "Confirmed";
+    }
+    return "Pending";
+  };
+
+  const handleToggleRegistrationStatus = async (id: string) => {
+    const reg = registrations.find((r) => r.id === id);
+    if (!reg) return;
+    const currentStatus = getRegistrationStatus(reg);
+    const newStatus = currentStatus === "Confirmed" ? "Pending" : "Confirmed";
+
     setRegistrations((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          const currentStatus = r.status || "Confirmed";
-          const newStatus = currentStatus === "Confirmed" ? "Pending" : "Confirmed";
-          toast.success(`Delegate ${r.name} status updated to ${newStatus}`);
-          return { ...r, status: newStatus };
-        }
-        return r;
-      })
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
     );
+
+    try {
+      const res = await fetch(`/api/admin/registrations/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Delegate ${reg.name} status updated to ${newStatus}`);
+      } else {
+        toast.error(data.message || "Failed to update status.");
+      }
+    } catch (err) {
+      toast.error("Network error updating status.");
+    }
   };
 
   const handleUpdateApplicantStatus = (id: string, newStatus: string) => {
@@ -1355,7 +1438,7 @@ export default function AdminDashboardPage() {
         r.event_title || r.event_id,
         r.city || r.registering_city || "N/A",
         r.registration_category || "Executive Delegate",
-        r.status || "Confirmed",
+        getRegistrationStatus(r),
         new Date(r.created_at).toLocaleString(),
       ]);
     } else if (type === "cms-delegates") {
@@ -1799,65 +1882,7 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
-  // --- GALLERY FILE UPLOAD HANDLER ---
-  const handleGalleryFileUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be under 10MB");
-      return;
-    }
-
-    setUploadingGalleryIndex(idx);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
-      // Instant base64 preview update
-      setEventForm((prev) => {
-        const updated = [...prev.gallery_list];
-        const existing = updated[idx];
-        if (existing) {
-          updated[idx] = { ...existing, url: base64Data };
-        }
-        return { ...prev, gallery_list: updated };
-      });
-
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
-
-        const data = await res.json();
-        if (data.success && data.url) {
-          setEventForm((prev) => {
-            const updated = [...prev.gallery_list];
-            const existing = updated[idx];
-            if (existing) {
-              updated[idx] = { ...existing, url: data.url };
-            }
-            return { ...prev, gallery_list: updated };
-          });
-          toast.success(`Gallery photo #${idx + 1} uploaded & saved!`);
-        } else {
-          toast.success(`Gallery photo #${idx + 1} loaded into form preview.`);
-        }
-      } catch (err) {
-        toast.success(`Gallery photo #${idx + 1} loaded into form preview.`);
-      } finally {
-        setUploadingGalleryIndex(null);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
 
   // --- MULTI-LOCATION SLOT HANDLERS ---
@@ -1866,7 +1891,7 @@ export default function AdminDashboardPage() {
       ...prev,
       locations: [
         ...prev.locations,
-        { city: "", venue: "", date: "", time: "" },
+        { city: "", venue: "", date: "", time: "", address: "", map_url: "" },
       ],
     }));
   };
@@ -1893,6 +1918,305 @@ export default function AdminDashboardPage() {
     });
   };
 
+  // --- SUB-MODAL HANDLERS FOR SPEAKERS, SPONSORS, AGENDA & GALLERY ---
+
+  // Speaker Modal Handlers
+  const handleOpenAddSpeaker = () => {
+    setEditingSpeakerIndex(null);
+    setSpeakerForm({
+      id: `spk-${Date.now()}`,
+      name: "",
+      designation: "",
+      organization: "",
+      photo: "",
+      topic: "",
+    });
+    setSpeakerModalOpen(true);
+  };
+
+  const handleOpenEditSpeaker = (index: number) => {
+    const spk = eventForm.speakers_list[index];
+    if (spk) {
+      setEditingSpeakerIndex(index);
+      setSpeakerForm({ ...spk });
+      setSpeakerModalOpen(true);
+    }
+  };
+
+  const handleSpeakerImgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSpeakerImg(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setSpeakerForm((prev) => ({ ...prev, photo: data.url }));
+        toast.success("Speaker photo uploaded!");
+      } else {
+        toast.error(data.message || "Upload failed.");
+      }
+    } catch (err) {
+      toast.error("Error uploading photo.");
+    } finally {
+      setUploadingSpeakerImg(false);
+    }
+  };
+
+  const handleSaveSpeakerModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!speakerForm.name.trim() || !speakerForm.designation.trim() || !speakerForm.organization.trim()) {
+      toast.error("❌ Speaker Name, Designation, and Company are required.");
+      return;
+    }
+
+    setEventForm((prev) => {
+      const updated = [...prev.speakers_list];
+      if (editingSpeakerIndex !== null) {
+        updated[editingSpeakerIndex] = { ...speakerForm };
+      } else {
+        updated.push({ ...speakerForm, id: speakerForm.id || `spk-${Date.now()}` });
+      }
+      return { ...prev, speakers_list: updated };
+    });
+
+    setSpeakerModalOpen(false);
+    toast.success("✅ Speaker saved successfully!");
+  };
+
+  const handleDeleteSpeakerItem = (index: number) => {
+    setEventForm((prev) => ({
+      ...prev,
+      speakers_list: prev.speakers_list.filter((_, i) => i !== index),
+    }));
+    toast.success("Speaker deleted.");
+  };
+
+  // Sponsor Modal Handlers
+  const handleOpenAddSponsor = () => {
+    setEditingSponsorIndex(null);
+    setSponsorForm({
+      id: `spn-${Date.now()}`,
+      name: "",
+      tier: "Gold Sponsor",
+      logo: "",
+      websiteUrl: "",
+    });
+    setSponsorModalOpen(true);
+  };
+
+  const handleOpenEditSponsor = (index: number) => {
+    const spn = eventForm.sponsors_list[index];
+    if (spn) {
+      setEditingSponsorIndex(index);
+      setSponsorForm({ ...spn });
+      setSponsorModalOpen(true);
+    }
+  };
+
+  const handleSponsorLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSponsorLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setSponsorForm((prev) => ({ ...prev, logo: data.url }));
+        toast.success("Sponsor logo uploaded!");
+      } else {
+        toast.error(data.message || "Upload failed.");
+      }
+    } catch (err) {
+      toast.error("Error uploading logo.");
+    } finally {
+      setUploadingSponsorLogo(false);
+    }
+  };
+
+  const handleSaveSponsorModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sponsorForm.name.trim() || !sponsorForm.tier.trim()) {
+      toast.error("❌ Sponsor Name and Category Tier are required.");
+      return;
+    }
+
+    setEventForm((prev) => {
+      const updated = [...prev.sponsors_list];
+      if (editingSponsorIndex !== null) {
+        updated[editingSponsorIndex] = { ...sponsorForm };
+      } else {
+        updated.push({ ...sponsorForm, id: sponsorForm.id || `spn-${Date.now()}` });
+      }
+      return { ...prev, sponsors_list: updated };
+    });
+
+    setSponsorModalOpen(false);
+    toast.success("✅ Sponsor saved successfully!");
+  };
+
+  const handleDeleteSponsorItem = (index: number) => {
+    setEventForm((prev) => ({
+      ...prev,
+      sponsors_list: prev.sponsors_list.filter((_, i) => i !== index),
+    }));
+    toast.success("Sponsor deleted.");
+  };
+
+  // Agenda Modal Handlers
+  const handleOpenAddAgenda = () => {
+    setEditingAgendaIndex(null);
+    setAgendaForm({
+      id: `ag-${Date.now()}`,
+      time: "",
+      title: "",
+      speaker: "",
+      description: "",
+    });
+    setAgendaModalOpen(true);
+  };
+
+  const handleOpenEditAgenda = (index: number) => {
+    const item = eventForm.agenda_list[index];
+    if (item) {
+      setEditingAgendaIndex(index);
+      setAgendaForm({ ...item });
+      setAgendaModalOpen(true);
+    }
+  };
+
+  const handleSaveAgendaModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agendaForm.time.trim() || !agendaForm.title.trim()) {
+      toast.error("❌ Session Timing and Title are required.");
+      return;
+    }
+
+    setEventForm((prev) => {
+      const updated = [...prev.agenda_list];
+      if (editingAgendaIndex !== null) {
+        updated[editingAgendaIndex] = { ...agendaForm };
+      } else {
+        updated.push({ ...agendaForm, id: agendaForm.id || `ag-${Date.now()}` });
+      }
+      return { ...prev, agenda_list: updated };
+    });
+
+    setAgendaModalOpen(false);
+    toast.success("✅ Agenda session saved!");
+  };
+
+  const handleDeleteAgendaItem = (index: number) => {
+    setEventForm((prev) => ({
+      ...prev,
+      agenda_list: prev.agenda_list.filter((_, i) => i !== index),
+    }));
+    toast.success("Agenda session deleted.");
+  };
+
+  // Gallery Modal Handlers
+  const handleOpenAddGallery = () => {
+    setEditingGalleryIndex(null);
+    setGalleryForm({
+      id: `gal-${Date.now()}`,
+      type: "image",
+      url: "",
+      caption: "",
+    });
+    setGalleryModalOpen(true);
+  };
+
+  const handleOpenEditGallery = (index: number) => {
+    const item = eventForm.gallery_list[index];
+    if (item) {
+      setEditingGalleryIndex(index);
+      setGalleryForm({ ...item });
+      setGalleryModalOpen(true);
+    }
+  };
+
+  const handleGalleryUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate format: JPG, PNG, WEBP
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      toast.error("❌ Invalid image format! Only JPG, PNG, and WEBP images are allowed.");
+      return;
+    }
+
+    // Validate size: max 5 MB
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("❌ Image file size exceeds the maximum limit of 5 MB.");
+      return;
+    }
+
+    setUploadingGalleryImg(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setGalleryForm((prev) => ({ ...prev, url: data.url }));
+        toast.success("✅ Gallery image uploaded successfully!");
+      } else {
+        toast.error(data.message || "Upload failed.");
+      }
+    } catch (err) {
+      toast.error("Network error uploading image.");
+    } finally {
+      setUploadingGalleryImg(false);
+    }
+  };
+
+  const handleSaveGalleryModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryForm.url.trim()) {
+      toast.error("❌ Gallery image URL or file is required.");
+      return;
+    }
+
+    setEventForm((prev) => {
+      const updated = [...prev.gallery_list];
+      if (editingGalleryIndex !== null) {
+        updated[editingGalleryIndex] = { ...galleryForm };
+      } else {
+        updated.push({ ...galleryForm, id: galleryForm.id || `gal-${Date.now()}` });
+      }
+      return { ...prev, gallery_list: updated };
+    });
+
+    setGalleryModalOpen(false);
+    toast.success("✅ Gallery image saved!");
+  };
+
+  const handleDeleteEventGalleryItem = (index: number) => {
+    setEventForm((prev) => ({
+      ...prev,
+      gallery_list: prev.gallery_list.filter((_, i) => i !== index),
+    }));
+    toast.success("Gallery item deleted.");
+  };
+
   // --- EVENT CMS CRUD HANDLERS ---
   const handleOpenAddEvent = () => {
     setEditingEvent(null);
@@ -1912,6 +2236,8 @@ export default function AdminDashboardPage() {
           venue: "",
           date: "",
           time: "",
+          address: "",
+          map_url: "",
         },
       ],
       speakers_list: [],
@@ -1936,18 +2262,22 @@ export default function AdminDashboardPage() {
     if (!parsedLocations || parsedLocations.length === 0) {
       parsedLocations = [
         {
-          city: "",
-          venue: "",
-          date: "",
-          time: "",
+          city: evt.city || "",
+          venue: evt.venue || "",
+          date: evt.date || "",
+          time: evt.time || "",
+          address: evt.venue_address || "",
+          map_url: evt.map_url || "",
         },
       ];
     } else {
       parsedLocations = parsedLocations.map((loc: any) => ({
-        city: loc.city === "Mumbai" ? "" : loc.city || "",
-        venue: (loc.venue || "").toLowerCase().includes("st. regis") ? "" : loc.venue || "",
+        city: loc.city || "",
+        venue: loc.venue || "",
         date: loc.date || "",
-        time: loc.time === "09:00 AM — 06:00 PM" ? "" : loc.time || "",
+        time: loc.time || "",
+        address: loc.address || evt.venue_address || "",
+        map_url: loc.map_url || evt.map_url || "",
       }));
     }
 
@@ -1999,52 +2329,83 @@ export default function AdminDashboardPage() {
     setEventModalOpen(true);
   };
 
-  const handleSaveEvent = async (e: React.FormEvent) => {
+  const validateEventForm = () => {
+    if (!eventForm.title.trim() || !eventForm.description.trim()) {
+      toast.error("❌ Please complete all required fields before updating the event.");
+      return false;
+    }
+
+    if (!eventForm.locations || eventForm.locations.length === 0) {
+      toast.error("❌ Please add at least one Event Schedule & City slot.");
+      return false;
+    }
+
+    for (let i = 0; i < eventForm.locations.length; i++) {
+      const loc = eventForm.locations[i];
+      if (!loc) continue;
+      const slotNum = i + 1;
+      if (!loc.city.trim()) {
+        toast.error(`❌ Please enter City for Slot #${slotNum}.`);
+        return false;
+      }
+      if (!loc.date.trim()) {
+        toast.error(`❌ Please select Date for Slot #${slotNum}.`);
+        return false;
+      }
+      if (!loc.time.trim()) {
+        toast.error(`❌ Please enter Timing for Slot #${slotNum}.`);
+        return false;
+      }
+      if (!loc.venue.trim()) {
+        toast.error(`❌ Please enter Venue Name for Slot #${slotNum}.`);
+        return false;
+      }
+      if (!loc.address?.trim()) {
+        toast.error(`❌ Please enter Custom Venue Address for Slot #${slotNum} (${loc.city || "City"}).`);
+        return false;
+      }
+      if (!loc.map_url?.trim()) {
+        toast.error(`❌ Please enter Google Maps Embed iframe URL for Slot #${slotNum} (${loc.city || "City"}).`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent, overrideStatus?: string) => {
     e.preventDefault();
     if (!token) {
       toast.error("Admin session expired. Please log in again.");
       return;
     }
 
-    if (!eventForm.title.trim()) {
-      toast.error("Please enter an Event Title.");
+    if (!validateEventForm()) {
       return;
     }
 
-    if (!eventForm.description.trim()) {
-      toast.error("Please enter a Short Description.");
-      return;
-    }
-
-    const primaryLoc = eventForm.locations[0] || { city: "", venue: "", date: "", time: "" };
-
-    if (!primaryLoc.city.trim()) {
-      toast.error("Please enter a City / Location for slot #1.");
-      return;
-    }
-
-    if (!primaryLoc.date.trim()) {
-      toast.error("Please select an Event Date.");
-      return;
-    }
+    setSubmittingEvent(true);
+    const primaryLoc = eventForm.locations[0] || { city: "", venue: "", date: "", time: "", address: "", map_url: "" };
+    const targetStatus = overrideStatus || eventForm.status || "published";
 
     const payload = {
       ...eventForm,
+      status: targetStatus,
       title: eventForm.title.trim(),
       description: eventForm.description.trim(),
       full_description: (eventForm.full_description || eventForm.description).trim(),
       image: eventForm.image.trim() || "/assets/event-cfo-BjslOJNi.jpg",
       city: primaryLoc.city.trim(),
-      venue: primaryLoc.venue.trim() || `${primaryLoc.city} Main Convention Center`,
+      venue: primaryLoc.venue.trim(),
       date: primaryLoc.date,
-      time: primaryLoc.time || "09:00 AM — 06:00 PM",
+      time: primaryLoc.time,
       locations: JSON.stringify(eventForm.locations),
       speakers_list: JSON.stringify(eventForm.speakers_list),
       sponsors_list: JSON.stringify(eventForm.sponsors_list),
       gallery_list: JSON.stringify(eventForm.gallery_list),
       agenda_list: JSON.stringify(eventForm.agenda_list),
-      map_url: eventForm.map_url.trim(),
-      venue_address: (eventForm.venue_address || primaryLoc.venue).trim(),
+      map_url: (primaryLoc.map_url || eventForm.map_url).trim(),
+      venue_address: (primaryLoc.address || eventForm.venue_address).trim(),
     };
 
     try {
@@ -2062,8 +2423,16 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
-        toast.success(editingEvent ? "Event updated successfully!" : "Event created & published successfully!");
-        setEventModalOpen(false);
+        // Requirement 3: Premium Toast Notification
+        toast.success(editingEvent ? "✅ Event Updated Successfully!" : "✅ Event Created Successfully!", {
+          description: "All event details have been saved successfully.",
+          duration: 3000,
+        });
+
+        // Requirement 4: Stay on Same Page
+        if (data.data) {
+          setEditingEvent(data.data);
+        }
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to save event.");
@@ -2071,6 +2440,8 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error("Save event error:", err);
       toast.error("Network error saving event.");
+    } finally {
+      setSubmittingEvent(false);
     }
   };
 
@@ -3717,21 +4088,26 @@ export default function AdminDashboardPage() {
 
                         {/* Status */}
                         <td className="py-4 px-4">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleRegistrationStatus(reg.id)}
-                            title="Click to toggle status"
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
-                              (reg.status || "Confirmed") === "Confirmed"
-                                ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                                : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-                            }`}
-                          >
-                            <span className={`h-1.5 w-1.5 rounded-full ${
-                              (reg.status || "Confirmed") === "Confirmed" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
-                            }`} />
-                            {reg.status || "Confirmed"}
-                          </button>
+                          {(() => {
+                            const regStatus = getRegistrationStatus(reg);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRegistrationStatus(reg.id)}
+                                title="Click to toggle status"
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
+                                  regStatus === "Confirmed"
+                                    ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                    : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+                                }`}
+                              >
+                                <span className={`h-1.5 w-1.5 rounded-full ${
+                                  regStatus === "Confirmed" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+                                }`} />
+                                {regStatus}
+                              </button>
+                            );
+                          })()}
                         </td>
 
                         {/* Actions / View Details */}
@@ -4251,12 +4627,12 @@ export default function AdminDashboardPage() {
             {/* Builder Sub-Navigation Tabs */}
             <div className="flex border-b border-slate-200 bg-slate-100/70 p-2 overflow-x-auto gap-1 text-xs font-bold shrink-0">
               {[
-                { id: "basic", label: "1. Basic & Venue" },
+                { id: "basic", label: `1. Basic & Venues (${eventForm.locations.length})` },
                 { id: "agenda", label: `2. Agenda (${eventForm.agenda_list.length})` },
                 { id: "speakers", label: `3. Speakers (${eventForm.speakers_list.length})` },
                 { id: "sponsors", label: `4. Sponsors (${eventForm.sponsors_list.length})` },
                 { id: "gallery", label: `5. Gallery (${eventForm.gallery_list.length})` },
-                { id: "venue", label: "6. Map Embed" },
+                { id: "venue", label: "6. Primary Map" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -4275,7 +4651,7 @@ export default function AdminDashboardPage() {
 
             {/* Scrollable Form Body */}
             <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
-              {/* TAB 1: BASIC INFO & LOCATIONS */}
+              {/* TAB 1: BASIC INFO & LOCATIONS WITH DYNAMIC VENUE BLOCKS */}
               {builderTab === "basic" && (
                 <div className="space-y-6">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -4374,82 +4750,84 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Multiple Locations & Dates */}
-                  <div className="space-y-3 pt-4 border-t border-slate-200">
+                  {/* Multiple Locations & Dynamic Matching Venue Blocks */}
+                  <div className="space-y-4 pt-4 border-t border-slate-200">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
                           <MapPin className="h-4 w-4 text-cyan-600" />
-                          <span>Event Schedules & Cities</span>
+                          <span>Event Schedules & Dynamic Venues</span>
                         </h4>
+                        <p className="text-xs text-slate-500 font-medium">Each slot automatically generates a matching venue block with custom address and map iframe.</p>
                       </div>
 
                       <button
                         type="button"
                         onClick={handleAddLocationSlot}
-                        className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs"
+                        className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
                       >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        <span>+ Add City Slot</span>
+                        <PlusCircle className="h-4 w-4 text-cyan-600" />
+                        <span>+ Add Schedule & Venue Block</span>
                       </button>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {eventForm.locations.map((loc, idx) => (
-                        <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-3.5 shadow-2xs hover:border-slate-300 transition-all">
-                          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                            <span className="font-bold text-cyan-800 text-xs flex items-center gap-1.5">
-                              <span>Slot #{idx + 1}</span>
+                        <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/90 p-5 space-y-4 shadow-xs hover:border-slate-300 transition-all">
+                          {/* Slot Header */}
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-cyan-900 text-sm">
+                                Slot #{idx + 1}: {loc.city ? loc.city : "New Schedule Slot"}
+                              </span>
                               {idx === 0 && (
-                                <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200/80">
-                                  Primary
+                                <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
+                                  Primary Location
                                 </span>
                               )}
-                            </span>
+                            </div>
 
                             {eventForm.locations.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleRemoveLocationSlot(idx)}
-                                className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 transition-colors"
+                                className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
                               >
-                                <X className="h-3.5 w-3.5" /> Remove
+                                <X className="h-3.5 w-3.5" /> Remove Slot
                               </button>
                             )}
                           </div>
 
+                          {/* Schedule Inputs */}
                           <div className="grid gap-3.5 sm:grid-cols-3">
                             <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5 text-cyan-600" />
-                                <span>City *</span>
+                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
                               </label>
                               <input
                                 type="text"
                                 required
                                 value={loc.city}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
-                                placeholder="e.g. Mumbai / Delhi / Bengaluru"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
+                                placeholder="e.g. Visakhapatnam / Hyderabad"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-cyan-600" />
-                                <span>Date *</span>
+                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 text-cyan-600" /> Date *
                               </label>
                               <input
                                 type="date"
                                 required
                                 value={loc.date}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all cursor-pointer font-sans"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
                               />
                             </div>
                             <div>
-                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
-                                <Clock className="h-3.5 w-3.5 text-cyan-600" />
-                                <span>Timing *</span>
+                              <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 text-cyan-600" /> Timing *
                               </label>
                               <input
                                 type="text"
@@ -4457,22 +4835,61 @@ export default function AdminDashboardPage() {
                                 value={loc.time}
                                 onChange={(e) => handleUpdateLocationSlot(idx, "time", e.target.value)}
                                 placeholder="e.g. 09:00 AM — 06:00 PM"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
                               />
                             </div>
-                            <div className="sm:col-span-3">
-                              <label className="block text-slate-700 font-bold text-xs mb-1.5 flex items-center gap-1.5">
-                                <Building className="h-3.5 w-3.5 text-cyan-600" />
-                                <span>Venue Name / Hotel *</span>
-                              </label>
-                              <input
-                                type="text"
-                                required
-                                value={loc.venue}
-                                onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
-                                placeholder="e.g. The St. Regis Mumbai, Lower Parel / Grand Hyatt"
-                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
-                              />
+                          </div>
+
+                          {/* Dynamic Matching Venue Block Section */}
+                          <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-3">
+                            <h5 className="font-extrabold text-xs text-cyan-900 flex items-center gap-2">
+                              <Building className="h-4 w-4 text-cyan-600" />
+                              <span>Venue for Slot {idx + 1} – {loc.city ? loc.city : `City #${idx + 1}`}</span>
+                            </h5>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                  Venue Name / Hotel *
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={loc.venue || ""}
+                                  onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
+                                  placeholder="e.g. Novotel Visakhapatnam Varun Beach / Taj Krishna"
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                  Custom Venue Address *
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={loc.address || ""}
+                                  onChange={(e) => handleUpdateLocationSlot(idx, "address", e.target.value)}
+                                  placeholder="e.g. Beach Rd, Maharani Peta, Visakhapatnam, AP 530002"
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-2">
+                                <label className="block text-slate-700 font-bold text-[11px] mb-1 flex items-center justify-between">
+                                  <span>Google Maps Embed iframe URL *</span>
+                                  <span className="text-[10px] text-slate-500 font-normal">Standard Google Maps Embed iframe src URL</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={loc.map_url || ""}
+                                  onChange={(e) => handleUpdateLocationSlot(idx, "map_url", e.target.value)}
+                                  placeholder="https://www.google.com/maps/embed?pb=..."
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -4481,7 +4898,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {/* Descriptions */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-2">
                     <div>
                       <label className="block text-slate-700 font-bold mb-1">Short Description (Card Overview) *</label>
                       <textarea
@@ -4508,515 +4925,294 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* TAB 2: AGENDA TIMELINE BUILDER */}
+              {/* TAB 2: AGENDA TIMELINE (SUMMARY CARD & MODAL WORKFLOW) */}
               {builderTab === "agenda" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-5">
+                  {/* Summary Card */}
+                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">Agenda Sessions Timeline</h4>
-                      <p className="text-xs text-slate-500 font-medium">Add full-day sessions with timings, titles, and speaker details.</p>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>✅ {eventForm.agenda_list.length} Agenda Sessions Added</span>
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Agenda & Session Timeline</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Session" to open modal popup and save sessions.</p>
                     </div>
+
                     <button
                       type="button"
-                      onClick={() =>
-                        setEventForm((prev) => ({
-                          ...prev,
-                          agenda_list: [
-                            ...prev.agenda_list,
-                            { id: `ag-${Date.now()}`, time: "", title: "", speaker: "", description: "" },
-                          ],
-                        }))
-                      }
-                      className="rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100"
+                      onClick={handleOpenAddAgenda}
+                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                     >
-                      + Add Session
+                      <PlusCircle className="h-4 w-4" />
+                      <span>+ Add Agenda Session</span>
                     </button>
                   </div>
 
-                  {eventForm.agenda_list.map((item, idx) => (
-                    <div key={item.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 relative">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <span className="font-bold text-cyan-800 text-xs">Session #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              agenda_list: prev.agenda_list.filter((_, i) => i !== idx),
-                            }))
-                          }
-                          className="text-xs font-bold text-rose-600 hover:text-rose-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
+                  {/* Sessions Summary List */}
+                  <div className="space-y-3">
+                    {eventForm.agenda_list.map((item, idx) => (
+                      <div key={item.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs hover:border-cyan-300 transition-all">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md bg-cyan-100 text-cyan-800 px-2 py-0.5 font-mono text-[11px] font-bold">
+                              {item.time || "Time N/A"}
+                            </span>
+                            <span className="font-bold text-slate-900 text-xs sm:text-sm">{item.title}</span>
+                          </div>
+                          {item.speaker && (
+                            <p className="text-xs text-slate-600 font-medium">👤 Presenter: <span className="text-slate-800 font-semibold">{item.speaker}</span></p>
+                          )}
+                          {item.description && (
+                            <p className="text-xs text-slate-500 line-clamp-1">{item.description}</p>
+                          )}
+                        </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Time Slot *</label>
-                          <input
-                            type="text"
-                            value={item.time}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.agenda_list];
-                                const itm = updated[idx];
-                                if (itm) itm.time = e.target.value;
-                                return { ...prev, agenda_list: updated };
-                              })
-                            }
-                            placeholder="e.g. 09:30 AM — 10:30 AM"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Speaker / Presenter</label>
-                          <input
-                            type="text"
-                            value={item.speaker || ""}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.agenda_list];
-                                const itm = updated[idx];
-                                if (itm) itm.speaker = e.target.value;
-                                return { ...prev, agenda_list: updated };
-                              })
-                            }
-                            placeholder="e.g. Dr. Rajesh Sharma"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block font-bold text-slate-700 mb-1">Session Title *</label>
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.agenda_list];
-                                const itm = updated[idx];
-                                if (itm) itm.title = e.target.value;
-                                return { ...prev, agenda_list: updated };
-                              })
-                            }
-                            placeholder="e.g. Opening Keynote: AI Transformation"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block font-bold text-slate-700 mb-1">Description / Summary</label>
-                          <input
-                            type="text"
-                            value={item.description || ""}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.agenda_list];
-                                const itm = updated[idx];
-                                if (itm) itm.description = e.target.value;
-                                return { ...prev, agenda_list: updated };
-                              })
-                            }
-                            placeholder="Brief session details..."
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* TAB 3: SPEAKERS BUILDER */}
-              {builderTab === "speakers" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">Featured Keynote Speakers</h4>
-                      <p className="text-xs text-slate-500 font-medium">Add executive speakers, designation, photo, and bio topic.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEventForm((prev) => ({
-                          ...prev,
-                          speakers_list: [
-                            ...prev.speakers_list,
-                            {
-                              id: `spk-${Date.now()}`,
-                              name: "",
-                              designation: "",
-                              organization: "",
-                              photo: "",
-                              topic: "",
-                            },
-                          ],
-                        }))
-                      }
-                      className="rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100"
-                    >
-                      + Add Speaker
-                    </button>
-                  </div>
-
-                  {eventForm.speakers_list.map((spk, idx) => (
-                    <div key={spk.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <span className="font-bold text-cyan-800 text-xs">Speaker #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              speakers_list: prev.speakers_list.filter((_, i) => i !== idx),
-                            }))
-                          }
-                          className="text-xs font-bold text-rose-600 hover:text-rose-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Speaker Name *</label>
-                          <input
-                            type="text"
-                            value={spk.name}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.speakers_list];
-                                const itm = updated[idx];
-                                if (itm) itm.name = e.target.value;
-                                return { ...prev, speakers_list: updated };
-                              })
-                            }
-                            placeholder="e.g. Dr. Rajesh Sharma"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Designation *</label>
-                          <input
-                            type="text"
-                            value={spk.designation}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.speakers_list];
-                                const itm = updated[idx];
-                                if (itm) itm.designation = e.target.value;
-                                return { ...prev, speakers_list: updated };
-                              })
-                            }
-                            placeholder="e.g. Executive Director / VP"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Company / Organization *</label>
-                          <input
-                            type="text"
-                            value={spk.organization}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.speakers_list];
-                                const itm = updated[idx];
-                                if (itm) itm.organization = e.target.value;
-                                return { ...prev, speakers_list: updated };
-                              })
-                            }
-                            placeholder="e.g. ET Media Hub"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Photo Image URL</label>
-                          <input
-                            type="text"
-                            value={spk.photo}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.speakers_list];
-                                const itm = updated[idx];
-                                if (itm) itm.photo = e.target.value;
-                                return { ...prev, speakers_list: updated };
-                              })
-                            }
-                            placeholder="e.g. https://... or image URL"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block font-bold text-slate-700 mb-1">Presentation Topic / Bio</label>
-                          <input
-                            type="text"
-                            value={spk.topic || ""}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.speakers_list];
-                                const itm = updated[idx];
-                                if (itm) itm.topic = e.target.value;
-                                return { ...prev, speakers_list: updated };
-                              })
-                            }
-                            placeholder="Topic title or short speaker bio..."
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* TAB 4: SPONSORS BUILDER */}
-              {builderTab === "sponsors" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">Event Sponsors & Brand Partners</h4>
-                      <p className="text-xs text-slate-500 font-medium">Add corporate sponsors, tier categories, and logo links.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEventForm((prev) => ({
-                          ...prev,
-                          sponsors_list: [
-                            ...prev.sponsors_list,
-                            {
-                              id: `spn-${Date.now()}`,
-                              name: "",
-                              tier: "Gold Sponsor",
-                              logo: "",
-                              websiteUrl: "",
-                            },
-                          ],
-                        }))
-                      }
-                      className="rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100"
-                    >
-                      + Add Sponsor
-                    </button>
-                  </div>
-
-                  {eventForm.sponsors_list.map((spn, idx) => (
-                    <div key={spn.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <span className="font-bold text-cyan-800 text-xs">Sponsor #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              sponsors_list: prev.sponsors_list.filter((_, i) => i !== idx),
-                            }))
-                          }
-                          className="text-xs font-bold text-rose-600 hover:text-rose-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Brand Name *</label>
-                          <input
-                            type="text"
-                            value={spn.name}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.sponsors_list];
-                                const itm = updated[idx];
-                                if (itm) itm.name = e.target.value;
-                                return { ...prev, sponsors_list: updated };
-                              })
-                            }
-                            placeholder="e.g. Partner Brand Name"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">Sponsorship Tier *</label>
-                          <select
-                            value={spn.tier}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.sponsors_list];
-                                const itm = updated[idx];
-                                if (itm) itm.tier = e.target.value as any;
-                                return { ...prev, sponsors_list: updated };
-                              })
-                            }
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditAgenda(idx)}
+                            className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 cursor-pointer flex items-center gap-1"
                           >
-                            <option value="Title Partner">Title Partner</option>
-                            <option value="Platinum Sponsor">Platinum Sponsor</option>
-                            <option value="Gold Sponsor">Gold Sponsor</option>
-                            <option value="Silver Partner">Silver Partner</option>
-                            <option value="Technology Partner">Technology Partner</option>
-                            <option value="Media Partner">Media Partner</option>
-                          </select>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block font-bold text-slate-700 mb-1">Logo / Banner URL</label>
-                          <input
-                            type="text"
-                            value={spn.logo}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.sponsors_list];
-                                const itm = updated[idx];
-                                if (itm) itm.logo = e.target.value;
-                                return { ...prev, sponsors_list: updated };
-                              })
-                            }
-                            placeholder="e.g. https://... or logo link"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                          />
+                            <Edit3 className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAgendaItem(idx)}
+                            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+
+                    {eventForm.agenda_list.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                        No agenda sessions added yet. Click "+ Add Agenda Session" above.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* TAB 5: GALLERY BUILDER */}
-              {builderTab === "gallery" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+              {/* TAB 3: SPEAKERS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+              {builderTab === "speakers" && (
+                <div className="space-y-5">
+                  {/* Summary Card */}
+                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">Event Photos & Video Media</h4>
-                      <p className="text-xs text-slate-500 font-medium">Upload gallery image files or enter image URLs with captions.</p>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>✅ {eventForm.speakers_list.length} Speakers Added</span>
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Keynote Speakers & Leaders</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Speaker" to open modal popup, upload photo, and save.</p>
                     </div>
+
                     <button
                       type="button"
-                      onClick={() =>
-                        setEventForm((prev) => ({
-                          ...prev,
-                          gallery_list: [
-                            ...prev.gallery_list,
-                            {
-                              id: `gal-${Date.now()}`,
-                              type: "image",
-                              url: "",
-                              caption: "",
-                            },
-                          ],
-                        }))
-                      }
-                      className="rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100"
+                      onClick={handleOpenAddSpeaker}
+                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                     >
-                      + Add Gallery Item
+                      <PlusCircle className="h-4 w-4" />
+                      <span>+ Add Speaker</span>
                     </button>
                   </div>
 
-                  {eventForm.gallery_list.map((item, idx) => (
-                    <div key={item.id || idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <span className="font-bold text-cyan-800 text-xs">Media #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              gallery_list: prev.gallery_list.filter((_, i) => i !== idx),
-                            }))
-                          }
-                          className="text-xs font-bold text-rose-600 hover:text-rose-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-12 items-start">
-                        {/* File Upload & URL Input */}
-                        <div className="sm:col-span-8 space-y-2">
-                          <label className="block font-bold text-slate-700">Upload Image File or Enter URL *</label>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                              <Upload className="h-3.5 w-3.5" />
-                              <span>{uploadingGalleryIndex === idx ? "Uploading Image..." : "Upload Image File"}</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleGalleryFileUpload(idx, e)}
-                                disabled={uploadingGalleryIndex === idx}
-                                className="hidden"
-                              />
-                            </label>
-                            <span className="text-[11px] text-slate-400 font-bold">OR</span>
-                          </div>
-
-                          <input
-                            type="text"
-                            value={item.url}
-                            onChange={(e) =>
-                              setEventForm((prev) => {
-                                const updated = [...prev.gallery_list];
-                                const itm = updated[idx];
-                                if (itm) itm.url = e.target.value;
-                                return { ...prev, gallery_list: updated };
-                              })
-                            }
-                            placeholder="Image URL e.g. /assets/hero-leadership.jpg"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-[11px]"
-                          />
-
-                          <div>
-                            <label className="block font-bold text-slate-700 mt-2 mb-1">Caption / Description</label>
-                            <input
-                              type="text"
-                              value={item.caption || ""}
-                              onChange={(e) =>
-                                setEventForm((prev) => {
-                                  const updated = [...prev.gallery_list];
-                                  const itm = updated[idx];
-                                  if (itm) itm.caption = e.target.value;
-                                  return { ...prev, gallery_list: updated };
-                                })
-                              }
-                              placeholder="e.g. CXO Keynote Address & Industry Benchmarking Session"
-                              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900"
-                            />
-                          </div>
+                  {/* Speakers Summary Grid */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {eventForm.speakers_list.map((spk, idx) => (
+                      <div key={spk.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-cyan-300 transition-all">
+                        <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
+                          {spk.photo ? (
+                            <img src={spk.photo} alt={spk.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
+                              {spk.name.charAt(0) || "S"}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Image Preview Thumbnail */}
-                        <div className="sm:col-span-4 space-y-1">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Preview</span>
-                          <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-200 shadow-xs flex items-center justify-center">
-                            {item.url ? (
-                              <img
-                                src={item.url}
-                                alt={item.caption || `Gallery ${idx + 1}`}
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "/assets/hero-leadership.jpg";
-                                }}
-                              />
-                            ) : (
-                              <span className="text-[10px] text-slate-400 font-bold">No Image</span>
-                            )}
-                          </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
+                          <p className="text-xs text-slate-600 font-medium truncate">{spk.designation}</p>
+                          <p className="text-[11px] text-cyan-800 font-bold truncate">{spk.organization}</p>
+                        </div>
+
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditSpeaker(idx)}
+                            className="rounded-lg border border-cyan-200 bg-cyan-50 p-1.5 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
+                            title="Edit Speaker"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSpeakerItem(idx)}
+                            className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                            title="Delete Speaker"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+
+                    {eventForm.speakers_list.length === 0 && (
+                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                        No speakers added yet. Click "+ Add Speaker" above.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* TAB 6: VENUE & MAP EMBED */}
+              {/* TAB 4: SPONSORS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+              {builderTab === "sponsors" && (
+                <div className="space-y-5">
+                  {/* Summary Card */}
+                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>✅ {eventForm.sponsors_list.length} Sponsors Added</span>
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Corporate Sponsors & Brand Partners</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Sponsor" to open modal popup and manage logos.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddSponsor}
+                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>+ Add Sponsor</span>
+                    </button>
+                  </div>
+
+                  {/* Sponsors Grid */}
+                  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    {eventForm.sponsors_list.map((spn, idx) => (
+                      <div key={spn.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-cyan-300 transition-all">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-purple-100 border border-purple-200 px-2.5 py-0.5 text-[10px] text-purple-800 font-extrabold uppercase">
+                            {spn.tier}
+                          </span>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditSponsor(idx)}
+                              className="rounded-lg border border-cyan-200 bg-cyan-50 p-1 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSponsorItem(idx)}
+                              className="rounded-lg border border-rose-200 bg-rose-50 p-1 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="h-16 flex items-center justify-center border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                          {spn.logo ? (
+                            <img src={spn.logo} alt={spn.name} className="max-h-full max-w-full object-contain" />
+                          ) : (
+                            <span className="font-bold text-slate-800 text-xs">{spn.name}</span>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-slate-900 text-xs text-center truncate">{spn.name}</p>
+                      </div>
+                    ))}
+
+                    {eventForm.sponsors_list.length === 0 && (
+                      <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                        No corporate sponsors added yet. Click "+ Add Sponsor" above.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: GALLERY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+              {builderTab === "gallery" && (
+                <div className="space-y-5">
+                  {/* Summary Card */}
+                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>✅ {eventForm.gallery_list.length} Images Added</span>
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Event Photos & Highlights</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Gallery Image" (supports JPG, PNG, WEBP up to 5 MB).</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddGallery}
+                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>+ Add Gallery Image</span>
+                    </button>
+                  </div>
+
+                  {/* Gallery Grid */}
+                  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    {eventForm.gallery_list.map((item, idx) => (
+                      <div key={item.id || idx} className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs hover:shadow-lg transition-all h-40">
+                        <img src={item.url} alt={item.caption || `Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-90 p-3 flex flex-col justify-between text-white">
+                          <div className="flex justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditGallery(idx)}
+                              className="rounded-lg bg-white/90 p-1 text-slate-900 hover:bg-white cursor-pointer"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEventGalleryItem(idx)}
+                              className="rounded-lg bg-rose-600 p-1 text-white hover:bg-rose-700 cursor-pointer"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <span className="text-[11px] font-semibold truncate">{item.caption || "Event Highlight"}</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {eventForm.gallery_list.length === 0 && (
+                      <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                        No gallery images added yet. Click "+ Add Gallery Image" above.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: PRIMARY MAP EMBED */}
               {builderTab === "venue" && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Google Maps Embed & Venue Location</h4>
-                    <p className="text-xs text-slate-500 font-medium">Embed custom Google Maps iframe or address text.</p>
+                    <h4 className="text-sm font-bold text-slate-900 font-display">Primary Google Maps Embed & Venue Location</h4>
+                    <p className="text-xs text-slate-500 font-medium">Fallback venue address and iframe URL for primary event location.</p>
                   </div>
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Custom Venue Address</label>
+                      <label className="block font-bold text-slate-700 mb-1">Primary Venue Address</label>
                       <input
                         type="text"
                         value={eventForm.venue_address}
@@ -5032,7 +5228,7 @@ export default function AdminDashboardPage() {
                         rows={3}
                         value={eventForm.map_url}
                         onChange={(e) => setEventForm({ ...eventForm, map_url: e.target.value })}
-                        placeholder="Paste Google Maps iframe src URL or share link..."
+                        placeholder="Paste Google Maps iframe src URL..."
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
                       />
                     </div>
@@ -5040,8 +5236,8 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Sticky Footer Submit */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200 sticky bottom-0 bg-white py-3">
+              {/* REQUIREMENT 5: STICKY SAVE BAR AT BOTTOM */}
+              <div className="sticky bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 shrink-0 rounded-2xl">
                 <label className="relative flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -5049,28 +5245,423 @@ export default function AdminDashboardPage() {
                     onChange={(e) => setEventForm({ ...eventForm, is_featured: e.target.checked })}
                     className="h-4 w-4 rounded border-slate-300 bg-white text-cyan-600 focus:ring-cyan-500"
                   />
-                  <span className="font-bold text-slate-900">Mark as Featured Event</span>
+                  <span className="font-bold text-slate-900 text-xs">Mark as Featured Event</span>
                 </label>
 
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setEventModalOpen(false)}
-                    className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                    onClick={(e) => handleSaveEvent(e, "draft")}
+                    className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
                   >
-                    Cancel
+                    Save Draft
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingEvent?.slug) {
+                        window.open(`/events/${editingEvent.slug}`, "_blank");
+                      } else {
+                        toast.info("Please save event first to preview page.");
+                      }
+                    }}
+                    className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Preview Event</span>
                   </button>
 
                   <button
                     type="submit"
-                    className="rounded-xl bg-cyan-600 hover:bg-cyan-700 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all hover:scale-105"
+                    disabled={submittingEvent}
+                    className="gradient-brand rounded-xl px-6 py-2.5 text-xs font-extrabold text-white shadow-lg hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
                   >
-                    {editingEvent ? "Update Event" : "Create & Save Event"}
+                    {submittingEvent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    <span>{editingEvent ? "Update Event" : "Create & Save Event"}</span>
                   </button>
                 </div>
               </div>
             </form>
           </aside>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* POPUP SUB-MODAL: SPEAKER EDIT/ADD          */}
+      {/* ========================================== */}
+      {speakerModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                {editingSpeakerIndex !== null ? "Edit Keynote Speaker" : "Add Keynote Speaker"}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setSpeakerModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSpeakerModal} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Speaker Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={speakerForm.name}
+                  onChange={(e) => setSpeakerForm({ ...speakerForm, name: e.target.value })}
+                  placeholder="e.g. Dr. Rajesh Sharma"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Designation *</label>
+                <input
+                  type="text"
+                  required
+                  value={speakerForm.designation}
+                  onChange={(e) => setSpeakerForm({ ...speakerForm, designation: e.target.value })}
+                  placeholder="e.g. Chief Technology Officer / Executive VP"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
+                <input
+                  type="text"
+                  required
+                  value={speakerForm.organization}
+                  onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
+                  placeholder="e.g. ET Media Hub / Enterprise AI Solutions"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-slate-700 font-bold">Photo Image (Upload or URL) *</label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>{uploadingSpeakerImg ? "Uploading..." : "Upload File"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSpeakerImgFileUpload}
+                      disabled={uploadingSpeakerImg}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={speakerForm.photo}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, photo: e.target.value })}
+                    placeholder="Image URL..."
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
+                <input
+                  type="text"
+                  value={speakerForm.topic || ""}
+                  onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
+                  placeholder="e.g. Keynote: AI Transformation in Enterprise Finance"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSpeakerModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                >
+                  Save Speaker
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* POPUP SUB-MODAL: SPONSOR EDIT/ADD          */}
+      {/* ========================================== */}
+      {sponsorModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                {editingSponsorIndex !== null ? "Edit Corporate Sponsor" : "Add Corporate Sponsor"}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setSponsorModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSponsorModal} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Brand Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={sponsorForm.name}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
+                  placeholder="e.g. Partner Corporate Brand"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Sponsorship Tier *</label>
+                <select
+                  value={sponsorForm.tier}
+                  onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value as any })}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                >
+                  <option value="Title Partner">Title Partner</option>
+                  <option value="Platinum Sponsor">Platinum Sponsor</option>
+                  <option value="Gold Sponsor">Gold Sponsor</option>
+                  <option value="Silver Partner">Silver Partner</option>
+                  <option value="Technology Partner">Technology Partner</option>
+                  <option value="Media Partner">Media Partner</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-slate-700 font-bold">Logo (Upload File or URL) *</label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>{uploadingSponsorLogo ? "Uploading..." : "Upload Logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSponsorLogoFileUpload}
+                      disabled={uploadingSponsorLogo}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={sponsorForm.logo}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, logo: e.target.value })}
+                    placeholder="Logo URL..."
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSponsorModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                >
+                  Save Sponsor
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* POPUP SUB-MODAL: AGENDA EDIT/ADD           */}
+      {/* ========================================== */}
+      {agendaModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                {editingAgendaIndex !== null ? "Edit Agenda Session" : "Add Agenda Session"}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setAgendaModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAgendaModal} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Time Slot *</label>
+                <input
+                  type="text"
+                  required
+                  value={agendaForm.time}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, time: e.target.value })}
+                  placeholder="e.g. 09:30 AM — 10:30 AM"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Session Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={agendaForm.title}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, title: e.target.value })}
+                  placeholder="e.g. Opening Keynote: AI Transformation in Indian Enterprise"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Speaker / Presenter</label>
+                <input
+                  type="text"
+                  value={agendaForm.speaker || ""}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, speaker: e.target.value })}
+                  placeholder="e.g. Dr. Rajesh Sharma"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Session Description</label>
+                <textarea
+                  rows={3}
+                  value={agendaForm.description || ""}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, description: e.target.value })}
+                  placeholder="Brief summary of session takeaways..."
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAgendaModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                >
+                  Save Agenda Session
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* POPUP SUB-MODAL: GALLERY EDIT/ADD         */}
+      {/* ========================================== */}
+      {galleryModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                {editingGalleryIndex !== null ? "Edit Gallery Image" : "Add Gallery Image"}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setGalleryModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGalleryModal} className="space-y-3 text-xs">
+              <div className="space-y-2">
+                <label className="block text-slate-700 font-bold flex items-center justify-between">
+                  <span>Upload Image File (JPG, PNG, WEBP max 5 MB) *</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-4 py-2.5 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs shadow-xs">
+                    <Upload className="h-4 w-4" />
+                    <span>{uploadingGalleryImg ? "Uploading (Max 5MB)..." : "Upload File"}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleGalleryUploadFile}
+                      disabled={uploadingGalleryImg}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={galleryForm.url}
+                    onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
+                    placeholder="Image URL..."
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Caption / Description</label>
+                <input
+                  type="text"
+                  value={galleryForm.caption || ""}
+                  onChange={(e) => setGalleryForm({ ...galleryForm, caption: e.target.value })}
+                  placeholder="e.g. Executive Keynote Address Highlights"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              {galleryForm.url && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thumbnail Preview</span>
+                  <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-100 shadow-xs">
+                    <img src={galleryForm.url} alt="Preview" className="h-full w-full object-cover" />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setGalleryModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                >
+                  Save Gallery Image
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -5167,23 +5758,28 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Status:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleToggleRegistrationStatus(selectedRegDetail.id);
-                        setSelectedRegDetail((prev) =>
-                          prev ? { ...prev, status: (prev.status || "Confirmed") === "Confirmed" ? "Pending" : "Confirmed" } : null
-                        );
-                      }}
-                      title="Click to toggle status"
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-all cursor-pointer ${
-                        (selectedRegDetail.status || "Confirmed") === "Confirmed"
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                          : "bg-amber-50 border-amber-200 text-amber-800"
-                      }`}
-                    >
-                      {selectedRegDetail.status || "Confirmed"}
-                    </button>
+                    {(() => {
+                      const modalStatus = getRegistrationStatus(selectedRegDetail);
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleToggleRegistrationStatus(selectedRegDetail.id);
+                            setSelectedRegDetail((prev) =>
+                              prev ? { ...prev, status: modalStatus === "Confirmed" ? "Pending" : "Confirmed" } : null
+                            );
+                          }}
+                          title="Click to toggle status"
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-all cursor-pointer ${
+                            modalStatus === "Confirmed"
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                              : "bg-amber-50 border-amber-200 text-amber-800"
+                          }`}
+                        >
+                          {modalStatus}
+                        </button>
+                      );
+                    })()}
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px]">Registering City:</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Lenis from "lenis";
@@ -12,6 +12,7 @@ import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 
 export function Layout() {
   const location = useLocation();
+  const lenisRef = useRef<Lenis | null>(null);
   const [modalState, setModalState] = useState<{ isOpen: boolean; event: EventItem | null }>({
     isOpen: false,
     event: null,
@@ -37,6 +38,8 @@ export function Layout() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     });
+    lenisRef.current = lenis;
+    (window as any).__lenis = lenis;
 
     function raf(time: number) {
       lenis.raf(time);
@@ -46,9 +49,19 @@ export function Layout() {
     requestAnimationFrame(raf);
 
     return () => {
+      delete (window as any).__lenis;
+      lenisRef.current = null;
       lenis.destroy();
     };
   }, []);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { immediate: true });
+    }
+    window.scrollTo(0, 0);
+  }, [location.pathname, location.search]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-brand-blue/30 selection:text-brand-blue">
