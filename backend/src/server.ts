@@ -2415,7 +2415,7 @@ app.get("/api/magazines", async (req, res) => {
 
 // Admin create magazine issue
 app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
-  const { issue, title, date, month, cover, pdf_url, pages_list, category, is_featured } = req.body;
+  const { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
   if (!title || !cover) {
     return res.status(400).json({ success: false, message: "Title and Cover image are required" });
   }
@@ -2426,7 +2426,7 @@ app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
   try {
     if (pool) {
       await pool.query(
-        "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
           id,
           issue || "Special Issue",
@@ -2437,6 +2437,7 @@ app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
           pdf_url || "",
           pagesJson,
           category || "Leadership",
+          description || "",
           is_featured ? 1 : 0,
         ]
       );
@@ -2451,6 +2452,7 @@ app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
       pdf_url: pdf_url || "",
       pages_list: pagesJson,
       category: category || "Leadership",
+      description: description || "",
       is_featured: is_featured ? 1 : 0,
       created_at: new Date(),
     };
@@ -2465,14 +2467,14 @@ app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
 // Admin update magazine issue
 app.put("/api/admin/magazines/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { issue, title, date, month, cover, pdf_url, pages_list, category, is_featured } = req.body;
+  const { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
 
   const pagesJson = typeof pages_list === "string" ? pages_list : JSON.stringify(pages_list || [cover]);
 
   try {
     if (pool) {
       await pool.query(
-        "UPDATE magazines SET issue = ?, title = ?, date = ?, month = ?, cover = ?, pdf_url = ?, pages_list = ?, category = ?, is_featured = ? WHERE id = ?",
+        "UPDATE magazines SET issue = ?, title = ?, date = ?, month = ?, cover = ?, pdf_url = ?, pages_list = ?, category = ?, description = ?, is_featured = ? WHERE id = ?",
         [
           issue,
           title,
@@ -2482,6 +2484,7 @@ app.put("/api/admin/magazines/:id", authenticateAdmin, async (req, res) => {
           pdf_url || "",
           pagesJson,
           category || "Leadership",
+          description || "",
           is_featured ? 1 : 0,
           id,
         ]

@@ -268,18 +268,73 @@ export default function AdminDashboardPage() {
   const [selectedPartnerLeadDetail, setSelectedPartnerLeadDetail] = useState<any | null>(null);
   const [cmsMagazines, setCmsMagazines] = useState<MagazineItem[]>([]);
   const [editingMag, setEditingMag] = useState<MagazineItem | null>(null);
+
+  // Helper utilities for Executive Magazines CMS
+  const calculateNextIssueNumber = (magazines: MagazineItem[]) => {
+    if (!magazines || magazines.length === 0) return "Issue 29";
+    let maxNum = 0;
+    magazines.forEach((mag) => {
+      const match = mag.issue?.match(/\d+/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    });
+    return `Issue ${maxNum > 0 ? maxNum + 1 : 29}`;
+  };
+
+  const getCurrentMonthIso = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  };
+
+  const formatIsoMonthToLabel = (isoMonth: string) => {
+    if (!isoMonth) return "October 2026";
+    if (isoMonth.includes(" ") && !isoMonth.includes("-")) return isoMonth;
+    const parts = isoMonth.split("-");
+    const yearStr = parts[0];
+    const monthStr = parts[1];
+    if (!yearStr || !monthStr) return isoMonth;
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    if (isNaN(year) || isNaN(month)) return isoMonth;
+    const dateObj = new Date(year, month - 1, 1);
+    if (isNaN(dateObj.getTime())) return isoMonth;
+    return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  };
+
   const [newMagForm, setNewMagForm] = useState({
-    issue: "Issue 29",
+    issue: "",
     title: "",
-    date: "October 2026",
-    month: "October 2026",
+    date: getCurrentMonthIso(),
+    month: formatIsoMonthToLabel(getCurrentMonthIso()),
     cover: "",
     pdf_url: "",
     pages_list: "",
     category: "Leadership",
+    description: "",
     is_featured: false,
   });
   const [magUploading, setMagUploading] = useState(false);
+
+  const resetMagForm = (magList = cmsMagazines) => {
+    const currentIsoMonth = getCurrentMonthIso();
+    setEditingMag(null);
+    setNewMagForm({
+      issue: calculateNextIssueNumber(magList),
+      title: "",
+      date: currentIsoMonth,
+      month: formatIsoMonthToLabel(currentIsoMonth),
+      cover: "",
+      pdf_url: "",
+      pages_list: "",
+      category: "Leadership",
+      description: "",
+      is_featured: false,
+    });
+  };
 
   // Careers & Jobs CMS State
   const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
@@ -2661,18 +2716,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(isEditing ? "Magazine updated!" : "New Magazine published!");
-        setNewMagForm({
-          issue: "Issue 29",
-          title: "",
-          date: "October 2026",
-          month: "October 2026",
-          cover: "",
-          pdf_url: "",
-          pages_list: "",
-          category: "Leadership",
-          is_featured: false,
-        });
-        setEditingMag(null);
+        resetMagForm();
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to save magazine.");
@@ -6499,26 +6543,48 @@ export default function AdminDashboardPage() {
           {/* TAB: EXECUTIVE TALKS MAGAZINE CMS */}
           {activeTab === "magazines" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
-                <p className="text-xs text-slate-500 font-medium">
-                  Upload cover images, PDF downloads, and flipbook page spreads for Executive Talks Magazine digital editions.
-                </p>
-                <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
-                  Published Editions: {cmsMagazines.length}
-                </span>
+              {/* Premium Header Banner */}
+              <div className="rounded-3xl border border-purple-200/80 bg-gradient-to-r from-purple-50 via-white to-cyan-50 p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-600/20">
+                    <BookOpen className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+                      Executive Talks Magazine CMS
+                    </h2>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Publish digital editions, upload high-res cover artwork, attach PDF downloads, and configure interactive flipbook page spreads.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="rounded-full bg-purple-100 border border-purple-200 px-3.5 py-1.5 text-xs font-extrabold text-purple-900 shadow-2xs flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                    Published: {cmsMagazines.length} Editions
+                  </span>
+                </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-3">
-                {/* Publish Form */}
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
-                    <PlusCircle className="h-5 w-5 text-purple-600" />
-                    {editingMag ? "Edit Magazine Edition" : "Publish New Magazine Edition"}
-                  </h3>
+              <div className="grid gap-6 lg:grid-cols-12">
+                {/* 1. PUBLISH / EDIT FORM (5 COLS) */}
+                <div className="lg:col-span-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5 h-fit">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2 font-display">
+                      <PlusCircle className="h-4 w-4 text-purple-600" />
+                      {editingMag ? "Edit Magazine Edition" : "Publish New Magazine Edition"}
+                    </h3>
+                    {editingMag && (
+                      <span className="text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                        Editing: {editingMag.id}
+                      </span>
+                    )}
+                  </div>
 
                   <form onSubmit={handleAddMagazine} className="space-y-4">
+                    {/* Edition Title */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Edition Title *
                       </label>
                       <input
@@ -6527,13 +6593,14 @@ export default function AdminDashboardPage() {
                         placeholder="e.g. Leading Beyond Today"
                         value={newMagForm.title}
                         onChange={(e) => setNewMagForm({ ...newMagForm, title: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none transition-all"
                       />
                     </div>
 
+                    {/* Issue Number & Month Datepicker */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                           Issue Number *
                         </label>
                         <input
@@ -6542,53 +6609,127 @@ export default function AdminDashboardPage() {
                           placeholder="e.g. Issue 29"
                           value={newMagForm.issue}
                           onChange={(e) => setNewMagForm({ ...newMagForm, issue: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                         />
+                        <p className="text-[10px] text-slate-400 mt-1">Auto-suggested issue #</p>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                          Month / Date *
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Publish Month / Date *
                         </label>
                         <input
-                          type="text"
+                          type="month"
                           required
-                          placeholder="e.g. October 2026"
-                          value={newMagForm.month}
-                          onChange={(e) => setNewMagForm({ ...newMagForm, month: e.target.value, date: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
+                          value={newMagForm.date.includes("-") ? newMagForm.date : getCurrentMonthIso()}
+                          onChange={(e) => {
+                            const iso = e.target.value;
+                            const formattedLabel = formatIsoMonthToLabel(iso);
+                            setNewMagForm({
+                              ...newMagForm,
+                              date: iso,
+                              month: formattedLabel,
+                            });
+                          }}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none cursor-pointer"
+                        />
+                        <p className="text-[10px] font-bold text-purple-700 mt-1 truncate">
+                          Formatted: {newMagForm.month || formatIsoMonthToLabel(newMagForm.date)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Category & Featured Toggle */}
+                    <div className="grid grid-cols-2 gap-3 items-end">
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Category *
+                        </label>
+                        <select
+                          value={newMagForm.category}
+                          onChange={(e) => setNewMagForm({ ...newMagForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none cursor-pointer"
+                        >
+                          <option value="Leadership">Leadership</option>
+                          <option value="HR">HR</option>
+                          <option value="Finance">Finance</option>
+                          <option value="Technology">Technology</option>
+                          <option value="GCC">GCC</option>
+                          <option value="Startup">Startup</option>
+                          <option value="Healthcare">Healthcare</option>
+                          <option value="Manufacturing">Manufacturing</option>
+                        </select>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 flex items-center justify-between">
+                        <label htmlFor="mag_featured" className="text-[11px] font-bold text-slate-800 cursor-pointer select-none">
+                          Featured Edition
+                        </label>
+                        <input
+                          type="checkbox"
+                          id="mag_featured"
+                          checked={newMagForm.is_featured}
+                          onChange={(e) => setNewMagForm({ ...newMagForm, is_featured: e.target.checked })}
+                          className="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
                         />
                       </div>
                     </div>
 
+                    {/* Magazine Content / Editorial Description */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Category *
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Magazine Content / Editorial Summary
                       </label>
-                      <select
-                        value={newMagForm.category}
-                        onChange={(e) => setNewMagForm({ ...newMagForm, category: e.target.value })}
+                      <textarea
+                        rows={3}
+                        placeholder="Enter magazine summary, executive keynotes overview, or featured article highlights..."
+                        value={newMagForm.description}
+                        onChange={(e) => setNewMagForm({ ...newMagForm, description: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
-                      >
-                        <option value="Leadership">Leadership</option>
-                        <option value="HR">HR</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Technology">Technology</option>
-                        <option value="GCC">GCC</option>
-                        <option value="Startup">Startup</option>
-                        <option value="Healthcare">Healthcare</option>
-                        <option value="Manufacturing">Manufacturing</option>
-                      </select>
+                      />
                     </div>
 
-                    {/* Cover Image Upload / Input */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        1. Upload Magazine Cover Image *
-                      </label>
-                      
-                      <div className="mb-2">
-                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
+                    {/* 1. Cover Image Upload / Input */}
+                    <div className="space-y-2 border-t border-slate-200 pt-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                          1. Magazine Cover Image *
+                        </label>
+                        {newMagForm.cover && (
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            ✓ Cover Attached
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Live Thumbnail Preview Box */}
+                      {newMagForm.cover ? (
+                        <div className="relative rounded-2xl border border-purple-200 bg-purple-50/50 p-3 flex items-center gap-3">
+                          <img
+                            src={newMagForm.cover}
+                            alt="Cover Preview"
+                            className="h-20 w-14 rounded-lg object-cover border border-purple-300 shadow-sm shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className="text-xs font-bold text-slate-900 truncate">Cover Artwork Ready</p>
+                            <p className="text-[10px] text-slate-500 font-mono truncate">{newMagForm.cover.slice(0, 40)}...</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewMagForm({ ...newMagForm, cover: "" })}
+                            className="p-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors text-xs font-bold"
+                            title="Remove Cover"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : null}
+
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3.5 py-2.5 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-2xs">
                           <Upload className="h-4 w-4 text-purple-600" />
                           <span>Choose Cover Image File</span>
                           <input
@@ -6603,7 +6744,7 @@ export default function AdminDashboardPage() {
                                 const base64Data = reader.result as string;
                                 setNewMagForm((prev) => ({ ...prev, cover: base64Data }));
                                 try {
-                                  toast.loading("Uploading cover image...");
+                                  toast.loading("Uploading magazine cover image...");
                                   const res = await fetch("/api/admin/upload", {
                                     method: "POST",
                                     headers: {
@@ -6616,7 +6757,7 @@ export default function AdminDashboardPage() {
                                   toast.dismiss();
                                   if (uploadRes.success && uploadRes.url) {
                                     setNewMagForm((prev) => ({ ...prev, cover: uploadRes.url }));
-                                    toast.success("Cover image uploaded!");
+                                    toast.success("Cover image uploaded successfully!");
                                   } else {
                                     toast.success("Cover image loaded into form preview!");
                                   }
@@ -6633,24 +6774,30 @@ export default function AdminDashboardPage() {
 
                       <input
                         type="text"
-                        required
-                        placeholder="Or enter Cover Image URL (https://...)"
+                        placeholder="Or paste Cover Image URL (https://...)"
                         value={newMagForm.cover}
                         onChange={(e) => setNewMagForm({ ...newMagForm, cover: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                       />
                     </div>
 
-                    {/* PDF Document Upload / Input */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        2. Upload Full PDF Document
-                      </label>
-                      
-                      <div className="mb-2">
-                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
-                          <Upload className="h-4 w-4 text-purple-600" />
-                          <span>Choose PDF File</span>
+                    {/* 2. PDF Document Upload */}
+                    <div className="space-y-2 border-t border-slate-200 pt-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                          2. Upload Full PDF Document
+                        </label>
+                        {newMagForm.pdf_url && (
+                          <span className="text-[10px] text-cyan-700 font-bold bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                            ✓ PDF Attached
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 px-3.5 py-2.5 text-xs font-bold text-cyan-900 transition-colors w-full justify-center shadow-2xs">
+                          <Upload className="h-4 w-4 text-cyan-600" />
+                          <span>Choose PDF Document File</span>
                           <input
                             type="file"
                             accept="application/pdf"
@@ -6676,7 +6823,7 @@ export default function AdminDashboardPage() {
                                   toast.dismiss();
                                   if (uploadRes.success && uploadRes.url) {
                                     setNewMagForm((prev) => ({ ...prev, pdf_url: uploadRes.url }));
-                                    toast.success("PDF document uploaded!");
+                                    toast.success("PDF document uploaded successfully!");
                                   } else {
                                     toast.success("PDF document attached!");
                                   }
@@ -6693,114 +6840,135 @@ export default function AdminDashboardPage() {
 
                       <input
                         type="url"
-                        placeholder="Or enter PDF URL (https://...)"
+                        placeholder="Or paste PDF Download URL (https://...)"
                         value={newMagForm.pdf_url}
                         onChange={(e) => setNewMagForm({ ...newMagForm, pdf_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                       />
                     </div>
 
-                    {/* Individual Pages Upload / Input */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        3. Upload Individual Pages (For Interactive Flipbook)
-                      </label>
-
-                      <div className="mb-2">
-                        <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-purple-50 hover:bg-purple-100 border-purple-200 px-3.5 py-2 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-xs">
-                          <Upload className="h-4 w-4 text-purple-600" />
-                          <span>Choose Multiple Page Images</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={async (e) => {
-                              const files = Array.from(e.target.files || []);
-                              if (files.length === 0) return;
-                              toast.loading(`Uploading ${files.length} page images...`);
-                              const uploadedUrls: string[] = [];
-
-                              for (const file of files) {
-                                await new Promise<void>((resolve) => {
-                                  const reader = new FileReader();
-                                  reader.onload = async () => {
-                                    const base64Data = reader.result as string;
-                                    try {
-                                      const res = await fetch("/api/admin/upload", {
-                                        method: "POST",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                        body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
-                                      });
-                                      const uploadRes = await res.json();
-                                      if (uploadRes.success && uploadRes.url) {
-                                        uploadedUrls.push(uploadRes.url);
-                                      } else {
-                                        uploadedUrls.push(base64Data);
-                                      }
-                                    } catch (err) {
-                                      uploadedUrls.push(base64Data);
-                                    }
-                                    resolve();
-                                  };
-                                  reader.readAsDataURL(file);
-                                });
-                              }
-                              toast.dismiss();
-                              setNewMagForm((prev) => ({
-                                ...prev,
-                                pages_list: uploadedUrls.join(", "),
-                              }));
-                              toast.success(`Attached ${uploadedUrls.length} page images for flipbook!`);
-                            }}
-                          />
+                    {/* 3. Flipbook Individual Page Spreads Upload */}
+                    <div className="space-y-2 border-t border-slate-200 pt-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                          3. Upload Individual Pages (Interactive Flipbook)
                         </label>
+                        {newMagForm.pages_list && (
+                          <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                            {newMagForm.pages_list.split(",").filter(Boolean).length} Pages
+                          </span>
+                        )}
                       </div>
 
+                      <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3.5 py-2.5 text-xs font-bold text-purple-900 transition-colors w-full justify-center shadow-2xs">
+                        <Upload className="h-4 w-4 text-purple-600" />
+                        <span>Select Multiple Page Images</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length === 0) return;
+                            toast.loading(`Processing & uploading ${files.length} page images...`);
+                            const uploadedUrls: string[] = [];
+
+                            for (const file of files) {
+                              await new Promise<void>((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = async () => {
+                                  const base64Data = reader.result as string;
+                                  try {
+                                    const res = await fetch("/api/admin/upload", {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                      body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
+                                    });
+                                    const uploadRes = await res.json();
+                                    if (uploadRes.success && uploadRes.url) {
+                                      uploadedUrls.push(uploadRes.url);
+                                    } else {
+                                      uploadedUrls.push(base64Data);
+                                    }
+                                  } catch (err) {
+                                    uploadedUrls.push(base64Data);
+                                  }
+                                  resolve();
+                                };
+                                reader.readAsDataURL(file);
+                              });
+                            }
+                            toast.dismiss();
+                            const existingList = newMagForm.pages_list ? newMagForm.pages_list.split(",").map(s => s.trim()).filter(Boolean) : [];
+                            const combined = [...existingList, ...uploadedUrls];
+                            setNewMagForm((prev) => ({
+                              ...prev,
+                              pages_list: combined.join(", "),
+                            }));
+                            toast.success(`Attached ${uploadedUrls.length} page images for flipbook!`);
+                          }}
+                        />
+                      </label>
+
+                      {/* Attached Pages Thumbnail Strip */}
+                      {newMagForm.pages_list && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 max-h-36 overflow-y-auto space-y-2">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Attached Page Spreads ({newMagForm.pages_list.split(",").filter(Boolean).length})</p>
+                          <div className="flex flex-wrap gap-2">
+                            {newMagForm.pages_list.split(",").map((pUrl, pIdx) => {
+                              const cleanUrl = pUrl.trim();
+                              if (!cleanUrl) return null;
+                              return (
+                                <div key={pIdx} className="relative group shrink-0">
+                                  <img
+                                    src={cleanUrl}
+                                    alt={`Page ${pIdx + 1}`}
+                                    className="h-14 w-10 object-cover rounded-md border border-slate-300 shadow-2xs"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = "none";
+                                    }}
+                                  />
+                                  <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] text-white text-center font-mono py-0.2">
+                                    P.{pIdx + 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const allPages = newMagForm.pages_list.split(",").map(s => s.trim()).filter(Boolean);
+                                      allPages.splice(pIdx, 1);
+                                      setNewMagForm({ ...newMagForm, pages_list: allPages.join(", ") });
+                                    }}
+                                    className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-bold shadow-xs hover:scale-110 transition-transform"
+                                    title="Remove Page"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       <textarea
-                        rows={3}
-                        placeholder="Comma-separated page URLs: /uploads/p1.png, /uploads/p2.png..."
+                        rows={2}
+                        placeholder="Or enter comma-separated page URLs: /uploads/p1.png, /uploads/p2.png..."
                         value={newMagForm.pages_list}
                         onChange={(e) => setNewMagForm({ ...newMagForm, pages_list: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
                       />
                     </div>
 
-                    {/* Featured Checkbox */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="checkbox"
-                        id="mag_featured"
-                        checked={newMagForm.is_featured}
-                        onChange={(e) => setNewMagForm({ ...newMagForm, is_featured: e.target.checked })}
-                        className="h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                      />
-                      <label htmlFor="mag_featured" className="text-xs font-bold text-slate-800 cursor-pointer">
-                        Set as Featured Cover Issue on Hero
-                      </label>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
+                    {/* Submit / Cancel Buttons */}
+                    <div className="flex gap-2 pt-3 border-t border-slate-200">
                       {editingMag && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingMag(null);
-                            setNewMagForm({
-                              issue: "Issue 29",
-                              title: "",
-                              date: "October 2026",
-                              month: "October 2026",
-                              cover: "",
-                              pdf_url: "",
-                              pages_list: "",
-                              category: "Leadership",
-                              is_featured: false,
-                            });
-                          }}
+                          onClick={() => resetMagForm()}
                           className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
                           Cancel
@@ -6809,113 +6977,168 @@ export default function AdminDashboardPage() {
                       <button
                         type="submit"
                         disabled={magUploading}
-                        className="flex-1 rounded-2xl bg-purple-600 py-3 text-xs font-bold text-white shadow-md hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50"
+                        className="flex-1 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3 text-xs font-extrabold text-white shadow-md shadow-purple-600/20 hover:from-purple-700 hover:to-indigo-700 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        {magUploading ? "Saving..." : editingMag ? "Update Magazine Edition" : "Publish Magazine Edition"}
+                        <BookOpen className="h-4 w-4" />
+                        <span>{magUploading ? "Saving..." : editingMag ? "Update Magazine Edition" : "Publish Magazine Edition"}</span>
                       </button>
                     </div>
                   </form>
                 </div>
 
-                {/* Published Magazines Display */}
-                <div className="lg:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 flex items-center justify-between border-b border-slate-200 pb-3">
-                    <span>Published Magazine Editions ({cmsMagazines.length})</span>
-                    <span className="text-xs text-slate-500 font-normal">Active in Executive Library</span>
-                  </h3>
+                {/* 2. PUBLISHED EDITIONS SHOWCASE (7 COLS) */}
+                <div className="lg:col-span-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 font-display">
+                        Published Magazine Library ({cmsMagazines.length})
+                      </h3>
+                      <p className="text-xs text-slate-500">Active editions accessible to executive delegates online</p>
+                    </div>
+                  </div>
 
                   {cmsMagazines.length === 0 ? (
-                    <div className="py-12 text-center text-slate-500 text-xs">
-                      No magazine editions published yet.
+                    <div className="py-16 text-center text-slate-400 text-xs rounded-2xl border border-dashed border-slate-200 bg-slate-50">
+                      <BookOpen className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                      No magazine editions published yet. Fill in the form on the left to publish your first issue.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {cmsMagazines.map((mag) => (
-                        <div
-                          key={mag.id}
-                          className="flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:border-purple-400 transition-all space-y-3"
-                        >
-                          <div className="flex gap-3">
-                            <img
-                              src={mag.cover}
-                              alt={mag.title}
-                              className="h-24 w-18 rounded-xl object-cover border border-slate-300 shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                            <div className="min-w-0 flex-1 space-y-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {cmsMagazines.map((mag) => {
+                        const pageCount = Array.isArray(mag.pages_list)
+                          ? mag.pages_list.length
+                          : typeof mag.pages_list === "string" && mag.pages_list.trim()
+                          ? mag.pages_list.split(",").filter(Boolean).length
+                          : 0;
+
+                        return (
+                          <div
+                            key={mag.id}
+                            className={`flex flex-col justify-between p-4 rounded-2xl border transition-all duration-300 ${
+                              mag.is_featured
+                                ? "border-purple-300 bg-gradient-to-b from-purple-50/60 to-white shadow-md shadow-purple-500/5"
+                                : "border-slate-200 bg-slate-50/50 hover:border-purple-300 hover:bg-white"
+                            }`}
+                          >
+                            <div className="space-y-3">
+                              {/* Top Bar with Badges */}
                               <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                                <span className="text-[10px] font-mono font-extrabold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-200">
                                   {mag.issue}
                                 </span>
                                 {mag.is_featured ? (
-                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
                                     ★ Featured
                                   </span>
-                                ) : null}
+                                ) : (
+                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                    {mag.category}
+                                  </span>
+                                )}
                               </div>
 
-                              <h4 className="font-bold text-slate-900 text-sm truncate">
-                                {mag.title}
-                              </h4>
-                              
-                              <p className="text-[11px] text-slate-500 font-medium">
-                                {mag.month || mag.date} · {mag.category}
-                              </p>
+                              {/* Content & Cover Image Grid */}
+                              <div className="flex gap-3">
+                                <div className="relative group shrink-0">
+                                  <img
+                                    src={mag.cover}
+                                    alt={mag.title}
+                                    className="h-28 w-20 rounded-xl object-cover border border-slate-300 shadow-sm group-hover:scale-105 transition-transform"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                  <h4 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2">
+                                    {mag.title}
+                                  </h4>
+                                  
+                                  <p className="text-[11px] text-purple-700 font-bold">
+                                    {mag.month || mag.date} · {mag.category}
+                                  </p>
+
+                                  {mag.description && (
+                                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                                      {mag.description}
+                                    </p>
+                                  )}
+
+                                  {/* Documents & Spreads Indicators */}
+                                  <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {mag.pdf_url && (
+                                      <span className="text-[9px] font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                                        📄 PDF Document
+                                      </span>
+                                    )}
+                                    {pageCount > 0 && (
+                                      <span className="text-[9px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                        📖 {pageCount} Pages Flipbook
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleMagFeatured(mag)}
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
-                                mag.is_featured
-                                  ? "bg-amber-100 text-amber-800 border-amber-300"
-                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300"
-                              }`}
-                            >
-                              {mag.is_featured ? "Featured ★" : "Make Featured"}
-                            </button>
-
-                            <div className="flex items-center gap-1">
+                            {/* Card Footer Toolbar */}
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-200 text-xs">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setEditingMag(mag);
-                                  setNewMagForm({
-                                    issue: mag.issue,
-                                    title: mag.title,
-                                    date: mag.date,
-                                    month: mag.month || mag.date,
-                                    cover: mag.cover,
-                                    pdf_url: mag.pdf_url || "",
-                                    pages_list: Array.isArray(mag.pages_list)
-                                      ? mag.pages_list.join(", ")
-                                      : mag.pages_list || "",
-                                    category: mag.category || "Leadership",
-                                    is_featured: Boolean(mag.is_featured),
-                                  });
-                                }}
-                                className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
-                                title="Edit Edition"
+                                onClick={() => handleToggleMagFeatured(mag)}
+                                className={`text-[11px] font-extrabold px-3 py-1 rounded-xl border transition-colors cursor-pointer ${
+                                  mag.is_featured
+                                    ? "bg-amber-100 text-amber-900 border-amber-300"
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300"
+                                }`}
                               >
-                                <Edit3 className="h-4 w-4" />
+                                {mag.is_featured ? "Featured ★" : "Make Featured"}
                               </button>
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteMagazine(mag.id)}
-                                className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                                title="Delete Edition"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingMag(mag);
+                                    let isoDate = getCurrentMonthIso();
+                                    if (mag.date && mag.date.includes("-")) {
+                                      isoDate = mag.date;
+                                    }
+                                    setNewMagForm({
+                                      issue: mag.issue,
+                                      title: mag.title,
+                                      date: isoDate,
+                                      month: mag.month || mag.date || formatIsoMonthToLabel(isoDate),
+                                      cover: mag.cover,
+                                      pdf_url: mag.pdf_url || "",
+                                      pages_list: Array.isArray(mag.pages_list)
+                                        ? mag.pages_list.join(", ")
+                                        : mag.pages_list || "",
+                                      category: mag.category || "Leadership",
+                                      description: mag.description || "",
+                                      is_featured: Boolean(mag.is_featured),
+                                    });
+                                  }}
+                                  className="p-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
+                                  title="Edit Edition"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMagazine(mag.id)}
+                                  className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                                  title="Delete Edition"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

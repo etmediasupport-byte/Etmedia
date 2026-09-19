@@ -428,6 +428,7 @@ export async function ensureMagazinesTable() {
         pdf_url LONGTEXT,
         pages_list LONGTEXT,
         category VARCHAR(100) DEFAULT 'Leadership',
+        description LONGTEXT,
         is_featured TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -435,6 +436,7 @@ export async function ensureMagazinesTable() {
     try { await pool.query("ALTER TABLE magazines MODIFY COLUMN cover LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE magazines MODIFY COLUMN pdf_url LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE magazines MODIFY COLUMN pages_list LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE magazines ADD COLUMN description LONGTEXT;"); } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating magazines table:", err);
   }
@@ -462,6 +464,7 @@ export async function seedDefaultMagazines() {
             "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800",
           ]),
           category: "Leadership",
+          description: "Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets.",
           is_featured: 1,
         },
         {
@@ -478,6 +481,7 @@ export async function seedDefaultMagazines() {
             "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=800",
           ]),
           category: "HR",
+          description: "Decoding HR transformation, talent retention, AI in recruitment, and building high-performance organizational culture for global capability centers.",
           is_featured: 0,
         },
         {
@@ -493,14 +497,15 @@ export async function seedDefaultMagazines() {
             "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=800",
           ]),
           category: "Finance",
+          description: "Strategic insights into corporate treasury management, ESG investing, risk compliance, and capital allocation frameworks for modern financial officers.",
           is_featured: 0,
         },
       ];
 
       for (const mag of defaultMagazines) {
         await pool.query(
-          "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          [mag.id, mag.issue, mag.title, mag.date, mag.month, mag.cover, mag.pdf_url, mag.pages_list, mag.category, mag.is_featured]
+          "INSERT INTO magazines (id, issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [mag.id, mag.issue, mag.title, mag.date, mag.month, mag.cover, mag.pdf_url, mag.pages_list, mag.category, mag.description, mag.is_featured]
         );
       }
       console.log("[MySQL] Seeded initial default magazine issues!");

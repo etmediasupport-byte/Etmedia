@@ -67,11 +67,17 @@ export default function MagazinePage() {
   // Helper to parse pages array from magazine
   const getPagesArray = (mag: MagazineItem): string[] => {
     if (Array.isArray(mag.pages_list)) return mag.pages_list;
-    if (typeof mag.pages_list === "string") {
+    if (typeof mag.pages_list === "string" && mag.pages_list.trim()) {
       try {
         const parsed = JSON.parse(mag.pages_list);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
+      if (mag.pages_list.includes(",")) {
+        const split = mag.pages_list.split(",").map((s) => s.trim()).filter(Boolean);
+        if (split.length > 0) return split;
+      } else if (mag.pages_list.trim().startsWith("http") || mag.pages_list.trim().startsWith("data:")) {
+        return [mag.pages_list.trim()];
+      }
     }
     return [mag.cover, mag.cover];
   };
@@ -182,7 +188,7 @@ export default function MagazinePage() {
               </p>
 
               <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
-                Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets.
+                {featuredMagazine.description || "Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets."}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -317,6 +323,12 @@ export default function MagazinePage() {
                         <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1">
                           {mag.title}
                         </h3>
+
+                        {mag.description && (
+                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed font-sans">
+                            {mag.description}
+                          </p>
+                        )}
                       </div>
                     </div>
 

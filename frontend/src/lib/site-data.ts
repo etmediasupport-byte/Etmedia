@@ -436,6 +436,7 @@ export type MagazineItem = {
   pdf_url?: string;
   pages_list?: string | string[];
   category: string;
+  description?: string;
   is_featured?: boolean | number;
   views?: number;
 };
