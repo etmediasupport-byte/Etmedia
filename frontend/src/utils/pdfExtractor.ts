@@ -66,3 +66,44 @@ export async function extractPdfPagesToDataUrls(
     throw error;
   }
 }
+
+/**
+ * Safely parses pages_list from string (JSON array or delimited string), array, or null/undefined.
+ * Correctly preserves Base64 Data URLs (data:image/jpeg;base64,...) which contain internal header commas!
+ */
+export function parsePagesList(input: any): string[] {
+  if (!input) return [];
+
+  // If already an array
+  if (Array.isArray(input)) {
+    return input.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof input !== "string") return [];
+  const str = input.trim();
+  if (!str) return [];
+
+  // 1. Try JSON Array parsing (Recommended format)
+  if (str.startsWith("[") && str.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch (e) {}
+  }
+
+  // 2. If contains data URLs, extract full data URLs safely without splitting header comma
+  if (str.includes("data:image/")) {
+    const matches = str.match(/data:image\/[a-zA-Z0-9+\-.]+;base64,[A-Za-z0-9+/=]+/g);
+    if (matches && matches.length > 0) {
+      return matches;
+    }
+  }
+
+  // 3. Fallback for line-separated or comma-separated HTTP / relative URLs
+  return str
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "data:image/jpeg;base64" && s !== "data:image/png;base64");
+}

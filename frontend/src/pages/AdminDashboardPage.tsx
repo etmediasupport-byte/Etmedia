@@ -90,7 +90,7 @@ import {
   Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { extractPdfPagesToDataUrls } from "@/utils/pdfExtractor";
+import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
 
 interface Registration {
@@ -6831,13 +6831,11 @@ export default function AdminDashboardPage() {
                                   toast.dismiss();
 
                                   if (extractedPages.length > 0) {
-                                    const existingList = newMagForm.pages_list
-                                      ? newMagForm.pages_list.split(",").map((s) => s.trim()).filter(Boolean)
-                                      : [];
+                                    const existingList = parsePagesList(newMagForm.pages_list);
                                     const combined = [...existingList, ...extractedPages];
                                     setNewMagForm((prev) => ({
                                       ...prev,
-                                      pages_list: combined.join(", "),
+                                      pages_list: JSON.stringify(combined),
                                       cover: prev.cover || extractedPages[0] || prev.cover,
                                     }));
                                     toast.success(`PDF attached & ${extractedPages.length} pages extracted for flipbook!`);
@@ -6878,13 +6876,11 @@ export default function AdminDashboardPage() {
                                 );
                                 toast.dismiss();
                                 if (extractedPages.length > 0) {
-                                  const existingList = newMagForm.pages_list
-                                    ? newMagForm.pages_list.split(",").map((s) => s.trim()).filter(Boolean)
-                                    : [];
+                                  const existingList = parsePagesList(newMagForm.pages_list);
                                   const combined = [...existingList, ...extractedPages];
                                   setNewMagForm((prev) => ({
                                     ...prev,
-                                    pages_list: combined.join(", "),
+                                    pages_list: JSON.stringify(combined),
                                     cover: prev.cover || extractedPages[0] || prev.cover,
                                   }));
                                   toast.success(`Extracted ${extractedPages.length} pages from PDF URL!`);
@@ -6910,9 +6906,9 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
                           3. Upload Individual Pages (Interactive Flipbook)
                         </label>
-                        {newMagForm.pages_list && (
+                        {parsePagesList(newMagForm.pages_list).length > 0 && (
                           <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                            {newMagForm.pages_list.split(",").filter(Boolean).length} Pages
+                            {parsePagesList(newMagForm.pages_list).length} Pages
                           </span>
                         )}
                       </div>
@@ -6928,7 +6924,7 @@ export default function AdminDashboardPage() {
                           onChange={async (e) => {
                             const files = Array.from(e.target.files || []);
                             if (files.length === 0) return;
-                            toast.loading(`Processing & uploading ${files.length} page images...`);
+                            toast.loading(`Processing & attaching ${files.length} page images...`);
                             const uploadedUrls: string[] = [];
 
                             for (const file of files) {
@@ -6960,11 +6956,12 @@ export default function AdminDashboardPage() {
                               });
                             }
                             toast.dismiss();
-                            const existingList = newMagForm.pages_list ? newMagForm.pages_list.split(",").map(s => s.trim()).filter(Boolean) : [];
+                            const existingList = parsePagesList(newMagForm.pages_list);
                             const combined = [...existingList, ...uploadedUrls];
                             setNewMagForm((prev) => ({
                               ...prev,
-                              pages_list: combined.join(", "),
+                              pages_list: JSON.stringify(combined),
+                              cover: prev.cover || uploadedUrls[0] || prev.cover,
                             }));
                             toast.success(`Attached ${uploadedUrls.length} page images for flipbook!`);
                           }}
@@ -6972,48 +6969,43 @@ export default function AdminDashboardPage() {
                       </label>
 
                       {/* Attached Pages Thumbnail Strip */}
-                      {newMagForm.pages_list && (
+                      {parsePagesList(newMagForm.pages_list).length > 0 && (
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 max-h-36 overflow-y-auto space-y-2">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Attached Page Spreads ({newMagForm.pages_list.split(",").filter(Boolean).length})</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Attached Page Spreads ({parsePagesList(newMagForm.pages_list).length})
+                          </p>
                           <div className="flex flex-wrap gap-2">
-                            {newMagForm.pages_list.split(",").map((pUrl, pIdx) => {
-                              const cleanUrl = pUrl.trim();
-                              if (!cleanUrl) return null;
-                              return (
-                                <div key={pIdx} className="relative group shrink-0">
-                                  <img
-                                    src={cleanUrl}
-                                    alt={`Page ${pIdx + 1}`}
-                                    className="h-14 w-10 object-cover rounded-md border border-slate-300 shadow-2xs"
-                                    onError={(e) => {
-                                      (e.target as HTMLElement).style.display = "none";
-                                    }}
-                                  />
-                                  <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] text-white text-center font-mono py-0.2">
-                                    P.{pIdx + 1}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const allPages = newMagForm.pages_list.split(",").map(s => s.trim()).filter(Boolean);
-                                      allPages.splice(pIdx, 1);
-                                      setNewMagForm({ ...newMagForm, pages_list: allPages.join(", ") });
-                                    }}
-                                    className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-bold shadow-xs hover:scale-110 transition-transform"
-                                    title="Remove Page"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              );
-                            })}
+                            {parsePagesList(newMagForm.pages_list).map((pUrl, pIdx) => (
+                              <div key={pIdx} className="relative group shrink-0">
+                                <img
+                                  src={pUrl}
+                                  alt={`Page ${pIdx + 1}`}
+                                  className="h-14 w-10 object-cover rounded-md border border-slate-300 shadow-2xs bg-slate-200"
+                                />
+                                <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] text-white text-center font-mono py-0.2">
+                                  P.{pIdx + 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currentPages = parsePagesList(newMagForm.pages_list);
+                                    currentPages.splice(pIdx, 1);
+                                    setNewMagForm({ ...newMagForm, pages_list: JSON.stringify(currentPages) });
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-bold shadow-xs hover:scale-110 transition-transform"
+                                  title="Remove Page"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
 
                       <textarea
                         rows={2}
-                        placeholder="Or enter comma-separated page URLs: /uploads/p1.png, /uploads/p2.png..."
+                        placeholder="Or enter page URLs or JSON array of image URLs..."
                         value={newMagForm.pages_list}
                         onChange={(e) => setNewMagForm({ ...newMagForm, pages_list: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
@@ -7062,11 +7054,7 @@ export default function AdminDashboardPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {cmsMagazines.map((mag) => {
-                        const pageCount = Array.isArray(mag.pages_list)
-                          ? mag.pages_list.length
-                          : typeof mag.pages_list === "string" && mag.pages_list.trim()
-                          ? mag.pages_list.split(",").filter(Boolean).length
-                          : 0;
+                        const pageCount = parsePagesList(mag.pages_list).length;
 
                         return (
                           <div
@@ -7169,9 +7157,9 @@ export default function AdminDashboardPage() {
                                       month: mag.month || mag.date || formatIsoMonthToLabel(isoDate),
                                       cover: mag.cover,
                                       pdf_url: mag.pdf_url || "",
-                                      pages_list: Array.isArray(mag.pages_list)
-                                        ? mag.pages_list.join(", ")
-                                        : mag.pages_list || "",
+                                      pages_list: mag.pages_list
+                                        ? (typeof mag.pages_list === "string" ? mag.pages_list : JSON.stringify(mag.pages_list))
+                                        : "",
                                       category: mag.category || "Leadership",
                                       description: mag.description || "",
                                       is_featured: Boolean(mag.is_featured),

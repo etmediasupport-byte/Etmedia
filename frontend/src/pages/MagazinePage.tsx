@@ -23,7 +23,7 @@ import { images, magazineCategories, getDefaultMagazines, MagazineItem } from "@
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal, SectionHeading } from "@/components/site/primitives";
 import { socket } from "@/lib/socket";
-import { extractPdfPagesToDataUrls } from "@/utils/pdfExtractor";
+import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 
 export default function MagazinePage() {
   const [magazinesList, setMagazinesList] = useState<MagazineItem[]>([]);
@@ -68,19 +68,8 @@ export default function MagazinePage() {
 
   // Helper to parse pages array from magazine
   const getPagesArray = (mag: MagazineItem): string[] => {
-    if (Array.isArray(mag.pages_list)) return mag.pages_list;
-    if (typeof mag.pages_list === "string" && mag.pages_list.trim()) {
-      try {
-        const parsed = JSON.parse(mag.pages_list);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-      if (mag.pages_list.includes(",")) {
-        const split = mag.pages_list.split(",").map((s) => s.trim()).filter(Boolean);
-        if (split.length > 0) return split;
-      } else if (mag.pages_list.trim().startsWith("http") || mag.pages_list.trim().startsWith("data:")) {
-        return [mag.pages_list.trim()];
-      }
-    }
+    const parsed = parsePagesList(mag.pages_list);
+    if (parsed.length > 0) return parsed;
     return [mag.cover, mag.cover];
   };
 
