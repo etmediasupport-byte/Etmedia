@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   Shield,
   FileText,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { images, magazineCategories, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal, SectionHeading } from "@/components/site/primitives";
 import { socket } from "@/lib/socket";
+import { extractPdfPagesToDataUrls } from "@/utils/pdfExtractor";
 
 export default function MagazinePage() {
   const [magazinesList, setMagazinesList] = useState<MagazineItem[]>([]);
@@ -82,15 +84,37 @@ export default function MagazinePage() {
     return [mag.cover, mag.cover];
   };
 
-  const openReader = (mag: MagazineItem) => {
+  const [pdfExtractedPages, setPdfExtractedPages] = useState<string[]>([]);
+  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+
+  const openReader = async (mag: MagazineItem) => {
     setActiveMagazine(mag);
     setCurrentPageIndex(0);
     setZoomLevel(1);
+    setPdfExtractedPages([]);
+
+    const staticPages = getPagesArray(mag);
+    // If magazine has a PDF URL but pages_list is empty/default fallback, dynamically extract PDF pages for reader!
+    if (mag.pdf_url && (staticPages.length <= 2 && (!mag.pages_list || staticPages[0] === mag.cover))) {
+      try {
+        setIsExtractingPdf(true);
+        const pages = await extractPdfPagesToDataUrls(mag.pdf_url);
+        if (pages.length > 0) {
+          setPdfExtractedPages(pages);
+        }
+      } catch (err) {
+        console.warn("Could not dynamically extract PDF pages:", err);
+      } finally {
+        setIsExtractingPdf(false);
+      }
+    }
   };
 
   const closeReader = () => {
     setActiveMagazine(null);
     setZoomLevel(1);
+    setPdfExtractedPages([]);
+    setIsExtractingPdf(false);
     if (isFullscreen) {
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
@@ -126,7 +150,8 @@ export default function MagazinePage() {
     return matchesCategory && matchesSearch;
   });
 
-  const activePages = activeMagazine ? getPagesArray(activeMagazine) : [];
+  const staticPages = activeMagazine ? getPagesArray(activeMagazine) : [];
+  const activePages = pdfExtractedPages.length > 0 ? pdfExtractedPages : staticPages;
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -460,27 +485,37 @@ export default function MagazinePage() {
 
               {/* Flipbook Page Viewer Display */}
               <div className="relative w-full max-w-4xl max-h-[75vh] flex items-center justify-center [perspective:2000px]">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentPageIndex}
-                    initial={{ rotateY: -90, opacity: 0.2 }}
-                    animate={{ rotateY: 0, opacity: 1, scale: zoomLevel }}
-                    exit={{ rotateY: 90, opacity: 0.2 }}
-                    transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
-                    className="relative origin-left shadow-[0_50px_100px_-30px_rgba(0,0,0,0.9)] rounded-2xl overflow-hidden border border-slate-800 max-h-[70vh]"
-                  >
-                    <img
-                      src={activePages[currentPageIndex] || activeMagazine.cover}
-                      alt={`Page ${currentPageIndex + 1}`}
-                      className="h-full max-h-[70vh] w-auto object-contain bg-slate-950"
-                      onError={(e) => {
-                        // Fallback to cover if page image link fails
-                        (e.target as HTMLImageElement).src = activeMagazine.cover;
-                      }}
-                    />
-                    <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-slate-950/60 to-transparent pointer-events-none" />
-                  </motion.div>
-                </AnimatePresence>
+                {isExtractingPdf ? (
+                  <div className="flex flex-col items-center justify-center py-24 text-cyan-400 space-y-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-cyan-400" />
+                    <p className="text-sm font-extrabold text-white font-mono tracking-wide">
+                      Rendering PDF Document Pages for Flipbook...
+                    </p>
+                    <p className="text-xs text-slate-400">Please wait a moment while spreads are generated</p>
+                  </div>
+                ) : (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentPageIndex}
+                      initial={{ rotateY: -90, opacity: 0.2 }}
+                      animate={{ rotateY: 0, opacity: 1, scale: zoomLevel }}
+                      exit={{ rotateY: 90, opacity: 0.2 }}
+                      transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+                      className="relative origin-left shadow-[0_50px_100px_-30px_rgba(0,0,0,0.9)] rounded-2xl overflow-hidden border border-slate-800 max-h-[70vh]"
+                    >
+                      <img
+                        src={activePages[currentPageIndex] || activeMagazine.cover}
+                        alt={`Page ${currentPageIndex + 1}`}
+                        className="h-full max-h-[70vh] w-auto object-contain bg-slate-950"
+                        onError={(e) => {
+                          // Fallback to cover if page image link fails
+                          (e.target as HTMLImageElement).src = activeMagazine.cover;
+                        }}
+                      />
+                      <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-slate-950/60 to-transparent pointer-events-none" />
+                    </motion.div>
+                  </AnimatePresence>
+                )}
               </div>
 
               {/* Right Arrow Button */}

@@ -90,6 +90,7 @@ import {
   Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
+import { extractPdfPagesToDataUrls } from "@/utils/pdfExtractor";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
 
 interface Registration {
@@ -6810,7 +6811,7 @@ export default function AdminDashboardPage() {
                                 const base64Data = reader.result as string;
                                 setNewMagForm((prev) => ({ ...prev, pdf_url: base64Data }));
                                 try {
-                                  toast.loading("Uploading PDF document...");
+                                  toast.loading("Uploading PDF & extracting pages for flipbook...");
                                   const res = await fetch("/api/admin/upload", {
                                     method: "POST",
                                     headers: {
@@ -6820,10 +6821,26 @@ export default function AdminDashboardPage() {
                                     body: JSON.stringify({ imageBase64: base64Data, filename: file.name }),
                                   });
                                   const uploadRes = await res.json();
+                                  const finalPdfUrl = uploadRes.success && uploadRes.url ? uploadRes.url : base64Data;
+                                  setNewMagForm((prev) => ({ ...prev, pdf_url: finalPdfUrl }));
+
+                                  // Auto extract PDF pages for interactive flipbook spreads!
+                                  const extractedPages = await extractPdfPagesToDataUrls(file, 1.5, (current, total) => {
+                                    toast.loading(`Extracting page ${current} of ${total} from PDF...`);
+                                  });
                                   toast.dismiss();
-                                  if (uploadRes.success && uploadRes.url) {
-                                    setNewMagForm((prev) => ({ ...prev, pdf_url: uploadRes.url }));
-                                    toast.success("PDF document uploaded successfully!");
+
+                                  if (extractedPages.length > 0) {
+                                    const existingList = newMagForm.pages_list
+                                      ? newMagForm.pages_list.split(",").map((s) => s.trim()).filter(Boolean)
+                                      : [];
+                                    const combined = [...existingList, ...extractedPages];
+                                    setNewMagForm((prev) => ({
+                                      ...prev,
+                                      pages_list: combined.join(", "),
+                                      cover: prev.cover || extractedPages[0] || prev.cover,
+                                    }));
+                                    toast.success(`PDF attached & ${extractedPages.length} pages extracted for flipbook!`);
                                   } else {
                                     toast.success("PDF document attached!");
                                   }
@@ -6838,13 +6855,53 @@ export default function AdminDashboardPage() {
                         </label>
                       </div>
 
-                      <input
-                        type="url"
-                        placeholder="Or paste PDF Download URL (https://...)"
-                        value={newMagForm.pdf_url}
-                        onChange={(e) => setNewMagForm({ ...newMagForm, pdf_url: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          placeholder="Or paste PDF Download URL (https://...)"
+                          value={newMagForm.pdf_url}
+                          onChange={(e) => setNewMagForm({ ...newMagForm, pdf_url: e.target.value })}
+                          className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none font-mono"
+                        />
+                        {newMagForm.pdf_url && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                toast.loading("Extracting pages from PDF URL...");
+                                const extractedPages = await extractPdfPagesToDataUrls(
+                                  newMagForm.pdf_url,
+                                  1.5,
+                                  (current, total) => {
+                                    toast.loading(`Extracting page ${current} of ${total}...`);
+                                  }
+                                );
+                                toast.dismiss();
+                                if (extractedPages.length > 0) {
+                                  const existingList = newMagForm.pages_list
+                                    ? newMagForm.pages_list.split(",").map((s) => s.trim()).filter(Boolean)
+                                    : [];
+                                  const combined = [...existingList, ...extractedPages];
+                                  setNewMagForm((prev) => ({
+                                    ...prev,
+                                    pages_list: combined.join(", "),
+                                    cover: prev.cover || extractedPages[0] || prev.cover,
+                                  }));
+                                  toast.success(`Extracted ${extractedPages.length} pages from PDF URL!`);
+                                } else {
+                                  toast.error("Could not extract pages from PDF URL.");
+                                }
+                              } catch (err) {
+                                toast.dismiss();
+                                toast.error("Failed to parse PDF from URL.");
+                              }
+                            }}
+                            className="rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold px-3 py-2 text-[11px] border border-purple-200 transition-colors whitespace-nowrap"
+                          >
+                            Extract Pages
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* 3. Flipbook Individual Page Spreads Upload */}
