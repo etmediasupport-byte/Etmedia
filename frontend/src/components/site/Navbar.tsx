@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import logo from "@/assets/logo.jpeg";
+import logo2 from "@/assets/logo2.webp";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
@@ -137,7 +137,7 @@ export function Navbar() {
 
   const navLinkStyle = (isActive: boolean) =>
     cn(
-      "relative py-1.5 text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap text-slate-200 hover:text-cyan-400",
+      "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-200 hover:text-cyan-400",
       "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-400 after:to-purple-500 after:transition-transform after:duration-300 hover:after:scale-x-100",
       isActive && "text-cyan-400 font-extrabold after:scale-x-100"
     );
@@ -152,7 +152,7 @@ export function Navbar() {
             : "bg-black border-b border-zinc-800",
           scrolled
             ? "py-2.5 shadow-lg shadow-black/80"
-            : "py-3.5 shadow-md shadow-black/40"
+            : "py-3 shadow-md shadow-black/40"
         )}
       >
         {/* Animated Scanning Beam on Loading State */}
@@ -167,7 +167,7 @@ export function Navbar() {
             />
           )}
         </AnimatePresence>
-        <nav className="container-x flex items-center justify-between gap-2 lg:gap-4">
+        <nav className="container-x flex items-center justify-between gap-2 lg:gap-3 xl:gap-5">
           {/* LEFT: ET Media Logo */}
           <Link
             to="/"
@@ -175,16 +175,16 @@ export function Navbar() {
             onClick={handleNavClick}
           >
             <img
-              src={logo}
+              src={logo2}
               alt="ET Media Business Intelligence"
-              className="h-12 sm:h-14 lg:h-16 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
+              className="h-10 sm:h-12 lg:h-14 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
               width={280}
               height={110}
             />
           </Link>
 
           {/* CENTER: Navigation Links Single Row */}
-          <div className="hidden items-center gap-3 lg:gap-4 xl:gap-6 lg:flex">
+          <div className="hidden items-center gap-2.5 lg:gap-3 xl:gap-5 lg:flex shrink min-w-0 overflow-x-auto no-scrollbar">
             <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Home
             </NavLink>
@@ -195,7 +195,7 @@ export function Navbar() {
 
             {/* MEGA DROPDOWN: Events */}
             <div
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => setEventsMegaOpen(true)}
               onMouseLeave={() => setEventsMegaOpen(false)}
             >
@@ -289,19 +289,19 @@ export function Navbar() {
           </div>
 
           {/* RIGHT: Glowing Register Button • Mobile Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
             {/* Glowing Register CTA Button */}
             <MagneticButton
               strength={18}
-              className="relative gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_18px_rgba(0,174,239,0.4)] hover:shadow-[0_6px_25px_rgba(0,174,239,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
+              className="relative shrink-0 whitespace-nowrap gradient-brand rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_18px_rgba(0,174,239,0.4)] hover:shadow-[0_6px_25px_rgba(0,174,239,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
             >
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("open-register-modal"))}
-                className="flex items-center gap-1.5 font-btn cursor-pointer bg-transparent border-none text-white text-xs sm:text-sm font-extrabold"
+                className="flex items-center gap-1.5 font-btn cursor-pointer bg-transparent border-none text-white text-xs sm:text-sm font-extrabold whitespace-nowrap shrink-0"
               >
-                <span>Register Now</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span className="whitespace-nowrap">Register Now</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0" />
               </button>
             </MagneticButton>
 

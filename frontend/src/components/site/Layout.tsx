@@ -6,6 +6,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { RegisterModal } from "@/components/site/RegisterModal";
+import { Preloader } from "@/components/site/Preloader";
 import { events as defaultEvents, EventItem } from "@/lib/site-data";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
@@ -65,6 +66,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-brand-blue/30 selection:text-brand-blue">
+      <Preloader />
       <ScrollProgressBar />
       <Navbar />
       <AnimatePresence mode="wait">
