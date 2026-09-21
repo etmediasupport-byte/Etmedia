@@ -352,3 +352,25 @@
   background: rgba(0, 174, 239, 0.8);
 }
 
+@keyframes navbar-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@utility animate-navbar-loading {
+  background: linear-gradient(
+    90deg,
+    #000000 0%,
+    rgba(0, 174, 239, 0.35) 25%,
+    rgba(75, 31, 167, 0.5) 50%,
+    rgba(20, 198, 248, 0.35) 75%,
+    #000000 100%
+  );
+  background-size: 200% 100%;
+  animation: navbar-shimmer 2.5s ease-in-out infinite;
+}
+

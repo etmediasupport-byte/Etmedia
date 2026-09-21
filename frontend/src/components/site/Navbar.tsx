@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
@@ -48,17 +48,53 @@ const megaEventCategories = [
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventsMegaOpen, setEventsMegaOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Scroll listener
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Initial website load animation timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Trigger loading animation state when navigating pages / route change
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [location.pathname, location.search]);
+
+  // Global custom event listener for "navbar-loading"
+  useEffect(() => {
+    const handleNavbarLoading = (e: Event) => {
+      const customEv = e as CustomEvent<{ loading?: boolean; duration?: number }>;
+      const active = customEv.detail?.loading ?? true;
+      setIsLoading(active);
+      if (active) {
+        const dur = customEv.detail?.duration || 1500;
+        setTimeout(() => setIsLoading(false), dur);
+      }
+    };
+
+    window.addEventListener("navbar-loading", handleNavbarLoading);
+    return () => window.removeEventListener("navbar-loading", handleNavbarLoading);
   }, []);
 
   // Keyboard shortcut listener for Esc key to close search modal
@@ -101,32 +137,47 @@ export function Navbar() {
 
   const navLinkStyle = (isActive: boolean) =>
     cn(
-      "relative py-1.5 text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap text-slate-800 hover:text-cyan-600",
-      "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-500 after:to-purple-500 after:transition-transform after:duration-300 hover:after:scale-x-100",
-      isActive && "text-cyan-600 font-extrabold after:scale-x-100"
+      "relative py-1.5 text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap text-slate-200 hover:text-cyan-400",
+      "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-400 after:to-purple-500 after:transition-transform after:duration-300 hover:after:scale-x-100",
+      isActive && "text-cyan-400 font-extrabold after:scale-x-100"
     );
 
   return (
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 bg-white border-b border-slate-200 transition-all duration-300",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-500 relative",
+          isLoading
+            ? "bg-black border-b border-cyan-500/50 shadow-[0_4px_30px_rgba(0,174,239,0.35)] animate-navbar-loading"
+            : "bg-black border-b border-zinc-800",
           scrolled
-            ? "py-2.5 shadow-md shadow-slate-200/50"
-            : "py-3.5 shadow-sm"
+            ? "py-2.5 shadow-lg shadow-black/80"
+            : "py-3.5 shadow-md shadow-black/40"
         )}
       >
+        {/* Animated Scanning Beam on Loading State */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              exit={{ opacity: 0, scaleX: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 shadow-[0_0_15px_#00AEEF] z-50 origin-left animate-pulse"
+            />
+          )}
+        </AnimatePresence>
         <nav className="container-x flex items-center justify-between gap-2 lg:gap-4">
           {/* LEFT: ET Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.03]"
+            className="flex min-w-0 shrink-0 items-center bg-white rounded-xl px-2.5 py-1 transition-transform hover:scale-[1.03]"
             onClick={handleNavClick}
           >
             <img
               src={logo}
               alt="ET Media Business Intelligence"
-              className="h-14 sm:h-16 lg:h-18 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
+              className="h-12 sm:h-14 lg:h-16 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
               width={280}
               height={110}
             />
@@ -159,7 +210,7 @@ export function Navbar() {
                 <ChevronDown
                   className={cn(
                     "h-3.5 w-3.5 transition-transform duration-200",
-                    eventsMegaOpen && "rotate-180 text-cyan-600"
+                    eventsMegaOpen && "rotate-180 text-cyan-400"
                   )}
                 />
               </NavLink>
@@ -171,19 +222,19 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.96 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[34rem] mt-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl backdrop-blur-2xl text-slate-900 z-50"
+                    className="absolute top-full left-1/2 -translate-x-1/2 w-[34rem] mt-2 rounded-3xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl backdrop-blur-2xl text-slate-100 z-50"
                   >
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-cyan-600" />
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-800 font-display">
+                        <Sparkles className="h-4 w-4 text-cyan-400" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 font-display">
                           ET Media Business Intelligence Conferences
                         </span>
                       </div>
                       <Link
                         to="/events"
                         onClick={handleNavClick}
-                        className="text-xs font-bold text-cyan-700 hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-cyan-400 hover:underline flex items-center gap-1"
                       >
                         All Events <ArrowRight className="h-3 w-3" />
                       </Link>
@@ -195,17 +246,17 @@ export function Navbar() {
                           key={cat.to}
                           to={cat.to}
                           onClick={handleNavClick}
-                          className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-cyan-50/80 hover:border-cyan-300 transition-all duration-200 shadow-xs"
+                          className="group flex flex-col p-3 rounded-2xl border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
                               <cat.icon className="h-4 w-4" />
                             </span>
-                            <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-700 transition-colors">
+                            <span className="text-sm font-bold font-btn text-slate-100 group-hover:text-cyan-400 transition-colors">
                               {cat.title}
                             </span>
                           </div>
-                          <p className="mt-2 text-xs text-slate-600 leading-snug">
+                          <p className="mt-2 text-xs text-slate-400 leading-snug">
                             {cat.desc}
                           </p>
                         </Link>
@@ -259,7 +310,7 @@ export function Navbar() {
               type="button"
               aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="p-2 sm:p-2.5 rounded-full border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 lg:hidden cursor-pointer transition-colors"
+              className="p-2 sm:p-2.5 rounded-full border border-zinc-800 bg-zinc-900 text-slate-200 hover:bg-zinc-800 hover:text-white lg:hidden cursor-pointer transition-colors"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -276,7 +327,7 @@ export function Navbar() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="container-x overflow-hidden lg:hidden"
             >
-              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
+              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/95 p-4 text-slate-100 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
                 {[
                   { to: "/", label: "Home" },
                   { to: "/about", label: "About Us" },
@@ -291,7 +342,7 @@ export function Navbar() {
                     key={item.label}
                     to={item.to}
                     onClick={handleNavClick}
-                    className="block rounded-2xl px-4 py-2.5 text-sm font-semibold font-btn text-slate-800 hover:bg-cyan-50 hover:text-cyan-600 transition-colors"
+                    className="block rounded-2xl px-4 py-2.5 text-sm font-semibold font-btn text-slate-200 hover:bg-zinc-900 hover:text-cyan-400 transition-colors"
                   >
                     {item.label}
                   </Link>
