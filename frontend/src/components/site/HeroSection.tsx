@@ -78,7 +78,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-[60px] sm:pt-[64px] lg:pt-[68px] pb-3 sm:pb-4">
+    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-16 sm:pt-16 lg:pt-18 pb-3 sm:pb-4">
       
       {/* Background Radial Atmosphere Glow behind Globe & Content */}
       <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.25)_0%,rgba(75,31,167,0.18)_45%,transparent_75%)] pointer-events-none blur-3xl" />
@@ -93,7 +93,7 @@ export function HeroSection() {
       </div>
 
       {/* MAIN CONTENT CONTAINER */}
-      <div className="container-x relative z-10 flex flex-col justify-between pt-1 sm:pt-2">
+      <div className="container-x relative z-10 flex flex-col justify-between pt-0">
         
         {/* TOP ROW: TWO COLUMNS (LEFT CONTENT & RIGHT INTERACTIVE GLOBE) */}
         <div className="grid gap-3 lg:grid-cols-12 items-center">
@@ -102,7 +102,7 @@ export function HeroSection() {
           <div className="lg:col-span-6 space-y-2.5 sm:space-y-3">
             
             {/* Dynamic Animated Text Section with Motion & Blur Transitions */}
-            <div className="min-h-[160px] sm:min-h-[175px] lg:min-h-[190px] flex flex-col justify-center">
+            <div className="min-h-[140px] sm:min-h-[155px] lg:min-h-[170px] flex flex-col justify-start pt-1">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={phraseIndex}

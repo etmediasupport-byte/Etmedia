@@ -146,7 +146,7 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-500 relative",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-500",
           isLoading
             ? "bg-black border-b border-cyan-500/50 shadow-[0_4px_30px_rgba(0,174,239,0.35)] animate-navbar-loading"
             : "bg-black border-b border-zinc-800",
