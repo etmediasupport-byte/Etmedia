@@ -1,13 +1,20 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import {
+  Award,
+  BookOpen,
   Building2,
   Compass,
+  Crown,
   Eye,
+  Handshake,
   HeartHandshake,
   Linkedin,
+  Megaphone,
+  Rocket,
   Sparkles,
   Target,
+  Users,
   X,
 } from "lucide-react";
 import { images, stats } from "@/lib/site-data";
@@ -38,15 +45,63 @@ const pillars = [
   },
 ];
 
-const whatWeDo = [
-  "Leadership Conferences & Summits",
-  "Executive Networking Platforms",
-  "Industry Awards & Recognition",
-  "Product & Brand Launch Events",
-  "Corporate Branding & Media Promotions",
-  "Business Workshops & Knowledge Sessions",
-  "Startup & Innovation Connect Programs",
-  "Strategic Business Networking Platforms",
+const whatWeDoSteps = [
+  {
+    step: "01",
+    title: "Leadership Conferences & Summits",
+    desc: "Curated national conclaves bringing together CXO decision-makers, thought leaders, and policymakers.",
+    icon: Crown,
+    gradient: "from-cyan-500 to-blue-600",
+  },
+  {
+    step: "02",
+    title: "Executive Networking Platforms",
+    desc: "Closed-door networking dinners and peer discussions engineered for senior enterprise leaders.",
+    icon: Users,
+    gradient: "from-purple-500 to-indigo-600",
+  },
+  {
+    step: "03",
+    title: "Industry Awards & Recognition",
+    desc: "Benchmarking excellence to honor benchmark corporations, industry pioneers, and leadership teams.",
+    icon: Award,
+    gradient: "from-blue-500 to-cyan-600",
+  },
+  {
+    step: "04",
+    title: "Product & Brand Launch Events",
+    desc: "High-impact unveilings designed to present enterprise tech solutions directly to decision makers.",
+    icon: Rocket,
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    step: "05",
+    title: "Corporate Branding & Promotions",
+    desc: "Multi-channel media amplification across Executive Talks Magazine and premium digital platforms.",
+    icon: Megaphone,
+    gradient: "from-pink-500 to-purple-600",
+  },
+  {
+    step: "06",
+    title: "Workshops & Knowledge Sessions",
+    desc: "Interactive masterclasses and strategic roundtables built around researched corporate agendas.",
+    icon: BookOpen,
+    gradient: "from-amber-500 to-orange-600",
+  },
+  {
+    step: "07",
+    title: "Startup & Innovation Connect",
+    desc: "Bridging high-growth technology startups with corporate enterprise sponsors, GCCs, and investors.",
+    icon: Sparkles,
+    gradient: "from-cyan-600 to-indigo-600",
+  },
+  {
+    step: "08",
+    title: "Strategic Business Networking",
+    desc: "Engineered 1-on-1 meeting ecosystems that translate initial introductions into commercial partnerships.",
+    icon: Handshake,
+    gradient: "from-blue-600 to-purple-600",
+  },
 ];
 
 const team = [
@@ -132,23 +187,38 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container-x">
+      <section className="section bg-surface/50 border-y border-border/80 relative overflow-hidden">
+        <div className="container-x relative z-10">
           <SectionHeading
             kicker="What We Do"
             title="Eight Ways We Put Your Brand In The Right Room"
+            description="Our proven platform ecosystem engineered to connect decision makers with high-value commercial outcomes."
+            align="left"
           />
-          <div className="mt-14 grid gap-x-12 gap-y-4 md:grid-cols-2">
-            {whatWeDo.map((item, i) => (
-              <Reveal key={item} delay={i * 0.04}>
-                <MouseTiltCard maxTilt={6} className="glass-card flex gap-5 p-6 rounded-2xl border border-border">
-                  <span className="gradient-brand relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-md">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-base font-bold font-display">{item}</h3>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      Curated formats, verified audiences and full media amplification.
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {whatWeDoSteps.map((step, i) => (
+              <Reveal key={step.title} delay={i * 0.05}>
+                <MouseTiltCard
+                  maxTilt={10}
+                  className="glass-card gradient-ring group h-full rounded-3xl p-6 border border-border/80 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10"
+                >
+                  <div>
+                    {/* Top Row: Step Number Badge + Gradient Icon Box */}
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="text-xs font-black font-display uppercase tracking-widest text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-3 py-1">
+                        Step {step.step}
+                      </span>
+                      <div className={`p-3 rounded-2xl text-white bg-gradient-to-r shadow-md group-hover:scale-110 transition-transform ${step.gradient}`}>
+                        <step.icon className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <h3 className="text-base font-bold font-display text-foreground leading-snug group-hover:text-cyan-600 transition-colors">
+                      {step.title}
+                    </h3>
+                    <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-sans text-justify">
+                      {step.desc}
                     </p>
                   </div>
                 </MouseTiltCard>
@@ -172,32 +242,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container-x">
-          <SectionHeading kicker="Why ET Media" title="Why Enterprises Choose Us" />
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Building2, title: "Business Networking", stat: stats[2]! },
-              { icon: Compass, title: "Industry Intelligence", stat: stats[3]! },
-              { icon: Sparkles, title: "Media Promotions", stat: stats[4]! },
-              { icon: Target, title: "Strategic Growth", stat: stats[0]! },
-            ].map((c, i) => (
-              <Reveal key={c.title} delay={i * 0.08}>
-                <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80 text-center">
-                  <span className="gradient-soft text-brand-blue inline-flex rounded-2xl p-3.5 mx-auto">
-                    <c.icon className="h-6 w-6" />
-                  </span>
-                  <p className="text-gradient mt-5 text-3xl font-extrabold font-display">
-                    <CountUpNumber value={c.stat.value} suffix={c.stat.suffix} />
-                  </p>
-                  <h3 className="mt-2 text-base font-bold font-display">{c.title}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">{c.stat.label}</p>
-                </MouseTiltCard>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section className="bg-surface section">
         <div className="container-x">
@@ -233,36 +277,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container-x">
-          <Reveal>
-            <div className="relative overflow-hidden rounded-4xl shadow-2xl">
-              <img
-                src={images.heroSummit}
-                alt="ET Media corporate introduction"
-                loading="lazy"
-                width={1920}
-                height={1080}
-                className="h-[420px] w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/75 to-purple-950/70" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center z-10">
-                <h2 className="max-w-2xl text-3xl font-extrabold font-display text-white sm:text-5xl leading-tight">
-                  Connect. Collaborate. Grow.
-                </h2>
-                <div className="mt-8 flex flex-wrap justify-center gap-4">
-                  <MagneticButton strength={15} className="gradient-brand rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-lg">
-                    <Link to="/contact">Contact Us</Link>
-                  </MagneticButton>
-                  <MagneticButton strength={15} className="glass-dark rounded-full px-8 py-3.5 text-sm font-semibold text-white border border-white/20">
-                    <Link to="/events/partner">Become a Partner</Link>
-                  </MagneticButton>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
     </>
   );
 }

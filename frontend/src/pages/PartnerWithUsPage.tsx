@@ -297,95 +297,237 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 1. HERO SECTION                            */}
       {/* ========================================== */}
-      <section className="relative pt-20 pb-10 md:pt-22 md:pb-12 overflow-hidden border-b border-slate-800/80">
+      <section id="partner-form" className="relative pt-16 pb-12 md:pt-20 md:pb-16 overflow-hidden border-b border-slate-800/80">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(6,182,212,0.18),rgba(255,255,255,0))] pointer-events-none" />
 
-        <div className="container-x relative z-10">
-          <div className="max-w-4xl text-left">
-            {/* Top Pill */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs sm:text-sm font-semibold text-cyan-300 shadow-lg backdrop-blur-md mb-6"
-            >
-              <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
-              <span>ET Media Business Intelligence Partnership Platform</span>
-            </motion.div>
-
-            {/* Main Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-display text-white"
-            >
-              Become Our <br className="hidden sm:inline" />
-              <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 bg-clip-text text-transparent">
-                Strategic Partner.
+        <div className="container-x relative z-10 w-full max-w-6xl mx-auto">
+          <div className="rounded-3xl border border-slate-800/90 bg-slate-900/80 p-6 sm:p-10 md:p-12 shadow-2xl backdrop-blur-xl relative">
+            <div className="text-left mb-10 border-b border-slate-800/80 pb-6">
+              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
+                <Zap className="h-4 w-4" /> Partner Application
               </span>
-            </motion.h1>
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-white mt-2 font-display tracking-tight">
+                Partner With Us
+              </h1>
+              <p className="mt-3 text-slate-300 text-sm sm:text-base max-w-3xl leading-relaxed">
+                Fill out the strategic proposal request below. Our partner relations team will connect with your organization within 24 business hours.
+              </p>
+            </div>
 
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mt-6 text-base sm:text-lg lg:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-sans"
-            >
-              Co-create India's most prestigious B2B leadership conferences, C-suite summits, and benchmark industry awards. Engage with 5,000+ C-level decision-makers and showcase your brand authority.
-            </motion.p>
+            {formError && (
+              <div className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-center gap-3">
+                <X className="h-5 w-5 text-rose-400 shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
 
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-8 flex flex-wrap items-center justify-center gap-4"
-            >
-              <a
-                href="#partner-form"
-                className="group relative inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Row 1: Company Name & Website */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Company Name *
+                  </label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      name="company_name"
+                      required
+                      placeholder="e.g. Acme Corp Ltd"
+                      value={formData.company_name}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Website
+                  </label>
+                  <div className="relative">
+                    <Globe className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="url"
+                      name="website"
+                      placeholder="https://example.com"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Industry *
+                  </label>
+                  <select
+                    name="industry"
+                    required
+                    value={formData.industry}
+                    onChange={handleInputChange}
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                  >
+                    <option value="" disabled>
+                      Select Your Industry
+                    </option>
+                    {industriesList.map((ind) => (
+                      <option key={ind} value={ind} className="bg-slate-900 text-white">
+                        {ind}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Location *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      name="location"
+                      required
+                      placeholder="City, Country"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Contact Person *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      name="contact_person"
+                      required
+                      placeholder="Full Name"
+                      value={formData.contact_person}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Designation *
+                  </label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      name="designation"
+                      required
+                      placeholder="e.g. CMO / Head of Marketing"
+                      value={formData.designation}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Email *
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="official.email@company.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Phone *
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      placeholder="+91 98765 43210"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    Partnership Type *
+                  </label>
+                  <select
+                    name="partnership_type"
+                    required
+                    value={formData.partnership_type}
+                    onChange={handleInputChange}
+                    className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                  >
+                    <option value="" disabled>
+                      Select Desired Partnership Type
+                    </option>
+                    {partnershipTypesList.map((pt) => (
+                      <option key={pt} value={pt} className="bg-slate-900 text-white">
+                        {pt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Message Textarea */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Message / Partnership Objectives
+                </label>
+                <textarea
+                  name="message"
+                  rows={3}
+                  placeholder="Share details about your partnership goals, target audience, or specific event interests..."
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-600 py-4 text-base font-extrabold text-white shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
               >
-                <span>Apply For Partnership</span>
-                <Handshake className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-              </a>
-
-              <a
-                href="#benefits"
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-700/80 bg-slate-900/60 px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all backdrop-blur-md"
-              >
-                <span>Explore Benefits</span>
-                <ChevronRight className="h-4 w-4 text-cyan-400" />
-              </a>
-            </motion.div>
-
-            {/* Quick Metrics Badges */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-10 border-t border-slate-800/80 text-center"
-            >
-              <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 backdrop-blur-sm">
-                <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-display">50+</div>
-                <div className="text-xs text-slate-400 font-medium mt-1">National Summits</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 backdrop-blur-sm">
-                <div className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-display">5,000+</div>
-                <div className="text-xs text-slate-400 font-medium mt-1">CXO Delegates</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 backdrop-blur-sm">
-                <div className="text-2xl sm:text-3xl font-extrabold text-teal-400 font-display">200+</div>
-                <div className="text-xs text-slate-400 font-medium mt-1">Corporate Brands</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 backdrop-blur-sm">
-                <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-display">10M+</div>
-                <div className="text-xs text-slate-400 font-medium mt-1">Digital Impressions</div>
-              </div>
-            </motion.div>
+                {isSubmitting ? (
+                  <>
+                    <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span>Submitting Application...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-5 w-5" />
+                    <span>Submit Strategic Proposal</span>
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       </section>
@@ -555,251 +697,7 @@ export default function PartnerWithUsPage() {
         </div>
       </section>
 
-      {/* ========================================== */}
-      {/* 4. PARTNER APPLICATION FORM SECTION        */}
-      {/* ========================================== */}
-      <section id="partner-form" className="py-20 md:py-28 relative">
-        <div className="container-x max-w-4xl mx-auto">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 sm:p-10 md:p-12 shadow-2xl backdrop-blur-xl relative">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
-                <Zap className="h-4 w-4" /> Partner Application
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-white mt-2 font-display">
-                Partner With Us
-              </h2>
-              <p className="mt-2 text-slate-400 text-xs sm:text-sm">
-                Fill out the strategic proposal request below. Our partner relations team will connect with your organization within 24 business hours.
-              </p>
-            </div>
 
-            {formError && (
-              <div className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-center gap-3">
-                <X className="h-5 w-5 text-rose-400 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Row 1: Company Name & Website */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Company Name *
-                  </label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      name="company_name"
-                      required
-                      placeholder="e.g. Acme Corp Ltd"
-                      value={formData.company_name}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Website
-                  </label>
-                  <div className="relative">
-                    <Globe className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="url"
-                      name="website"
-                      placeholder="https://example.com"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2: Industry & Location */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Industry *
-                  </label>
-                  <select
-                    name="industry"
-                    required
-                    value={formData.industry}
-                    onChange={handleInputChange}
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                  >
-                    <option value="" disabled>
-                      Select Your Industry
-                    </option>
-                    {industriesList.map((ind) => (
-                      <option key={ind} value={ind} className="bg-slate-900 text-white">
-                        {ind}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Location *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      name="location"
-                      required
-                      placeholder="City, Country"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 3: Contact Person & Designation */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Contact Person *
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      name="contact_person"
-                      required
-                      placeholder="Full Name"
-                      value={formData.contact_person}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Designation *
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      name="designation"
-                      required
-                      placeholder="e.g. CMO / Head of Marketing"
-                      value={formData.designation}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 4: Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Email *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="official.email@company.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    Phone *
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      placeholder="+91 98765 43210"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 5: Partnership Type Dropdown */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Partnership Type *
-                </label>
-                <select
-                  name="partnership_type"
-                  required
-                  value={formData.partnership_type}
-                  onChange={handleInputChange}
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                >
-                  <option value="" disabled>
-                    Select Desired Partnership Type
-                  </option>
-                  {partnershipTypesList.map((pt) => (
-                    <option key={pt} value={pt} className="bg-slate-900 text-white">
-                      {pt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Row 6: Message Textarea */}
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Message / Partnership Objectives
-                </label>
-                <textarea
-                  name="message"
-                  rows={4}
-                  placeholder="Share details about your partnership goals, target audience, or specific event interests..."
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  className="w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-600 py-4 text-base font-extrabold text-white shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    <span>Submitting Application...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-5 w-5" />
-                    <span>Submit Strategic Proposal</span>
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      </section>
 
       {/* ========================================== */}
       {/* 5. SUCCESS / CONFIRMATION MODAL            */}

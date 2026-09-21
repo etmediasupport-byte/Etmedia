@@ -155,28 +155,6 @@ export default function EventsPage() {
           </div>
         )}
 
-        <Reveal className="mt-20">
-          <div className="gradient-ink relative overflow-hidden rounded-3xl p-10 text-white">
-            <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-accent-cyan backdrop-blur-sm">
-                <Sparkles className="h-3.5 w-3.5" />
-                Partner With Us
-              </span>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight">Host or Sponsor an Executive Platform</h2>
-              <p className="mt-3 leading-relaxed text-white/80">
-                Position your brand in front of senior decision-makers across Finance, Technology, HR, and Enterprise operations.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-4">
-                <Link
-                  to="/contact"
-                  className="gradient-brand rounded-full px-6 py-3 font-semibold text-white transition-transform hover:scale-105"
-                >
-                  Sponsorship Opportunities
-                </Link>
-              </div>
-            </div>
-          </div>
-        </Reveal>
       </section>
 
       {/* Real-time Event Registration Modal */}
