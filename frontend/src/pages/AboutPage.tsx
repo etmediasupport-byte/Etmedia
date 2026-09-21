@@ -56,17 +56,7 @@ const team = [
   { name: "Priya Sharma", role: "Editor, Executive Talks", image: images.magazineCover },
 ];
 
-const gallery = [
-  images.heroLeadership,
-  images.heroAwards,
-  images.eventHr,
-  images.heroNetworking,
-  images.eventCfo,
-  images.heroSummit,
-];
-
 export default function AboutPage() {
-  const [lightbox, setLightbox] = useState<string | null>(null);
 
   return (
     <>
@@ -168,28 +158,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-surface section">
-        <div className="container-x">
-          <SectionHeading kicker="Gallery" title="Moments From Our Platforms" />
-          <div className="mt-14 columns-1 gap-5 sm:columns-2 lg:columns-3">
-            {gallery.map((src, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setLightbox(src)}
-                className="mb-5 block w-full overflow-hidden rounded-3xl group cursor-pointer"
-              >
-                <ImageZoomCard
-                  src={src}
-                  alt="ET Media event"
-                  className={`w-full ${i % 3 === 1 ? "h-80" : "h-60"}`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Timeline Growth Section */}
       <section className="section bg-slate-900/5 dark:bg-slate-950/50 border-y border-slate-200 dark:border-slate-800">
         <div className="container-x">
@@ -203,23 +171,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-
-      {lightbox ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-6 backdrop-blur-md"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            className="absolute top-6 right-6 rounded-full bg-white/20 p-3 text-white hover:bg-white/30"
-          >
-            <X className="h-6 w-6" />
-          </button>
-          <img src={lightbox} alt="" className="max-h-[85vh] w-auto rounded-3xl shadow-2xl" />
-        </div>
-      ) : null}
 
       <section className="section">
         <div className="container-x">
