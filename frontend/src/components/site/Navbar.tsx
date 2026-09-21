@@ -194,7 +194,7 @@ export function Navbar() {
           </Link>
 
           {/* CENTER: Navigation Links Single Row */}
-          <div className="hidden items-center gap-2.5 lg:gap-3 xl:gap-5 lg:flex shrink min-w-0 overflow-x-auto no-scrollbar">
+          <div className="hidden items-center gap-2.5 lg:gap-3 xl:gap-5 lg:flex shrink-0">
             <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Home
             </NavLink>
