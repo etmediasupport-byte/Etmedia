@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import type { EventItem } from "@/lib/site-data";
-import logoUrl from "@/assets/logo.jpeg";
+import logoUrl from "@/assets/logo-transparent.svg";
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -1062,7 +1062,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
             <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-cyan-700 p-5 sm:p-6 text-white relative overflow-hidden flex-none">
               <div className="flex flex-wrap items-center justify-between gap-4 pr-12 relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="bg-white p-2 rounded-2xl shadow-md shrink-0">
+                  <div className="bg-transparent shrink-0">
                     <img src={logoUrl} alt="ET Media Logo" className="h-9 w-auto object-contain" />
                   </div>
                   <div>

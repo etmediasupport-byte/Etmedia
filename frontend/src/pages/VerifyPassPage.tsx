@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CheckCircle2, ShieldCheck, User, MapPin, Building, Mail, Phone, Tag, CreditCard, Printer, AlertTriangle, ArrowLeft, Calendar, Gift } from "lucide-react";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-transparent.svg";
 
 interface PassData {
   id: string;
@@ -136,7 +136,7 @@ export default function VerifyPassPage() {
             <div className="bg-gradient-to-r from-cyan-600 via-blue-700 to-purple-700 p-6 sm:p-8 text-white relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="bg-white p-2 rounded-2xl shadow-md shrink-0">
+                  <div className="bg-transparent shrink-0">
                     <img src={logo} alt="ET Media Logo" className="h-10 w-auto object-contain" />
                   </div>
                   <div>

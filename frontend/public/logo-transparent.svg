@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 96" fill="none">
+  <defs>
+    <!-- Vibrant Globe Gradient matching official logo -->
+    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00AEEF" />
+      <stop offset="45%" stop-color="#2563EB" />
+      <stop offset="80%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#C026D3" />
+    </linearGradient>
+  </defs>
+
+  <!-- 3D GLOBE EMBLEM WITH ET INSIDE -->
+  <g transform="translate(6, 6)">
+    <!-- Filled Gradient Globe Sphere -->
+    <circle cx="42" cy="42" r="40" fill="url(#globeGrad)" />
+    
+    <!-- White Orbital Lines Grid -->
+    <circle cx="42" cy="42" r="34" stroke="#FFFFFF" stroke-width="1.6" opacity="0.85" fill="none" />
+    <ellipse cx="42" cy="42" rx="20" ry="38" stroke="#FFFFFF" stroke-width="1.6" opacity="0.9" fill="none" />
+    <ellipse cx="42" cy="42" rx="38" ry="20" stroke="#FFFFFF" stroke-width="1.6" opacity="0.9" fill="none" />
+    <line x1="4" y1="42" x2="80" y2="42" stroke="#FFFFFF" stroke-width="1.6" opacity="0.9" />
+    
+    <!-- White Satellite Nodes -->
+    <circle cx="26" cy="18" r="4" fill="#FFFFFF" />
+    <circle cx="62" cy="56" r="4" fill="#FFFFFF" />
+    <circle cx="16" cy="48" r="3.5" fill="#FFFFFF" />
+    <circle cx="70" cy="30" r="3.5" fill="#FFFFFF" />
+    
+    <!-- ET Text inside Globe -->
+    <text x="42" y="52" fill="#FFFFFF" font-family="'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" font-weight="900" font-size="30" text-anchor="middle" letter-spacing="-0.5">ET</text>
+  </g>
+
+  <!-- BRAND NAME: ET Media (PURE WHITE) -->
+  <text x="100" y="58" fill="#FFFFFF" font-family="'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" font-weight="800" font-size="46" letter-spacing="-1">ET Media</text>
+  
+  <!-- SUBTITLE: BUSINESS INTELLIGENCE (CYAN ACCENT) -->
+  <text x="102" y="78" fill="#00AEEF" font-family="'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" font-weight="800" font-size="11" letter-spacing="4.5">BUSINESS INTELLIGENCE</text>
+</svg>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-transparent.svg";
 import { socket } from "@/lib/socket";
 import {
   events as staticEvents,
@@ -3195,8 +3195,8 @@ export default function AdminDashboardPage() {
           {/* Brand Logo & Header */}
           <div className="flex items-center justify-between shrink-0 pb-2">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-slate-50 p-1.5 border border-slate-200 shadow-xs">
-                <img src={logo} alt="ET Media" className="h-6 w-auto object-contain" />
+              <div className="bg-transparent">
+                <img src={logo} alt="ET Media" className="h-7 w-auto object-contain" />
               </div>
               <div>
                 <h2 className="text-xs font-extrabold text-slate-900 tracking-wide">ET Media Hub</h2>

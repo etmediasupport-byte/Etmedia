@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-transparent.svg";
 import {
   Lock,
   Mail,
@@ -85,8 +85,8 @@ export default function AdminLoginPage() {
         {/* Top Header Logo */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-white p-2 shadow-lg border border-white/20">
-              <img src={logo} alt="ET Media Business Intelligence" className="h-7 w-auto object-contain" />
+            <div className="bg-transparent">
+              <img src={logo} alt="ET Media Business Intelligence" className="h-9 w-auto object-contain" />
             </div>
             <div>
               <span className="block text-sm font-black tracking-wider text-white font-display">ET Media</span>
@@ -179,8 +179,8 @@ export default function AdminLoginPage() {
           <div className="rounded-[2.5rem] border border-slate-200/80 bg-white p-8 sm:p-10 shadow-2xl shadow-slate-900/10 space-y-6">
             {/* Header Logo & Title */}
             <div className="text-center space-y-2">
-              <div className="inline-flex items-center justify-center rounded-2xl bg-slate-50 p-2.5 shadow-sm border border-slate-200 mb-2">
-                <img src={logo} alt="ET Media" className="h-8 w-auto object-contain" />
+              <div className="inline-flex items-center justify-center bg-transparent mb-2">
+                <img src={logo} alt="ET Media" className="h-10 w-auto object-contain" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
                 Welcome Back

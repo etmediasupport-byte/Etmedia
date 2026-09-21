@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import logo2 from "@/assets/logo2.webp";
+import logoTransparent from "@/assets/logo-transparent.svg";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
@@ -171,13 +171,13 @@ export function Navbar() {
           {/* LEFT: ET Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-white rounded-xl px-2.5 py-1 transition-transform hover:scale-[1.03]"
+            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.03]"
             onClick={handleNavClick}
           >
             <img
-              src={logo2}
+              src={logoTransparent}
               alt="ET Media Business Intelligence"
-              className="h-10 sm:h-12 lg:h-14 w-auto object-contain bg-transparent border-none shadow-none mix-blend-multiply"
+              className="h-9 sm:h-11 lg:h-12 w-auto object-contain bg-transparent border-none shadow-none"
               width={280}
               height={110}
             />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import logo2 from "@/assets/logo2.webp";
+import logoTransparent from "@/assets/logo-transparent.svg";
 import { Sparkles } from "lucide-react";
 
 export function Preloader() {
@@ -59,17 +59,17 @@ export function Preloader() {
               className="absolute -inset-3 rounded-[2.5rem] bg-gradient-to-r from-cyan-500/30 to-purple-600/30 blur-xl"
             />
 
-            {/* Centered White Badge Container for Logo2 */}
+            {/* Centered Container for Transparent Logo */}
             <motion.div
               initial={{ opacity: 0, scale: 0.85, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="relative z-10 flex items-center justify-center rounded-[2rem] bg-white p-5 sm:p-7 shadow-[0_0_60px_rgba(0,174,239,0.6)] border border-white/80"
+              className="relative z-10 flex items-center justify-center p-3 bg-transparent"
             >
               <img
-                src={logo2}
+                src={logoTransparent}
                 alt="ET Media Business Intelligence"
-                className="h-16 sm:h-20 lg:h-24 w-auto object-contain mix-blend-multiply"
+                className="h-16 sm:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_0_25px_rgba(0,174,239,0.5)]"
                 width={320}
                 height={120}
               />
