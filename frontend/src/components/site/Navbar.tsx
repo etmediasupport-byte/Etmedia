@@ -72,14 +72,7 @@ export function Navbar() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Trigger loading animation state when navigating pages / route change
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [location.pathname, location.search]);
+
 
   // Global custom event listener for "navbar-loading"
   useEffect(() => {

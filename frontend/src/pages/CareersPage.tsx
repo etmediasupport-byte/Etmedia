@@ -199,11 +199,11 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 1. HERO SECTION                            */}
       {/* ========================================== */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden border-b border-slate-800/80">
+      <section className="relative pt-20 pb-10 md:pt-22 md:pb-12 overflow-hidden border-b border-slate-800/80">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(168,85,247,0.18),rgba(255,255,255,0))] pointer-events-none" />
 
         <div className="container-x relative z-10">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="max-w-4xl text-left">
             {/* Top Badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}

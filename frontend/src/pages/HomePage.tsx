@@ -194,8 +194,9 @@ function EventNetwork() {
           kicker="Platform Formats"
           title="ET Media Event Network"
           description="Four signature conference and event formats engineered to connect decision makers with high-value commercial outcomes."
+          align="left"
         />
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {formats.map((f, i) => (
             <Reveal key={f.title} delay={i * 0.08}>
               <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80 flex flex-col justify-between">
@@ -281,7 +282,7 @@ function UpcomingEvents() {
           title="Reserve Your Delegate Seat"
           description="Conferences currently open for senior executive registration across India's top business hubs."
         />
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {eventList.slice(0, 3).map((evt, i) => (
             <Reveal key={evt.id || evt.slug || i} delay={i * 0.08}>
               <EventCard event={evt} />
@@ -315,7 +316,7 @@ function WhyEtMedia() {
           title="Why Enterprises Partner With ET Media"
           description="Four core pillars that set ET Media Business Intelligence apart in corporate event curation."
         />
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.08}>
               <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80">
@@ -344,7 +345,7 @@ function IndustriesWeServe() {
           title="Industries We Serve"
           description="Specialized leadership conclaves tailored for sector-specific enterprise challenges."
         />
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {industries.map((ind, i) => (
             <Reveal key={ind.title} delay={i * 0.06}>
               <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-3xl p-7 border border-border flex items-start gap-4">

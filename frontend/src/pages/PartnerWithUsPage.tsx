@@ -297,11 +297,11 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 1. HERO SECTION                            */}
       {/* ========================================== */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden border-b border-slate-800/80">
+      <section className="relative pt-20 pb-10 md:pt-22 md:pb-12 overflow-hidden border-b border-slate-800/80">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(6,182,212,0.18),rgba(255,255,255,0))] pointer-events-none" />
 
         <div className="container-x relative z-10">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="max-w-4xl text-left">
             {/* Top Pill */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -395,7 +395,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       <section id="benefits" className="py-20 md:py-28 relative">
         <div className="container-x">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-left max-w-3xl mb-8">
             <span className="text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
               Partnership Benefits
             </span>

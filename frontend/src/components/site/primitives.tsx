@@ -60,7 +60,7 @@ export function SectionHeading({
   kicker,
   title,
   description,
-  align = "center",
+  align = "left",
   className,
 }: {
   kicker?: string;
@@ -82,11 +82,11 @@ export function SectionHeading({
           {kicker}
         </span>
       ) : null}
-      <h2 className="mt-5 text-3xl leading-tight font-semibold sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="mt-2.5 text-3xl leading-tight font-semibold sm:text-4xl lg:text-[2.75rem]">
         {title}
       </h2>
       {description ? (
-        <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
+        <p className="text-muted-foreground mt-2.5 text-base leading-relaxed sm:text-lg">
           {description}
         </p>
       ) : null}

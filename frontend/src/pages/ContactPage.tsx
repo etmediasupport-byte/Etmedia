@@ -168,14 +168,14 @@ export default function ContactPage() {
       />
 
       {/* Main Container */}
-      <div className="container-x relative mt-12 space-y-16">
+      <div className="container-x relative mt-6 space-y-8">
         
         {/* ==================================================== */}
         {/* 1. CONTACT CARDS GRID (5 Dedicated Cards)             */}
         {/* ==================================================== */}
         <section>
           <Reveal>
-            <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <div className="text-left max-w-2xl mb-6 space-y-2">
               <span className="text-xs font-extrabold uppercase tracking-widest text-cyan-600 font-display flex items-center justify-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Get In Touch</span>

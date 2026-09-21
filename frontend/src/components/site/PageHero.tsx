@@ -14,7 +14,7 @@ export function PageHero({
   crumb: string;
 }) {
   return (
-    <section className="relative flex min-h-[60vh] items-end overflow-hidden pt-28 pb-16">
+    <section className="relative flex min-h-[38vh] items-end overflow-hidden pt-20 pb-8">
       <img
         src={image}
         alt=""
