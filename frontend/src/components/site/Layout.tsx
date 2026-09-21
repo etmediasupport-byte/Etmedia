@@ -6,6 +6,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { FloatingActions } from "@/components/site/FloatingActions";
 import { RegisterModal } from "@/components/site/RegisterModal";
+import { MembershipModal } from "@/components/site/MembershipModal";
 import { Preloader } from "@/components/site/Preloader";
 import { events as defaultEvents, EventItem } from "@/lib/site-data";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,6 +19,7 @@ export function Layout() {
     isOpen: false,
     event: null,
   });
+  const [membershipModalOpen, setMembershipModalOpen] = useState(false);
 
   // Global event listener to open RegisterModal from any card, button, or link
   useEffect(() => {
@@ -26,9 +28,16 @@ export function Layout() {
       setModalState({ isOpen: true, event: selectedEvent });
     };
 
+    const handleOpenMembershipModal = () => {
+      setMembershipModalOpen(true);
+    };
+
     window.addEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+    window.addEventListener("open-membership-modal", handleOpenMembershipModal as EventListener);
+
     return () => {
       window.removeEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+      window.removeEventListener("open-membership-modal", handleOpenMembershipModal as EventListener);
     };
   }, []);
 
@@ -90,6 +99,12 @@ export function Layout() {
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ isOpen: false, event: null })}
         event={modalState.event || (defaultEvents[0] as EventItem) || null}
+      />
+
+      {/* Global Step-wise Membership Application Modal */}
+      <MembershipModal
+        isOpen={membershipModalOpen}
+        onClose={() => setMembershipModalOpen(false)}
       />
     </div>
   );

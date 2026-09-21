@@ -282,7 +282,7 @@ export default function GalleryPage() {
                 <div
                   key={item.id}
                   onClick={() => setLightboxIndex(index)}
-                  className="group relative break-inside-avoid overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-slate-900 shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
+                  className="group relative break-inside-avoid overflow-hidden rounded-none border border-slate-200/80 dark:border-slate-800 bg-slate-900 shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
                 >
                   {/* Image / Thumbnail */}
                   <img
@@ -399,7 +399,7 @@ export default function GalleryPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.92 }}
               transition={{ duration: 0.2 }}
-              className="relative max-w-5xl w-full max-h-[85vh] flex flex-col justify-between overflow-hidden rounded-3xl border border-white/15 bg-slate-900/90 shadow-2xl"
+              className="relative max-w-5xl w-full max-h-[85vh] flex flex-col justify-between overflow-hidden rounded-none border border-white/15 bg-slate-900/90 shadow-2xl"
             >
               {/* Media Display Area */}
               <div className="relative flex-1 flex items-center justify-center bg-black min-h-[350px] max-h-[65vh]">

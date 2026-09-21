@@ -94,63 +94,15 @@ export function Footer() {
       {/* Top Border Glow Line */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
 
-      <div className="container-x relative pt-16 pb-12 space-y-16">
+      <div className="container-x relative pt-12 pb-12 space-y-12">
         
         {/* ==================================================== */}
-        {/* TOP BRAND & NEWSLETTER SECTION                       */}
+        {/* MAIN COLUMNS GRID (Brand, Quick Links, Events, Mag, Careers, Subscribe) */}
         {/* ==================================================== */}
-        <div className="grid gap-8 lg:grid-cols-12 items-center rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl">
-          <div className="lg:col-span-6 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <span className="text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
-                Executive Intelligence Newsletter
-              </span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold font-display text-white">
-              Stay Ahead of Indian Enterprise Trends
-            </h3>
-            <p className="text-xs text-slate-300 max-w-lg leading-relaxed font-medium">
-              Receive curated C-suite insights, upcoming leadership summit announcements, and Executive Talks Magazine editions directly in your inbox.
-            </p>
-          </div>
-
-          <div className="lg:col-span-6">
-            {subscribed ? (
-              <div className="rounded-2xl bg-cyan-500/20 p-4 text-center text-cyan-300 border border-cyan-500/30">
-                <p className="text-xs font-bold font-display">✨ You are subscribed! Welcome to Executive Talks.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your corporate work email..."
-                  className="flex-1 rounded-2xl border border-white/15 bg-slate-900/80 px-4 py-3 text-xs text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none transition-colors font-medium"
-                />
-                <button
-                  type="submit"
-                  className="gradient-brand shrink-0 rounded-2xl px-6 py-3 text-xs font-extrabold uppercase tracking-wider text-white shadow-lg shadow-cyan-500/25 hover:scale-105 transition-transform flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Subscribe</span>
-                  <Send className="h-3.5 w-3.5" />
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* ==================================================== */}
-        {/* MAIN COLUMNS GRID (Brand, Quick Links, Events, Mag, Careers, Contact) */}
-        {/* ==================================================== */}
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 pt-4">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 pt-4">
           
-          {/* COLUMN 1: BRAND LOGO & OVERVIEW */}
-          <div className="sm:col-span-2 md:col-span-3 lg:col-span-2 space-y-4">
+          {/* COLUMN 1: BRAND LOGO & OVERVIEW (4 cols) */}
+          <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">
             <Link to="/" className="inline-flex transition-transform hover:scale-105 bg-transparent">
               <img
                 src={logoTransparent}
@@ -162,7 +114,7 @@ export function Footer() {
               />
             </Link>
 
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+            <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-sm">
               ET Media Business Intelligence builds India's most credible C-suite leadership platforms — national conferences, executive summits, corporate awards, and industry intelligence.
             </p>
 
@@ -194,8 +146,8 @@ export function Footer() {
             </div>
           </div>
 
-          {/* COLUMN 2: QUICK LINKS */}
-          <div className="space-y-4">
+          {/* COLUMN 2: QUICK LINKS (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
             <h4 className="text-xs font-black uppercase tracking-widest text-white font-display flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
               <span>Quick Links</span>
@@ -205,7 +157,7 @@ export function Footer() {
                 { to: "/", label: "Home" },
                 { to: "/about", label: "About Us" },
                 { to: "/partner", label: "Partner With Us" },
-                { to: "/delegate-registration", label: "Delegate Pass" },
+                { to: "/membership", label: "Membership" },
                 { to: "/gallery", label: "Media Gallery" },
               ].map((l) => (
                 <li key={l.to}>
@@ -221,19 +173,19 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* COLUMN 3: EVENTS */}
-          <div className="space-y-4">
+          {/* COLUMN 3: EVENTS (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
             <h4 className="text-xs font-black uppercase tracking-widest text-white font-display flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Events</span>
+              <span>Events & Portals</span>
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               {[
                 { to: "/events", label: "All Conferences" },
                 { to: "/events/cfo-leadership-summit-2026", label: "India CFO Summit" },
                 { to: "/events/hr-excellence-awards-2026", label: "HR Excellence" },
-                { to: "/events/register", label: "Delegate Registration" },
-                { to: "/partner", label: "Sponsorship Packages" },
+                { to: "/magazine", label: "Executive Talks" },
+                { to: "/careers", label: "Careers Portal" },
               ].map((l) => (
                 <li key={l.to}>
                   <Link
@@ -248,56 +200,38 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* COLUMN 4: MAGAZINE */}
-          <div className="space-y-4">
+          {/* COLUMN 4: SUBSCRIBE NEWSLETTER (4 cols) */}
+          <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">
             <h4 className="text-xs font-black uppercase tracking-widest text-white font-display flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Magazine</span>
+              <Mail className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Subscribe to Newsletter</span>
             </h4>
-            <ul className="space-y-2.5 text-xs font-medium">
-              {[
-                { to: "/magazine", label: "Executive Talks" },
-                { to: "/magazine", label: "Latest Issue 29" },
-                { to: "/magazine", label: "Leadership Features" },
-                { to: "/magazine", label: "Digital Flipbook" },
-              ].map((l, idx) => (
-                <li key={idx}>
-                  <Link
-                    to={l.to}
-                    className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors group"
-                  >
-                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all text-cyan-400" />
-                    <span>{l.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* COLUMN 5: CAREERS */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-white font-display flex items-center gap-1.5">
-              <Briefcase className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Careers</span>
-            </h4>
-            <ul className="space-y-2.5 text-xs font-medium">
-              {[
-                { to: "/careers", label: "Join ET Media" },
-                { to: "/careers", label: "Open Positions" },
-                { to: "/careers", label: "Conference Producers" },
-                { to: "/careers", label: "Sales & Alliances" },
-              ].map((l, idx) => (
-                <li key={idx}>
-                  <Link
-                    to={l.to}
-                    className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors group"
-                  >
-                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all text-cyan-400" />
-                    <span>{l.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+              Subscribe to receive curated C-suite insights, upcoming leadership summit announcements, and Executive Talks Magazine editions directly in your inbox.
+            </p>
+            {subscribed ? (
+              <div className="rounded-xl bg-cyan-500/20 p-3 text-xs font-bold text-cyan-300 border border-cyan-500/30">
+                ✨ Subscribed! Thank you for joining Executive Talks.
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2.5">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your corporate work email..."
+                  className="w-full min-w-0 rounded-xl border border-white/15 bg-slate-900/90 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none transition-colors font-medium"
+                />
+                <button
+                  type="submit"
+                  className="gradient-brand shrink-0 rounded-xl px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-cyan-500/20 hover:scale-105 transition-transform flex items-center justify-center gap-1.5 cursor-pointer border-none"
+                >
+                  <span>Subscribe</span>
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </form>
+            )}
           </div>
 
         </div>

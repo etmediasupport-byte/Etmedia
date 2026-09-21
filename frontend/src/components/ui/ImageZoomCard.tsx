@@ -18,7 +18,7 @@ export function ImageZoomCard({
   children,
 }: ImageZoomCardProps) {
   return (
-    <div className={cn("image-zoom-container rounded-3xl group relative overflow-hidden", className)}>
+    <div className={cn("image-zoom-container group relative overflow-hidden rounded-none", className)}>
       <motion.img
         src={src}
         alt={alt}

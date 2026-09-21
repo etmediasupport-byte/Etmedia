@@ -18,6 +18,7 @@ import {
   Building2,
   Briefcase,
   Phone,
+  Crown,
 } from "lucide-react";
 import logoTransparent from "@/assets/logo-transparent.svg";
 import { cn } from "@/lib/utils";
@@ -26,13 +27,13 @@ import { events } from "@/lib/site-data";
 
 const waffleMenuItems = [
   { to: "/", label: "Home", icon: Home, color: "from-cyan-500 to-blue-600" },
-  { to: "/about", label: "About Us", icon: Building2, color: "from-purple-500 to-indigo-600" },
+  { to: "/about", label: "About", icon: Building2, color: "from-purple-500 to-indigo-600" },
   { to: "/events", label: "Events", icon: Calendar, color: "from-blue-500 to-cyan-600" },
-  { to: "/partner", label: "Partner With Us", icon: Handshake, color: "from-emerald-500 to-teal-600" },
-  { to: "/magazine", label: "Executive Talks", icon: BookOpen, color: "from-pink-500 to-purple-600" },
-  { to: "/delegate-registration", label: "Delegate Pass", icon: Users, color: "from-amber-500 to-orange-600" },
+  { to: "/partner", label: "Partners", icon: Handshake, color: "from-emerald-500 to-teal-600" },
+  { to: "/magazine", label: "Magazines", icon: BookOpen, color: "from-pink-500 to-purple-600" },
+  { to: "/membership", label: "Membership", icon: Crown, color: "from-amber-500 to-orange-600", isMembership: true },
   { to: "/careers", label: "Careers", icon: Briefcase, color: "from-cyan-600 to-indigo-600" },
-  { to: "/contact", label: "Contact Us", icon: Phone, color: "from-blue-600 to-purple-600" },
+  { to: "/contact", label: "Contact", icon: Phone, color: "from-blue-600 to-purple-600" },
 ];
 
 const megaEventCategories = [
@@ -193,13 +194,13 @@ export function Navbar() {
           </Link>
 
           {/* CENTER: Navigation Links Single Row */}
-          <div className="hidden items-center gap-3 xl:gap-5 xl:flex shrink-0">
+          <div className="hidden items-center gap-2.5 lg:gap-3 xl:gap-5 lg:flex shrink min-w-0 overflow-x-auto no-scrollbar">
             <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Home
             </NavLink>
 
             <NavLink to="/about" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              About Us
+              About
             </NavLink>
 
             {/* MEGA DROPDOWN: Events */}
@@ -277,27 +278,38 @@ export function Navbar() {
             </div>
 
             <NavLink to="/partner" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Partner With Us
+              Partners
             </NavLink>
 
             <NavLink to="/magazine" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Executive Talks Magazine
+              Magazines
             </NavLink>
 
-            <NavLink to="/delegate-registration" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Delegate Registration
-            </NavLink>
+            <button
+              type="button"
+              onClick={() => {
+                handleNavClick();
+                window.dispatchEvent(new CustomEvent("open-membership-modal"));
+              }}
+              className={cn(
+                "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-200 hover:text-cyan-400 bg-transparent border-none",
+                "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-amber-400 after:to-cyan-400 after:transition-transform after:duration-300 hover:after:scale-x-100 inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-extrabold"
+              )}
+            >
+              <Crown className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+              <span>Membership</span>
+            </button>
 
             <NavLink to="/careers" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
               Careers
             </NavLink>
 
             <NavLink to="/contact" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Contact Us
+              Contact
             </NavLink>
           </div>
 
-          {/* RIGHT: Glowing Register Button • Waffle Mobile Menu */}
+          {/* RIGHT: Glowing Register Button • Mobile Menu */}
           <div className="flex items-center gap-2.5 shrink-0">
             {/* Glowing Register CTA Button */}
             <MagneticButton
@@ -314,78 +326,77 @@ export function Navbar() {
               </button>
             </MagneticButton>
 
-            {/* Mobile/Tablet Waffle Menu Toggle Button */}
+            {/* Mobile Hamburger Toggle Button */}
             <button
               type="button"
-              aria-label="Toggle navigation menu"
+              aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-zinc-800 bg-zinc-900 text-slate-200 hover:bg-zinc-800 hover:text-white xl:hidden cursor-pointer transition-colors shadow-sm"
+              className="p-2 sm:p-2.5 rounded-full border border-zinc-800 bg-zinc-900 text-slate-200 hover:bg-zinc-800 hover:text-white lg:hidden cursor-pointer transition-colors"
             >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5 text-cyan-400" />
-              ) : (
-                <LayoutGrid className="h-5 w-5 text-cyan-400" />
-              )}
-              <span className="text-xs font-bold font-btn hidden sm:inline">Menu</span>
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </nav>
 
-        {/* MOBILE & TABLET WAFFLE GRID MENU DRAWER */}
+        {/* MOBILE NAV DRAWER */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0, scale: 0.98 }}
-              animate={{ opacity: 1, height: "auto", scale: 1 }}
-              exit={{ opacity: 0, height: 0, scale: 0.98 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="container-x overflow-hidden xl:hidden pb-4"
+              className="container-x overflow-hidden lg:hidden"
             >
-              <div className="mt-2 rounded-3xl border border-zinc-800 bg-zinc-950/98 p-4 text-slate-100 shadow-2xl backdrop-blur-2xl max-h-[80vh] overflow-y-auto space-y-4">
-                {/* Waffle Menu Header */}
-                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-                  <div className="flex items-center gap-2">
-                    <LayoutGrid className="h-4 w-4 text-cyan-400" />
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 font-display">
-                      ET Media Navigation
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Select Portal
-                  </span>
-                </div>
-
-                {/* 2-Column Waffle Grid */}
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                  {waffleMenuItems.map((item) => (
+              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/95 p-4 text-slate-100 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
+                {[
+                  { to: "/", label: "Home" },
+                  { to: "/about", label: "About" },
+                  { to: "/events", label: "Events" },
+                  { to: "/events/partner", label: "Partners" },
+                  { to: "/magazine", label: "Magazines" },
+                  { label: "Membership", isMembership: true },
+                  { to: "/careers", label: "Careers" },
+                  { to: "/contact", label: "Contact" },
+                ].map((item) => (
+                  item.isMembership ? (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent("open-membership-modal"));
+                      }}
+                      className="w-full text-left block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-amber-300 hover:bg-zinc-900 hover:text-amber-200 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Crown className="h-4 w-4 text-amber-400" />
+                        <span>Membership</span>
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                        Apply Now
+                      </span>
+                    </button>
+                  ) : (
                     <Link
                       key={item.label}
-                      to={item.to}
+                      to={item.to!}
                       onClick={handleNavClick}
-                      className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl border border-zinc-800/90 bg-zinc-900/80 hover:bg-zinc-800 hover:border-cyan-500/50 transition-all duration-200 text-center shadow-xs"
+                      className="block rounded-2xl px-4 py-2.5 text-sm font-semibold font-btn text-slate-200 hover:bg-zinc-900 hover:text-cyan-400 transition-colors"
                     >
-                      <div className={cn("p-2.5 rounded-xl text-white bg-gradient-to-r shadow-md group-hover:scale-110 transition-transform mb-2", item.color)}>
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <span className="text-xs font-bold font-btn text-slate-200 group-hover:text-cyan-400 transition-colors leading-tight">
-                        {item.label}
-                      </span>
+                      {item.label}
                     </Link>
-                  ))}
-                </div>
-
-                {/* Register CTA Banner */}
+                  )
+                ))}
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     window.dispatchEvent(new CustomEvent("open-register-modal"));
                   }}
-                  className="gradient-brand w-full rounded-2xl px-4 py-3 text-center text-sm font-extrabold font-btn text-white shadow-lg cursor-pointer border-none flex items-center justify-center gap-2"
+                  className="gradient-brand mt-4 w-full block rounded-2xl px-4 py-3 text-center text-sm font-bold font-btn text-white shadow-lg cursor-pointer border-none"
                 >
-                  <Sparkles className="h-4 w-4 text-cyan-200" />
-                  <span>Register For Executive Summit</span>
-                  <ArrowRight className="h-4 w-4" />
+                  Register Now
                 </button>
               </div>
             </motion.div>

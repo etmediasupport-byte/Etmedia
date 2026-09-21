@@ -59,6 +59,7 @@ export default function App() {
           <Route path="events/:slug" element={<EventDetailPage />} />
           <Route path="partner" element={<PartnerWithUsPage />} />
           <Route path="events/partner" element={<PartnerWithUsPage />} />
+          <Route path="membership" element={<DelegateRegistrationPage />} />
           <Route path="delegate-registration" element={<DelegateRegistrationPage />} />
           <Route path="events/register" element={<DelegateRegistrationPage />} />
           <Route path="careers" element={<CareersPage />} />

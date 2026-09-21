@@ -584,9 +584,9 @@ function GalleryPreview() {
               key={i}
               type="button"
               onClick={() => setLightbox(src)}
-              className="overflow-hidden rounded-3xl cursor-pointer group"
+              className="overflow-hidden rounded-none cursor-pointer group"
             >
-              <ImageZoomCard src={src} alt="ET Media event highlight" className="h-64 w-full rounded-3xl" />
+              <ImageZoomCard src={src} alt="ET Media event highlight" className="h-64 w-full rounded-none" />
             </button>
           ))}
         </div>
@@ -604,7 +604,7 @@ function GalleryPreview() {
           >
             <X className="h-6 w-6" />
           </button>
-          <img src={lightbox} alt="Enlarged gallery view" className="max-h-[85vh] w-auto rounded-3xl shadow-2xl" />
+          <img src={lightbox} alt="Enlarged gallery view" className="max-h-[85vh] w-auto rounded-none shadow-2xl" />
         </div>
       )}
     </section>
