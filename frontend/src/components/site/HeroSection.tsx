@@ -1,9 +1,33 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, Calendar, Users, Handshake, Globe, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Calendar, Users, Handshake, Globe, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { AnimatedGlobe } from "@/components/ui/AnimatedGlobe";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+
+const heroPhrases = [
+  {
+    prefix: "Connecting",
+    gradientText: "Ideas. People.",
+    line2: "Opportunities.",
+    subtext: "A global platform for business intelligence, thought leadership and meaningful collaborations.",
+    kicker: "E T  M E D I A  —  O U R  E V E N T  N E T W O R K",
+  },
+  {
+    prefix: "Empowering",
+    gradientText: "CFOs. HR Leaders.",
+    line2: "Industry Pioneers.",
+    subtext: "Elevating C-suite conversations, executive keynotes, and strategic corporate summits worldwide.",
+    kicker: "E L E V A T I N G  C - S U I T E  L E A D E R S H I P",
+  },
+  {
+    prefix: "Accelerating",
+    gradientText: "Intelligence. Tech.",
+    line2: "Global Growth.",
+    subtext: "Unlocking high-impact networking, premier delegate experiences, and transformative partnerships.",
+    kicker: "P R E M I E R  B U S I N E S S  I N T E L L I G E N C E",
+  },
+];
 
 const statsList = [
   {
@@ -34,6 +58,8 @@ const statsList = [
 
 export function HeroSection() {
   const [activeStatIndex, setActiveStatIndex] = useState(0);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const currentPhrase = heroPhrases[phraseIndex] ?? heroPhrases[0]!;
 
   // Auto-rotate stats highlight indicator every 4s
   useEffect(() => {
@@ -43,8 +69,16 @@ export function HeroSection() {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-rotate text transition phrases every 4.5s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % heroPhrases.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-14 sm:pt-16 lg:pt-18 pb-4 sm:pb-6">
+    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-[60px] sm:pt-[64px] lg:pt-[68px] pb-3 sm:pb-4">
       
       {/* Background Radial Atmosphere Glow behind Globe & Content */}
       <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.25)_0%,rgba(75,31,167,0.18)_45%,transparent_75%)] pointer-events-none blur-3xl" />
@@ -59,49 +93,66 @@ export function HeroSection() {
       </div>
 
       {/* MAIN CONTENT CONTAINER */}
-      <div className="container-x relative z-10 flex flex-col justify-between">
+      <div className="container-x relative z-10 flex flex-col justify-between pt-1 sm:pt-2">
         
         {/* TOP ROW: TWO COLUMNS (LEFT CONTENT & RIGHT INTERACTIVE GLOBE) */}
-        <div className="grid gap-4 lg:grid-cols-12 items-center">
+        <div className="grid gap-3 lg:grid-cols-12 items-center">
           
           {/* LEFT COLUMN: BRANDING, HEADLINE, LOCATIONS & CTAS */}
-          <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+          <div className="lg:col-span-6 space-y-2.5 sm:space-y-3">
             
-            {/* Top Subtitle Kicker */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] text-cyan-400 font-btn"
-            >
-              <span>E T &nbsp; M E D I A &nbsp; — &nbsp; O U R &nbsp; E V E N T &nbsp; N E T W O R K</span>
-            </motion.div>
+            {/* Dynamic Animated Text Section with Motion & Blur Transitions */}
+            <div className="min-h-[160px] sm:min-h-[175px] lg:min-h-[190px] flex flex-col justify-center">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={phraseIndex}
+                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
+                  transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className="space-y-2 sm:space-y-2.5"
+                >
+                  {/* Top Subtitle Kicker */}
+                  <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] text-cyan-400 font-btn">
+                    <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                    <span>{currentPhrase.kicker}</span>
+                  </div>
 
-            {/* Main Headline (Strictly 2 Lines on Desktop, Responsive on Mobile) */}
-            <motion.h1
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-white font-display leading-[1.15]"
-            >
-              <span className="block sm:whitespace-nowrap">
-                Connecting{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Ideas. People.
-                </span>
-              </span>
-              <span className="block">Opportunities.</span>
-            </motion.h1>
+                  {/* Main Dynamic Headline */}
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-white font-display leading-[1.15]">
+                    <span className="block sm:whitespace-nowrap">
+                      {currentPhrase.prefix}{" "}
+                      <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(0,174,239,0.35)]">
+                        {currentPhrase.gradientText}
+                      </span>
+                    </span>
+                    <span className="block">{currentPhrase.line2}</span>
+                  </h1>
 
-            {/* Subtext Paragraph */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xs sm:text-sm lg:text-base text-slate-300 font-medium max-w-xl leading-relaxed"
-            >
-              A global platform for business intelligence, thought leadership and meaningful collaborations.
-            </motion.p>
+                  {/* Subtext Paragraph */}
+                  <p className="text-xs sm:text-sm lg:text-base text-slate-300 font-medium max-w-xl leading-relaxed">
+                    {currentPhrase.subtext}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Phrase Selector Dots */}
+            <div className="flex items-center gap-1.5 pt-0.5">
+              {heroPhrases.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Phrase ${i + 1}`}
+                  onClick={() => setPhraseIndex(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === phraseIndex
+                      ? "w-6 bg-gradient-to-r from-cyan-400 to-purple-500 shadow-[0_0_10px_#00AEEF]"
+                      : "w-1.5 bg-zinc-700 hover:bg-zinc-500"
+                  }`}
+                />
+              ))}
+            </div>
 
             {/* ACTION BUTTONS */}
             <motion.div
