@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PageHero } from "@/components/site/PageHero";
 import { EventCard } from "@/components/site/EventCard";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { events as defaultEvents, EventItem, images } from "@/lib/site-data";
@@ -101,58 +100,46 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background pb-20">
+    <div className="relative min-h-screen bg-background pb-16 pt-20">
       <GlowBackdrop />
-      <PageHero
-        crumb="Events"
-        title="Leadership Events & Industry Awards"
-        subtitle="Connect with CXOs, policymakers, and industry pioneers at India's premier executive platforms."
-        image={images.heroSummit}
-      />
 
-      <section className="container-x relative mt-6 sm:mt-12">
-        <Reveal>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-border bg-card/60 p-3.5 sm:p-4 backdrop-blur-md">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-foreground">
-                <Filter className="h-4 w-4 text-primary" />
-                <span>Filter Events</span>
-              </div>
-
-              {activeUsers !== null && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-emerald-500">
-                  <Radio className="h-3 w-3 animate-pulse" />
-                  Live ({activeUsers})
-                </span>
-              )}
-
-              {liveRegistrations > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-primary">
-                  <UserCheck className="h-3 w-3" />
-                  {liveRegistrations} Registered
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto">
-              {(["all", "upcoming", "past"] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setStatusFilter(filter)}
-                  className={`flex-1 sm:flex-none rounded-full px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold capitalize transition-all cursor-pointer ${
-                    statusFilter === filter
-                      ? "gradient-brand text-white shadow-md"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  {filter === "all" ? "All Events" : `${filter} Events`}
-                </button>
-              ))}
-            </div>
+      <section className="container-x relative">
+        {/* Title Header & Filter Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/80 pb-5">
+          <div className="text-left">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground font-display">
+              Leadership Events & Industry Awards
+            </h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1.5 max-w-2xl">
+              Connect with CXOs, policymakers, and industry pioneers at India's premier executive platforms.
+            </p>
           </div>
-        </Reveal>
 
-        <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {activeUsers !== null && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+                <Radio className="h-3 w-3 animate-pulse" />
+                Live ({activeUsers})
+              </span>
+            )}
+            {(["all", "upcoming", "past"] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setStatusFilter(filter)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all cursor-pointer ${
+                  statusFilter === filter
+                    ? "gradient-brand text-white shadow-md"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+                }`}
+              >
+                {filter === "all" ? "All Events" : `${filter} Events`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Compact Cards Grid */}
+        <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => (
             <Reveal key={event.id || event.slug}>
               <div onClick={() => setSelectedEvent(event)}>
