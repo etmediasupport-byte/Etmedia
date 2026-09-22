@@ -114,16 +114,8 @@ export function HeroSection() {
     return () => clearInterval(timer);
   }, [isPaused, statsList.length]);
 
-  // Auto-scroll active card smoothly into view
-  useEffect(() => {
-    if (cardRefs.current[activeStatIndex]) {
-      cardRefs.current[activeStatIndex]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  }, [activeStatIndex]);
+  // Auto-rotate stats highlight active index
+  // (No scrollIntoView needed as all items fit inside grid layout without scrollbars)
 
   // Auto-rotate text transition phrases every 4.5s
   useEffect(() => {
@@ -287,14 +279,15 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.4 }}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/85 p-2.5 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl"
+          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/85 p-2.5 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl overflow-hidden"
         >
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 overflow-hidden">
             
-            {/* CAROUSEL COUNTER STATISTICS HORIZONTAL SCROLL CONTAINER */}
+            {/* CAROUSEL COUNTER STATISTICS GRID CONTAINER */}
             <div
               ref={scrollContainerRef}
-              className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar scroll-smooth py-1 px-0.5 flex-1"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 flex-1 no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden overflow-hidden py-1 px-0.5"
             >
               {statsList.map((st, idx) => {
                 const IconComp = st.icon;
@@ -304,7 +297,7 @@ export function HeroSection() {
                     key={st.id}
                     ref={(el) => { cardRefs.current[idx] = el; }}
                     onClick={() => setActiveStatIndex(idx)}
-                    className={`flex-1 min-w-[190px] sm:min-w-[210px] xl:min-w-0 flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
+                    className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
                       isActive
                         ? `${st.activeBorder} scale-[1.02] z-10`
                         : "bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-800/70 opacity-80 hover:opacity-100"

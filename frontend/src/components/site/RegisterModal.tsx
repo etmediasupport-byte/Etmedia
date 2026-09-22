@@ -2,16 +2,19 @@ import { useState, useEffect } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, type EventItem } from "@/lib/site-data";
-import logoUrl from "@/assets/logo-transparent.svg";
+import logoUrl from "@/assets/logo-etmedia.png";
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   event: EventItem | null;
+  mode?: "paid" | "free";
 }
 
-export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
+export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: RegisterModalProps) {
   const [modalStep, setModalStep] = useState<"form" | "payment">("form");
+  const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,6 +34,14 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
+
+  // Sync activeMode with mode prop when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveMode(mode || "paid");
+      setModalStep("form");
+    }
+  }, [isOpen, mode]);
 
   // Events list & selector state
   const [eventsList, setEventsList] = useState<EventItem[]>(defaultEvents);
@@ -241,7 +252,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     }
   };
 
-  // Submit Free Registration & Skip Payment Step Completely
+  // Handle Form Submission (Supports both Free Interest & Paid Ticket Modes)
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -278,39 +289,71 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
       return;
     }
 
-    setSubmitting(true);
-    const refId = `ET-REG-${Math.floor(100000 + Math.random() * 900000)}`;
+    if (activeMode === "free") {
+      // FREE MODE: Submit registration directly, skip payment step
+      setSubmitting(true);
+      const refId = `ET-REG-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const payload = {
-      ...formData,
-      name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-      phone: formData.contactNumber,
-      organization: formData.companyName,
-      eventId: currentEvent.id || currentEvent.slug,
-      eventTitle: currentEvent.title,
-      paymentAmount: 0,
-      paymentStatus: "Free Registration",
-      referenceId: refId,
-    };
+      const payload = {
+        ...formData,
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        phone: formData.contactNumber,
+        organization: formData.companyName,
+        eventId: currentEvent.id || currentEvent.slug,
+        eventTitle: currentEvent.title,
+        paymentAmount: 0,
+        paymentStatus: "Free Registration",
+        referenceId: refId,
+      };
 
-    try {
-      const res = await fetch("/api/events/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      await res.json();
-      toast.success(`🎉 Free Interest Registered! Ref ID: ${refId}`);
-    } catch (leadErr) {
-      console.warn("Using offline confirmation fallback:", leadErr);
-      toast.success(`🎉 Interest Registered Successfully! Ref ID: ${refId}`);
-    } finally {
-      setSubmitting(false);
-      setSubmittedData({
-        ...payload,
-        totalPaid: 0,
-      });
-      setSuccessModalOpen(true);
+      try {
+        const res = await fetch("/api/events/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        await res.json();
+        toast.success(`🎉 Free Interest Registered! Ref ID: ${refId}`);
+      } catch (leadErr) {
+        console.warn("Using offline confirmation fallback:", leadErr);
+        toast.success(`🎉 Interest Registered Successfully! Ref ID: ${refId}`);
+      } finally {
+        setSubmitting(false);
+        setSubmittedData({
+          ...payload,
+          totalPaid: 0,
+        });
+        setSuccessModalOpen(true);
+      }
+    } else {
+      // PAID MODE: Save pending lead & proceed to Payment Summary + Razorpay checkout
+      const pricing = getPricing();
+      try {
+        const payload = {
+          ...formData,
+          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+          phone: formData.contactNumber,
+          organization: formData.companyName,
+          eventId: currentEvent.id || currentEvent.slug,
+          eventTitle: currentEvent.title,
+          paymentAmount: pricing.totalPayable,
+          paymentStatus: "Pending",
+        };
+
+        const res = await fetch("/api/events/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success && data.data?.id) {
+          setPendingRegId(data.data.id);
+        }
+      } catch (leadErr) {
+        console.warn("Could not pre-save pending registration lead:", leadErr);
+      }
+
+      setModalStep("payment");
     }
   };
 
@@ -541,8 +584,33 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                     <span>Executive Platform Registration</span>
                   </div>
                   <h3 className="mt-0.5 text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
-                    Register Your Free Interest
+                    {activeMode === "free" ? "Register Free Interest" : "Delegate Pass Registration"}
                   </h3>
+                  {/* Mode Selector Tabs */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveMode("paid"); setModalStep("form"); }}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        activeMode === "paid"
+                          ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                          : "bg-slate-800 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      💳 Paid Pass (With Payment)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveMode("free"); setModalStep("form"); }}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        activeMode === "free"
+                          ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-extrabold"
+                          : "bg-slate-800 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      ✨ Free Interest (No Payment)
+                    </button>
+                  </div>
                 </div>
 
                 {/* Interactive Event Selector Banner */}
@@ -899,7 +967,9 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                       ) : (
                         <>
                           <Award className="h-4 w-4 text-white" />
-                          <span>Submit Free Interest Registration →</span>
+                          <span>
+                            {activeMode === "free" ? "Submit Free Interest Registration →" : "Proceed to Order & Payment →"}
+                          </span>
                         </>
                       )}
                     </button>

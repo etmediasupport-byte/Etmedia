@@ -15,17 +15,29 @@ import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 export function Layout() {
   const location = useLocation();
   const lenisRef = useRef<Lenis | null>(null);
-  const [modalState, setModalState] = useState<{ isOpen: boolean; event: EventItem | null }>({
+  const [modalState, setModalState] = useState<{ isOpen: boolean; event: EventItem | null; mode?: "paid" | "free" }>({
     isOpen: false,
     event: null,
+    mode: "paid",
   });
   const [membershipModalOpen, setMembershipModalOpen] = useState(false);
 
   // Global event listener to open RegisterModal from any card, button, or link
   useEffect(() => {
     const handleOpenRegisterModal = (e: any) => {
-      const selectedEvent = e.detail || defaultEvents[0];
-      setModalState({ isOpen: true, event: selectedEvent });
+      const detail = e.detail || {};
+      let selectedEvent: EventItem | null = defaultEvents[0] ?? null;
+      let regMode: "paid" | "free" = "paid";
+
+      if (detail.event) {
+        selectedEvent = detail.event;
+        regMode = detail.mode || "paid";
+      } else if (detail.title || detail.id) {
+        selectedEvent = detail;
+        regMode = detail.registrationMode || "paid";
+      }
+
+      setModalState({ isOpen: true, event: selectedEvent, mode: regMode });
     };
 
     const handleOpenMembershipModal = () => {
@@ -97,8 +109,9 @@ export function Layout() {
       {/* Global Instant Register Now Modal */}
       <RegisterModal
         isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, event: null })}
+        onClose={() => setModalState({ isOpen: false, event: null, mode: "paid" })}
         event={modalState.event || (defaultEvents[0] as EventItem) || null}
+        mode={modalState.mode || "paid"}
       />
 
       {/* Global Step-wise Membership Application Modal */}

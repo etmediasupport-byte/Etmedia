@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CheckCircle2, ShieldCheck, User, MapPin, Building, Mail, Phone, Tag, CreditCard, Printer, AlertTriangle, ArrowLeft, Calendar, Gift } from "lucide-react";
-import logo from "@/assets/logo-transparent.svg";
+import logo from "@/assets/logo-etmedia.png";
 
 interface PassData {
   id: string;

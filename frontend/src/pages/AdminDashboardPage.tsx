@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
-import logo from "@/assets/logo-transparent.svg";
+import logo from "@/assets/logo-etmedia.png";
 import { socket } from "@/lib/socket";
 import {
   events as staticEvents,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import logoTransparent from "@/assets/logo-transparent.svg";
+import logoEtMedia from "@/assets/logo-etmedia.png";
 import { Sparkles } from "lucide-react";
 
 export function Preloader() {
@@ -67,11 +67,9 @@ export function Preloader() {
               className="relative z-10 flex items-center justify-center p-3 bg-transparent"
             >
               <img
-                src={logoTransparent}
+                src={logoEtMedia}
                 alt="ET Media"
                 className="h-16 sm:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_0_25px_rgba(0,174,239,0.5)]"
-                width={320}
-                height={120}
               />
             </motion.div>
           </div>
