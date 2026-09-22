@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard } from "lucide-react";
+import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import type { EventItem } from "@/lib/site-data";
+import { events as defaultEvents, type EventItem } from "@/lib/site-data";
 import logoUrl from "@/assets/logo-transparent.svg";
 
 interface RegisterModalProps {
@@ -31,6 +31,35 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
+
+  // Events list & selector state
+  const [eventsList, setEventsList] = useState<EventItem[]>(defaultEvents);
+  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+
+  // Fetch live events list for event dropdown selector
+  useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setEventsList(data.data);
+        }
+      })
+      .catch((err) => console.warn("Using static events data for modal selector", err));
+  }, []);
+
+  // Sync selectedEvent when event prop or isOpen changes
+  useEffect(() => {
+    if (isOpen) {
+      if (event) {
+        setSelectedEvent(event);
+      } else if (eventsList.length > 0) {
+        setSelectedEvent((prev) => prev ?? eventsList[0] ?? null);
+      }
+    }
+  }, [isOpen, event, eventsList]);
+
+  const currentEvent = selectedEvent || event || eventsList[0] || defaultEvents[0];
 
   // Payment Config & Coupon state
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
@@ -68,9 +97,9 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     return "";
   };
 
-  // Auto-select event details & fetch payment configuration when event changes
+  // Auto-select event details & fetch payment configuration when active event changes
   useEffect(() => {
-    if (event) {
+    if (currentEvent && isOpen) {
       setModalStep("form");
       setAppliedCoupon(null);
       setCouponInput("");
@@ -80,16 +109,16 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
       let cities: string[] = [];
       try {
-        if (typeof event.locations === "string") {
-          const parsed = JSON.parse(event.locations);
+        if (typeof currentEvent.locations === "string") {
+          const parsed = JSON.parse(currentEvent.locations);
           cities = parsed.map((l: any) => l.city).filter(Boolean);
-        } else if (Array.isArray(event.locations)) {
-          cities = event.locations.map((l: any) => l.city).filter(Boolean);
+        } else if (Array.isArray(currentEvent.locations)) {
+          cities = currentEvent.locations.map((l: any) => l.city).filter(Boolean);
         }
       } catch (e) {}
 
-      if (cities.length === 0 && event.city) {
-        cities = [event.city];
+      if (cities.length === 0 && currentEvent.city) {
+        cities = [currentEvent.city];
       }
       const initialRegisteringCity = cities[0] || "Mumbai";
 
@@ -98,34 +127,39 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
         registeringCity: initialRegisteringCity,
       }));
 
-      // Fetch payment config for event
-      fetch(`/api/event-payments/event/${event.id || event.slug}`)
+      // Fetch payment config for active event
+      fetch(`/api/event-payments/event/${currentEvent.id || currentEvent.slug}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.payment) {
             setPaymentConfig(data.payment);
+          } else {
+            setPaymentConfig(null);
           }
         })
-        .catch((err) => console.warn("Could not load payment settings for event", err));
+        .catch((err) => {
+          console.warn("Could not load payment settings for event", err);
+          setPaymentConfig(null);
+        });
     }
-  }, [event]);
+  }, [currentEvent?.id, currentEvent?.slug, isOpen]);
 
-  if (!isOpen || !event) return null;
+  if (!isOpen || !currentEvent) return null;
 
   // Extract cities list for dropdown - ONLY from Admin added Event Schedules & Cities
   let eventCities: string[] = [];
   try {
-    if (typeof event.locations === "string") {
-      const parsed = JSON.parse(event.locations);
+    if (typeof currentEvent.locations === "string") {
+      const parsed = JSON.parse(currentEvent.locations);
       eventCities = parsed.map((l: any) => l.city).filter(Boolean);
-    } else if (Array.isArray(event.locations)) {
-      eventCities = event.locations.map((l: any) => l.city).filter(Boolean);
+    } else if (Array.isArray(currentEvent.locations)) {
+      eventCities = currentEvent.locations.map((l: any) => l.city).filter(Boolean);
     }
   } catch (e) {}
-  if (eventCities.length === 0 && event.city) {
-    eventCities = [event.city];
+  if (eventCities.length === 0 && currentEvent.city) {
+    eventCities = [currentEvent.city];
   }
-  const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [event.city || "Mumbai"]));
+  const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [currentEvent.city || "Mumbai"]));
 
   // Calculate pricing breakdown
   const getPricing = () => {
@@ -252,8 +286,8 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
         name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
         phone: formData.contactNumber,
         organization: formData.companyName,
-        eventId: event.id || event.slug,
-        eventTitle: event.title,
+        eventId: currentEvent.id || currentEvent.slug,
+        eventTitle: currentEvent.title,
         paymentAmount: pricing.totalPayable,
         paymentStatus: "Pending",
       };
@@ -334,7 +368,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           amount: Math.round(pricing.totalPayable * 100), // Amount in paise
           currency: paymentConfig?.currency || "INR",
           name: "ET Media Business Intelligence",
-          description: `${formData.registrationCategory} Pass: ${event.title}`,
+          description: `${formData.registrationCategory} Pass: ${currentEvent.title}`,
           image: logoUrl,
           order_id: razorpayOrderId || undefined,
           prefill: {
@@ -353,8 +387,8 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                 name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
                 phone: formData.contactNumber,
                 organization: formData.companyName,
-                eventId: event.id || event.slug,
-                eventTitle: event.title,
+                eventId: currentEvent.id || currentEvent.slug,
+                eventTitle: currentEvent.title,
                 paymentAmount: pricing.totalPayable,
                 paymentStatus: "Paid",
                 paymentId: response.razorpay_payment_id,
@@ -389,7 +423,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
               toast.success(`💳 Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
               setSubmittedData({
                 ...formData,
-                eventTitle: event.title,
+                eventTitle: currentEvent.title,
                 emailSent: data.emailSent,
                 paymentId: response.razorpay_payment_id,
                 totalPaid: pricing.totalPayable,
@@ -425,8 +459,8 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
           name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
           phone: formData.contactNumber,
           organization: formData.companyName,
-          eventId: event.id || event.slug,
-          eventTitle: event.title,
+          eventId: currentEvent.id || currentEvent.slug,
+          eventTitle: currentEvent.title,
           paymentAmount: 0,
           paymentStatus: "Free",
           couponApplied: appliedCoupon?.code || null,
@@ -447,7 +481,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
         setSubmittedData({
           ...formData,
-          eventTitle: event.title,
+          eventTitle: currentEvent.title,
           emailSent: data.emailSent,
           totalPaid: 0,
         });
@@ -505,23 +539,49 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                   </h3>
                 </div>
 
-                {/* Auto Selected Event Banner */}
-                <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900 to-purple-950/30 p-2.5 sm:px-4 sm:py-2.5 text-slate-200 shadow-inner sm:max-w-md">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">
-                    Auto-Selected Summit
-                  </span>
-                  <h4 className="text-xs sm:text-sm font-bold text-white truncate">
-                    {event.title}
-                  </h4>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-400">
-                    {event.date && (
-                      <span className="flex items-center gap-1 text-cyan-300">
-                        <Calendar className="h-3 w-3 text-cyan-400" /> {event.date}
+                {/* Interactive Event Selector Banner */}
+                <div className="rounded-2xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 via-slate-900 to-purple-950/40 p-2.5 sm:px-4 sm:py-2 text-slate-200 shadow-inner sm:w-80 md:w-96 shrink-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-cyan-400" />
+                      <span>Select Summit / Event</span>
+                    </span>
+                    {eventsList.length > 1 && (
+                      <span className="text-[9px] font-bold text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded-full font-mono">
+                        {eventsList.length} Events Available
                       </span>
                     )}
-                    {(event.venue || event.city) && (
-                      <span className="flex items-center gap-1 text-purple-300 truncate">
-                        <MapPin className="h-3 w-3 text-purple-400 shrink-0" /> {event.venue ? `${event.venue}, ` : ""}{event.city}
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={currentEvent.id || currentEvent.slug || ""}
+                      onChange={(e) => {
+                        const found = eventsList.find((ev) => (ev.id || ev.slug) === e.target.value);
+                        if (found) {
+                          setSelectedEvent(found);
+                        }
+                      }}
+                      className="w-full appearance-none rounded-lg border border-cyan-500/50 bg-slate-950/90 py-1.5 pl-3 pr-8 text-xs sm:text-sm font-bold text-white shadow-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 hover:border-cyan-400 transition-all cursor-pointer truncate"
+                    >
+                      {eventsList.map((ev) => (
+                        <option key={ev.id || ev.slug} value={ev.id || ev.slug} className="bg-slate-900 text-slate-100 py-1 font-semibold">
+                          {ev.title} {ev.city ? `(${ev.city})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 pointer-events-none" />
+                  </div>
+
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-400">
+                    {currentEvent.date && (
+                      <span className="flex items-center gap-1 text-cyan-300 font-semibold">
+                        <Calendar className="h-3 w-3 text-cyan-400 shrink-0" /> {currentEvent.date}
+                      </span>
+                    )}
+                    {(currentEvent.venue || currentEvent.city) && (
+                      <span className="flex items-center gap-1 text-purple-300 font-semibold truncate">
+                        <MapPin className="h-3 w-3 text-purple-400 shrink-0" /> {currentEvent.venue ? `${currentEvent.venue}, ` : ""}{currentEvent.city}
                       </span>
                     )}
                   </div>
@@ -867,7 +927,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
 
                       <div className="border-t border-slate-800/80 pt-3">
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Event & Category</span>
-                        <strong className="text-cyan-300 text-sm block mt-0.5 leading-snug">{event.title}</strong>
+                        <strong className="text-cyan-300 text-sm block mt-0.5 leading-snug">{currentEvent.title}</strong>
                         <span className="block text-purple-300 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
                         <span className="block text-slate-400 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
                       </div>
