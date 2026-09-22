@@ -202,6 +202,14 @@ interface WebsiteSettings {
   youtube_url: string;
   google_maps_url: string;
   maintenance_mode: boolean;
+  hero_stat_1_value?: string;
+  hero_stat_1_label?: string;
+  hero_stat_2_value?: string;
+  hero_stat_2_label?: string;
+  hero_stat_3_value?: string;
+  hero_stat_3_label?: string;
+  hero_stat_4_value?: string;
+  hero_stat_4_label?: string;
 }
 
 type TabType =
@@ -445,6 +453,14 @@ export default function AdminDashboardPage() {
     youtube_url: "https://youtube.com/c/etmediahub",
     google_maps_url: "https://maps.google.com",
     maintenance_mode: false,
+    hero_stat_1_value: "100+",
+    hero_stat_1_label: "Events Hosted",
+    hero_stat_2_value: "50,000+",
+    hero_stat_2_label: "Delegates Connected",
+    hero_stat_3_value: "500+",
+    hero_stat_3_label: "Industry Partners",
+    hero_stat_4_value: "8+",
+    hero_stat_4_label: "Countries",
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -10090,6 +10106,141 @@ export default function AdminDashboardPage() {
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
                         placeholder="https://youtube.com/@etmedia"
                       />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Hero Section Counter Statistics */}
+                <div className="border-t border-slate-200/80 pt-6 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 tracking-wider">
+                      <Sliders className="h-4 w-4 text-cyan-600" />
+                      <span>Hero Section Counter Statistics</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2.5 py-0.5 rounded-full">
+                      Live Homepage Hero Stats
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Stat 1 */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-cyan-800">
+                        <Calendar className="h-4 w-4 text-cyan-600" />
+                        <span>Counter 1 (Events)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Value</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_1_value || "100+"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_1_value: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="100+"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_1_label || "Events Hosted"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_1_label: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="Events Hosted"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stat 2 */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-purple-800">
+                        <Users className="h-4 w-4 text-purple-600" />
+                        <span>Counter 2 (Delegates)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Value</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_2_value || "50,000+"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_2_value: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="50,000+"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_2_label || "Delegates Connected"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_2_label: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="Delegates Connected"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stat 3 */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-blue-800">
+                        <Handshake className="h-4 w-4 text-blue-600" />
+                        <span>Counter 3 (Partners)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Value</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_3_value || "500+"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_3_value: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="500+"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_3_label || "Industry Partners"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_3_label: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="Industry Partners"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stat 4 */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-800">
+                        <Globe className="h-4 w-4 text-emerald-600" />
+                        <span>Counter 4 (Countries)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Value</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_4_value || "8+"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_4_value: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="8+"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={siteSettings.hero_stat_4_label || "Countries"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, hero_stat_4_label: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:outline-none"
+                            placeholder="Countries"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

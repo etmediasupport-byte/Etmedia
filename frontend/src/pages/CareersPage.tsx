@@ -14,11 +14,20 @@ import {
   ShieldCheck,
   Building,
   User,
+  Users,
   Mail,
   Phone,
   Globe,
   FileText,
   Zap,
+  Trophy,
+  UserCheck,
+  TrendingUp,
+  Heart,
+  ArrowRight,
+  Award,
+  Sliders,
+  Check,
 } from "lucide-react";
 import { GlowBackdrop } from "@/components/site/primitives";
 import { socket } from "@/lib/socket";
@@ -32,6 +41,16 @@ const departmentsList = [
   "Marketing & Digital",
   "Content & Editorial",
 ];
+
+const getDepartmentIcon = (department: string) => {
+  const d = department.toLowerCase();
+  if (d.includes("sales") || d.includes("sponsorship")) return Sparkles;
+  if (d.includes("conference") || d.includes("production")) return Users;
+  if (d.includes("event") || d.includes("operations")) return Sliders;
+  if (d.includes("marketing") || d.includes("digital")) return TrendingUp;
+  if (d.includes("content") || d.includes("editorial")) return FileText;
+  return Briefcase;
+};
 
 export default function CareersPage() {
   const [jobsList, setJobsList] = useState<JobItem[]>([]);
@@ -192,52 +211,62 @@ export default function CareersPage() {
     return matchesDept && matchesSearch;
   });
 
+  const scrollToPositions = () => {
+    const el = document.getElementById("open-positions");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="relative min-h-screen bg-[#07090E] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
       <GlowBackdrop />
 
-
-
       {/* ========================================== */}
-      {/* 2. OPEN POSITIONS SECTION & FILTER         */}
+      {/* 1. OPEN POSITIONS SECTION & SEARCH BAR     */}
       {/* ========================================== */}
-      <section id="open-positions" className="py-20 md:py-28 relative">
+      <section id="open-positions" className="pt-24 sm:pt-28 pb-16 relative">
         <div className="container-x">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="text-xs font-black uppercase tracking-widest text-purple-400 font-display">
-              Career Opportunities
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 font-display">
+          
+          {/* Header Title Box */}
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-purple-400 font-display mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+              <span>CAREER OPPORTUNITIES</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white font-display tracking-tight">
               Open Positions
-            </h2>
-            <p className="mt-3 text-slate-400 text-sm sm:text-base">
+            </h1>
+            <p className="mt-3 text-slate-400 text-xs sm:text-sm lg:text-base font-medium leading-relaxed max-w-2xl mx-auto font-sans">
               Explore available roles across conference production, sales alliances, event operations, and media leadership.
             </p>
           </div>
 
-          {/* Search Bar & Department Filter */}
-          <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900/60 p-4 rounded-3xl border border-slate-800">
+          {/* Search Bar & Department Filter Bar */}
+          <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-4 bg-[#0D111D]/80 p-3 sm:p-4 rounded-3xl border border-slate-800/80 shadow-2xl backdrop-blur-xl">
+            {/* Search Input Box */}
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search job title, location or department..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-11 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
               />
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2">
+            {/* Department Filter Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar py-1">
               {departmentsList.map((dept) => (
                 <button
                   key={dept}
                   type="button"
                   onClick={() => setSelectedDepartment(dept)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     selectedDepartment === dept
-                      ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/20"
-                      : "bg-slate-950 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
+                      ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-purple-500/25 border-none"
+                      : "bg-[#07090E] text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800/80"
                   }`}
                 >
                   {dept}
@@ -246,96 +275,258 @@ export default function CareersPage() {
             </div>
           </div>
 
-          {/* Job Openings Grid */}
+          {/* Job Openings Grid (2 Columns Desktop, 1 Column Mobile) */}
           {filteredJobs.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 text-sm">
+            <div className="py-20 text-center rounded-3xl border border-slate-800/80 bg-[#0D111D]/50 text-slate-400 text-sm font-medium">
               No open position currently matches your search query.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job, idx) => (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.06 }}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-slate-800 bg-slate-900/70 p-7 shadow-xl hover:border-purple-500/50 hover:bg-slate-900 transition-all duration-300"
-                >
-                  <div>
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                        {job.department}
-                      </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredJobs.map((job, idx) => {
+                const IconComp = getDepartmentIcon(job.department);
+                const isClosed = job.status === "Closed";
+                return (
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.05, duration: 0.4 }}
+                    className="group relative flex flex-col justify-between rounded-3xl border border-slate-800/80 bg-[#0B0F19]/90 p-6 sm:p-7 shadow-xl hover:border-purple-500/50 hover:bg-[#0D111D] transition-all duration-300 backdrop-blur-xl"
+                  >
+                    <div>
+                      {/* Top Header: Department Icon, Category Badge & Hiring Badge */}
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-950/60 border border-purple-500/30 text-purple-400 shadow-sm">
+                            <IconComp className="h-5 w-5" />
+                          </div>
 
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                          job.status === "Closed"
-                            ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                            : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        }`}
+                          <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 truncate">
+                            {job.department}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-bold px-3 py-1 rounded-full border shrink-0 ${
+                            isClosed
+                              ? "bg-rose-950/60 text-rose-400 border-rose-500/40"
+                              : "bg-emerald-950/60 text-emerald-400 border-emerald-500/40"
+                          }`}
+                        >
+                          {isClosed ? "Hiring Closed" : "Actively Hiring"}
+                        </span>
+                      </div>
+
+                      {/* Job Title */}
+                      <h3 className="text-xl sm:text-2xl font-bold text-white group-hover:text-purple-300 transition-colors font-display line-clamp-2 leading-snug">
+                        {job.title}
+                      </h3>
+
+                      {/* Meta Info: Location & Experience */}
+                      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-400">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+                          <span>{job.location}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Briefcase className="h-4 w-4 text-cyan-400 shrink-0" />
+                          <span>{job.experience}</span>
+                        </div>
+                      </div>
+
+                      {/* Description Paragraph */}
+                      <p className="mt-4 text-xs sm:text-sm text-slate-400 line-clamp-3 leading-relaxed font-sans font-normal">
+                        {job.description}
+                      </p>
+                    </div>
+
+                    {/* Bottom Action Buttons */}
+                    <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJobDetail(job)}
+                        className="rounded-xl border border-slate-800 bg-[#07090E] px-5 py-2.5 text-xs font-bold text-slate-300 hover:border-slate-700 hover:text-white transition-all cursor-pointer"
                       >
-                        {job.status === "Closed" ? "Hiring Closed" : "Actively Hiring"}
-                      </span>
+                        View Details
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isClosed}
+                        onClick={() => {
+                          setApplyJob(job);
+                          setFormError(null);
+                        }}
+                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-2.5 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        <span>Apply Now</span>
+                        <span className="text-sm font-black">+</span>
+                      </button>
                     </div>
-
-                    {/* Job Title */}
-                    <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors font-display line-clamp-2">
-                      {job.title}
-                    </h3>
-
-                    {/* Location & Experience Badges */}
-                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400 font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-                        <span>{job.location}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                        <span>{job.experience}</span>
-                      </div>
-                    </div>
-
-                    {/* Description Snippet */}
-                    <p className="mt-4 text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed font-sans">
-                      {job.description}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedJobDetail(job)}
-                      className="text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      View Details
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={job.status === "Closed"}
-                      onClick={() => {
-                        setApplyJob(job);
-                        setFormError(null);
-                      }}
-                      className="cursor-pointer inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
-                    >
-                      <span>Apply Now</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
+
         </div>
       </section>
 
       {/* ========================================== */}
-      {/* 3. CAREER DETAIL MODAL                     */}
+      {/* 2. WHY JOIN ET MEDIA / MAKE AN IMPACT      */}
+      {/* ========================================== */}
+      <section className="py-12 sm:py-16 relative">
+        <div className="container-x">
+          <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-[#0D0A26] via-[#120D3D] to-[#0A1628] p-8 sm:p-12 overflow-hidden relative shadow-2xl">
+            {/* Background Orbs */}
+            <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+              
+              {/* Left Column: Heading & CTA */}
+              <div className="lg:col-span-5 space-y-4 text-left">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400 font-display">
+                  WHY JOIN ET MEDIA
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display leading-tight">
+                  Make an Impact with Us
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed font-sans">
+                  Join ET Media and be part of a team that brings ideas to life, connects leaders, and shapes industries.
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={scrollToPositions}
+                    className="inline-flex items-center gap-2 rounded-full border border-purple-400/40 bg-purple-950/40 hover:bg-purple-900/60 px-6 py-3 text-xs font-extrabold text-white transition-all cursor-pointer hover:border-purple-400"
+                  >
+                    <span>View All Openings</span>
+                    <ArrowRight className="h-4 w-4 text-purple-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: 4 Value Cards */}
+              <div className="lg:col-span-7 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-4">
+                {/* Value 1 */}
+                <div className="flex flex-col items-start p-4 rounded-2xl bg-[#07090E]/60 border border-slate-800/80 backdrop-blur-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 mb-3">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white font-display">Exciting Projects</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-normal font-sans">Work on high-impact events and initiatives</p>
+                </div>
+
+                {/* Value 2 */}
+                <div className="flex flex-col items-start p-4 rounded-2xl bg-[#07090E]/60 border border-slate-800/80 backdrop-blur-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 mb-3">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white font-display">Learn from Leaders</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-normal font-sans">Collaborate with top professionals</p>
+                </div>
+
+                {/* Value 3 */}
+                <div className="flex flex-col items-start p-4 rounded-2xl bg-[#07090E]/60 border border-slate-800/80 backdrop-blur-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 mb-3">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white font-display">Career Growth</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-normal font-sans">Continuous learning and development</p>
+                </div>
+
+                {/* Value 4 */}
+                <div className="flex flex-col items-start p-4 rounded-2xl bg-[#07090E]/60 border border-slate-800/80 backdrop-blur-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/15 text-pink-400 border border-pink-500/30 mb-3">
+                    <Heart className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white font-display">People-First</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-normal font-sans">A supportive and inclusive workplace</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================== */}
+      {/* 3. GET STARTED / HIRING PROCESS SECTION    */}
+      {/* ========================================== */}
+      <section className="py-16 sm:py-20 relative">
+        <div className="container-x">
+          {/* Header */}
+          <div className="text-left mb-12">
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400 font-display">
+              GET STARTED
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display mt-1">
+              Our Hiring Process
+            </h2>
+          </div>
+
+          {/* 4-Step Flow */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+            {/* Step 1 */}
+            <div className="relative flex flex-col p-6 rounded-3xl border border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-black text-sm shadow-md">
+                  1
+                </div>
+                <h4 className="text-base font-bold text-white font-display">Apply</h4>
+              </div>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed font-sans">
+                Submit your application online
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative flex flex-col p-6 rounded-3xl border border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-sm shadow-md">
+                  2
+                </div>
+                <h4 className="text-base font-bold text-white font-display">Screening</h4>
+              </div>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed font-sans">
+                Initial review by our team
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="relative flex flex-col p-6 rounded-3xl border border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white font-black text-sm shadow-md">
+                  3
+                </div>
+                <h4 className="text-base font-bold text-white font-display">Interviews</h4>
+              </div>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed font-sans">
+                Meet with our hiring managers
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="relative flex flex-col p-6 rounded-3xl border border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-500 text-white font-black text-sm shadow-md">
+                  4
+                </div>
+                <h4 className="text-base font-bold text-white font-display">Get Hired</h4>
+              </div>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed font-sans">
+                Join the ET Media family
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================== */}
+      {/* 4. CAREER DETAIL MODAL                     */}
       {/* ========================================== */}
       <AnimatePresence>
         {selectedJobDetail && (
@@ -344,18 +535,16 @@ export default function CareersPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl rounded-3xl border border-purple-500/30 bg-slate-900 p-6 sm:p-8 shadow-2xl text-white max-h-[85vh] overflow-y-auto"
+              className="relative w-full max-w-3xl rounded-3xl border border-purple-500/30 bg-[#0D111D] p-6 sm:p-8 shadow-2xl text-white max-h-[85vh] overflow-y-auto"
             >
-              {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setSelectedJobDetail(null)}
-                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-800/60 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-900 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              {/* Top Header */}
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
                   {selectedJobDetail.department}
@@ -363,8 +552,8 @@ export default function CareersPage() {
                 <span
                   className={`text-xs font-bold px-3 py-0.5 rounded-full border ${
                     selectedJobDetail.status === "Closed"
-                      ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                      : "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                      ? "bg-rose-950/60 text-rose-400 border-rose-500/40"
+                      : "bg-emerald-950/60 text-emerald-400 border-emerald-500/40"
                   }`}
                 >
                   {selectedJobDetail.status === "Closed" ? "Hiring Closed" : "Actively Hiring"}
@@ -375,18 +564,17 @@ export default function CareersPage() {
                 {selectedJobDetail.title}
               </h2>
 
-              <div className="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-slate-400 border-b border-slate-800 pb-4">
+              <div className="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-slate-400 border-b border-slate-800/80 pb-4">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 text-purple-400" />
                   <span>{selectedJobDetail.location}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-cyan-400" />
+                  <Briefcase className="h-4 w-4 text-cyan-400" />
                   <span>{selectedJobDetail.experience}</span>
                 </div>
               </div>
 
-              {/* Body Content */}
               <div className="mt-6 space-y-6 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
                 <div>
                   <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
@@ -395,7 +583,6 @@ export default function CareersPage() {
                   <p>{selectedJobDetail.description}</p>
                 </div>
 
-                {/* Responsibilities */}
                 {parseList(selectedJobDetail.responsibilities).length > 0 && (
                   <div>
                     <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
@@ -412,7 +599,6 @@ export default function CareersPage() {
                   </div>
                 )}
 
-                {/* Qualifications */}
                 {parseList(selectedJobDetail.qualifications).length > 0 && (
                   <div>
                     <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
@@ -429,7 +615,6 @@ export default function CareersPage() {
                   </div>
                 )}
 
-                {/* Benefits */}
                 {parseList(selectedJobDetail.benefits).length > 0 && (
                   <div>
                     <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
@@ -447,12 +632,11 @@ export default function CareersPage() {
                 )}
               </div>
 
-              {/* Modal Actions */}
-              <div className="mt-8 pt-6 border-t border-slate-800 flex justify-end gap-3">
+              <div className="mt-8 pt-6 border-t border-slate-800/80 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedJobDetail(null)}
-                  className="px-6 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-bold"
+                  className="px-6 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-bold"
                 >
                   Close
                 </button>
@@ -465,7 +649,7 @@ export default function CareersPage() {
                     setSelectedJobDetail(null);
                     setFormError(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-purple-600 text-white hover:bg-purple-500 transition-colors cursor-pointer text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-purple-500/20 disabled:opacity-40"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer text-xs font-extrabold flex items-center gap-2 disabled:opacity-40"
                 >
                   <span>Apply For This Position</span>
                   <ChevronRight className="h-4 w-4" />
@@ -477,7 +661,7 @@ export default function CareersPage() {
       </AnimatePresence>
 
       {/* ========================================== */}
-      {/* 4. APPLY FORM MODAL                        */}
+      {/* 5. APPLY FORM MODAL                        */}
       {/* ========================================== */}
       <AnimatePresence>
         {applyJob && (
@@ -486,18 +670,16 @@ export default function CareersPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl rounded-3xl border border-purple-500/30 bg-slate-900 p-6 sm:p-8 shadow-2xl text-white max-h-[90vh] overflow-y-auto"
+              className="relative w-full max-w-xl rounded-3xl border border-purple-500/30 bg-[#0D111D] p-6 sm:p-8 shadow-2xl text-white max-h-[90vh] overflow-y-auto"
             >
-              {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setApplyJob(null)}
-                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-800/60 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-900 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              {/* Form Title */}
               <div className="mb-6">
                 <span className="text-xs font-extrabold uppercase text-purple-400 font-display">
                   Job Application
@@ -518,7 +700,6 @@ export default function CareersPage() {
               )}
 
               <form onSubmit={handleApplySubmit} className="space-y-4">
-                {/* Full Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                     Full Name *
@@ -531,12 +712,11 @@ export default function CareersPage() {
                       placeholder="e.g. Rahul Sharma"
                       value={applicantForm.name}
                       onChange={(e) => setApplicantForm({ ...applicantForm, name: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Email & Phone */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -550,7 +730,7 @@ export default function CareersPage() {
                         placeholder="your.email@example.com"
                         value={applicantForm.email}
                         onChange={(e) => setApplicantForm({ ...applicantForm, email: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -567,13 +747,12 @@ export default function CareersPage() {
                         placeholder="+91 98765 43210"
                         value={applicantForm.phone}
                         onChange={(e) => setApplicantForm({ ...applicantForm, phone: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Total Experience */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                     Years of Experience *
@@ -586,19 +765,18 @@ export default function CareersPage() {
                       placeholder="e.g. 3 Years 6 Months"
                       value={applicantForm.experience}
                       onChange={(e) => setApplicantForm({ ...applicantForm, experience: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* PDF Resume Upload */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                     Upload Resume (PDF File) *
                   </label>
                   
                   <div className="relative">
-                    <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-700 bg-slate-950 p-3.5 text-xs font-bold text-purple-300 hover:bg-slate-800 transition-colors">
+                    <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-800 bg-[#07090E] p-3.5 text-xs font-bold text-purple-300 hover:bg-slate-800 transition-colors">
                       <Upload className="h-4 w-4 text-purple-400" />
                       <span>{uploadingResume ? "Uploading PDF..." : "Choose PDF Resume File"}</span>
                       <input
@@ -618,7 +796,6 @@ export default function CareersPage() {
                   )}
                 </div>
 
-                {/* Portfolio / LinkedIn Link */}
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                     Portfolio / LinkedIn Profile URL
@@ -630,16 +807,15 @@ export default function CareersPage() {
                       placeholder="https://linkedin.com/in/yourprofile"
                       value={applicantForm.portfolio_url}
                       onChange={(e) => setApplicantForm({ ...applicantForm, portfolio_url: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Submit Application Button */}
                 <button
                   type="submit"
                   disabled={isSubmitting || uploadingResume}
-                  className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-purple-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
+                  className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-purple-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
                 >
                   {isSubmitting ? (
                     <span>Submitting Application...</span>
@@ -657,7 +833,7 @@ export default function CareersPage() {
       </AnimatePresence>
 
       {/* ========================================== */}
-      {/* 5. SUCCESS CONFIRMATION MODAL             */}
+      {/* 6. SUCCESS CONFIRMATION MODAL             */}
       {/* ========================================== */}
       <AnimatePresence>
         {showSuccessModal && (
@@ -666,7 +842,7 @@ export default function CareersPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md rounded-3xl border border-emerald-500/30 bg-slate-900 p-6 sm:p-8 shadow-2xl text-white text-center"
+              className="relative w-full max-w-md rounded-3xl border border-emerald-500/30 bg-[#0D111D] p-6 sm:p-8 shadow-2xl text-white text-center"
             >
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mb-4">
                 <ShieldCheck className="h-8 w-8" />

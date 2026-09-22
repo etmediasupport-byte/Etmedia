@@ -186,7 +186,7 @@ export function Navbar() {
           >
             <img
               src={logoTransparent}
-              alt="ET Media Business Intelligence"
+              alt="ET Media"
               className="h-9 sm:h-11 lg:h-12 w-auto object-contain bg-transparent border-none shadow-none"
               width={280}
               height={110}

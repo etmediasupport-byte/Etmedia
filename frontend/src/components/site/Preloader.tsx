@@ -68,7 +68,7 @@ export function Preloader() {
             >
               <img
                 src={logoTransparent}
-                alt="ET Media Business Intelligence"
+                alt="ET Media"
                 className="h-16 sm:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_0_25px_rgba(0,174,239,0.5)]"
                 width={320}
                 height={120}
@@ -86,7 +86,7 @@ export function Preloader() {
             {/* Brand Title */}
             <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold uppercase tracking-[0.25em] text-cyan-400 font-display">
               <Sparkles className="h-4 w-4 text-cyan-400 animate-spin" />
-              <span>ET Media Business Intelligence</span>
+              <span>ET Media</span>
             </div>
 
             {/* Subtitle */}
