@@ -141,8 +141,8 @@ export default function EventsPage() {
         {/* Compact Cards Grid */}
         <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => (
-            <Reveal key={event.id || event.slug}>
-              <div onClick={() => setSelectedEvent(event)}>
+            <Reveal key={event.id || event.slug} className="h-full">
+              <div onClick={() => setSelectedEvent(event)} className="h-full">
                 <EventCard event={event} />
               </div>
             </Reveal>

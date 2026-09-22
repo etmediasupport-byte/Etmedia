@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, type EventItem } from "@/lib/site-data";
-import logoUrl from "@/assets/logo-etmedia.png";
+import logoUrl from "@/assets/logo2-transparent.png";
 
 interface RegisterModalProps {
   isOpen: boolean;

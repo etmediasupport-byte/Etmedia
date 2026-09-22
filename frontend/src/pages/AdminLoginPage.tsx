@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo-etmedia.png";
+import logo from "@/assets/logo2-transparent.png";
 import {
   Lock,
   Mail,

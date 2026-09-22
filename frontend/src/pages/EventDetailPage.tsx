@@ -593,19 +593,40 @@ export default function EventDetailPage() {
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
-                {sponsorsList.map((sponsor, idx) => (
-                  <div
-                    key={sponsor.id || idx}
-                    className="flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-6 text-center hover:border-primary/50 transition-colors shadow-sm"
-                  >
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary mb-3">
-                      {sponsor.tier}
-                    </span>
-                    <div className="h-16 flex items-center justify-center">
-                      <span className="text-lg font-black tracking-tight text-foreground">{sponsor.name}</span>
+                {sponsorsList.map((sponsor, idx) => {
+                  const targetUrl = (sponsor as any).websiteUrl || (sponsor as any).website;
+                  const CardContent = (
+                    <div
+                      className="h-full flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-6 text-center hover:border-primary/50 transition-colors shadow-sm group cursor-pointer"
+                    >
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-primary mb-3">
+                        {sponsor.tier}
+                      </span>
+                      <div className="h-16 flex items-center justify-center">
+                        {sponsor.logo ? (
+                          <img src={sponsor.logo} alt={sponsor.name} className="max-h-full max-w-full object-contain transition-transform group-hover:scale-105" />
+                        ) : (
+                          <span className="text-lg font-black tracking-tight text-foreground">{sponsor.name}</span>
+                        )}
+                      </div>
+                      {targetUrl && (
+                        <span className="mt-3 text-[11px] font-bold text-cyan-400 group-hover:underline flex items-center gap-1">
+                          Visit Website ↗
+                        </span>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+
+                  return targetUrl ? (
+                    <a key={sponsor.id || idx} href={targetUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
+                      {CardContent}
+                    </a>
+                  ) : (
+                    <div key={sponsor.id || idx} className="h-full">
+                      {CardContent}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </Reveal>

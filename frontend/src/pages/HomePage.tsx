@@ -304,7 +304,7 @@ function UpcomingEvents() {
         />
         <div className="mt-6 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {eventList.slice(0, 3).map((evt, i) => (
-            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08}>
+            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08} className="h-full">
               <EventCard event={evt} />
             </Reveal>
           ))}

@@ -21,7 +21,7 @@ import {
   Facebook,
 } from "lucide-react";
 import { toast } from "sonner";
-import logoEtMedia from "@/assets/logo-etmedia.png";
+import logo2Transparent from "@/assets/logo2-transparent.png";
 import { contact } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 
@@ -105,7 +105,7 @@ export function Footer() {
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">
             <Link to="/" className="inline-flex transition-transform hover:scale-105 bg-transparent">
               <img
-                src={logoEtMedia}
+                src={logo2Transparent}
                 alt="ET Media Business Intelligence"
                 className="h-10 sm:h-12 w-auto object-contain"
                 loading="lazy"

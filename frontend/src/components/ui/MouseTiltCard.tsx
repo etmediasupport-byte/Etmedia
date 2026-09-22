@@ -69,7 +69,7 @@ export function MouseTiltCard({
         transformStyle: "preserve-3d",
         perspective: 1000,
       }}
-      className={cn("relative overflow-hidden transition-shadow duration-300", className)}
+      className={cn("relative overflow-hidden transition-shadow duration-300 h-full flex flex-col justify-between", className)}
     >
       {/* Dynamic Cursor Spotlight Radial Glow */}
       <div
@@ -79,7 +79,7 @@ export function MouseTiltCard({
           background: `radial-gradient(600px circle at ${spotlightPos.x}% ${spotlightPos.y}%, ${glowColor}, transparent 40%)`,
         }}
       />
-      <div style={{ transform: "translateZ(15px)" }} className="relative z-20">
+      <div style={{ transform: "translateZ(15px)" }} className="relative z-20 h-full flex flex-col justify-between">
         {children}
       </div>
     </motion.div>

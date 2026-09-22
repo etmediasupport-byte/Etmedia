@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
-import logo from "@/assets/logo-etmedia.png";
+import logo from "@/assets/logo2-transparent.png";
 import { socket } from "@/lib/socket";
 import {
   events as staticEvents,
@@ -5605,7 +5605,20 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
 
-                        <p className="font-bold text-slate-900 text-xs text-center truncate">{spn.name}</p>
+                        <div className="text-center">
+                          <p className="font-bold text-slate-900 text-xs truncate">{spn.name}</p>
+                          {(spn.websiteUrl || (spn as any).website) && (
+                            <a
+                              href={spn.websiteUrl || (spn as any).website}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-cyan-600 hover:underline flex items-center justify-center gap-1 mt-0.5 truncate"
+                            >
+                              <span className="truncate">{spn.websiteUrl || (spn as any).website}</span>
+                              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                     ))}
 
@@ -5914,9 +5927,25 @@ export default function AdminDashboardPage() {
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Google, Microsoft, KPMG..."
                   value={sponsorForm.name}
                   onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
-                  placeholder="e.g. Partner Corporate Brand"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Website URL (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="e.g. https://www.google.com"
+                  value={sponsorForm.websiteUrl || (sponsorForm as any).website || ""}
+                  onChange={(e) =>
+                    setSponsorForm({
+                      ...sponsorForm,
+                      websiteUrl: e.target.value,
+                    })
+                  }
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
                 />
               </div>

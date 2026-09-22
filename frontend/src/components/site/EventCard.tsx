@@ -76,18 +76,18 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
 
         {/* Content Body */}
         <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white leading-snug group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2">
+          <div className="flex-1 flex flex-col justify-start">
+            <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white leading-snug group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2 min-h-[2.75rem] sm:min-h-[3.25rem] flex items-center">
               {event.title}
             </h3>
 
-            <p className="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm leading-relaxed font-sans line-clamp-2">
+            <p className="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm leading-relaxed font-sans line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem]">
               {event.description}
             </p>
           </div>
 
-          <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5 font-medium truncate">
+          <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0 mt-auto">
+            <span className="flex items-center gap-1.5 font-medium truncate min-w-0 flex-1 pr-2">
               <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <span className="truncate">{venueText}</span>
             </span>
