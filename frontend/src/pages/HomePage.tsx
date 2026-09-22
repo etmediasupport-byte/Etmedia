@@ -467,70 +467,6 @@ function IndustriesWeServe() {
   );
 }
 
-// SECTION 7: EXECUTIVE TALKS MAGAZINE
-function MagazineSection() {
-  return (
-    <section className="bg-slate-50 section relative overflow-hidden text-slate-900 border-y border-slate-200">
-      <FloatingShapes />
-      <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
-        <Reveal>
-          <div className="[perspective:1600px]">
-            <motion.div
-              initial={{ rotateY: -25, rotateX: 5 }}
-              whileHover={{ rotateY: -5, scale: 1.04 }}
-              transition={{ type: "spring", stiffness: 120, damping: 16 }}
-              className="relative mx-auto w-64 sm:w-80 [transform-style:preserve-3d]"
-            >
-              <div className="absolute inset-y-3 -right-4 rounded-r-2xl bg-slate-200/60 [transform:rotateY(-14deg)_translateZ(-24px)]" />
-              <div className="absolute inset-y-1.5 -right-2 rounded-r-2xl bg-slate-300/80 [transform:rotateY(-8deg)_translateZ(-12px)]" />
-              <img
-                src={images.magazineCover}
-                alt="Executive Talks magazine cover"
-                loading="lazy"
-                width={912}
-                height={1200}
-                className="relative rounded-2xl shadow-2xl border border-slate-200"
-              />
-            </motion.div>
-          </div>
-        </Reveal>
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-50 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-800 uppercase font-btn shadow-sm">
-            Executive Talks Magazine
-          </span>
-          <h2 className="mt-6 text-3xl font-bold font-display text-slate-900 sm:text-5xl leading-tight">
-            The Publication For India's Decision Makers
-          </h2>
-          <p className="mt-5 max-w-xl text-slate-700 text-base leading-relaxed">
-            In-depth interviews, sector intelligence reports and C-Suite perspectives — published quarterly for executive leaders across India.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <MagneticButton strength={15} className="gradient-brand rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-md">
-              <Link to="/magazine" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Read Online
-              </Link>
-            </MagneticButton>
-            <MagneticButton strength={15} className="bg-white rounded-full px-7 py-3.5 text-sm font-semibold text-slate-800 border border-slate-300 shadow-sm hover:bg-slate-100">
-              <Link to="/magazine" className="flex items-center gap-2">
-                <Download className="h-4 w-4" /> Download PDF Edition
-              </Link>
-            </MagneticButton>
-          </div>
-          <div className="mt-12 flex gap-4 overflow-x-auto pb-4">
-            {magazines.slice(0, 4).map((m) => (
-              <ImageZoomCard key={m.issue} src={m.cover} alt={`${m.title} cover`} className="w-32 h-44 shrink-0 rounded-xl shadow-lg">
-                <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-md rounded-lg p-1.5 text-center">
-                  <p className="text-[10px] text-white/80 font-medium">{m.issue}</p>
-                </div>
-              </ImageZoomCard>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // SECTION 8: OUR COLLABORATORS
 function CollaboratorsMarquee() {
   return (
@@ -741,9 +677,6 @@ export default function HomePage() {
 
       {/* Interactive Regional & International Event Map */}
       <InteractiveMapSection />
-
-      {/* 7. Executive Talks Magazine */}
-      <MagazineSection />
 
       {/* 8. Our Collaborators */}
       <CollaboratorsMarquee />
