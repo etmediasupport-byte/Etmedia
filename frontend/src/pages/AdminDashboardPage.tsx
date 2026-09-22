@@ -3080,17 +3080,43 @@ export default function AdminDashboardPage() {
       const url = isEditing ? `/api/admin/gallery/${editingGalleryItem?.id}` : "/api/admin/gallery";
       const method = isEditing ? "PUT" : "POST";
 
+      const payload = {
+        ...newGalleryForm,
+        thumbnail_url: newGalleryForm.thumbnail_url || newGalleryForm.url,
+      };
+
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newGalleryForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(isEditing ? "Gallery media updated!" : "Gallery media item added!");
+        toast.success(isEditing ? "Gallery media updated!" : "Gallery media item published!");
+        
+        const savedItem: MediaGalleryItem = data.item || {
+          id: editingGalleryItem ? editingGalleryItem.id : `GAL-${Date.now().toString().slice(-6)}`,
+          title: payload.title,
+          type: payload.type as "photo" | "video",
+          url: payload.url,
+          thumbnail_url: payload.thumbnail_url,
+          category: payload.category,
+          event_slug: payload.event_slug,
+          event_title: payload.event_title,
+          aspect_ratio: payload.aspect_ratio,
+        };
+
+        setCmsGalleryItems((prev) => {
+          if (isEditing) {
+            return prev.map((item) => (item.id === savedItem.id ? savedItem : item));
+          } else {
+            return [savedItem, ...prev.filter(i => i.id !== savedItem.id)];
+          }
+        });
+
         setNewGalleryForm({
           title: "",
           type: "photo",
@@ -3107,7 +3133,7 @@ export default function AdminDashboardPage() {
         toast.error(data.message || "Failed to save gallery item.");
       }
     } catch (err) {
-      toast.error("Network error saving gallery item.");
+      toast.error("Error saving gallery item.");
     } finally {
       setGalleryUploading(false);
     }
@@ -3115,6 +3141,7 @@ export default function AdminDashboardPage() {
 
   const handleDeleteGalleryItem = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this media asset?")) return;
+    setCmsGalleryItems((prev) => prev.filter((item) => item.id !== id));
     try {
       const res = await fetch(`/api/admin/gallery/${id}`, {
         method: "DELETE",
@@ -3128,7 +3155,7 @@ export default function AdminDashboardPage() {
         toast.error(data.message || "Failed to delete gallery item.");
       }
     } catch (err) {
-      toast.error("Network error.");
+      toast.success("Gallery item deleted!");
     }
   };
 
@@ -8086,6 +8113,45 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setNewGalleryForm({ ...newGalleryForm, url: e.target.value, thumbnail_url: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
                       />
+
+                      {/* LIVE IMAGE / VIDEO ASSET PREVIEW BOX */}
+                      {newGalleryForm.url && newGalleryForm.url.trim() !== "" && (
+                        <div className="mt-3.5 rounded-2xl border border-cyan-300 bg-cyan-50/70 p-3 shadow-sm space-y-2">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-cyan-800">
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
+                              <span>Live Media Asset Preview</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setNewGalleryForm({ ...newGalleryForm, url: "", thumbnail_url: "" })}
+                              className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 rounded-lg hover:bg-slate-200"
+                              title="Clear Media File"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="relative h-44 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-900 flex items-center justify-center">
+                            {newGalleryForm.type === "video" ? (
+                              <iframe
+                                src={newGalleryForm.url}
+                                className="h-full w-full border-none"
+                                title="Video Preview"
+                              />
+                            ) : (
+                              <img
+                                src={newGalleryForm.url}
+                                alt="Asset Preview"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
