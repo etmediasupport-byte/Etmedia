@@ -14,7 +14,7 @@ import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable } from "./db.js";
 
 dotenv.config();
 
@@ -2970,6 +2970,87 @@ app.delete("/api/admin/testimonials/:id", authenticateAdmin, async (req, res) =>
   } catch (err: any) {
     console.error("Delete Testimonial Error:", err);
     return res.status(500).json({ success: false, message: "Failed to delete testimonial" });
+  }
+});
+
+// ==========================================
+// SECTOR FOCUS (INDUSTRIES WE SERVE) API ENDPOINTS
+// ==========================================
+
+// Get all sectors (Public)
+app.get("/api/sectors", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureSectorsTable();
+      const [rows]: any = await pool.query("SELECT * FROM sectors ORDER BY priority ASC, created_at ASC");
+      return res.json({ success: true, sectors: rows });
+    }
+    return res.json({ success: true, sectors: [] });
+  } catch (err: any) {
+    console.error("Fetch Sectors Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch sectors" });
+  }
+});
+
+// Admin create sector
+app.post("/api/admin/sectors", authenticateAdmin, async (req, res) => {
+  const { title, description, icon, tag, priority, status } = req.body;
+  if (!title || !description) {
+    return res.status(400).json({ success: false, message: "Sector title and description are required" });
+  }
+
+  const id = `SEC-${Date.now().toString().slice(-6)}`;
+  try {
+    if (pool) {
+      await ensureSectorsTable();
+      await pool.query(
+        "INSERT INTO sectors (id, title, description, icon, tag, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [id, title, description, icon || "TrendingUp", tag || "C-Suite Conclave", priority || 0, status || "Active"]
+      );
+    }
+    const newSector = { id, title, description, icon: icon || "TrendingUp", tag: tag || "C-Suite Conclave", priority: priority || 0, status: status || "Active", created_at: new Date() };
+    io.emit("sector_updated", { type: "add", sector: newSector });
+    return res.json({ success: true, sector: newSector, message: "Sector focus created successfully!" });
+  } catch (err: any) {
+    console.error("Create Sector Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create sector focus item" });
+  }
+});
+
+// Admin update sector
+app.put("/api/admin/sectors/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, description, icon, tag, priority, status } = req.body;
+
+  try {
+    if (pool) {
+      await ensureSectorsTable();
+      await pool.query(
+        "UPDATE sectors SET title = ?, description = ?, icon = ?, tag = ?, priority = ?, status = ? WHERE id = ?",
+        [title, description, icon || "TrendingUp", tag || "C-Suite Conclave", priority || 0, status || "Active", id]
+      );
+    }
+    io.emit("sector_updated", { type: "update", id });
+    return res.json({ success: true, message: "Sector updated successfully!" });
+  } catch (err: any) {
+    console.error("Update Sector Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update sector" });
+  }
+});
+
+// Admin delete sector
+app.delete("/api/admin/sectors/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureSectorsTable();
+      await pool.query("DELETE FROM sectors WHERE id = ?", [id]);
+    }
+    io.emit("sector_updated", { type: "delete", id });
+    return res.json({ success: true, message: "Sector deleted successfully" });
+  } catch (err: any) {
+    console.error("Delete Sector Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete sector" });
   }
 });
 

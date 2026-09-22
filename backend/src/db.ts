@@ -183,6 +183,8 @@ export async function initDatabase() {
     // Create new admin modules tables (testimonials, newsletter, seo, settings)
     await ensureNewAdminTables();
     await seedNewAdminTables();
+    await ensureSectorsTable();
+    await seedDefaultSectors();
     await ensureEventPaymentsTable();
     await seedDefaultEventPayments();
     await ensureCollectionAliases();
@@ -1201,6 +1203,95 @@ export async function seedDefaultEventPayments() {
     }
   } catch (err) {
     console.error("[MySQL] Error seeding default event payment settings:", err);
+  }
+}
+
+export async function ensureSectorsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sectors (
+        id VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        icon VARCHAR(100) DEFAULT 'TrendingUp',
+        tag VARCHAR(100) DEFAULT 'C-Suite Conclave',
+        priority INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating sectors table:", err);
+  }
+}
+
+export async function seedDefaultSectors() {
+  if (!pool) return;
+  try {
+    const [existing]: any = await pool.query("SELECT COUNT(*) as count FROM sectors");
+    if (existing[0]?.count === 0) {
+      const defaultSectors = [
+        {
+          id: "SEC-101",
+          title: "Finance & CFO Ecosystem",
+          description: "Capital allocation, enterprise risk, compliance & treasury strategy.",
+          icon: "TrendingUp",
+          tag: "Finance Conclave",
+          priority: 1,
+        },
+        {
+          id: "SEC-102",
+          title: "HR & People Leadership",
+          description: "Talent strategy, AI in workforce, culture & executive retention.",
+          icon: "Crown",
+          tag: "HR Leadership",
+          priority: 2,
+        },
+        {
+          id: "SEC-103",
+          title: "Enterprise Tech & AI",
+          description: "CIO/CTO conclaves, cloud migration, cybersecurity & generative AI.",
+          icon: "Cpu",
+          tag: "Tech Summit",
+          priority: 3,
+        },
+        {
+          id: "SEC-104",
+          title: "Manufacturing & Operations",
+          description: "Industry 4.0, smart factories, supply chain resilience & logistics.",
+          icon: "Factory",
+          tag: "Industry 4.0",
+          priority: 4,
+        },
+        {
+          id: "SEC-105",
+          title: "Healthcare & Lifesciences",
+          description: "Pharma innovation, digital health ecosystems & medical technology.",
+          icon: "HeartPulse",
+          tag: "Pharma & Health",
+          priority: 5,
+        },
+        {
+          id: "SEC-106",
+          title: "GCC & Global Capability Centers",
+          description: "India site expansion, capability scaling & talent acquisition.",
+          icon: "Globe2",
+          tag: "Global Capability",
+          priority: 6,
+        },
+      ];
+
+      for (const sec of defaultSectors) {
+        await pool.query(
+          "INSERT INTO sectors (id, title, description, icon, tag, priority) VALUES (?, ?, ?, ?, ?, ?)",
+          [sec.id, sec.title, sec.description, sec.icon, sec.tag, sec.priority]
+        );
+      }
+      console.log("[MySQL] Seeded default initial sector focus items!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding sectors:", err);
   }
 }
 

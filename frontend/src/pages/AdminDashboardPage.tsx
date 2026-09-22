@@ -188,6 +188,17 @@ interface AdminUserItem {
   created_at: string;
 }
 
+interface SectorItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  tag: string;
+  priority: number;
+  status: string;
+  created_at?: string;
+}
+
 interface WebsiteSettings {
   site_name: string;
   support_email: string;
@@ -215,6 +226,7 @@ interface WebsiteSettings {
 type TabType =
   | "overview"
   | "events"
+  | "sectors"
   | "event-payments"
   | "magazines"
   | "partners"
@@ -463,6 +475,20 @@ export default function AdminDashboardPage() {
     hero_stat_4_label: "Countries",
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Sector Focus CMS State
+  const [cmsSectors, setCmsSectors] = useState<SectorItem[]>([]);
+  const [showSectorModal, setShowSectorModal] = useState(false);
+  const [editingSector, setEditingSector] = useState<SectorItem | null>(null);
+  const [sectorSaving, setSectorSaving] = useState(false);
+  const [sectorForm, setSectorForm] = useState({
+    title: "",
+    description: "",
+    icon: "TrendingUp",
+    tag: "C-Suite Conclave",
+    priority: 1,
+    status: "Active",
+  });
 
   // Event Payments Management State
   const [eventPayments, setEventPayments] = useState<EventPaymentConfig[]>([]);
@@ -838,6 +864,17 @@ export default function AdminDashboardPage() {
         console.warn("Could not fetch admin users", e);
       }
 
+      // 14b. Fetch Sector Focus Items
+      try {
+        const secRes = await fetch("/api/sectors");
+        const secData = await secRes.json();
+        if (secData.success && Array.isArray(secData.sectors)) {
+          setCmsSectors(secData.sectors);
+        }
+      } catch (e) {
+        console.warn("Could not fetch sectors", e);
+      }
+
       // 15. Fetch Website Settings
       try {
         const stgRes = await fetch("/api/settings");
@@ -1166,6 +1203,85 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error deleting user.");
+    }
+  };
+
+  // --- SECTOR FOCUS CMS HANDLERS ---
+  const handleOpenAddSector = () => {
+    setEditingSector(null);
+    setSectorForm({
+      title: "",
+      description: "",
+      icon: "TrendingUp",
+      tag: "C-Suite Conclave",
+      priority: cmsSectors.length + 1,
+      status: "Active",
+    });
+    setShowSectorModal(true);
+  };
+
+  const handleOpenEditSector = (sector: SectorItem) => {
+    setEditingSector(sector);
+    setSectorForm({
+      title: sector.title,
+      description: sector.description,
+      icon: sector.icon || "TrendingUp",
+      tag: sector.tag || "C-Suite Conclave",
+      priority: sector.priority || 1,
+      status: sector.status || "Active",
+    });
+    setShowSectorModal(true);
+  };
+
+  const handleSaveSector = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSectorSaving(true);
+    try {
+      const url = editingSector ? `/api/admin/sectors/${editingSector.id}` : "/api/admin/sectors";
+      const method = editingSector ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(sectorForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(editingSector ? "Sector updated successfully!" : "Sector created successfully!");
+        setShowSectorModal(false);
+        const secRes = await fetch("/api/sectors");
+        const secData = await secRes.json();
+        if (secData.success && Array.isArray(secData.sectors)) {
+          setCmsSectors(secData.sectors);
+        }
+      } else {
+        toast.error(data.message || "Failed to save sector.");
+      }
+    } catch (err) {
+      toast.error("Network error saving sector.");
+    } finally {
+      setSectorSaving(false);
+    }
+  };
+
+  const handleDeleteSector = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this sector focus item?")) return;
+    try {
+      const res = await fetch(`/api/admin/sectors/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Sector deleted successfully.");
+        setCmsSectors((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        toast.error(data.message || "Failed to delete sector.");
+      }
+    } catch (err) {
+      toast.error("Network error deleting sector.");
     }
   };
 
@@ -3168,6 +3284,7 @@ export default function AdminDashboardPage() {
   const navItems: NavItem[] = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+    { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
     { id: "event-payments", label: "Event Payments", icon: CreditCard, count: eventPayments.length },
     { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
     { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
@@ -4626,6 +4743,83 @@ export default function AdminDashboardPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* SECTOR FOCUS CMS TAB */}
+          {activeTab === "sectors" && (
+            <div className="space-y-6">
+              {/* Action Bar Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">
+                    Sector Focus CMS (Industries We Serve)
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Manage homepage industry focus cards, icons, tags, and descriptions
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenAddSector}
+                  className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-xs font-extrabold text-white shadow-md hover:scale-[1.02] transition-all cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add New Sector Focus</span>
+                </button>
+              </div>
+
+              {/* Sectors Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cmsSectors.map((sector) => (
+                  <div
+                    key={sector.id}
+                    className="flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:border-cyan-500/50 hover:shadow-md transition-all"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-mono">
+                          {sector.tag || "C-Suite Conclave"}
+                        </span>
+
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {sector.status || "Active"}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-extrabold text-slate-900">{sector.title}</h4>
+                      <p className="mt-2 text-xs text-slate-600 leading-relaxed font-sans">{sector.description}</p>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-400 font-mono">
+                        Icon: {sector.icon || "TrendingUp"}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSector(sector)}
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-colors cursor-pointer"
+                          title="Edit Sector"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSector(sector.id)}
+                          className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                          title="Delete Sector"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -11613,6 +11807,143 @@ export default function AdminDashboardPage() {
                 Close Preview
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* SECTOR FOCUS ADD / EDIT MODAL */}
+      {showSectorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setShowSectorModal(false)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-6">
+              <h3 className="text-lg font-extrabold text-slate-900">
+                {editingSector ? "Edit Sector Focus" : "Add New Sector Focus"}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Configure sector title, description, icon and tag badge
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveSector} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Sector Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sectorForm.title}
+                  onChange={(e) => setSectorForm({ ...sectorForm, title: e.target.value })}
+                  className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                  placeholder="e.g. Finance & CFO Ecosystem"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Short Description *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={sectorForm.description}
+                  onChange={(e) => setSectorForm({ ...sectorForm, description: e.target.value })}
+                  className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                  placeholder="Capital allocation, enterprise risk, compliance & treasury strategy."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Select Icon
+                  </label>
+                  <select
+                    value={sectorForm.icon}
+                    onChange={(e) => setSectorForm({ ...sectorForm, icon: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                  >
+                    <option value="TrendingUp">TrendingUp (Finance)</option>
+                    <option value="Crown">Crown (HR Leadership)</option>
+                    <option value="Cpu">Cpu (Tech & AI)</option>
+                    <option value="Factory">Factory (Manufacturing)</option>
+                    <option value="HeartPulse">HeartPulse (Healthcare)</option>
+                    <option value="Globe2">Globe2 (GCC & Global)</option>
+                    <option value="Building2">Building2 (Corporate)</option>
+                    <option value="Sparkles">Sparkles (Innovation)</option>
+                    <option value="Award">Award (Excellence)</option>
+                    <option value="Zap">Zap (Growth)</option>
+                    <option value="Shield">Shield (Cybersecurity)</option>
+                    <option value="Briefcase">Briefcase (General)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Tag / Category Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={sectorForm.tag}
+                    onChange={(e) => setSectorForm({ ...sectorForm, tag: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                    placeholder="e.g. Finance Conclave"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Display Priority (Order)
+                  </label>
+                  <input
+                    type="number"
+                    value={sectorForm.priority}
+                    onChange={(e) => setSectorForm({ ...sectorForm, priority: Number(e.target.value) })}
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={sectorForm.status}
+                    onChange={(e) => setSectorForm({ ...sectorForm, status: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Hidden">Hidden</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSectorModal(false)}
+                  className="rounded-2xl border border-slate-300 px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sectorSaving}
+                  className="rounded-2xl gradient-brand px-6 py-2.5 text-xs font-extrabold text-white shadow-md hover:scale-[1.02] transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {sectorSaving ? "Saving..." : editingSector ? "Update Sector" : "Create Sector"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -26,7 +26,12 @@ import {
   HeartPulse,
   Factory,
   Layers,
+  Zap,
+  Shield,
+  Briefcase,
+  ArrowUpRight,
 } from "lucide-react";
+import { socket } from "@/lib/socket";
 import {
   events,
   heroSlides,
@@ -61,13 +66,28 @@ const iconMap = {
   Globe2,
 };
 
-const industries = [
-  { icon: TrendingUp, title: "Finance & CFO Ecosystem", desc: "Capital allocation, enterprise risk, compliance & treasury strategy." },
-  { icon: Crown, title: "HR & People Leadership", desc: "Talent strategy, AI in workforce, culture & executive retention." },
-  { icon: Cpu, title: "Enterprise Tech & AI", desc: "CIO/CTO conclaves, cloud migration, cybersecurity & generative AI." },
-  { icon: Factory, title: "Manufacturing & Operations", desc: "Industry 4.0, smart factories, supply chain resilience & logistics." },
-  { icon: HeartPulse, title: "Healthcare & Lifesciences", desc: "Pharma innovation, digital health ecosystems & medical technology." },
-  { icon: Globe2, title: "GCC & Global Capability Centers", desc: "India site expansion, capability scaling & talent acquisition." },
+const sectorIconsMap: Record<string, any> = {
+  TrendingUp,
+  Crown,
+  Cpu,
+  Factory,
+  HeartPulse,
+  Globe2,
+  Building2,
+  Sparkles,
+  Award,
+  Zap,
+  Shield,
+  Briefcase,
+};
+
+const defaultSectors = [
+  { id: 1, title: "Finance & CFO Ecosystem", description: "Capital allocation, enterprise risk, compliance & treasury strategy.", icon: "TrendingUp", tag: "Finance & Risk" },
+  { id: 2, title: "HR & People Leadership", description: "Talent strategy, AI in workforce, culture & executive retention.", icon: "Crown", tag: "Talent & Culture" },
+  { id: 3, title: "Enterprise Tech & AI", description: "CIO/CTO conclaves, cloud migration, cybersecurity & generative AI.", icon: "Cpu", tag: "Tech & Innovation" },
+  { id: 4, title: "Manufacturing & Operations", description: "Industry 4.0, smart factories, supply chain resilience & logistics.", icon: "Factory", tag: "Industry 4.0" },
+  { id: 5, title: "Healthcare & Lifesciences", description: "Pharma innovation, digital health ecosystems & medical technology.", icon: "HeartPulse", tag: "HealthTech" },
+  { id: 6, title: "GCC & Global Capability Centers", description: "India site expansion, capability scaling & talent acquisition.", icon: "Globe2", tag: "Global Hubs" },
 ];
 
 const galleryPreviewPhotos = [
@@ -337,29 +357,110 @@ function WhyEtMedia() {
 
 // SECTION 6: INDUSTRIES WE SERVE
 function IndustriesWeServe() {
+  const [sectors, setSectors] = useState<any[]>(defaultSectors);
+
+  const fetchSectors = async () => {
+    try {
+      const res = await fetch("/api/sectors");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setSectors(data.data);
+      }
+    } catch (err) {
+      console.warn("Using default sectors fallback:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSectors();
+
+    const handleUpdate = () => {
+      fetchSectors();
+    };
+
+    socket.on("sector_updated", handleUpdate);
+    return () => {
+      socket.off("sector_updated", handleUpdate);
+    };
+  }, []);
+
   return (
-    <section className="bg-surface section relative overflow-hidden">
+    <section className="relative overflow-hidden bg-[#060813] py-24 text-white border-y border-zinc-800/80">
+      {/* Background Radial Atmosphere Glows */}
+      <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan-600/15 blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-indigo-600/15 blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#060813]/90 to-[#060813] pointer-events-none" />
+
       <FloatingShapes />
+
       <div className="container-x relative z-10">
-        <SectionHeading
-          kicker="Sector Focus"
-          title="Industries We Serve"
-          description="Specialized leadership conclaves tailored for sector-specific enterprise challenges."
-        />
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {industries.map((ind, i) => (
-            <Reveal key={ind.title} delay={i * 0.06}>
-              <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-3xl p-7 border border-border flex items-start gap-4">
-                <span className="gradient-brand p-3 rounded-2xl text-white shrink-0 shadow-md">
-                  <ind.icon className="h-6 w-6" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold font-display text-foreground">{ind.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{ind.desc}</p>
-                </div>
-              </MouseTiltCard>
-            </Reveal>
-          ))}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-400 uppercase font-btn backdrop-blur-md shadow-[0_0_15px_rgba(0,174,239,0.15)]">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+              <span>Sector Focus</span>
+            </div>
+            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-white tracking-tight leading-tight">
+              Industries We Serve
+            </h2>
+            <p className="mt-3 max-w-2xl text-slate-400 text-base sm:text-lg font-sans">
+              Specialized leadership conclaves and executive summits tailored for sector-specific enterprise challenges.
+            </p>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Curated Verticals</span>
+            <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+          </div>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {sectors.map((sec, i) => {
+            const IconComponent = sectorIconsMap[sec.icon] || Building2;
+
+            return (
+              <Reveal key={sec.id || sec.title || i} delay={i * 0.05}>
+                <MouseTiltCard
+                  maxTilt={8}
+                  className="group relative h-full rounded-3xl border border-zinc-800/90 bg-zinc-900/60 p-7 backdrop-blur-xl transition-all duration-500 hover:border-cyan-500/50 hover:bg-zinc-900/90 hover:shadow-[0_12px_40px_rgba(0,174,239,0.18)] flex flex-col justify-between overflow-hidden"
+                >
+                  {/* Subtle Card Ambient Highlight */}
+                  <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all duration-500 pointer-events-none" />
+
+                  <div>
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                      <div className="relative flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3 text-white shadow-lg shadow-cyan-500/25 group-hover:scale-110 group-hover:shadow-cyan-500/40 transition-all duration-300">
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+
+                      {sec.tag && (
+                        <span className="rounded-full border border-slate-700/80 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-300 group-hover:border-cyan-500/40 group-hover:text-cyan-300 transition-colors">
+                          {sec.tag}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-xl font-bold font-display text-white group-hover:text-cyan-400 transition-colors">
+                      {sec.title}
+                    </h3>
+                    <p className="mt-3 text-slate-400 text-sm leading-relaxed font-sans font-normal">
+                      {sec.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-8 pt-5 border-t border-zinc-800/80 flex items-center justify-between text-xs text-slate-400 font-medium">
+                    <span className="flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                      Executive Platform
+                    </span>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/80 group-hover:border-cyan-400 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </MouseTiltCard>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
