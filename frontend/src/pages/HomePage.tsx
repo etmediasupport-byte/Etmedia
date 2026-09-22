@@ -41,6 +41,8 @@ import {
   services,
   stats,
   testimonials,
+  Collaborator,
+  getDefaultCollaborators,
 } from "@/lib/site-data";
 import { GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
 import { EventCard } from "@/components/site/EventCard";
@@ -469,33 +471,130 @@ function IndustriesWeServe() {
 
 // SECTION 8: OUR COLLABORATORS
 function CollaboratorsMarquee() {
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+
+  useEffect(() => {
+    fetchPartners();
+
+    const handlePartnerUpdate = () => {
+      fetchPartners();
+    };
+
+    socket.on("partner_updated", handlePartnerUpdate);
+    return () => {
+      socket.off("partner_updated", handlePartnerUpdate);
+    };
+  }, []);
+
+  const fetchPartners = async () => {
+    try {
+      const res = await fetch("/api/partners");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.partners && data.partners.length > 0) {
+          const activePartners = data.partners.filter((c: Collaborator) => c.status !== "Inactive");
+          activePartners.sort((a: Collaborator, b: Collaborator) => (a.priority ?? 0) - (b.priority ?? 0));
+          setCollaborators(activePartners);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Using fallback collaborators data:", e);
+    }
+    setCollaborators(getDefaultCollaborators());
+  };
+
+  const partnerList = collaborators.length > 0 ? collaborators : getDefaultCollaborators();
+  // Multiply items for smooth infinite horizontal loop marquee animation
+  const marqueeItems = [...partnerList, ...partnerList, ...partnerList, ...partnerList];
+
   return (
-    <section className="bg-surface py-16 overflow-hidden border-y border-slate-200/80 dark:border-slate-800">
-      <div className="container-x">
-        <p className="text-muted-foreground text-center text-xs font-bold tracking-[0.28em] uppercase font-btn">
+    <section className="bg-[#0b0f19] py-20 overflow-hidden border-y border-zinc-800/80 relative">
+      {/* Background glow aura */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-[800px] bg-cyan-500/10 blur-[120px] pointer-events-none" />
+
+      <div className="container-x relative z-10 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-300 uppercase font-btn shadow-sm">
+          <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+          <span>Corporate Sponsors & Strategic Partners</span>
+        </div>
+        <h3 className="mt-3 text-2xl font-extrabold font-display text-white tracking-tight sm:text-3xl">
           Trusted By Industry Leaders & Corporate Sponsors
+        </h3>
+        <p className="mt-2 text-xs text-slate-400 max-w-xl mx-auto font-medium">
+          Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers. Click any brand logo to visit their website.
         </p>
       </div>
-      <div className="mt-10 overflow-hidden relative">
-        {/* Gradient Fade Masks on sides */}
-        <div className="absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-surface to-transparent z-10 pointer-events-none" />
-        <div className="absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-surface to-transparent z-10 pointer-events-none" />
+
+      {/* INFINITE MARQUEE SCROLLER */}
+      <div className="mt-12 overflow-hidden relative z-10">
+        {/* Gradient Side Fade Masks */}
+        <div className="absolute top-0 bottom-0 left-0 w-28 bg-gradient-to-r from-[#0b0f19] via-[#0b0f19]/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 right-0 w-28 bg-gradient-to-l from-[#0b0f19] via-[#0b0f19]/80 to-transparent z-20 pointer-events-none" />
 
         <motion.div
           animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 25, ease: "linear", repeat: Infinity }}
+          transition={{ duration: 35, ease: "linear", repeat: Infinity }}
           whileHover={{ animationPlayState: "paused" }}
-          className="flex w-max gap-16 items-center"
+          className="flex w-max gap-6 items-center py-4"
         >
-          {[...partners, ...partners, ...partners, ...partners].map((p, i) => (
-            <span
-              key={`${p}-${i}`}
-              className="text-muted-foreground/60 hover:text-gradient text-2xl font-bold font-display tracking-[0.2em] whitespace-nowrap grayscale transition-all duration-300 hover:grayscale-0 cursor-default hover:scale-105"
-            >
-              {p}
-            </span>
-          ))}
+          {marqueeItems.map((item, idx) => {
+            const targetUrl = item.website && item.website.trim() !== "" ? item.website : undefined;
+            
+            return (
+              <a
+                key={`${item.id}-${idx}`}
+                href={targetUrl || "#"}
+                target={targetUrl ? "_blank" : "_self"}
+                rel={targetUrl ? "noopener noreferrer" : undefined}
+                title={targetUrl ? `Visit ${item.brand_name} website (${item.website})` : item.brand_name}
+                className="group relative flex items-center gap-3.5 rounded-2xl border border-zinc-800 bg-zinc-900/80 px-6 py-3.5 text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-500/60 hover:bg-zinc-800/90 hover:shadow-cyan-500/20 shrink-0 cursor-pointer"
+              >
+                {/* Brand Logo Container */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 p-1.5 border border-zinc-800 shadow-inner group-hover:border-cyan-400/50 transition-colors">
+                  {item.logo ? (
+                    <img
+                      src={item.logo}
+                      alt={item.brand_name}
+                      className="max-h-full max-w-full object-contain filter group-hover:brightness-110 transition-all"
+                      onError={(e: any) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Building2 className="h-5 w-5 text-cyan-400" />
+                  )}
+                </div>
+
+                {/* Brand Name & Category */}
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold font-display text-slate-100 group-hover:text-cyan-300 transition-colors whitespace-nowrap flex items-center gap-1.5">
+                    {item.brand_name}
+                    {targetUrl && (
+                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+                    )}
+                  </span>
+                  {item.category && (
+                    <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase font-semibold">
+                      {item.category}
+                    </span>
+                  )}
+                </div>
+              </a>
+            );
+          })}
         </motion.div>
+      </div>
+
+      {/* FOOTER CTA TO PARTNERS PAGE */}
+      <div className="mt-8 text-center relative z-10">
+        <Link
+          to="/partner"
+          className="inline-flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors underline-offset-4 hover:underline"
+        >
+          <span>Become an Official ET Media Sponsor & Strategic Partner</span>
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </section>
   );
