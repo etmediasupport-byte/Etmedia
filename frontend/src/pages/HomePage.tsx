@@ -223,9 +223,9 @@ function EventNetwork() {
             <Reveal key={f.title} delay={i * 0.08}>
               <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80 flex flex-col justify-between">
                 <div>
-                  <span className="gradient-brand inline-flex rounded-2xl p-3.5 text-white shadow-md">
+                  <div className="w-12 h-12 rounded-2xl gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
                     <f.icon className="h-6 w-6" />
-                  </span>
+                  </div>
                   <h3 className="mt-5 text-xl font-bold font-display text-foreground">{f.title}</h3>
                   <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{f.desc}</p>
                 </div>
@@ -343,11 +343,13 @@ function WhyEtMedia() {
           {pillars.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.08}>
               <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80">
-                <span className="gradient-soft text-brand-blue inline-flex rounded-2xl p-3.5 shadow-sm">
-                  <p.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-6 text-lg font-bold font-display">{p.title}</h3>
-                <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{p.desc}</p>
+                <div>
+                  <div className="w-12 h-12 rounded-2xl gradient-soft text-brand-blue flex items-center justify-center shadow-sm shrink-0">
+                    <p.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-6 text-lg font-bold font-display">{p.title}</h3>
+                  <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{p.desc}</p>
+                </div>
               </MouseTiltCard>
             </Reveal>
           ))}

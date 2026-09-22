@@ -11,6 +11,17 @@ const backendPublic = path.resolve(__dirname, "public");
 console.log(`[Build Sync] Syncing frontend dist from: ${frontendDist} to ${backendPublic}`);
 
 if (fs.existsSync(frontendDist)) {
+  const uploadsBackup = path.join(backendPublic, "uploads");
+  const tempUploads = path.resolve(__dirname, "temp_uploads_backup");
+
+  let hasUploads = false;
+  if (fs.existsSync(uploadsBackup)) {
+    try {
+      fs.cpSync(uploadsBackup, tempUploads, { recursive: true, force: true });
+      hasUploads = true;
+    } catch (e) {}
+  }
+
   if (fs.existsSync(backendPublic)) {
     fs.rmSync(backendPublic, { recursive: true, force: true });
   }
@@ -18,6 +29,14 @@ if (fs.existsSync(frontendDist)) {
 
   // Copy recursive
   fs.cpSync(frontendDist, backendPublic, { recursive: true, force: true });
+
+  if (hasUploads && fs.existsSync(tempUploads)) {
+    const targetUploads = path.join(backendPublic, "uploads");
+    fs.mkdirSync(targetUploads, { recursive: true });
+    fs.cpSync(tempUploads, targetUploads, { recursive: true, force: true });
+    fs.rmSync(tempUploads, { recursive: true, force: true });
+  }
+
   console.log("✅ [Build Sync] Successfully updated backend/public with latest frontend production build!");
 } else {
   console.error("❌ [Build Sync] Error: ../frontend/dist directory does not exist!");

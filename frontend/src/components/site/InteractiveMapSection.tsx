@@ -222,6 +222,9 @@ export function InteractiveMapSection() {
           kicker="Event Footprint"
           title="Pan-India & International C-Suite Footprint"
           description="A high-density network connecting senior executives, GCC hubs, and industry titans across 12 major economic capitals."
+          titleClassName="text-white font-bold tracking-tight"
+          descriptionClassName="text-slate-300"
+          kickerClassName="border-cyan-500/30 bg-cyan-950/60 text-cyan-300"
         />
 
         {/* TOP STATS METRIC BANNER */}

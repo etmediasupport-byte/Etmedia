@@ -444,6 +444,33 @@ function sanitizeText(input: any): string {
   return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").trim();
 }
 
+// Convert Base64 Image to Disk File in uploads directory
+function saveBase64Image(dataStr: string): string {
+  if (!dataStr || typeof dataStr !== "string" || !dataStr.startsWith("data:image/")) {
+    return dataStr;
+  }
+  try {
+    const match = dataStr.match(/^data:image\/([a-zA-Z0-9]+);base64,/);
+    const ext = match ? match[1] : "png";
+    const base64Data = dataStr.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, "");
+
+    const uploadsDir = path.join(__dirname, "../public/uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const uniqueFilename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const buffer = Buffer.from(base64Data, "base64");
+    const filePath = path.join(uploadsDir, uniqueFilename);
+    fs.writeFileSync(filePath, buffer);
+
+    return `/uploads/${uniqueFilename}`;
+  } catch (err) {
+    console.error("Error saving base64 image:", err);
+    return dataStr;
+  }
+}
+
 
 // Serve static assets from public folder (including compiled frontend build)
 const publicPath = path.join(__dirname, "../public");
@@ -1645,7 +1672,7 @@ app.delete("/api/admin/contacts/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
-// 0. Image File Upload Handler (stores base64 directly into MySQL database)
+// 0. Image File Upload Handler
 app.post("/api/admin/upload", authenticateAdmin, async (req, res) => {
   const { imageBase64 } = req.body;
   if (!imageBase64) {
@@ -1653,8 +1680,8 @@ app.post("/api/admin/upload", authenticateAdmin, async (req, res) => {
   }
 
   try {
-    // Return base64 string directly to be stored straight into MySQL DB table column
-    return res.json({ success: true, url: imageBase64, message: "Image stored directly in database!" });
+    const relativeUrl = saveBase64Image(imageBase64);
+    return res.json({ success: true, url: relativeUrl, message: "Image stored successfully!" });
   } catch (err: any) {
     console.error("Upload error:", err);
     return res.status(500).json({ success: false, message: "Failed to process image data." });
@@ -2415,10 +2442,12 @@ app.get("/api/magazines", async (req, res) => {
 
 // Admin create magazine issue
 app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
-  const { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
+  let { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
   if (!title || !cover) {
     return res.status(400).json({ success: false, message: "Title and Cover image are required" });
   }
+
+  cover = saveBase64Image(cover);
 
   const id = `MAG-${Date.now().toString().slice(-6)}`;
   const pagesJson = typeof pages_list === "string" ? pages_list : JSON.stringify(pages_list || [cover]);
@@ -2467,7 +2496,11 @@ app.post("/api/admin/magazines", authenticateAdmin, async (req, res) => {
 // Admin update magazine issue
 app.put("/api/admin/magazines/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
+  let { issue, title, date, month, cover, pdf_url, pages_list, category, description, is_featured } = req.body;
+
+  if (cover) {
+    cover = saveBase64Image(cover);
+  }
 
   const pagesJson = typeof pages_list === "string" ? pages_list : JSON.stringify(pages_list || [cover]);
 
@@ -2841,10 +2874,13 @@ app.get("/api/gallery", async (req, res) => {
 
 // Admin Create / Upload Gallery Media Item
 app.post("/api/admin/gallery", authenticateAdmin, async (req, res) => {
-  const { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
+  let { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
   if (!title || !url) {
     return res.status(400).json({ success: false, message: "Media Title and URL are required" });
   }
+
+  url = saveBase64Image(url);
+  thumbnail_url = saveBase64Image(thumbnail_url || url);
 
   const id = `GAL-${Date.now().toString().slice(-6)}`;
   const newItem = {
@@ -2890,7 +2926,10 @@ app.post("/api/admin/gallery", authenticateAdmin, async (req, res) => {
 // Admin Update Gallery Media Item
 app.put("/api/admin/gallery/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
+  let { title, type, url, thumbnail_url, category, event_slug, event_title, aspect_ratio } = req.body;
+
+  url = saveBase64Image(url);
+  thumbnail_url = saveBase64Image(thumbnail_url || url);
 
   const updatedItem = {
     id,

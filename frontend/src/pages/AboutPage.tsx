@@ -175,11 +175,13 @@ export default function AboutPage() {
             {pillars.map((p, i) => (
               <Reveal key={p.title} delay={i * 0.08}>
                 <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-8 border border-border/80">
-                  <span className="gradient-brand inline-flex rounded-2xl p-3.5 text-white shadow-md">
-                    <p.icon className="h-6 w-6" />
-                  </span>
-                  <h3 className="mt-6 text-xl font-bold font-display">{p.title}</h3>
-                  <p className="text-muted-foreground mt-3 leading-relaxed text-sm">{p.body}</p>
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
+                      <p.icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="mt-6 text-xl font-bold font-display">{p.title}</h3>
+                    <p className="text-muted-foreground mt-3 text-base leading-relaxed">{p.body}</p>
+                  </div>
                 </MouseTiltCard>
               </Reveal>
             ))}

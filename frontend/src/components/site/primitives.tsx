@@ -62,12 +62,18 @@ export function SectionHeading({
   description,
   align = "left",
   className,
+  titleClassName,
+  descriptionClassName,
+  kickerClassName,
 }: {
   kicker?: string;
   title: ReactNode;
   description?: string;
   align?: "center" | "left";
   className?: string;
+  titleClassName?: string;
+  descriptionClassName?: string;
+  kickerClassName?: string;
 }) {
   return (
     <Reveal
@@ -78,15 +84,30 @@ export function SectionHeading({
       )}
     >
       {kicker ? (
-        <span className="inline-flex items-center rounded-full border border-border bg-accent/60 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-accent-foreground uppercase">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full border border-border bg-accent/60 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-accent-foreground uppercase",
+            kickerClassName,
+          )}
+        >
           {kicker}
         </span>
       ) : null}
-      <h2 className="mt-2.5 text-3xl leading-tight font-semibold sm:text-4xl lg:text-[2.75rem]">
+      <h2
+        className={cn(
+          "mt-2.5 text-3xl leading-tight font-semibold sm:text-4xl lg:text-[2.75rem]",
+          titleClassName,
+        )}
+      >
         {title}
       </h2>
       {description ? (
-        <p className="text-muted-foreground mt-2.5 text-base leading-relaxed sm:text-lg">
+        <p
+          className={cn(
+            "text-muted-foreground mt-2.5 text-base leading-relaxed sm:text-lg",
+            descriptionClassName,
+          )}
+        >
           {description}
         </p>
       ) : null}
