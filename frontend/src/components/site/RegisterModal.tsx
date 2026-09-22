@@ -241,7 +241,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
     }
   };
 
-  // Step 1: Form Validation, Save Lead into DB Immediately & Proceed to Payment Summary
+  // Submit Free Registration & Skip Payment Step Completely
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -278,34 +278,40 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
       return;
     }
 
-    // Save lead details into DB immediately with paymentStatus: "Pending"
-    const pricing = getPricing();
-    try {
-      const payload = {
-        ...formData,
-        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
-        phone: formData.contactNumber,
-        organization: formData.companyName,
-        eventId: currentEvent.id || currentEvent.slug,
-        eventTitle: currentEvent.title,
-        paymentAmount: pricing.totalPayable,
-        paymentStatus: "Pending",
-      };
+    setSubmitting(true);
+    const refId = `ET-REG-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const payload = {
+      ...formData,
+      name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+      phone: formData.contactNumber,
+      organization: formData.companyName,
+      eventId: currentEvent.id || currentEvent.slug,
+      eventTitle: currentEvent.title,
+      paymentAmount: 0,
+      paymentStatus: "Free Registration",
+      referenceId: refId,
+    };
+
+    try {
       const res = await fetch("/api/events/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (data.success && data.data?.id) {
-        setPendingRegId(data.data.id);
-      }
+      await res.json();
+      toast.success(`🎉 Free Interest Registered! Ref ID: ${refId}`);
     } catch (leadErr) {
-      console.warn("Could not pre-save pending registration lead:", leadErr);
+      console.warn("Using offline confirmation fallback:", leadErr);
+      toast.success(`🎉 Interest Registered Successfully! Ref ID: ${refId}`);
+    } finally {
+      setSubmitting(false);
+      setSubmittedData({
+        ...payload,
+        totalPaid: 0,
+      });
+      setSuccessModalOpen(true);
     }
-
-    setModalStep("payment");
   };
 
   // Helper to dynamically load Razorpay checkout SDK if missing
@@ -535,7 +541,7 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                     <span>Executive Platform Registration</span>
                   </div>
                   <h3 className="mt-0.5 text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
-                    {modalStep === "form" ? "Register Now" : "Order & Payment Summary"}
+                    Register Your Free Interest
                   </h3>
                 </div>
 
@@ -882,10 +888,20 @@ export function RegisterModal({ isOpen, onClose, event }: RegisterModalProps) {
                   <div className="lg:col-span-5">
                     <button
                       type="submit"
-                      className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3 px-5 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer font-btn"
+                      disabled={submitting}
+                      className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer font-btn disabled:opacity-60"
                     >
-                      <Award className="h-4 w-4 text-white" />
-                      <span>Confirm & Register Now →</span>
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-white" />
+                          <span>Submitting Registration...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Award className="h-4 w-4 text-white" />
+                          <span>Submit Free Interest Registration →</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

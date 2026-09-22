@@ -530,17 +530,28 @@ export default function CareersPage() {
       {/* ========================================== */}
       <AnimatePresence>
         {selectedJobDetail && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedJobDetail(null)}
+              className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl rounded-3xl border border-purple-500/30 bg-[#0D111D] p-6 sm:p-8 shadow-2xl text-white max-h-[85vh] overflow-y-auto"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-6xl rounded-3xl border border-purple-500/30 bg-[#0D111D]/98 p-6 sm:p-8 md:p-10 shadow-2xl text-white backdrop-blur-2xl z-10 my-auto"
             >
               <button
                 type="button"
                 onClick={() => setSelectedJobDetail(null)}
-                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-900 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-5 right-5 sm:top-7 sm:right-7 p-3 rounded-full border border-slate-800 bg-[#07090E] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close detail modal"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -560,11 +571,11 @@ export default function CareersPage() {
                 </span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white font-display">
                 {selectedJobDetail.title}
               </h2>
 
-              <div className="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-slate-400 border-b border-slate-800/80 pb-4">
+              <div className="mt-3 flex flex-wrap gap-4 text-xs sm:text-sm font-semibold text-slate-400 border-b border-slate-800/80 pb-4">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 text-purple-400" />
                   <span>{selectedJobDetail.location}</span>
@@ -575,70 +586,74 @@ export default function CareersPage() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-6 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-                <div>
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
-                    Job Description
-                  </h4>
-                  <p>{selectedJobDetail.description}</p>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
+                      Job Description
+                    </h4>
+                    <p>{selectedJobDetail.description}</p>
+                  </div>
+
+                  {parseList(selectedJobDetail.responsibilities).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
+                        Key Responsibilities
+                      </h4>
+                      <ul className="space-y-2">
+                        {parseList(selectedJobDetail.responsibilities).map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-slate-300">
+                            <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
-                {parseList(selectedJobDetail.responsibilities).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
-                      Key Responsibilities
-                    </h4>
-                    <ul className="space-y-2">
-                      {parseList(selectedJobDetail.responsibilities).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-slate-300">
-                          <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="space-y-6">
+                  {parseList(selectedJobDetail.qualifications).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
+                        Qualifications & Skills
+                      </h4>
+                      <ul className="space-y-2">
+                        {parseList(selectedJobDetail.qualifications).map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-slate-300">
+                            <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {parseList(selectedJobDetail.qualifications).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
-                      Qualifications & Skills
-                    </h4>
-                    <ul className="space-y-2">
-                      {parseList(selectedJobDetail.qualifications).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-slate-300">
-                          <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {parseList(selectedJobDetail.benefits).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
-                      Benefits & Culture Perks
-                    </h4>
-                    <ul className="space-y-2">
-                      {parseList(selectedJobDetail.benefits).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-slate-300">
-                          <Zap className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {parseList(selectedJobDetail.benefits).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2 font-display">
+                        Benefits & Culture Perks
+                      </h4>
+                      <ul className="space-y-2">
+                        {parseList(selectedJobDetail.benefits).map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5 text-slate-300">
+                            <Zap className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-8 pt-6 border-t border-slate-800/80 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedJobDetail(null)}
-                  className="px-6 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-bold"
+                  className="px-6 py-3 rounded-2xl border border-slate-800 bg-[#07090E] text-slate-300 hover:text-white transition-colors cursor-pointer text-xs sm:text-sm font-bold"
                 >
-                  Close
+                  Close Window
                 </button>
 
                 <button
@@ -649,7 +664,7 @@ export default function CareersPage() {
                     setSelectedJobDetail(null);
                     setFormError(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer text-xs font-extrabold flex items-center gap-2 disabled:opacity-40"
+                  className="px-8 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer text-xs sm:text-sm font-extrabold flex items-center gap-2 disabled:opacity-40"
                 >
                   <span>Apply For This Position</span>
                   <ChevronRight className="h-4 w-4" />
@@ -665,167 +680,183 @@ export default function CareersPage() {
       {/* ========================================== */}
       <AnimatePresence>
         {applyJob && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setApplyJob(null)}
+              className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl rounded-3xl border border-purple-500/30 bg-[#0D111D] p-6 sm:p-8 shadow-2xl text-white max-h-[90vh] overflow-y-auto"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-6xl rounded-3xl border border-purple-500/40 bg-[#0D111D]/98 p-6 sm:p-8 md:p-10 shadow-2xl text-white backdrop-blur-2xl z-10 my-auto"
             >
               <button
                 type="button"
                 onClick={() => setApplyJob(null)}
-                className="absolute top-5 right-5 p-2 rounded-full border border-slate-800 bg-slate-900 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-5 right-5 sm:top-7 sm:right-7 p-3 rounded-full border border-slate-800 bg-[#07090E] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close apply modal"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              <div className="mb-6">
+              <div className="mb-6 border-b border-slate-800/80 pb-4">
                 <span className="text-xs font-extrabold uppercase text-purple-400 font-display">
                   Job Application
                 </span>
-                <h3 className="text-2xl font-extrabold text-white mt-1 font-display">
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 font-display">
                   Apply for {applyJob.title}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 font-mono">
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
                   {applyJob.department} · {applyJob.location}
                 </p>
               </div>
 
               {formError && (
-                <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
+                <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-center gap-3">
                   <X className="h-4 w-4 text-rose-400 shrink-0" />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <form onSubmit={handleApplySubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Full Name *
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Rahul Sharma"
-                      value={applicantForm.name}
-                      onChange={(e) => setApplicantForm({ ...applicantForm, name: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <form onSubmit={handleApplySubmit} className="space-y-6">
+                {/* 3 Columns Row 1: Full Name, Email, Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                      Full Name *
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Rahul Sharma"
+                        value={applicantForm.name}
+                        onChange={(e) => setApplicantForm({ ...applicantForm, name: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                       Email Address *
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                      <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       <input
                         type="email"
                         required
                         placeholder="your.email@example.com"
                         value={applicantForm.email}
                         onChange={(e) => setApplicantForm({ ...applicantForm, email: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                       Phone Number *
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+                      <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       <input
                         type="tel"
                         required
                         placeholder="+91 98765 43210"
                         value={applicantForm.phone}
                         onChange={(e) => setApplicantForm({ ...applicantForm, phone: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Years of Experience *
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 3 Years 6 Months"
-                      value={applicantForm.experience}
-                      onChange={(e) => setApplicantForm({ ...applicantForm, experience: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Upload Resume (PDF File) *
-                  </label>
-                  
-                  <div className="relative">
-                    <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-800 bg-[#07090E] p-3.5 text-xs font-bold text-purple-300 hover:bg-slate-800 transition-colors">
-                      <Upload className="h-4 w-4 text-purple-400" />
-                      <span>{uploadingResume ? "Uploading PDF..." : "Choose PDF Resume File"}</span>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleResumeFileUpload}
-                        className="hidden"
-                      />
+                {/* 3 Columns Row 2: Experience, Resume, Portfolio */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                      Years of Experience *
                     </label>
-                  </div>
-
-                  {applicantForm.resume_url && (
-                    <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                      <FileText className="h-4 w-4 shrink-0" />
-                      <span className="font-mono truncate">Resume PDF Uploaded Successfully!</span>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 3 Years 6 Months"
+                        value={applicantForm.experience}
+                        onChange={(e) => setApplicantForm({ ...applicantForm, experience: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      />
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Portfolio / LinkedIn Profile URL
-                  </label>
-                  <div className="relative">
-                    <Globe className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                    <input
-                      type="url"
-                      placeholder="https://linkedin.com/in/yourprofile"
-                      value={applicantForm.portfolio_url}
-                      onChange={(e) => setApplicantForm({ ...applicantForm, portfolio_url: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
-                    />
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                      Upload Resume (PDF File) *
+                    </label>
+                    <div className="relative">
+                      <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-800 bg-[#07090E] p-3 text-xs font-bold text-purple-300 hover:bg-slate-800 transition-colors h-[46px]">
+                        <Upload className="h-4 w-4 text-purple-400 shrink-0" />
+                        <span className="truncate">{uploadingResume ? "Uploading PDF..." : "Choose PDF Resume File"}</span>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleResumeFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {applicantForm.resume_url && (
+                      <div className="mt-2 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="font-mono truncate">Resume PDF Uploaded!</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                      Portfolio / LinkedIn Profile URL
+                    </label>
+                    <div className="relative">
+                      <Globe className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <input
+                        type="url"
+                        placeholder="https://linkedin.com/in/yourprofile"
+                        value={applicantForm.portfolio_url}
+                        onChange={(e) => setApplicantForm({ ...applicantForm, portfolio_url: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting || uploadingResume}
-                  className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-purple-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
-                >
-                  {isSubmitting ? (
-                    <span>Submitting Application...</span>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      <span>Submit Application</span>
-                    </>
-                  )}
-                </button>
+                <div className="pt-4 border-t border-slate-800/80 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || uploadingResume}
+                    className="w-full sm:w-auto cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-purple-500/20 hover:scale-[1.02] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <span>Submitting Application...</span>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Submit Job Application</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

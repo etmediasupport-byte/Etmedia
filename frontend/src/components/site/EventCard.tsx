@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, Clock, MapPin, Sparkles, Users } from "lucide-react";
-import type { EventItem } from "@/lib/site-data";
+import { CalendarDays, MapPin, Sparkles, ArrowUpRight } from "lucide-react";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 
@@ -21,8 +20,6 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
   const primaryLoc = parsedLocations[0] || {};
   const dateText = primaryLoc.date || event.date;
   const venueText = primaryLoc.venue || event.venue || `${event.city || "Mumbai"} Main Convention Center`;
-  const timeText = primaryLoc.time || event.time || "09:00 AM — 06:00 PM";
-  const speakersCount = event.speakers || 20;
   const citiesText = parsedLocations.map((l: any) => l.city).filter(Boolean).join(" • ");
 
   const handleRegisterClick = (e: React.MouseEvent) => {
@@ -36,81 +33,90 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
   };
 
   return (
-    <MouseTiltCard className="glass-card group relative overflow-hidden rounded-t-none rounded-b-3xl h-full flex flex-col justify-between border border-slate-200/80 bg-white/90 shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/15">
-      {/* Shine Effect Overlay on Hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none z-20" />
+    <MouseTiltCard className="group relative overflow-hidden rounded-3xl h-full flex flex-col justify-between border border-slate-200/80 dark:border-slate-800/90 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/70 dark:from-slate-900/95 dark:via-slate-900 dark:to-slate-950/90 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
+      {/* Top Right Atmospheric Glow */}
+      <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all pointer-events-none z-10" />
 
       <div onClick={handleRegisterClick} className="cursor-pointer flex-1 flex flex-col justify-between">
-        {/* Banner Image Container with Reduced Height & Zoom Animation */}
-        <div className="relative h-28 sm:h-32 md:h-36 w-full overflow-hidden bg-slate-100 shrink-0">
+        {/* Banner Image Container */}
+        <div className="relative h-44 sm:h-48 md:h-52 w-full overflow-hidden shrink-0">
           <img
             src={event.image || "/assets/event-cfo-BjslOJNi.jpg"}
             alt={event.title}
             loading="lazy"
             width={800}
             height={450}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
+
           {/* Category Badge */}
-          <span className="absolute top-2.5 left-2.5 z-10 rounded-full border border-cyan-500/30 bg-white/95 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 tracking-wide uppercase shadow-xs max-w-[60%] truncate whitespace-nowrap">
-            {event.category}
+          <span className="absolute top-3 left-3 z-10 rounded-full border border-white/30 bg-slate-950/75 backdrop-blur-md px-3 py-1 text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider shadow-md">
+            {event.category || "Leadership Conclave"}
           </span>
+
           {event.is_featured === 1 && (
-            <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full gradient-brand px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-xs font-btn">
-              <Sparkles className="h-3 w-3" /> Featured
+            <span className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1 text-[11px] font-extrabold text-white shadow-lg">
+              <Sparkles className="h-3 w-3 animate-pulse" /> Featured
             </span>
           )}
+
+          {/* Location & Date Bar Overlay */}
+          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between text-xs text-slate-200 font-medium bg-slate-950/70 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
+            <span className="flex items-center gap-1.5 truncate">
+              <CalendarDays className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+              <strong className="text-white font-semibold">{dateText}</strong>
+            </span>
+            <span className="flex items-center gap-1 text-[11px] text-cyan-300 font-semibold truncate ml-2">
+              <MapPin className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+              {citiesText || primaryLoc.city || "Mumbai"}
+            </span>
+          </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
           <div>
-            <h3 className="text-sm sm:text-base font-bold font-display text-slate-900 leading-snug group-hover:text-cyan-700 transition-colors line-clamp-2">
+            <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white leading-snug group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2">
               {event.title}
             </h3>
 
-            <p className="text-slate-600 mt-1 text-xs leading-relaxed font-sans line-clamp-2">
+            <p className="text-slate-600 dark:text-slate-400 mt-2 text-xs sm:text-sm leading-relaxed font-sans line-clamp-2">
               {event.description}
             </p>
           </div>
 
-          {/* Compact Event Metadata Grid */}
-          <div className="text-slate-600 mt-2.5 space-y-1 text-xs font-medium border-t border-slate-100 pt-2">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="text-cyan-600 h-3.5 w-3.5 shrink-0" />
-              <span className="truncate font-semibold text-slate-800">{dateText}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="text-cyan-600 h-3.5 w-3.5 shrink-0" />
-              <span className="truncate font-medium text-slate-700">{venueText}</span>
-            </div>
-            {parsedLocations.length > 1 && (
-              <div className="flex items-center gap-1.5 text-cyan-700 font-bold text-[10px]">
-                <span className="truncate">Cities: {citiesText}</span>
-              </div>
-            )}
+          <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium truncate">
+              <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="truncate">{venueText}</span>
+            </span>
+            <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 shrink-0">
+              Free Registration
+            </span>
           </div>
         </div>
       </div>
 
       {/* Card Action Footer */}
-      <div className="p-3.5 sm:p-4 pt-0 flex items-center gap-2 shrink-0">
-        <MagneticButton strength={12} className="gradient-brand rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:brightness-110 flex-1 text-center cursor-pointer">
+      <div className="p-4 sm:p-5 pt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+        <MagneticButton strength={10} className="w-full sm:flex-1">
           <button
             type="button"
             onClick={handleRegisterClick}
-            className="w-full h-full block font-btn cursor-pointer bg-transparent border-none text-white text-xs font-bold"
+            className="w-full gradient-brand rounded-2xl py-3 px-4 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            Register Now
+            <span>Register Your Free Interest</span>
           </button>
         </MagneticButton>
         <Link
           to={`/events/${event.slug || event.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors font-btn text-center whitespace-nowrap"
+          className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 px-4 py-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-center flex items-center justify-center gap-1 shrink-0"
         >
-          Learn More ↗
+          <span>Details</span>
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </MouseTiltCard>

@@ -261,7 +261,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] overflow-y-auto p-3 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
           {/* Backdrop Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -271,22 +271,22 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
             className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl"
           />
 
-          {/* Modal Container */}
+          {/* Modal Container - Full Width & Premium Responsive Layout */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-4xl rounded-3xl border border-slate-800 bg-slate-900/95 shadow-2xl backdrop-blur-2xl text-slate-100 overflow-hidden z-10 my-auto"
+            className="relative w-full max-w-6xl rounded-3xl border border-slate-800 bg-slate-900/98 shadow-2xl backdrop-blur-2xl text-slate-100 overflow-hidden z-10 my-auto"
           >
             {/* Top Glowing Gradient Beam */}
             <div className="h-1.5 w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 shadow-[0_0_20px_#00AEEF]" />
 
             {/* Header Controls */}
-            <div className="p-5 sm:p-7 border-b border-slate-800/80 flex items-center justify-between gap-4 bg-slate-950/60">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
-                  <Crown className="h-6 w-6" />
+            <div className="p-4 sm:p-6 md:p-8 border-b border-slate-800/80 flex items-center justify-between gap-4 bg-slate-950/60">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 shrink-0">
+                  <Crown className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       ET Media Business Intelligence
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-white font-display mt-0.5">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white font-display mt-1">
                     Executive Membership Application
                   </h2>
                 </div>
@@ -304,15 +304,16 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2.5 rounded-full border border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-3 rounded-full border border-slate-800 bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                aria-label="Close modal"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
 
             {/* If Submitted: Show Confirmation Screen */}
             {submittedData ? (
-              <div className="p-6 sm:p-10 text-center space-y-6 max-w-2xl mx-auto">
+              <div className="p-6 sm:p-10 md:p-12 text-center space-y-6 max-w-3xl mx-auto">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -331,12 +332,12 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 font-display">
                     Membership Application Received!
                   </h3>
-                  <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                  <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
                     Dear <strong className="text-white">{submittedData.fullName}</strong>, thank you for applying for <strong className="text-cyan-300">{MEMBERSHIP_TIERS.find(t => t.id === submittedData.selectedTier)?.title || "Executive Membership"}</strong> at ET Media.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 text-left text-xs sm:text-sm space-y-2 text-slate-300">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-6 text-left text-xs sm:text-sm space-y-3 text-slate-300">
                   <div className="flex justify-between border-b border-slate-800/80 pb-2">
                     <span className="text-slate-400">Organization:</span>
                     <strong className="text-white">{submittedData.organization}</strong>
@@ -368,8 +369,8 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
             ) : (
               <>
                 {/* STEP INDICATOR BAR */}
-                <div className="px-6 sm:px-10 pt-6 pb-2 bg-slate-950/40 border-b border-slate-800/60">
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="px-4 sm:px-8 md:px-10 pt-5 pb-3 bg-slate-950/40 border-b border-slate-800/60">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                     {[
                       { step: 1, title: "1. Executive Profile" },
                       { step: 2, title: "2. Tier & Industry" },
@@ -383,7 +384,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                           onClick={() => {
                             if (isDone) setCurrentStep(s.step);
                           }}
-                          className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all ${
+                          className={`flex items-center justify-center gap-2 p-2.5 sm:p-3 rounded-2xl border text-xs sm:text-sm font-bold transition-all ${
                             isDone
                               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 cursor-pointer"
                               : isActive
@@ -398,33 +399,33 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                               {s.step}
                             </span>
                           )}
-                          <span className="hidden sm:inline font-display truncate">{s.title}</span>
+                          <span className="truncate font-display">{s.title}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* FORM CONTENT BODY */}
-                <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 max-h-[65vh] overflow-y-auto">
+                {/* FORM CONTENT BODY - NO INTERNAL SCROLLBAR */}
+                <form onSubmit={handleSubmit} className="p-5 sm:p-8 md:p-10 space-y-6">
                   {/* STEP 1: EXECUTIVE PROFILE */}
                   {currentStep === 1 && (
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="space-y-5"
+                      className="space-y-6"
                     >
                       <div className="border-b border-slate-800 pb-3">
-                        <h3 className="text-lg font-extrabold text-white font-display flex items-center gap-2">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-white font-display flex items-center gap-2">
                           <User className="h-5 w-5 text-cyan-400" />
                           Executive Contact & Corporate Identity
                         </h3>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs sm:text-sm text-slate-400 mt-1">
                           Provide your official business credentials for verification by the ET Media Advisory Desk.
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {/* Full Name */}
                         <div>
                           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
@@ -544,17 +545,17 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       className="space-y-6"
                     >
                       <div className="border-b border-slate-800 pb-3">
-                        <h3 className="text-lg font-extrabold text-white font-display flex items-center gap-2">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-white font-display flex items-center gap-2">
                           <Crown className="h-5 w-5 text-purple-400" />
                           Select Preferred Membership Tier
                         </h3>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs sm:text-sm text-slate-400 mt-1">
                           Choose the engagement level aligned with your strategic networking and corporate objectives.
                         </p>
                       </div>
 
                       {/* Tier Cards Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {MEMBERSHIP_TIERS.map((tier) => {
                           const isSelected = formData.selectedTier === tier.id;
                           return (
@@ -632,11 +633,11 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       className="space-y-6"
                     >
                       <div className="border-b border-slate-800 pb-3">
-                        <h3 className="text-lg font-extrabold text-white font-display flex items-center gap-2">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-white font-display flex items-center gap-2">
                           <Award className="h-5 w-5 text-emerald-400" />
                           Executive Objectives & Preferences
                         </h3>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs sm:text-sm text-slate-400 mt-1">
                           Help us customize your membership briefings and event invitations.
                         </p>
                       </div>
@@ -646,7 +647,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
                           Primary Membership Goals (Select all that apply)
                         </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {OBJECTIVES_LIST.map((obj) => {
                             const checked = formData.objectives.includes(obj);
                             return (
@@ -674,7 +675,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                           Expected Summit Participation
                         </label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {["1-2 Summits / Year", "3-5 Summits / Year", "All Major Summits"].map((val) => (
                             <button
                               key={val}
@@ -713,7 +714,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                           id="agreeTerms"
                           checked={formData.agreeTerms}
                           onChange={(e) => handleInputChange("agreeTerms", e.target.checked)}
-                          className="mt-0.5 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500 h-4 w-4"
+                          className="mt-0.5 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500 h-4 w-4 cursor-pointer"
                         />
                         <label htmlFor="agreeTerms" className="text-xs text-slate-300 leading-relaxed cursor-pointer">
                           I confirm that the details provided are accurate. I authorize ET Media Business Intelligence to contact me regarding executive membership privileges and event invitations.
@@ -723,12 +724,12 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                   )}
 
                   {/* BOTTOM ACTION BUTTONS */}
-                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-4">
+                  <div className="pt-5 border-t border-slate-800/80 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
                     {currentStep > 1 ? (
                       <button
                         type="button"
                         onClick={() => setCurrentStep((s) => s - 1)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-5 py-3 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
                       >
                         <ChevronLeft className="h-4 w-4" />
                         <span>Back</span>
@@ -741,7 +742,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       <button
                         type="button"
                         onClick={handleNextStep}
-                        className="gradient-brand inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 hover:scale-105 transition-all cursor-pointer ml-auto"
+                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer sm:ml-auto"
                       >
                         <span>Continue to Step {currentStep + 1}</span>
                         <ChevronRight className="h-4 w-4" />
@@ -750,7 +751,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="gradient-brand inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-cyan-500/25 hover:scale-105 transition-all cursor-pointer disabled:opacity-50 ml-auto"
+                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-cyan-500/25 hover:scale-[1.02] transition-all cursor-pointer disabled:opacity-50 sm:ml-auto"
                       >
                         {isSubmitting ? (
                           <>
