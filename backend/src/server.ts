@@ -391,6 +391,294 @@ www.etmedia.in`,
   }
 }
 
+async function sendPartnerAdminNotificationEmail(data: {
+  id: string;
+  company_name: string;
+  website?: string;
+  industry: string;
+  location: string;
+  contact_person: string;
+  designation: string;
+  email: string;
+  phone: string;
+  partnership_type: string;
+  message?: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: adminEmail,
+    subject: `🤝 New Partner Proposal Submitted: ${data.company_name} (${data.id})`,
+    text: `New Partner Application Received:
+    
+- Submission ID: ${data.id}
+- Company Name: ${data.company_name}
+- Website: ${data.website || "N/A"}
+- Industry: ${data.industry}
+- Location: ${data.location}
+- Contact Person: ${data.contact_person}
+- Designation: ${data.designation}
+- Email: ${data.email}
+- Phone: ${data.phone}
+- Partnership Type: ${data.partnership_type}
+- Proposal Message: ${data.message || "N/A"}
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #00AEEF 0%, #4B1FA7 100%); padding: 25px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">🤝 NEW PARTNER PROPOSAL SUBMITTED</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Strategic Partnerships & Alliances Portal</p>
+        </div>
+        <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; font-weight: bold; width: 35%;">Company Name:</td><td style="padding: 8px 0; font-weight: 700; color: #00AEEF;">${data.company_name}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Website:</td><td style="padding: 8px 0;">${data.website ? `<a href="${data.website}" style="color: #00AEEF;">${data.website}</a>` : "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Industry:</td><td style="padding: 8px 0;">${data.industry}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Location:</td><td style="padding: 8px 0;">${data.location}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Contact Person:</td><td style="padding: 8px 0; font-weight: 700;">${data.contact_person}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Designation:</td><td style="padding: 8px 0;">${data.designation}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Email:</td><td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #00AEEF; font-weight: bold;">${data.email}</a></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Phone:</td><td style="padding: 8px 0;">${data.phone}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Partnership Type:</td><td style="padding: 8px 0;"><span style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 4px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px;">${data.partnership_type}</span></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Proposal Message:</td><td style="padding: 8px 0; background-color: #f8fafc; border-radius: 8px; padding: 12px; font-size: 13px;">${data.message ? data.message.replace(/\n/g, "<br/>") : "N/A"}</td></tr>
+          </table>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+          Received via ET Media Partner Portal · Admin Notification to ${adminEmail}
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Partner admin alert sent to ${adminEmail} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending partner admin alert:`, err.message);
+    return false;
+  }
+}
+
+async function sendContactAdminNotificationEmail(data: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  enquiryType?: string;
+  message: string;
+  submittedAt?: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: adminEmail,
+    subject: `📩 New Contact Enquiry: ${data.name} (${data.enquiryType || "General"})`,
+    text: `New Contact Form Enquiry Received:
+    
+- Reference ID: ${data.id}
+- Sender Name: ${data.name}
+- Email Address: ${data.email}
+- Phone Number: ${data.phone || "N/A"}
+- Enquiry Category: ${data.enquiryType || "General Enquiry"}
+- Submitted Message: ${data.message}
+- Timestamp: ${data.submittedAt || new Date().toISOString()}
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 25px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">📩 NEW CONTACT ENQUIRY RECEIVED</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Executive Advisory Desk</p>
+        </div>
+        <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; font-weight: bold; width: 35%;">Sender Name:</td><td style="padding: 8px 0; font-weight: 700; color: #0f172a;">${data.name}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Work Email:</td><td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #0891b2; font-weight: bold;">${data.email}</a></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Phone Number:</td><td style="padding: 8px 0;">${data.phone || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Enquiry Type:</td><td style="padding: 8px 0;"><span style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 4px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px;">${data.enquiryType || "General Enquiry"}</span></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Enquiry Message:</td><td style="padding: 8px 0; background-color: #f8fafc; border-radius: 8px; padding: 12px; font-size: 13px;">${data.message.replace(/\n/g, "<br/>")}</td></tr>
+          </table>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+          Received via ET Media Contact Form · Admin Notification to ${adminEmail}
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Contact admin alert sent to ${adminEmail} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending contact admin alert:`, err.message);
+    return false;
+  }
+}
+
+async function sendJobApplicationAdminNotificationEmail(data: {
+  id: string;
+  job_id: string;
+  job_title: string;
+  name: string;
+  email: string;
+  phone: string;
+  experience: string;
+  resume_url: string;
+  portfolio_url?: string;
+  created_at?: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: adminEmail,
+    subject: `💼 New Candidate Job Application: ${data.name} for ${data.job_title}`,
+    text: `New Candidate Job Application Received:
+    
+- Application ID: ${data.id}
+- Job Title: ${data.job_title} (${data.job_id})
+- Candidate Name: ${data.name}
+- Email Address: ${data.email}
+- Phone Number: ${data.phone}
+- Relevant Experience: ${data.experience}
+- Portfolio / LinkedIn URL: ${data.portfolio_url || "N/A"}
+- Resume Document Attached / Provided.
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #0891b2 100%); padding: 25px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">💼 NEW JOB APPLICATION RECEIVED</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Careers & Talent Acquisition Portal</p>
+        </div>
+        <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; font-weight: bold; width: 35%;">Position Applied:</td><td style="padding: 8px 0; font-weight: 700; color: #059669;">${data.job_title}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Candidate Name:</td><td style="padding: 8px 0; font-weight: 700; color: #0f172a;">${data.name}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Work Email:</td><td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #0891b2; font-weight: bold;">${data.email}</a></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Phone Number:</td><td style="padding: 8px 0;">${data.phone}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Experience Level:</td><td style="padding: 8px 0; font-weight: 600;">${data.experience}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Portfolio / LinkedIn:</td><td style="padding: 8px 0;">${data.portfolio_url ? `<a href="${data.portfolio_url}" style="color: #0891b2;">${data.portfolio_url}</a>` : "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Resume Link:</td><td style="padding: 8px 0;">${data.resume_url.startsWith("data:") ? `<span style="color: #059669; font-weight: bold;">📄 PDF Resume Uploaded (Stored in Admin Dashboard)</span>` : `<a href="${data.resume_url}" style="color: #0891b2; font-weight: bold;">View Resume Document</a>`}</td></tr>
+          </table>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+          Received via ET Media Careers Portal · Admin Notification to ${adminEmail}
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Job application admin alert sent to ${adminEmail} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending job application admin alert:`, err.message);
+    return false;
+  }
+}
+
+async function sendMembershipAdminNotificationEmail(data: {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  designation?: string;
+  company?: string;
+  city?: string;
+  membership_tier?: string;
+  industry?: string;
+  objectives?: string;
+  attendance_count?: string;
+  notes?: string;
+  created_at?: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: adminEmail,
+    subject: `👑 New Executive Membership Application: ${data.full_name} (${data.company || "C-Suite"})`,
+    text: `New Executive Membership Application Received:
+    
+- Application Ref ID: ${data.id}
+- Executive Name: ${data.full_name}
+- Official Work Email: ${data.email}
+- Mobile Phone: ${data.phone || "N/A"}
+- Designation: ${data.designation || "N/A"}
+- Organization: ${data.company || "N/A"}
+- City Location: ${data.city || "N/A"}
+- Membership Tier: ${data.membership_tier || "Executive Council"}
+- Industry Focus: ${data.industry || "N/A"}
+- Primary Objectives: ${data.objectives || "N/A"}
+- Expected Attendance: ${data.attendance_count || "N/A"}
+- Special Notes / Requests: ${data.notes || "N/A"}
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #4b1fa7 0%, #0891b2 100%); padding: 25px; text-align: center; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">👑 NEW EXECUTIVE MEMBERSHIP APPLICATION</h2>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media C-Suite Leadership Advisory Desk</p>
+        </div>
+        <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; font-weight: bold; width: 35%;">Executive Name:</td><td style="padding: 8px 0; font-weight: 700; color: #0f172a;">${data.full_name}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Official Work Email:</td><td style="padding: 8px 0;"><a href="mailto:${data.email}" style="color: #0891b2; font-weight: bold;">${data.email}</a></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Mobile Phone:</td><td style="padding: 8px 0;">${data.phone || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Designation:</td><td style="padding: 8px 0; font-weight: 600;">${data.designation || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Organization / Company:</td><td style="padding: 8px 0; font-weight: 700; color: #4b1fa7;">${data.company || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">City & Location:</td><td style="padding: 8px 0;">${data.city || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Membership Tier:</td><td style="padding: 8px 0;"><span style="background-color: #f3e8ff; border: 1px solid #d8b4fe; color: #6b21a8; padding: 4px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px;">${data.membership_tier || "Executive Council"}</span></td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Primary Industry:</td><td style="padding: 8px 0;">${data.industry || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Primary Goals:</td><td style="padding: 8px 0;">${data.objectives || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold;">Expected Attendance:</td><td style="padding: 8px 0;">${data.attendance_count || "N/A"}</td></tr>
+            <tr><td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Special Notes / Requests:</td><td style="padding: 8px 0; background-color: #f8fafc; border-radius: 8px; padding: 12px; font-size: 13px;">${data.notes ? data.notes.replace(/\n/g, "<br/>") : "None specified"}</td></tr>
+          </table>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
+          Received via ET Media Membership Portal · Admin Notification to ${adminEmail}
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Executive membership admin alert sent to ${adminEmail} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending membership admin alert:`, err.message);
+    return false;
+  }
+}
+
+async function sendNewsletterAdminNotificationEmail(data: {
+  id: string;
+  email: string;
+  source?: string;
+}) {
+  const mailOptions = {
+    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: adminEmail,
+    subject: `📰 New Executive Talks Newsletter Subscriber: ${data.email}`,
+    text: `New Newsletter Subscriber:
+- Email Address: ${data.email}
+- Subscription Source: ${data.source || "Website Footer"}
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; padding: 20px;">
+        <h3 style="color: #0891b2; margin-top: 0;">📰 New Executive Talks Newsletter Subscriber</h3>
+        <p>A new subscriber has joined the Executive Talks distribution list:</p>
+        <p style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 10px 14px; color: #047857; font-weight: bold;">
+          ${data.email} (Source: ${data.source || "Website Footer"})
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    await mailTransporter.sendMail(mailOptions);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1269,6 +1557,9 @@ app.post("/api/contact", async (req, res) => {
       enquiry: newEnquiry,
       notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
     });
+
+    // Send admin email notification to registration@etmedia.in
+    sendContactAdminNotificationEmail(newEnquiry).catch(err => console.error("Contact admin email notification error:", err));
 
     return res.status(201).json({
       success: true,
@@ -2332,7 +2623,8 @@ app.post("/api/partners/submit", async (req, res) => {
 
     io.emit("new_partner_submission", submissionData);
 
-    // Send auto confirmation email async
+    // Send auto confirmation email to user & notification to admin email registration@etmedia.in
+    sendPartnerAdminNotificationEmail(submissionData).catch(err => console.error("Partner admin notification error:", err));
     sendPartnerConfirmationEmail({
       contactPerson: contact_person,
       email,
@@ -2738,6 +3030,10 @@ app.post("/api/jobs/apply", async (req, res) => {
       );
     }
     io.emit("new_job_application", appData);
+
+    // Send admin email notification to registration@etmedia.in
+    sendJobApplicationAdminNotificationEmail(appData).catch(err => console.error("Job application admin notification error:", err));
+
     return res.json({ success: true, application: appData, message: "Job application submitted successfully!" });
   } catch (err: any) {
     console.error("Job Application Error:", err);
@@ -3224,10 +3520,128 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
     }
     const newSub = { id, email, source: source || "Website Footer", created_at: new Date() };
     io.emit("new_newsletter_subscriber", newSub);
+    sendNewsletterAdminNotificationEmail({ id, email, source: source || "Website Footer" }).catch(() => {});
     return res.json({ success: true, message: "Subscribed to Executive Talks newsletter!" });
   } catch (err: any) {
     console.error("Newsletter Subscribe Error:", err);
     return res.status(500).json({ success: false, message: "Failed to subscribe" });
+  }
+});
+
+// ==========================================
+// EXECUTIVE MEMBERSHIPS API ENDPOINTS
+// ==========================================
+
+// Submit Executive Membership Application (Public)
+app.post("/api/memberships", async (req, res) => {
+  const {
+    full_name,
+    email,
+    phone,
+    designation,
+    company,
+    city,
+    membership_tier,
+    industry,
+    objectives,
+    attendance_count,
+    notes,
+  } = req.body;
+
+  if (!full_name || !email) {
+    return res.status(400).json({ success: false, message: "Full Name and Official Email are required." });
+  }
+
+  const id = `MBR-${Date.now().toString().slice(-6)}`;
+  const timestamp = new Date().toISOString();
+
+  const membershipData = {
+    id,
+    full_name,
+    email,
+    phone: phone || "N/A",
+    designation: designation || "Executive Leader",
+    company: company || "Organization",
+    city: city || "N/A",
+    membership_tier: membership_tier || "Executive Council",
+    industry: industry || "Technology & Business",
+    objectives: objectives || "",
+    attendance_count: attendance_count || "3-5 Summits / Year",
+    notes: notes || "",
+    status: "Pending",
+    created_at: timestamp,
+  };
+
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query(
+        `INSERT INTO memberships (
+          id, full_name, email, phone, designation, company, city, membership_tier, industry, objectives, attendance_count, notes, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          full_name,
+          email,
+          phone || "N/A",
+          designation || "Executive Leader",
+          company || "Organization",
+          city || "N/A",
+          membership_tier || "Executive Council",
+          industry || "Technology & Business",
+          objectives || "",
+          attendance_count || "3-5 Summits / Year",
+          notes || "",
+          "Pending",
+        ]
+      );
+    }
+
+    io.emit("new_membership_application", membershipData);
+
+    // Send admin email notification to registration@etmedia.in
+    sendMembershipAdminNotificationEmail(membershipData).catch((err) =>
+      console.error("Membership admin notification error:", err)
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Membership application submitted successfully!",
+      membership: membershipData,
+    });
+  } catch (err: any) {
+    console.error("Membership Application DB Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to process membership application." });
+  }
+});
+
+// Admin Get All Membership Applications
+app.get("/api/admin/memberships", authenticateAdmin, async (_req, res) => {
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM memberships ORDER BY created_at DESC");
+      return res.json({ success: true, memberships: rows });
+    }
+    return res.json({ success: true, memberships: [] });
+  } catch (err: any) {
+    console.error("Fetch Memberships Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch membership applications" });
+  }
+});
+
+// Admin Delete Membership Application
+app.delete("/api/admin/memberships/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      await pool.query("DELETE FROM memberships WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Membership record deleted" });
+  } catch (err: any) {
+    console.error("Delete Membership Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete membership record" });
   }
 });
 

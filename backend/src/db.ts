@@ -829,12 +829,22 @@ export async function ensureNewAdminTables() {
       );
     `);
 
-    // 5. Site Pageviews Analytics Table
+    // 6. Executive Memberships Table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS site_pageviews (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        page_path VARCHAR(255) NOT NULL,
-        ip_address VARCHAR(100),
+      CREATE TABLE IF NOT EXISTS memberships (
+        id VARCHAR(100) PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(100),
+        designation VARCHAR(255),
+        company VARCHAR(255),
+        city VARCHAR(255),
+        membership_tier VARCHAR(100),
+        industry VARCHAR(255),
+        objectives TEXT,
+        attendance_count VARCHAR(100),
+        notes TEXT,
+        status VARCHAR(50) DEFAULT 'Pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
