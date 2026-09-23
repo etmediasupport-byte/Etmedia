@@ -221,11 +221,9 @@ export default function MagazinePage() {
 
   const currentSpread = getSpreadPages(currentSpreadIndex);
 
-  // Featured Magazine
-  const featuredMagazine = magazinesList.find((m) => m.is_featured) || magazinesList[0] || getDefaultMagazines()[0];
-
-  // All Magazines List
-  const filteredMagazines = magazinesList;
+  // Featured Magazine & Display Fallback
+  const displayMagazines = magazinesList.length > 0 ? magazinesList : getDefaultMagazines();
+  const featuredMagazine = displayMagazines.find((m) => m.is_featured) || displayMagazines[0];
 
   const handleShare = (mag: MagazineItem) => {
     const shareUrl = window.location.href;
@@ -357,10 +355,13 @@ export default function MagazinePage() {
             kicker="Executive Library"
             title="All Magazine Editions"
             description="Select any magazine card to open in full-screen 3D flipbook animation reader."
+            titleClassName="text-white font-black font-display tracking-tight text-3xl sm:text-4xl lg:text-5xl"
+            descriptionClassName="text-slate-300 text-base sm:text-lg mt-2.5 max-w-2xl"
+            kickerClassName="text-cyan-300 bg-cyan-950/80 border-cyan-500/40 font-bold rounded-none px-3.5 py-1 text-xs uppercase font-mono tracking-widest"
           />
 
           <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8">
-            {magazinesList.map((mag, i) => (
+            {displayMagazines.map((mag, i) => (
               <Reveal key={mag.id || mag.issue || i} delay={i * 0.04}>
                 <div
                   onClick={() => openReader(mag)}
