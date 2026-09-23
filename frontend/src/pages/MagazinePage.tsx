@@ -10,35 +10,24 @@ import {
   ZoomIn,
   ZoomOut,
   X,
-  Sparkles,
-  Search,
   Loader2,
   Volume2,
   VolumeX,
   Grid,
   List,
   Share2,
-  ArrowRight,
-  Sliders,
-  Eye,
   Flame,
-  Layers,
-  Award,
 } from "lucide-react";
 import { toast } from "sonner";
-import { images, magazineCategories, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
+import { images, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal, SectionHeading } from "@/components/site/primitives";
-import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
 import { socket } from "@/lib/socket";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 
 export default function MagazinePage() {
   const [magazinesList, setMagazinesList] = useState<MagazineItem[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Selected magazine for 3D Flipbook Reader Modal
   const [activeMagazine, setActiveMagazine] = useState<MagazineItem | null>(null);
@@ -235,16 +224,8 @@ export default function MagazinePage() {
   // Featured Magazine
   const featuredMagazine = magazinesList.find((m) => m.is_featured) || magazinesList[0] || getDefaultMagazines()[0];
 
-  // Filtered Magazines List
-  const filteredMagazines = magazinesList.filter((m) => {
-    const matchesCategory =
-      selectedCategory === "All" || m.category?.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch =
-      m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.issue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (m.month && m.month.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  // All Magazines List
+  const filteredMagazines = magazinesList;
 
   const handleShare = (mag: MagazineItem) => {
     const shareUrl = window.location.href;
@@ -265,80 +246,60 @@ export default function MagazinePage() {
         image={images.magazineCover}
       />
 
-      {/* STATS HIGHLIGHT TICKER BANNER */}
-      <section className="bg-gradient-to-r from-zinc-950 via-slate-900 to-zinc-950 border-y border-zinc-800/80 py-6">
-        <div className="container-x grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">29+</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Leadership Editions</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">500+</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">CXO Interviews</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">100k+</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Executive Readers</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">100%</p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Digital HD Flipbook</p>
-          </div>
-        </div>
-      </section>
-
       {/* ========================================== */}
       {/* 1. FEATURED MAGAZINE COVER SHOWCASE        */}
       {/* ========================================== */}
       {featuredMagazine && (
-        <section className="py-16 md:py-24 border-b border-zinc-800/80 relative overflow-hidden bg-zinc-950">
+        <section className="py-16 md:py-20 border-b border-zinc-800/80 relative overflow-hidden bg-zinc-950">
           <FloatingShapes />
           <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-          <div className="container-x grid items-center gap-12 lg:grid-cols-12 relative z-10">
-            {/* Left Column: 3D Animated Magazine Cover */}
+          <div className="container-x grid items-center gap-10 lg:grid-cols-12 relative z-10">
+            {/* Left Column: 3D Animated Magazine Cover (No Border Radius) */}
             <div className="lg:col-span-5 [perspective:1600px]">
               <Reveal>
                 <motion.div
-                  initial={{ rotateY: -22 }}
-                  animate={{ rotateY: [-22, -10, -22] }}
+                  initial={{ rotateY: -18 }}
+                  animate={{ rotateY: [-18, -8, -18] }}
                   transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                  whileHover={{ rotateY: -4, scale: 1.03 }}
+                  whileHover={{ rotateY: -2, scale: 1.02 }}
                   onClick={() => openReader(featuredMagazine)}
-                  className="relative mx-auto w-72 sm:w-88 cursor-pointer [transform-style:preserve-3d] group"
+                  className="relative mx-auto w-64 sm:w-80 cursor-pointer [transform-style:preserve-3d] group"
                 >
                   {/* Magazine 3D Spine Depth Layer */}
-                  <div className="bg-zinc-800 absolute inset-y-4 -right-5 rounded-r-2xl [transform:rotateY(-16deg)_translateZ(-30px)] border border-zinc-700 shadow-2xl" />
-                  <div className="bg-zinc-700 absolute inset-y-2 -right-2.5 rounded-r-2xl [transform:rotateY(-9deg)_translateZ(-15px)] border border-zinc-600 shadow-xl" />
+                  <div className="bg-zinc-800 absolute inset-y-3 -right-4 [transform:rotateY(-16deg)_translateZ(-25px)] border border-zinc-700 shadow-2xl rounded-none" />
+                  <div className="bg-zinc-700 absolute inset-y-1.5 -right-2 [transform:rotateY(-9deg)_translateZ(-12px)] border border-zinc-600 shadow-xl rounded-none" />
 
                   {/* Main Front Cover Image */}
-                  <img
-                    src={featuredMagazine.cover}
-                    alt={`${featuredMagazine.title} Cover`}
-                    loading="lazy"
-                    className="relative rounded-2xl shadow-[0_50px_90px_-35px_rgba(0,0,0,0.95)] border border-zinc-700 group-hover:border-cyan-500/80 transition-all duration-300 w-full object-cover"
-                  />
+                  <div className="relative aspect-[1/1.5] w-full overflow-hidden bg-black border border-zinc-700 group-hover:border-cyan-500/80 transition-all duration-300 shadow-[0_40px_80px_-25px_rgba(0,0,0,0.95)] rounded-none">
+                    <img
+                      src={featuredMagazine.cover}
+                      alt={`${featuredMagazine.title} Cover`}
+                      loading="lazy"
+                      className="h-full w-full object-cover rounded-none"
+                    />
 
-                  {/* Glossy Sheen Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none rounded-2xl opacity-60 group-hover:opacity-100 transition-opacity" />
+                    {/* Glossy Sheen Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none rounded-none opacity-60 group-hover:opacity-100 transition-opacity" />
 
-                  {/* Hover Read Badge */}
-                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
-                    <span className="gradient-brand rounded-full px-6 py-3 text-xs font-extrabold text-white shadow-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-105 flex items-center gap-2 font-btn">
-                      <BookOpen className="h-4 w-4" /> Open Fullscreen 3D Reader
-                    </span>
+                    {/* Hover Read Badge */}
+                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-colors rounded-none flex items-center justify-center p-4">
+                      <span className="gradient-brand rounded-none px-6 py-3 text-xs font-extrabold text-white shadow-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-105 flex items-center gap-2 font-btn">
+                        <BookOpen className="h-4 w-4" /> Open Fullscreen 3D Reader
+                      </span>
+                    </div>
                   </div>
                 </motion.div>
               </Reveal>
             </div>
 
             {/* Right Column: Featured Details & CTAs */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-5">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-950/80 px-4 py-1.5 text-xs font-extrabold text-purple-300">
+                <div className="inline-flex items-center gap-2 rounded-none border border-purple-500/40 bg-purple-950/80 px-3.5 py-1 text-xs font-extrabold text-purple-300">
                   <Flame className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
                   <span>Featured Edition · {featuredMagazine.issue}</span>
                 </div>
-                <span className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3.5 py-1 text-xs font-extrabold text-cyan-300 font-mono">
+                <span className="rounded-none bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 text-xs font-extrabold text-cyan-300 font-mono">
                   {featuredMagazine.month || featuredMagazine.date}
                 </span>
               </div>
@@ -347,15 +308,15 @@ export default function MagazinePage() {
                 {featuredMagazine.title}
               </h2>
 
-              <p className="text-slate-300 text-base sm:text-lg leading-relaxed font-medium">
+              <p className="text-slate-300 text-base leading-relaxed font-medium">
                 {featuredMagazine.description || "Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets."}
               </p>
 
-              <div className="pt-4 flex flex-wrap items-center gap-4">
+              <div className="pt-2 flex flex-wrap items-center gap-4">
                 <button
                   type="button"
                   onClick={() => openReader(featuredMagazine)}
-                  className="gradient-brand inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-sm font-extrabold text-white shadow-2xl shadow-cyan-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer font-btn border-none"
+                  className="gradient-brand inline-flex items-center gap-3 rounded-none px-8 py-3.5 text-sm font-extrabold text-white shadow-2xl shadow-cyan-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-btn border-none"
                 >
                   <BookOpen className="h-5 w-5" />
                   <span>Open Fullscreen 3D Flipbook</span>
@@ -366,7 +327,7 @@ export default function MagazinePage() {
                     href={featuredMagazine.pdf_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/90 px-7 py-4 text-sm font-bold text-slate-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer font-btn shadow-md"
+                    className="inline-flex items-center gap-2.5 rounded-none border border-zinc-800 bg-zinc-900/90 px-7 py-3.5 text-sm font-bold text-slate-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer font-btn shadow-md"
                   >
                     <Download className="h-4 w-4 text-cyan-400" />
                     <span>Download PDF</span>
@@ -376,7 +337,7 @@ export default function MagazinePage() {
                 <button
                   type="button"
                   onClick={() => handleShare(featuredMagazine)}
-                  className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/90 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all cursor-pointer"
+                  className="p-3.5 rounded-none border border-zinc-800 bg-zinc-900/90 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all cursor-pointer"
                   title="Share Magazine"
                 >
                   <Share2 className="h-4 w-4" />
@@ -388,248 +349,96 @@ export default function MagazinePage() {
       )}
 
       {/* ========================================== */}
-      {/* 2. MAGAZINE CATEGORIES & SEARCH BAR        */}
-      {/* ========================================== */}
-      <section className="py-8 bg-zinc-950/90 border-b border-zinc-800/80 sticky top-0 z-30 backdrop-blur-xl">
-        <div className="container-x">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Search Bar */}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search issue, title or month..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black/90 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all font-medium"
-              />
-            </div>
-
-            {/* Category Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {["All", ...magazineCategories].map((cat) => {
-                const count = cat === "All"
-                  ? magazinesList.length
-                  : magazinesList.filter((m) => m.category?.toLowerCase() === cat.toLowerCase()).length;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer font-btn flex items-center gap-1.5 ${
-                      selectedCategory === cat
-                        ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
-                        : "bg-zinc-900/80 text-slate-400 hover:bg-zinc-800 hover:text-white border border-zinc-800"
-                    }`}
-                  >
-                    <span>{cat}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${selectedCategory === cat ? "bg-white/20 text-white" : "bg-black/60 text-slate-400"}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* View Mode Toggle (Grid vs List) */}
-            <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-2xl border border-zinc-800 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === "grid" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-white"}`}
-                title="3D Grid View"
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === "list" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-white"}`}
-                title="List View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================== */}
-      {/* 3. MAGAZINE CARDS LISTING SECTION          */}
+      {/* 2. ALL MAGAZINES CARDS GRID (NO BORDER RADIUS, HEIGHT TWICE WIDTH) */}
       {/* ========================================== */}
       <section className="py-16 sm:py-20">
         <div className="container-x">
           <SectionHeading
             kicker="Executive Library"
             title="All Magazine Editions"
-            description="Select any issue to launch the interactive full-screen digital flipbook reader."
+            description="Select any magazine card to open in full-screen 3D flipbook animation reader."
           />
 
-          {filteredMagazines.length === 0 ? (
-            <div className="py-20 text-center text-slate-400 text-sm bg-zinc-950/60 rounded-3xl border border-zinc-800 my-8">
-              <BookOpen className="h-12 w-12 mx-auto text-slate-600 mb-3" />
-              No magazine issues found matching "{searchQuery || selectedCategory}".
-            </div>
-          ) : viewMode === "grid" ? (
-            /* 3D TILT GRID VIEW */
-            <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredMagazines.map((mag, i) => (
-                <Reveal key={mag.id || mag.issue} delay={i * 0.05}>
-                  <MouseTiltCard
-                    maxTilt={10}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/90 bg-zinc-950/90 p-5 shadow-2xl hover:border-cyan-500/60 hover:bg-zinc-900 transition-all duration-300 h-full cursor-pointer"
-                    onClick={() => openReader(mag)}
-                  >
-                    <div>
-                      {/* Cover Image Container with 3D Spine Effect */}
-                      <div className="relative h-76 w-full overflow-hidden rounded-2xl bg-black border border-zinc-800 [perspective:1000px]">
-                        {/* Magazine Spine Edge Layer */}
-                        <div className="absolute top-0 bottom-0 left-0 w-3 bg-gradient-to-r from-zinc-950 via-zinc-800 to-transparent z-20 pointer-events-none" />
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8">
+            {magazinesList.map((mag, i) => (
+              <Reveal key={mag.id || mag.issue || i} delay={i * 0.04}>
+                <div
+                  onClick={() => openReader(mag)}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-none border border-zinc-800 bg-zinc-950 p-3.5 shadow-2xl hover:border-cyan-500/80 hover:bg-zinc-900 transition-all duration-300 h-full cursor-pointer"
+                >
+                  <div>
+                    {/* Tall Magazine Cover (Width is ~50% of Height, Aspect 1:1.6, Zero Border-Radius) */}
+                    <div className="relative aspect-[1/1.6] w-full overflow-hidden bg-black border border-zinc-800/80 rounded-none [perspective:1000px]">
+                      {/* Spine Layer Accent */}
+                      <div className="absolute top-0 bottom-0 left-0 w-2.5 bg-gradient-to-r from-zinc-950 via-zinc-800 to-transparent z-20 pointer-events-none" />
 
-                        <img
-                          src={mag.cover}
-                          alt={`${mag.title} cover`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
+                      <img
+                        src={mag.cover}
+                        alt={`${mag.title} cover`}
+                        loading="lazy"
+                        className="h-full w-full object-cover rounded-none transition-transform duration-700 group-hover:scale-105"
+                      />
 
-                        {/* Glossy Reflection Highlight */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity" />
+                      {/* Glossy Sheen Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none rounded-none opacity-40 group-hover:opacity-100 transition-opacity" />
 
-                        {/* Top Badges */}
-                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
-                          <span className="rounded-full bg-black/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 border border-zinc-800">
-                            {mag.category || "Leadership"}
+                      {/* Top Badges */}
+                      <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+                        <span className="rounded-none bg-black/85 backdrop-blur-md px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-cyan-300 border border-zinc-800">
+                          {mag.issue || "Issue"}
+                        </span>
+                        {mag.is_featured ? (
+                          <span className="rounded-none bg-purple-600/90 px-2 py-0.5 text-[9px] font-extrabold text-white shadow-md">
+                            Featured
                           </span>
-                          {mag.is_featured ? (
-                            <span className="rounded-full bg-purple-600/90 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-md">
-                              Featured
-                            </span>
-                          ) : null}
-                        </div>
-
-                        {/* Interactive On-Select Overlay */}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center z-20">
-                          <span className="rounded-2xl gradient-brand px-5 py-3 text-xs font-extrabold text-white shadow-2xl flex items-center gap-2 font-btn transform group-hover:scale-105 transition-transform">
-                            <Maximize2 className="h-4 w-4" /> Click for Fullscreen Reader
-                          </span>
-                          <span className="text-[11px] text-cyan-300 font-mono mt-2 font-semibold">
-                            3D Flipbook Spread Available
-                          </span>
-                        </div>
+                        ) : null}
                       </div>
 
-                      {/* Issue Header Info */}
-                      <div className="mt-5 space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-400 font-mono">
-                          <span className="text-cyan-400">{mag.issue}</span>
-                          <span>{mag.month || mag.date}</span>
+                      {/* Hover Fullscreen Reader Hint */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3 text-center z-20 rounded-none">
+                        <div className="gradient-brand rounded-none p-2.5 text-white shadow-xl mb-2">
+                          <Maximize2 className="h-5 w-5" />
                         </div>
-
-                        <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1">
-                          {mag.title}
-                        </h3>
-
-                        {mag.description && (
-                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed font-sans font-medium">
-                            {mag.description}
-                          </p>
-                        )}
+                        <span className="text-[11px] font-extrabold text-white font-btn tracking-wide">
+                          Click for Fullscreen
+                        </span>
+                        <span className="text-[9px] text-cyan-300 font-mono mt-1">
+                          3D Flipbook Reader
+                        </span>
                       </div>
                     </div>
 
-                    {/* Bottom Action Footer */}
-                    <div className="mt-6 flex items-center gap-3 pt-4 border-t border-zinc-800/80">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openReader(mag);
-                        }}
-                        className="flex-1 cursor-pointer rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/15 hover:shadow-cyan-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-btn border-none"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        <span>Read 3D Reader</span>
-                      </button>
-
-                      {mag.pdf_url && (
-                        <a
-                          href={mag.pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="cursor-pointer rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-slate-300 hover:border-zinc-700 hover:text-white transition-colors"
-                          title="Download PDF Edition"
-                        >
-                          <Download className="h-4 w-4 text-cyan-400" />
-                        </a>
-                      )}
-                    </div>
-                  </MouseTiltCard>
-                </Reveal>
-              ))}
-            </div>
-          ) : (
-            /* COMPACT SHOWCASE LIST VIEW */
-            <div className="mt-12 space-y-4">
-              {filteredMagazines.map((mag, i) => (
-                <Reveal key={mag.id || mag.issue} delay={i * 0.03}>
-                  <div
-                    onClick={() => openReader(mag)}
-                    className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-5 hover:border-cyan-500/50 hover:bg-zinc-900 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-6 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-5 min-w-0 w-full sm:w-auto">
-                      <div className="h-24 w-18 shrink-0 overflow-hidden rounded-xl bg-black border border-zinc-800">
-                        <img src={mag.cover} alt={mag.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                    {/* Card Title & Info */}
+                    <div className="mt-3.5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 font-mono">
+                        <span className="text-cyan-400 truncate">{mag.category || "Leadership"}</span>
+                        <span className="shrink-0">{mag.month || mag.date}</span>
                       </div>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-extrabold text-cyan-400 font-mono">{mag.issue}</span>
-                          <span className="text-xs text-slate-400 font-mono">· {mag.month || mag.date}</span>
-                          <span className="rounded-full bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 uppercase">
-                            {mag.category}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors font-display truncate">
-                          {mag.title}
-                        </h3>
-                        {mag.description && (
-                          <p className="text-xs text-slate-400 line-clamp-1 font-sans">{mag.description}</p>
-                        )}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto justify-end">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openReader(mag);
-                        }}
-                        className="gradient-brand px-5 py-2.5 rounded-xl text-xs font-extrabold text-white shadow-md flex items-center gap-1.5 font-btn border-none"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        <span>Read Reader</span>
-                      </button>
-
-                      {mag.pdf_url && (
-                        <a
-                          href={mag.pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-900 text-slate-300 hover:text-white transition-colors"
-                          title="Download PDF"
-                        >
-                          <Download className="h-4 w-4 text-cyan-400" />
-                        </a>
-                      )}
+                      <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-2 leading-snug">
+                        {mag.title}
+                      </h3>
                     </div>
                   </div>
-                </Reveal>
-              ))}
-            </div>
-          )}
+
+                  {/* Read Button */}
+                  <div className="mt-4 pt-3 border-t border-zinc-800/80">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openReader(mag);
+                      }}
+                      className="w-full cursor-pointer rounded-none gradient-brand py-2 text-[11px] font-extrabold text-white shadow-sm hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-1.5 font-btn border-none"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span>Read 3D Reader</span>
+                    </button>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
