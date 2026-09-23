@@ -161,6 +161,8 @@ interface TestimonialItem {
   rating: number;
   category: string;
   event_slug: string;
+  video_url?: string;
+  video_platform?: string;
   created_at?: string;
 }
 
@@ -421,6 +423,8 @@ export default function AdminDashboardPage() {
     rating: 5,
     category: "CFO Leadership",
     event_slug: "cfo-leadership-summit",
+    video_url: "",
+    video_platform: "youtube",
   });
   const [testimonialUploading, setTestimonialUploading] = useState(false);
 
@@ -1056,6 +1060,8 @@ export default function AdminDashboardPage() {
           rating: 5,
           category: "CFO Leadership",
           event_slug: "cfo-leadership-summit",
+          video_url: "",
+          video_platform: "youtube",
         });
         fetchDashboardData();
       } else {
@@ -3200,9 +3206,13 @@ export default function AdminDashboardPage() {
         reelId = cleaned.split("/p/")[1]?.split("/")[0] || "";
       } else if (cleaned.includes("/tv/")) {
         reelId = cleaned.split("/tv/")[1]?.split("/")[0] || "";
+      } else if (cleaned.match(/([A-Za-z0-9_-]{10,})/)) {
+        reelId = cleaned.match(/([A-Za-z0-9_-]{10,})/)?.[1] || "";
       }
+
       if (reelId) {
         embedUrl = `https://www.instagram.com/reel/${reelId}/embed`;
+        thumbnailUrl = `https://www.instagram.com/p/${reelId}/media/?size=l`;
       } else if (!cleaned.endsWith("/embed")) {
         embedUrl = `${cleaned.replace(/\/$/, "")}/embed`;
       }
@@ -8545,9 +8555,26 @@ export default function AdminDashboardPage() {
                           type="text"
                           value={newVideoForm.thumbnail_url}
                           onChange={(e) => setNewVideoForm({ ...newVideoForm, thumbnail_url: e.target.value })}
-                          placeholder="Or direct image URL (Auto-generated for YouTube if empty)"
+                          placeholder="Or direct image URL (Auto-generated for YouTube/Instagram if empty)"
                           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[10px]"
                         />
+
+                        {/* Live Auto-Thumbnail Preview */}
+                        {(newVideoForm.thumbnail_url || parseVideoInput(newVideoForm.url, newVideoForm.platform).thumbnailUrl) && (
+                          <div className="mt-2.5 relative aspect-video rounded-xl overflow-hidden border border-cyan-500/30 bg-slate-900 shadow-md">
+                            <img
+                              src={newVideoForm.thumbnail_url || parseVideoInput(newVideoForm.url, newVideoForm.platform).thumbnailUrl}
+                              alt="Thumbnail preview"
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop";
+                              }}
+                            />
+                            <div className="absolute top-2 left-2 rounded-md bg-slate-950/80 px-2.5 py-1 text-[9px] font-extrabold text-cyan-300 backdrop-blur-md uppercase tracking-wider border border-cyan-500/30">
+                              ✨ Auto Thumbnail Preview ({newVideoForm.platform === "instagram" ? "Instagram Reel" : "YouTube Video"})
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Live Thumbnail Preview */}
@@ -9480,6 +9507,30 @@ export default function AdminDashboardPage() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Video / Reel URL (Optional YouTube or Instagram Reel)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. https://www.youtube.com/watch?v=... or https://www.instagram.com/reel/..."
+                        value={newTestimonialForm.video_url || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const parsed = parseVideoInput(val, "youtube");
+                          setNewTestimonialForm({
+                            ...newTestimonialForm,
+                            video_url: parsed.embedUrl || val,
+                            video_platform: parsed.platform,
+                          });
+                        }}
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none font-mono"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Supports YouTube video links and Instagram Reel links. Auto-detects platform.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Testimonial Quote *
                       </label>
                       <textarea
@@ -9540,6 +9591,8 @@ export default function AdminDashboardPage() {
                               rating: 5,
                               category: "CFO Leadership",
                               event_slug: "cfo-leadership-summit",
+                              video_url: "",
+                              video_platform: "youtube",
                             });
                           }}
                           className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
@@ -9617,6 +9670,8 @@ export default function AdminDashboardPage() {
                                     rating: t.rating || 5,
                                     category: t.category || "CFO Leadership",
                                     event_slug: t.event_slug || "cfo-leadership-summit",
+                                    video_url: t.video_url || "",
+                                    video_platform: t.video_platform || "youtube",
                                   });
                                 }}
                                 className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer"

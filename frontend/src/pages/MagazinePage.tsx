@@ -20,11 +20,17 @@ import {
   Share2,
   ArrowRight,
   Sliders,
+  Eye,
+  Flame,
+  Layers,
+  Award,
 } from "lucide-react";
 import { toast } from "sonner";
 import { images, magazineCategories, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal, SectionHeading } from "@/components/site/primitives";
+import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
+import { FloatingShapes } from "@/components/ui/FloatingShapes";
 import { socket } from "@/lib/socket";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 
@@ -32,8 +38,9 @@ export default function MagazinePage() {
   const [magazinesList, setMagazinesList] = useState<MagazineItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Selected magazine for 3D Flipbook Reader
+  // Selected magazine for 3D Flipbook Reader Modal
   const [activeMagazine, setActiveMagazine] = useState<MagazineItem | null>(null);
   const [currentSpreadIndex, setCurrentSpreadIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100%, 1.4 = 140%, 1.8 = 180%
@@ -98,7 +105,6 @@ export default function MagazinePage() {
     const parsed = parsePagesList(mag.pages_list);
     let list = parsed.length > 0 ? parsed : [mag.cover, mag.cover];
 
-    // Expand pages if less than 6 to provide a rich 8-page book spread
     if (list.length < 6) {
       const fallbackList = [
         mag.cover,
@@ -176,11 +182,6 @@ export default function MagazinePage() {
       : getPagesArray(activeMagazine)
     : [];
 
-  // Double page spread calculation:
-  // Spread 0: Cover (Right: Page 0, Left: Blank Spine)
-  // Spread 1: Left: Page 1, Right: Page 2
-  // Spread 2: Left: Page 3, Right: Page 4
-  // ...
   const totalSpreads = Math.ceil((activePages.length + 1) / 2);
 
   const getSpreadPages = (spreadIdx: number) => {
@@ -213,6 +214,22 @@ export default function MagazinePage() {
     }
   };
 
+  // Keyboard navigation shortcuts when reader modal is active
+  useEffect(() => {
+    if (!activeMagazine) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        handleNextSpread();
+      } else if (e.key === "ArrowLeft") {
+        handlePrevSpread();
+      } else if (e.key === "Escape") {
+        closeReader();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeMagazine, currentSpreadIndex, totalSpreads]);
+
   const currentSpread = getSpreadPages(currentSpreadIndex);
 
   // Featured Magazine
@@ -229,6 +246,16 @@ export default function MagazinePage() {
     return matchesCategory && matchesSearch;
   });
 
+  const handleShare = (mag: MagazineItem) => {
+    const shareUrl = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success(`Link for "${mag.title}" copied to clipboard!`);
+    } else {
+      toast.info(`Sharing "${mag.title}"`);
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-black text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
       <PageHero
@@ -238,69 +265,100 @@ export default function MagazinePage() {
         image={images.magazineCover}
       />
 
+      {/* STATS HIGHLIGHT TICKER BANNER */}
+      <section className="bg-gradient-to-r from-zinc-950 via-slate-900 to-zinc-950 border-y border-zinc-800/80 py-6">
+        <div className="container-x grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="space-y-1">
+            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">29+</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Leadership Editions</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">500+</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">CXO Interviews</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">100k+</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Executive Readers</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-2xl sm:text-3xl font-black font-display text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">100%</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider font-btn">Digital HD Flipbook</p>
+          </div>
+        </div>
+      </section>
+
       {/* ========================================== */}
       {/* 1. FEATURED MAGAZINE COVER SHOWCASE        */}
       {/* ========================================== */}
       {featuredMagazine && (
         <section className="py-16 md:py-24 border-b border-zinc-800/80 relative overflow-hidden bg-zinc-950">
+          <FloatingShapes />
           <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-          <div className="container-x grid items-center gap-12 lg:grid-cols-2 relative z-10">
-            <Reveal>
-              <div className="[perspective:1600px]">
+          <div className="container-x grid items-center gap-12 lg:grid-cols-12 relative z-10">
+            {/* Left Column: 3D Animated Magazine Cover */}
+            <div className="lg:col-span-5 [perspective:1600px]">
+              <Reveal>
                 <motion.div
                   initial={{ rotateY: -22 }}
                   animate={{ rotateY: [-22, -10, -22] }}
                   transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
                   whileHover={{ rotateY: -4, scale: 1.03 }}
                   onClick={() => openReader(featuredMagazine)}
-                  className="relative mx-auto w-72 sm:w-96 cursor-pointer [transform-style:preserve-3d] group"
+                  className="relative mx-auto w-72 sm:w-88 cursor-pointer [transform-style:preserve-3d] group"
                 >
-                  {/* Magazine Spine Depth Layer */}
-                  <div className="bg-zinc-800 absolute inset-y-4 -right-5 rounded-r-2xl [transform:rotateY(-16deg)_translateZ(-30px)] border border-zinc-700" />
-                  <div className="bg-zinc-700 absolute inset-y-2 -right-2.5 rounded-r-2xl [transform:rotateY(-9deg)_translateZ(-15px)] border border-zinc-600" />
+                  {/* Magazine 3D Spine Depth Layer */}
+                  <div className="bg-zinc-800 absolute inset-y-4 -right-5 rounded-r-2xl [transform:rotateY(-16deg)_translateZ(-30px)] border border-zinc-700 shadow-2xl" />
+                  <div className="bg-zinc-700 absolute inset-y-2 -right-2.5 rounded-r-2xl [transform:rotateY(-9deg)_translateZ(-15px)] border border-zinc-600 shadow-xl" />
 
+                  {/* Main Front Cover Image */}
                   <img
                     src={featuredMagazine.cover}
                     alt={`${featuredMagazine.title} Cover`}
                     loading="lazy"
-                    className="relative rounded-2xl shadow-[0_50px_90px_-35px_rgba(0,0,0,0.9)] border border-zinc-700 group-hover:border-cyan-500/80 transition-all duration-300"
+                    className="relative rounded-2xl shadow-[0_50px_90px_-35px_rgba(0,0,0,0.95)] border border-zinc-700 group-hover:border-cyan-500/80 transition-all duration-300 w-full object-cover"
                   />
 
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors rounded-2xl flex items-center justify-center">
-                    <span className="gradient-brand rounded-full px-6 py-3 text-xs font-extrabold text-white shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 font-btn">
-                      <BookOpen className="h-4 w-4" /> Open 3D Flipbook Reader
+                  {/* Glossy Sheen Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none rounded-2xl opacity-60 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Hover Read Badge */}
+                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
+                    <span className="gradient-brand rounded-full px-6 py-3 text-xs font-extrabold text-white shadow-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-105 flex items-center gap-2 font-btn">
+                      <BookOpen className="h-4 w-4" /> Open Fullscreen 3D Reader
                     </span>
                   </div>
                 </motion.div>
-              </div>
-            </Reveal>
+              </Reveal>
+            </div>
 
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-950/80 px-4 py-1 text-xs font-extrabold text-purple-300">
-                <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-                <span>Featured Issue · {featuredMagazine.issue}</span>
+            {/* Right Column: Featured Details & CTAs */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-950/80 px-4 py-1.5 text-xs font-extrabold text-purple-300">
+                  <Flame className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+                  <span>Featured Edition · {featuredMagazine.issue}</span>
+                </div>
+                <span className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3.5 py-1 text-xs font-extrabold text-cyan-300 font-mono">
+                  {featuredMagazine.month || featuredMagazine.date}
+                </span>
               </div>
 
               <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-display leading-tight">
                 {featuredMagazine.title}
               </h2>
 
-              <p className="text-cyan-400 font-extrabold text-sm font-sans">
-                {featuredMagazine.month || featuredMagazine.date} · {featuredMagazine.category} Edition
-              </p>
-
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-medium">
+              <p className="text-slate-300 text-base sm:text-lg leading-relaxed font-medium">
                 {featuredMagazine.description || "Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets."}
               </p>
 
-              <div className="pt-4 flex flex-wrap gap-4">
+              <div className="pt-4 flex flex-wrap items-center gap-4">
                 <button
                   type="button"
                   onClick={() => openReader(featuredMagazine)}
-                  className="gradient-brand inline-flex items-center gap-2.5 rounded-2xl px-7 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-cyan-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-btn border-none"
+                  className="gradient-brand inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-sm font-extrabold text-white shadow-2xl shadow-cyan-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer font-btn border-none"
                 >
-                  <BookOpen className="h-4 w-4" />
-                  <span>Read 3D Magazine Flipbook</span>
+                  <BookOpen className="h-5 w-5" />
+                  <span>Open Fullscreen 3D Flipbook</span>
                 </button>
 
                 {featuredMagazine.pdf_url && (
@@ -308,12 +366,21 @@ export default function MagazinePage() {
                     href={featuredMagazine.pdf_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-3.5 text-sm font-bold text-slate-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer font-btn"
+                    className="inline-flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/90 px-7 py-4 text-sm font-bold text-slate-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer font-btn shadow-md"
                   >
                     <Download className="h-4 w-4 text-cyan-400" />
                     <span>Download PDF</span>
                   </a>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => handleShare(featuredMagazine)}
+                  className="p-4 rounded-2xl border border-zinc-800 bg-zinc-900/90 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all cursor-pointer"
+                  title="Share Magazine"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -323,10 +390,10 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 2. MAGAZINE CATEGORIES & SEARCH BAR        */}
       {/* ========================================== */}
-      <section className="py-10 bg-zinc-950/80 border-b border-zinc-800/80">
+      <section className="py-8 bg-zinc-950/90 border-b border-zinc-800/80 sticky top-0 z-30 backdrop-blur-xl">
         <div className="container-x">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Search Input */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Search Bar */}
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
               <input
@@ -334,57 +401,91 @@ export default function MagazinePage() {
                 placeholder="Search issue, title or month..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all font-medium"
+                className="w-full rounded-2xl border border-zinc-800 bg-black/90 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all font-medium"
               />
             </div>
 
             {/* Category Filter Tabs */}
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {["All", ...magazineCategories].map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer font-btn ${
-                    selectedCategory === cat
-                      ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
-                      : "bg-zinc-900 text-slate-400 hover:bg-zinc-800 hover:text-white border border-zinc-800"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {["All", ...magazineCategories].map((cat) => {
+                const count = cat === "All"
+                  ? magazinesList.length
+                  : magazinesList.filter((m) => m.category?.toLowerCase() === cat.toLowerCase()).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer font-btn flex items-center gap-1.5 ${
+                      selectedCategory === cat
+                        ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                        : "bg-zinc-900/80 text-slate-400 hover:bg-zinc-800 hover:text-white border border-zinc-800"
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${selectedCategory === cat ? "bg-white/20 text-white" : "bg-black/60 text-slate-400"}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* View Mode Toggle (Grid vs List) */}
+            <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-2xl border border-zinc-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === "grid" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-white"}`}
+                title="3D Grid View"
+              >
+                <Grid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === "list" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "text-slate-400 hover:text-white"}`}
+                title="List View"
+              >
+                <List className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* ========================================== */}
-      {/* 3. MAGAZINE CARDS LISTING GRID             */}
+      {/* 3. MAGAZINE CARDS LISTING SECTION          */}
       {/* ========================================== */}
       <section className="py-16 sm:py-20">
         <div className="container-x">
           <SectionHeading
             kicker="Executive Library"
             title="All Magazine Editions"
-            description="Browse complete digital editions of Executive Talks Magazine."
+            description="Select any issue to launch the interactive full-screen digital flipbook reader."
           />
 
           {filteredMagazines.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 text-sm">
-              No magazine issues found matching your filter criteria.
+            <div className="py-20 text-center text-slate-400 text-sm bg-zinc-950/60 rounded-3xl border border-zinc-800 my-8">
+              <BookOpen className="h-12 w-12 mx-auto text-slate-600 mb-3" />
+              No magazine issues found matching "{searchQuery || selectedCategory}".
             </div>
-          ) : (
+          ) : viewMode === "grid" ? (
+            /* 3D TILT GRID VIEW */
             <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {filteredMagazines.map((mag, i) => (
                 <Reveal key={mag.id || mag.issue} delay={i * 0.05}>
-                  <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/90 bg-zinc-950/90 p-5 shadow-xl hover:border-cyan-500/50 hover:bg-zinc-900 transition-all duration-300">
+                  <MouseTiltCard
+                    maxTilt={10}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/90 bg-zinc-950/90 p-5 shadow-2xl hover:border-cyan-500/60 hover:bg-zinc-900 transition-all duration-300 h-full cursor-pointer"
+                    onClick={() => openReader(mag)}
+                  >
                     <div>
-                      {/* Cover Image Container */}
-                      <div
-                        onClick={() => openReader(mag)}
-                        className="relative h-72 w-full overflow-hidden rounded-2xl bg-black cursor-pointer border border-zinc-800"
-                      >
+                      {/* Cover Image Container with 3D Spine Effect */}
+                      <div className="relative h-76 w-full overflow-hidden rounded-2xl bg-black border border-zinc-800 [perspective:1000px]">
+                        {/* Magazine Spine Edge Layer */}
+                        <div className="absolute top-0 bottom-0 left-0 w-3 bg-gradient-to-r from-zinc-950 via-zinc-800 to-transparent z-20 pointer-events-none" />
+
                         <img
                           src={mag.cover}
                           alt={`${mag.title} cover`}
@@ -392,10 +493,13 @@ export default function MagazinePage() {
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
 
-                        {/* Badges */}
-                        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                        {/* Glossy Reflection Highlight */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Top Badges */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
                           <span className="rounded-full bg-black/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 border border-zinc-800">
-                            {mag.category}
+                            {mag.category || "Leadership"}
                           </span>
                           {mag.is_featured ? (
                             <span className="rounded-full bg-purple-600/90 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-md">
@@ -404,18 +508,21 @@ export default function MagazinePage() {
                           ) : null}
                         </div>
 
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="rounded-2xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-lg flex items-center gap-1.5 font-btn">
-                            <BookOpen className="h-4 w-4" /> Open 3D Flipbook
+                        {/* Interactive On-Select Overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center z-20">
+                          <span className="rounded-2xl gradient-brand px-5 py-3 text-xs font-extrabold text-white shadow-2xl flex items-center gap-2 font-btn transform group-hover:scale-105 transition-transform">
+                            <Maximize2 className="h-4 w-4" /> Click for Fullscreen Reader
+                          </span>
+                          <span className="text-[11px] text-cyan-300 font-mono mt-2 font-semibold">
+                            3D Flipbook Spread Available
                           </span>
                         </div>
                       </div>
 
-                      {/* Content Details */}
-                      <div className="mt-5 space-y-1.5">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-400 font-mono">
-                          <span className="text-cyan-400 font-bold">{mag.issue}</span>
+                      {/* Issue Header Info */}
+                      <div className="mt-5 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-400 font-mono">
+                          <span className="text-cyan-400">{mag.issue}</span>
                           <span>{mag.month || mag.date}</span>
                         </div>
 
@@ -431,30 +538,94 @@ export default function MagazinePage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="mt-6 flex items-center gap-3 pt-4 border-t border-zinc-800">
+                    {/* Bottom Action Footer */}
+                    <div className="mt-6 flex items-center gap-3 pt-4 border-t border-zinc-800/80">
                       <button
                         type="button"
-                        onClick={() => openReader(mag)}
-                        className="flex-1 cursor-pointer rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/15 hover:shadow-cyan-500/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 font-btn border-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openReader(mag);
+                        }}
+                        className="flex-1 cursor-pointer rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/15 hover:shadow-cyan-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-btn border-none"
                       >
                         <BookOpen className="h-4 w-4" />
-                        <span>Read 3D Flipbook</span>
+                        <span>Read 3D Reader</span>
                       </button>
 
-                      {mag.pdf_url ? (
+                      {mag.pdf_url && (
                         <a
                           href={mag.pdf_url}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-slate-300 hover:border-zinc-700 hover:text-white transition-colors"
                           title="Download PDF Edition"
                         >
                           <Download className="h-4 w-4 text-cyan-400" />
                         </a>
-                      ) : null}
+                      )}
                     </div>
-                  </article>
+                  </MouseTiltCard>
+                </Reveal>
+              ))}
+            </div>
+          ) : (
+            /* COMPACT SHOWCASE LIST VIEW */
+            <div className="mt-12 space-y-4">
+              {filteredMagazines.map((mag, i) => (
+                <Reveal key={mag.id || mag.issue} delay={i * 0.03}>
+                  <div
+                    onClick={() => openReader(mag)}
+                    className="group rounded-3xl border border-zinc-800 bg-zinc-950 p-5 hover:border-cyan-500/50 hover:bg-zinc-900 transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-6 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-5 min-w-0 w-full sm:w-auto">
+                      <div className="h-24 w-18 shrink-0 overflow-hidden rounded-xl bg-black border border-zinc-800">
+                        <img src={mag.cover} alt={mag.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold text-cyan-400 font-mono">{mag.issue}</span>
+                          <span className="text-xs text-slate-400 font-mono">· {mag.month || mag.date}</span>
+                          <span className="rounded-full bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 uppercase">
+                            {mag.category}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors font-display truncate">
+                          {mag.title}
+                        </h3>
+                        {mag.description && (
+                          <p className="text-xs text-slate-400 line-clamp-1 font-sans">{mag.description}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openReader(mag);
+                        }}
+                        className="gradient-brand px-5 py-2.5 rounded-xl text-xs font-extrabold text-white shadow-md flex items-center gap-1.5 font-btn border-none"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span>Read Reader</span>
+                      </button>
+
+                      {mag.pdf_url && (
+                        <a
+                          href={mag.pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-900 text-slate-300 hover:text-white transition-colors"
+                          title="Download PDF"
+                        >
+                          <Download className="h-4 w-4 text-cyan-400" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </Reveal>
               ))}
             </div>
@@ -463,27 +634,33 @@ export default function MagazinePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. REALISTIC 3D FLIPBOOK MAGAZINE READER MODAL (PUBLUU STYLE BOOK SPREAD) */}
+      {/* 4. FULLSCREEN 3D FLIPBOOK MAGAZINE READER OVERLAY MODAL ON SELECT          */}
       {/* ========================================================================= */}
       <AnimatePresence>
         {activeMagazine && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             ref={modalContainerRef}
-            className="fixed inset-0 z-50 flex flex-col bg-zinc-950/98 backdrop-blur-2xl text-white animate-in fade-in duration-300 overflow-hidden select-none"
+            className="fixed inset-0 z-50 flex flex-col bg-zinc-950/98 backdrop-blur-2xl text-white overflow-hidden select-none"
           >
-            {/* TOP HEADER TOOLBAR (Publuu Reader Style) */}
-            <div className="flex items-center justify-between border-b border-zinc-800/90 bg-black/95 px-4 py-3 sm:px-6 z-30 shrink-0">
+            {/* TOP TOOLBAR */}
+            <div className="flex items-center justify-between border-b border-zinc-800/90 bg-black/95 px-4 py-3 sm:px-6 z-30 shrink-0 shadow-lg">
               {/* Title & Info */}
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-400 shrink-0">
+                <div className="p-2.5 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 shrink-0">
                   <BookOpen className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-extrabold text-white truncate font-display">
                     {activeMagazine.title}
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    {activeMagazine.issue} · {activeMagazine.month || activeMagazine.date}
+                  <p className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
+                    <span className="text-cyan-400 font-bold">{activeMagazine.issue}</span>
+                    <span>·</span>
+                    <span>{activeMagazine.month || activeMagazine.date}</span>
                   </p>
                 </div>
               </div>
@@ -520,7 +697,7 @@ export default function MagazinePage() {
                   <span className="hidden md:inline font-btn">Thumbnails</span>
                 </button>
 
-                {/* Sound Toggle */}
+                {/* Sound FX Toggle */}
                 <button
                   type="button"
                   onClick={() => setSoundEnabled((v) => !v)}
@@ -530,7 +707,7 @@ export default function MagazinePage() {
                   {soundEnabled ? <Volume2 className="h-4 w-4 text-cyan-400" /> : <VolumeX className="h-4 w-4 text-slate-500" />}
                 </button>
 
-                {/* Zoom Control */}
+                {/* Multi-level Zoom Control */}
                 <button
                   type="button"
                   onClick={handleZoom}
@@ -558,7 +735,7 @@ export default function MagazinePage() {
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-xl border border-zinc-800 bg-zinc-900 text-cyan-400 hover:text-cyan-300 transition-all cursor-pointer hidden sm:flex items-center gap-1.5 text-xs font-bold font-btn"
-                    title="Download PDF"
+                    title="Download PDF Edition"
                   >
                     <Download className="h-4 w-4" />
                     <span>PDF</span>
@@ -569,8 +746,8 @@ export default function MagazinePage() {
                 <button
                   type="button"
                   onClick={closeReader}
-                  className="p-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition-all cursor-pointer ml-1"
-                  title="Close Reader"
+                  className="p-2.5 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition-all cursor-pointer ml-1"
+                  title="Close Reader (Esc)"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -622,7 +799,7 @@ export default function MagazinePage() {
               )}
             </AnimatePresence>
 
-            {/* THUMBNAIL GRID MODAL OVERLAY */}
+            {/* THUMBNAIL GRID OVERLAY MODAL */}
             <AnimatePresence>
               {thumbnailGridOpen && (
                 <motion.div
@@ -689,7 +866,7 @@ export default function MagazinePage() {
                 disabled={currentSpreadIndex === 0}
                 onClick={handlePrevSpread}
                 className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 p-3 sm:p-4 rounded-full bg-zinc-900/90 border border-zinc-700 text-white hover:bg-cyan-600 hover:border-cyan-400 transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95"
-                title="Previous Page (Flip Left)"
+                title="Previous Page (Flip Left / ArrowLeft)"
               >
                 <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
               </button>
@@ -748,7 +925,6 @@ export default function MagazinePage() {
                             ) : (
                               <div className="h-full w-full bg-zinc-950 flex items-center justify-center text-xs text-zinc-600 font-mono">End of Issue</div>
                             )}
-                            {/* Inner Fold Spine Shadow Effect */}
                             <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/80 via-black/30 to-transparent pointer-events-none" />
                             <span className="absolute bottom-2 left-3 bg-black/80 text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded-full border border-zinc-800">
                               P. {currentSpread.leftNum}
@@ -770,7 +946,6 @@ export default function MagazinePage() {
                           ) : (
                             <div className="h-full w-full bg-zinc-950 flex items-center justify-center text-xs text-zinc-600 font-mono">End of Issue</div>
                           )}
-                          {/* Inner Fold Spine Shadow Effect */}
                           <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/80 via-black/30 to-transparent pointer-events-none" />
                           <span className="absolute bottom-2 right-3 bg-black/80 text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded-full border border-zinc-800">
                             P. {currentSpreadIndex === 0 ? 1 : currentSpread.rightNum}
@@ -788,13 +963,13 @@ export default function MagazinePage() {
                 disabled={currentSpreadIndex >= totalSpreads - 1}
                 onClick={handleNextSpread}
                 className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 p-3 sm:p-4 rounded-full bg-zinc-900/90 border border-zinc-700 text-white hover:bg-cyan-600 hover:border-cyan-400 transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95"
-                title="Next Page (Flip Right)"
+                title="Next Page (Flip Right / ArrowRight)"
               >
                 <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
               </button>
             </div>
 
-            {/* BOTTOM FOOTER CONTROL BAR (Publuu Slider & Page Counter) */}
+            {/* BOTTOM FOOTER CONTROL BAR */}
             <div className="border-t border-zinc-800/90 bg-black/95 px-4 py-3 sm:px-8 z-30 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Page Counter Badge */}
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 shrink-0">
@@ -844,7 +1019,7 @@ export default function MagazinePage() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

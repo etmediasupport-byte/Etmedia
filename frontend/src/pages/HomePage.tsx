@@ -30,6 +30,12 @@ import {
   Shield,
   Briefcase,
   ArrowUpRight,
+  Play,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { socket } from "@/lib/socket";
 import {
@@ -43,6 +49,8 @@ import {
   testimonials,
   Collaborator,
   getDefaultCollaborators,
+  MediaGalleryItem,
+  getDefaultMediaGallery,
 } from "@/lib/site-data";
 import { GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
 import { EventCard } from "@/components/site/EventCard";
@@ -603,11 +611,86 @@ function CollaboratorsMarquee() {
 }
 
 // SECTION 10: TESTIMONIALS
+const getTestimonialEmbedUrl = (t: any) => {
+  if (!t) return "";
+  const url = t.video_url || t.url || "";
+  if (!url) {
+    if (t.videoId) return `https://www.youtube.com/embed/${t.videoId}`;
+    return "";
+  }
+
+  if (url.includes("<iframe") && url.includes("src=")) {
+    const match = url.match(/src=["']([^"']+)["']/);
+    if (match && match[1]) return match[1];
+  }
+
+  if (url.includes("instagram.com")) {
+    let reelId = "";
+    if (url.includes("/reel/")) reelId = url.split("/reel/")[1]?.split("/")[0] || "";
+    else if (url.includes("/p/")) reelId = url.split("/p/")[1]?.split("/")[0] || "";
+    else if (url.includes("/tv/")) reelId = url.split("/tv/")[1]?.split("/")[0] || "";
+    else if (url.match(/([A-Za-z0-9_-]{10,})/)) reelId = url.match(/([A-Za-z0-9_-]{10,})/)?.[1] || "";
+
+    if (reelId) return `https://www.instagram.com/reel/${reelId}/embed`;
+    if (!url.endsWith("/embed")) return `${url.replace(/\/$/, "")}/embed`;
+    return url;
+  }
+
+  if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    let videoId = "";
+    if (url.includes("v=")) {
+      videoId = url.split("v=")[1]?.split("&")[0] || "";
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0] || "";
+    } else if (url.includes("embed/")) {
+      videoId = url.split("embed/")[1]?.split("?")[0] || "";
+    }
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  return url;
+};
+
 function TestimonialsSection() {
+  const [items, setItems] = useState<any[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  const nextSlide = () => setActiveIdx((prev) => (prev + 1) % testimonials.length);
-  const prevSlide = () => setActiveIdx((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
+  const fetchTestimonials = async () => {
+    try {
+      const res = await fetch("/api/testimonials");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+          setItems(data.testimonials);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Using fallback testimonials:", err);
+    }
+    setItems(testimonials);
+  };
+
+  useEffect(() => {
+    fetchTestimonials();
+
+    const handleUpdate = () => {
+      fetchTestimonials();
+    };
+
+    socket.on("testimonial_updated", handleUpdate);
+    return () => {
+      socket.off("testimonial_updated", handleUpdate);
+    };
+  }, []);
+
+  const activeList = items.length > 0 ? items : testimonials;
+  const nextSlide = () => setActiveIdx((prev) => (prev + 1) % activeList.length);
+  const prevSlide = () => setActiveIdx((prev) => (prev === 0 ? activeList.length - 1 : prev - 1));
+
+  const t = activeList[activeIdx] || activeList[0];
+  const videoEmbedUrl = getTestimonialEmbedUrl(t);
+  const isInstagram = Boolean(videoEmbedUrl.includes("instagram.com") || t?.video_platform === "instagram");
 
   return (
     <section className="section bg-surface overflow-hidden">
@@ -627,50 +710,60 @@ function TestimonialsSection() {
               exit={{ opacity: 0, x: -50, scale: 0.96 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             >
-              {(() => {
-                const t = testimonials[activeIdx]!;
-                return (
-                  <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-3xl border border-border/80 shadow-2xl p-8 sm:p-12">
-                    <div className="grid gap-8 lg:grid-cols-12 items-center">
-                      <div className="lg:col-span-6 relative aspect-video rounded-2xl overflow-hidden shadow-lg border border-border">
+              {t && (
+                <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-3xl border border-border/80 shadow-2xl p-6 sm:p-10">
+                  <div className="grid gap-8 lg:grid-cols-12 items-center">
+                    <div className={`lg:col-span-6 relative rounded-2xl overflow-hidden shadow-lg border border-border bg-slate-950 ${isInstagram ? "aspect-[9/16] max-h-[480px] mx-auto w-full max-w-[320px]" : "aspect-video w-full"}`}>
+                      {videoEmbedUrl ? (
                         <iframe
-                          src={`https://www.youtube.com/embed/${t.videoId}`}
-                          title={`${t.name} testimonial`}
+                          src={videoEmbedUrl}
+                          title={`${t.name || "Executive"} testimonial`}
                           loading="lazy"
                           allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
                           allowFullScreen
-                          className="absolute inset-0 h-full w-full"
+                          className="absolute inset-0 h-full w-full border-0"
                         />
-                      </div>
+                      ) : (
+                        <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-slate-900 to-slate-950">
+                          {t.avatar ? (
+                            <img src={t.avatar} alt={t.name} className="h-28 w-28 rounded-full object-cover border-2 border-cyan-400 shadow-xl mb-3" />
+                          ) : (
+                            <div className="h-24 w-24 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-3xl font-extrabold border border-cyan-500/40 mb-3">
+                              {(t.name || "CXO").charAt(0)}
+                            </div>
+                          )}
+                          <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">{t.category || "CXO Review"}</span>
+                        </div>
+                      )}
+                    </div>
 
-                      <div className="lg:col-span-6 space-y-4">
-                        <Quote className="text-cyan-500 h-8 w-8 opacity-80" />
-                        <p className="text-base sm:text-lg leading-relaxed text-foreground font-sans font-medium italic">
-                          "{t.quote}"
+                    <div className="lg:col-span-6 space-y-4">
+                      <Quote className="text-cyan-500 h-8 w-8 opacity-80" />
+                      <p className="text-base sm:text-lg leading-relaxed text-foreground font-sans font-medium italic">
+                        "{t.quote}"
+                      </p>
+                      <div className="flex items-center gap-1 pt-2">
+                        {Array.from({ length: t.rating || 5 }).map((_, s) => (
+                          <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t border-border/60">
+                        <p className="font-bold text-lg font-display text-foreground">{t.name}</p>
+                        <p className="text-muted-foreground text-sm font-btn">
+                          {t.role || t.designation}, <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{t.company}</span>
                         </p>
-                        <div className="flex items-center gap-1 pt-2">
-                          {Array.from({ length: 5 }).map((_, s) => (
-                            <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
-                          ))}
-                        </div>
-                        <div className="pt-2 border-t border-border/60">
-                          <p className="font-bold text-lg font-display text-foreground">{t.name}</p>
-                          <p className="text-muted-foreground text-sm font-btn">
-                            {t.role}, <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{t.company}</span>
-                          </p>
-                        </div>
                       </div>
                     </div>
-                  </MouseTiltCard>
-                );
-              })()}
+                  </div>
+                </MouseTiltCard>
+              )}
             </motion.div>
           </AnimatePresence>
 
           {/* Carousel Navigation Controls */}
           <div className="mt-8 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {testimonials.map((_, i) => (
+              {activeList.map((_, i) => (
                 <button
                   key={i}
                   type="button"
@@ -710,41 +803,256 @@ function TestimonialsSection() {
 
 // SECTION 11: GALLERY PREVIEW
 function GalleryPreview() {
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [items, setItems] = useState<MediaGalleryItem[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const fetchItems = async () => {
+    try {
+      const res = await fetch("/api/gallery");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Using fallback gallery data:", err);
+    }
+    setItems(getDefaultMediaGallery());
+  };
+
+  useEffect(() => {
+    fetchItems();
+
+    const handleUpdate = () => {
+      fetchItems();
+    };
+
+    socket.on("gallery_updated", handleUpdate);
+    return () => {
+      socket.off("gallery_updated", handleUpdate);
+    };
+  }, []);
+
+  const galleryList = items.length > 0 ? items : getDefaultMediaGallery();
+  const previewItems = galleryList.slice(0, 6);
+  const currentLightboxItem = lightboxIndex !== null ? previewItems[lightboxIndex] : null;
 
   return (
-    <section className="section bg-background">
-      <div className="container-x">
-        <SectionHeading kicker="Gallery Preview" title="Moments From Flagship Summits" />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {galleryPreviewPhotos.map((src, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setLightbox(src)}
-              className="overflow-hidden rounded-none cursor-pointer group"
-            >
-              <ImageZoomCard src={src} alt="ET Media event highlight" className="h-64 w-full rounded-none" />
-            </button>
+    <section className="section bg-background relative overflow-hidden">
+      <FloatingShapes />
+      <div className="container-x relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-600 dark:text-cyan-300 uppercase font-btn shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-500 animate-pulse" />
+              <span>Summit Highlights & Media Assets</span>
+            </div>
+            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-foreground tracking-tight leading-tight">
+              Moments From Flagship Summits
+            </h2>
+            <p className="mt-3 max-w-2xl text-muted-foreground text-base sm:text-lg font-sans">
+              High-resolution photo and video assets captured across India's leading executive conclaves and leadership awards.
+            </p>
+          </div>
+
+          <Link
+            to="/gallery"
+            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors shrink-0 group"
+          >
+            <span>Explore Full Media Gallery</span>
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {previewItems.map((item, i) => (
+            <Reveal key={item.id || i} delay={i * 0.08}>
+              <MouseTiltCard
+                maxTilt={10}
+                className="group relative overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-lg hover:shadow-2xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
+                onClick={() => setLightboxIndex(i)}
+              >
+                {/* Media Image Thumbnail Container */}
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
+                  <img
+                    src={item.thumbnail_url || item.url}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+
+                  {/* Category & Type Badges */}
+                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
+                    <span className="rounded-full bg-slate-950/70 border border-white/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-300 backdrop-blur-md">
+                      {item.category || "Gallery"}
+                    </span>
+
+                    <span className="flex items-center gap-1 rounded-full bg-slate-950/70 border border-white/20 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md uppercase">
+                      {item.type === "video" ? (
+                        <>
+                          <VideoIcon className="h-3 w-3 text-cyan-400" /> Video
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-3 w-3 text-cyan-400" /> Photo
+                        </>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Center Play Button for Video or Hover Zoom Icon for Photo */}
+                  <div className="absolute inset-0 flex items-center justify-center z-10 opacity-90 group-hover:opacity-100 transition-opacity">
+                    {item.type === "video" ? (
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-xl shadow-cyan-500/40 group-hover:scale-110 transition-transform">
+                        <Play className="h-6 w-6 fill-white ml-0.5" />
+                      </div>
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/60 text-white border border-white/30 backdrop-blur-md opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
+                        <Maximize2 className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Content Body */}
+                <div className="p-5 flex-1 flex flex-col justify-between bg-card">
+                  <div>
+                    {item.event_title && (
+                      <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 block mb-1 truncate">
+                        📍 {item.event_title}
+                      </span>
+                    )}
+                    <h3 className="font-bold text-foreground text-base font-display line-clamp-2 group-hover:text-cyan-500 transition-colors">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                    <span className="group-hover:text-cyan-500 transition-colors">Click to View High-Res</span>
+                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </div>
+                </div>
+              </MouseTiltCard>
+            </Reveal>
           ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <MagneticButton strength={18} className="gradient-brand rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-luxe">
+            <Link to="/gallery" className="flex items-center gap-2">
+              View All Summit Photos & Videos <ArrowRight className="h-4 w-4" />
+            </Link>
+          </MagneticButton>
         </div>
       </div>
 
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6 backdrop-blur-md"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            className="absolute top-6 right-6 rounded-full bg-white/20 p-3 text-white hover:bg-white/30"
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxIndex !== null && currentLightboxItem && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 sm:p-6 backdrop-blur-md"
+            onClick={() => setLightboxIndex(null)}
           >
-            <X className="h-6 w-6" />
-          </button>
-          <img src={lightbox} alt="Enlarged gallery view" className="max-h-[85vh] w-auto rounded-none shadow-2xl" />
-        </div>
-      )}
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setLightboxIndex(null)}
+              className="absolute top-6 right-6 z-50 rounded-full bg-white/20 p-3 text-white hover:bg-white/30 transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Left Prev Arrow Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : previewItems.length - 1));
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+              title="Previous Media"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+
+            {/* Right Next Arrow Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev !== null && prev < previewItems.length - 1 ? prev + 1 : 0));
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+              title="Next Media"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+
+            {/* Lightbox Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-5xl w-full max-h-[85vh] flex flex-col justify-between overflow-hidden rounded-3xl border border-white/20 bg-slate-950 shadow-2xl"
+            >
+              {/* Media Content View */}
+              <div className="relative flex-1 flex items-center justify-center bg-black min-h-[350px] max-h-[65vh]">
+                {currentLightboxItem.type === "video" ? (
+                  <iframe
+                    src={currentLightboxItem.url}
+                    title={currentLightboxItem.title}
+                    className="w-full h-full min-h-[400px] border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <img
+                    src={currentLightboxItem.url}
+                    alt={currentLightboxItem.title}
+                    className="max-h-[65vh] w-auto max-w-full object-contain"
+                  />
+                )}
+              </div>
+
+              {/* Lightbox Footer Info */}
+              <div className="p-6 bg-slate-900 border-t border-white/10 text-white flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-cyan-500/20 px-3 py-0.5 text-[11px] font-extrabold uppercase text-cyan-300 border border-cyan-500/40">
+                      {currentLightboxItem.category || "Keynotes"}
+                    </span>
+                    {currentLightboxItem.event_title && (
+                      <span className="text-xs text-slate-400 font-medium">
+                        📍 {currentLightboxItem.event_title}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-extrabold font-display truncate">
+                    {currentLightboxItem.title}
+                  </h3>
+                </div>
+
+                <a
+                  href={currentLightboxItem.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+                >
+                  <Download className="h-4 w-4 text-cyan-400" />
+                  <span>Download Media</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

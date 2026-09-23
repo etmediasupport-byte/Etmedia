@@ -2989,8 +2989,48 @@ app.delete("/api/admin/gallery/:id", authenticateAdmin, async (req, res) => {
 });
 
 // ==========================================
-// TESTIMONIALS API ENDPOINTS
+// TESTIMONIALS & INSTAGRAM HELPER API ENDPOINTS
 // ==========================================
+
+// Helper API to resolve Instagram Reel / Post High-Res Thumbnail
+app.get("/api/admin/instagram-thumbnail", async (req, res) => {
+  const urlParam = (req.query.url as string) || "";
+  if (!urlParam) {
+    return res.status(400).json({ success: false, message: "URL parameter is required" });
+  }
+
+  try {
+    let reelId = "";
+    if (urlParam.includes("/reel/")) {
+      reelId = urlParam.split("/reel/")[1]?.split("/")[0] || "";
+    } else if (urlParam.includes("/p/")) {
+      reelId = urlParam.split("/p/")[1]?.split("/")[0] || "";
+    } else if (urlParam.includes("/tv/")) {
+      reelId = urlParam.split("/tv/")[1]?.split("/")[0] || "";
+    }
+
+    if (!reelId && urlParam.match(/([A-Za-z0-9_-]{10,})/)) {
+      reelId = urlParam.match(/([A-Za-z0-9_-]{10,})/)?.[1] || "";
+    }
+
+    if (!reelId) {
+      return res.status(400).json({ success: false, message: "Invalid Instagram Reel / Post URL" });
+    }
+
+    const directMediaUrl = `https://www.instagram.com/p/${reelId}/media/?size=l`;
+    const embedUrl = `https://www.instagram.com/reel/${reelId}/embed`;
+
+    return res.json({
+      success: true,
+      reelId,
+      embedUrl,
+      thumbnailUrl: directMediaUrl,
+    });
+  } catch (err: any) {
+    console.error("Instagram Thumbnail Fetch Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to extract Instagram thumbnail" });
+  }
+});
 
 // Get all testimonials (Public)
 app.get("/api/testimonials", async (req, res) => {
@@ -3009,7 +3049,7 @@ app.get("/api/testimonials", async (req, res) => {
 
 // Admin create testimonial
 app.post("/api/admin/testimonials", authenticateAdmin, async (req, res) => {
-  const { name, designation, company, quote, avatar, rating, is_featured } = req.body;
+  const { name, designation, company, quote, avatar, rating, is_featured, video_url, video_platform } = req.body;
   if (!name || !designation || !company || !quote) {
     return res.status(400).json({ success: false, message: "Name, designation, company, and quote are required" });
   }
@@ -3019,11 +3059,23 @@ app.post("/api/admin/testimonials", authenticateAdmin, async (req, res) => {
     if (pool) {
       await ensureNewAdminTables();
       await pool.query(
-        "INSERT INTO testimonials (id, name, designation, company, quote, avatar, rating, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [id, name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0]
+        "INSERT INTO testimonials (id, name, designation, company, quote, avatar, rating, is_featured, video_url, video_platform) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0, video_url || "", video_platform || "youtube"]
       );
     }
-    const newTest = { id, name, designation, company, quote, avatar, rating: rating || 5, is_featured: is_featured ? 1 : 0, created_at: new Date() };
+    const newTest = {
+      id,
+      name,
+      designation,
+      company,
+      quote,
+      avatar,
+      rating: rating || 5,
+      is_featured: is_featured ? 1 : 0,
+      video_url: video_url || "",
+      video_platform: video_platform || "youtube",
+      created_at: new Date()
+    };
     io.emit("testimonial_updated", { type: "add", testimonial: newTest });
     return res.json({ success: true, testimonial: newTest, message: "Testimonial created successfully!" });
   } catch (err: any) {
@@ -3035,14 +3087,14 @@ app.post("/api/admin/testimonials", authenticateAdmin, async (req, res) => {
 // Admin update testimonial
 app.put("/api/admin/testimonials/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { name, designation, company, quote, avatar, rating, is_featured } = req.body;
+  const { name, designation, company, quote, avatar, rating, is_featured, video_url, video_platform } = req.body;
 
   try {
     if (pool) {
       await ensureNewAdminTables();
       await pool.query(
-        "UPDATE testimonials SET name = ?, designation = ?, company = ?, quote = ?, avatar = ?, rating = ?, is_featured = ? WHERE id = ?",
-        [name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0, id]
+        "UPDATE testimonials SET name = ?, designation = ?, company = ?, quote = ?, avatar = ?, rating = ?, is_featured = ?, video_url = ?, video_platform = ? WHERE id = ?",
+        [name, designation, company, quote, avatar || "", rating || 5, is_featured ? 1 : 0, video_url || "", video_platform || "youtube", id]
       );
     }
     io.emit("testimonial_updated", { type: "update", id });

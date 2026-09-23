@@ -1,8 +1,8 @@
 import React, { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface MouseTiltCardProps {
+interface MouseTiltCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
   maxTilt?: number;
@@ -14,6 +14,12 @@ export function MouseTiltCard({
   className,
   maxTilt = 12,
   glowColor = "rgba(0, 174, 239, 0.25)",
+  onMouseMove,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+  style,
+  ...props
 }: MouseTiltCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
@@ -22,6 +28,7 @@ export function MouseTiltCard({
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    onMouseMove?.(e);
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     const width = rect.width;
@@ -41,9 +48,13 @@ export function MouseTiltCard({
     });
   };
 
-  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    onMouseEnter?.(e);
+    setIsHovered(true);
+  };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    onMouseLeave?.(e);
     setIsHovered(false);
     setRotateX(0);
     setRotateY(0);
@@ -55,6 +66,7 @@ export function MouseTiltCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={onClick}
       animate={{
         rotateX,
         rotateY,
@@ -68,8 +80,10 @@ export function MouseTiltCard({
       style={{
         transformStyle: "preserve-3d",
         perspective: 1000,
+        ...style,
       }}
       className={cn("relative overflow-hidden transition-shadow duration-300 h-full flex flex-col justify-between", className)}
+      {...props}
     >
       {/* Dynamic Cursor Spotlight Radial Glow */}
       <div

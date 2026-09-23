@@ -839,6 +839,8 @@ export async function ensureNewAdminTables() {
       );
     `);
     try { await pool.query("ALTER TABLE testimonials MODIFY COLUMN avatar LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE testimonials ADD COLUMN video_url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE testimonials ADD COLUMN video_platform VARCHAR(50);"); } catch (e) {}
     try { await pool.query("ALTER TABLE seo_settings ADD COLUMN og_image LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE seo_settings MODIFY COLUMN og_image LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE website_settings MODIFY COLUMN setting_value LONGTEXT;"); } catch (e) {}
