@@ -20,7 +20,7 @@ import {
   Phone,
   Crown,
 } from "lucide-react";
-import logo2Transparent from "@/assets/logo2-transparent.png";
+import logoFinal from "@/assets/logo-final.png";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
@@ -185,7 +185,7 @@ export function Navbar() {
             onClick={handleNavClick}
           >
             <img
-              src={logo2Transparent}
+              src={logoFinal}
               alt="ET Media"
               className="h-9 sm:h-11 lg:h-12 w-auto object-contain bg-transparent border-none shadow-none"
             />
