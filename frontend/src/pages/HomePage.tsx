@@ -229,9 +229,12 @@ function EventNetwork() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {formats.map((f, i) => (
             <Reveal key={f.title} delay={i * 0.08}>
-              <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80 flex flex-col justify-between">
+              <MouseTiltCard
+                maxTilt={12}
+                className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 border border-border/80 flex flex-col justify-between shadow-xl transition-all duration-300 hover:shadow-cyan-500/10"
+              >
                 <div>
-                  <div className="w-12 h-12 rounded-2xl gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
+                  <div className="w-12 h-12 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
                     <f.icon className="h-6 w-6" />
                   </div>
                   <h3 className="mt-5 text-xl font-bold font-display text-foreground">{f.title}</h3>
