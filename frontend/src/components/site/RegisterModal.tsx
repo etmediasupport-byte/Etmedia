@@ -563,7 +563,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
       {/* 1. REGISTRATION FORM & PAYMENT MODAL */}
       {!successModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-6xl max-h-[92vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+          <div className="relative w-full max-w-[96vw] xl:max-w-[1500px] max-h-[94vh] sm:max-h-[90vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
             
             {/* STICKY MODAL HEADER */}
             <div className="flex-none border-b border-slate-200 p-4 sm:p-5 bg-slate-50/90 relative z-10">
