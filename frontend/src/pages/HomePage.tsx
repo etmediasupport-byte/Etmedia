@@ -60,7 +60,6 @@ import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
 import { ImageZoomCard } from "@/components/ui/ImageZoomCard";
 import { HeroSection } from "@/components/site/HeroSection";
-import { InteractiveMapSection } from "@/components/site/InteractiveMapSection";
 import { StatisticsSection } from "@/components/site/StatisticsSection";
 import { SEOHead } from "@/components/site/SEOHead";
 import { toast } from "sonner";
@@ -1098,14 +1097,8 @@ export default function HomePage() {
       {/* 6. Industries We Serve */}
       <IndustriesWeServe />
 
-      {/* Interactive Regional & International Event Map */}
-      <InteractiveMapSection />
-
       {/* 8. Our Collaborators */}
       <CollaboratorsMarquee />
-
-      {/* 10. Testimonials */}
-      <TestimonialsSection />
 
       {/* 11. Gallery Preview */}
       <GalleryPreview />
