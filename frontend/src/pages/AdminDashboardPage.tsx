@@ -639,7 +639,9 @@ export default function AdminDashboardPage() {
     category: string;
     description: string;
     full_description: string;
+    about_content: string;
     image: string;
+    about_image: string;
     speakers: number;
     status: string;
     is_featured: boolean;
@@ -655,7 +657,9 @@ export default function AdminDashboardPage() {
     category: "Conference & Leadership",
     description: "",
     full_description: "",
+    about_content: "",
     image: "/assets/event-cfo-BjslOJNi.jpg",
+    about_image: "",
     speakers: 20,
     status: "published",
     is_featured: false,
@@ -2109,6 +2113,52 @@ export default function AdminDashboardPage() {
     reader.readAsDataURL(file);
   };
 
+  const [uploadingAboutImage, setUploadingAboutImage] = useState(false);
+
+  const handleAboutFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be under 10MB");
+      return;
+    }
+
+    setUploadingAboutImage(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      setEventForm((prev) => ({ ...prev, about_image: base64Data }));
+
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            filename: file.name,
+          }),
+        });
+
+        const data = await res.json();
+        if (data.success && data.url) {
+          setEventForm((prev) => ({ ...prev, about_image: data.url }));
+          toast.success("About event image uploaded & synced successfully!");
+        } else {
+          toast.success("About event image loaded into form preview.");
+        }
+      } catch (err) {
+        toast.success("About event image loaded into form preview.");
+      } finally {
+        setUploadingAboutImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
 
 
 
@@ -2459,7 +2509,9 @@ export default function AdminDashboardPage() {
       category: "Conference & Leadership",
       description: "",
       full_description: "",
+      about_content: "",
       image: "/assets/event-cfo-BjslOJNi.jpg",
+      about_image: "",
       speakers: 20,
       status: "published",
       is_featured: false,
@@ -2548,7 +2600,9 @@ export default function AdminDashboardPage() {
       category: evt.category || "Conference & Leadership",
       description: evt.description || "",
       full_description: evt.full_description || evt.description || "",
+      about_content: evt.about_content || evt.full_description || evt.description || "",
       image: evt.image || "/assets/event-cfo-BjslOJNi.jpg",
+      about_image: evt.about_image || "",
       speakers: evt.speakers || parsedSpeakers.length || 20,
       status: evt.status || "published",
       is_featured: evt.is_featured === 1 || evt.is_featured === true,
@@ -2629,7 +2683,9 @@ export default function AdminDashboardPage() {
       title: eventForm.title.trim(),
       description: eventForm.description.trim(),
       full_description: (eventForm.full_description || eventForm.description).trim(),
+      about_content: (eventForm.about_content || eventForm.full_description || eventForm.description).trim(),
       image: eventForm.image.trim() || "/assets/event-cfo-BjslOJNi.jpg",
+      about_image: (eventForm.about_image || "").trim(),
       city: primaryLoc.city.trim(),
       venue: primaryLoc.venue.trim(),
       date: primaryLoc.date,
@@ -5396,8 +5452,8 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Descriptions */}
-                  <div className="space-y-3 pt-2">
+                  {/* Descriptions & About Event Section */}
+                  <div className="space-y-4 pt-2">
                     <div>
                       <label className="block text-slate-700 font-bold mb-1">Short Description (Card Overview) *</label>
                       <textarea
@@ -5411,14 +5467,98 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-slate-700 font-bold mb-1">Full Description (Detail Page)</label>
+                      <label className="block text-slate-700 font-bold mb-1">Full Description (Detail Page Overview)</label>
                       <textarea
-                        rows={4}
+                        rows={3}
                         value={eventForm.full_description}
                         onChange={(e) => setEventForm({ ...eventForm, full_description: e.target.value })}
                         placeholder="Detailed rich text breakdown of event themes, objectives, key takeaways..."
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
                       />
+                    </div>
+
+                    {/* DEDICATED ABOUT THE EVENT CONTENT & IMAGE SECTION */}
+                    <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/80 space-y-4">
+                      <div className="flex items-center gap-2 border-b border-cyan-200/80 pb-2">
+                        <FileText className="h-4 w-4 text-cyan-700" />
+                        <h4 className="text-xs font-extrabold text-cyan-900 uppercase tracking-wider">
+                          About The Event Content & Featured Banner Image
+                        </h4>
+                      </div>
+
+                      {/* About Event Content Text Area */}
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">
+                          About The Event Content (Detailed Story & Highlights) *
+                        </label>
+                        <p className="text-[11px] text-slate-500 mb-1.5 font-medium">
+                          This content appears directly under "About The Summit" on the public event page.
+                        </p>
+                        <textarea
+                          rows={5}
+                          value={eventForm.about_content}
+                          onChange={(e) => setEventForm({ ...eventForm, about_content: e.target.value })}
+                          placeholder="Write comprehensive details about the summit goals, key themes, agenda vision, target audience, and enterprise impact..."
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none shadow-xs"
+                        />
+                      </div>
+
+                      {/* About Event Upload Image & Live Preview */}
+                      <div className="space-y-3 pt-2 border-t border-cyan-200/60">
+                        <label className="block text-slate-800 font-extrabold">
+                          About Event Image (Upload File or Image URL)
+                        </label>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Upload a high-resolution photo/banner to showcase in the "About The Summit" section.
+                        </p>
+
+                        <div className="grid gap-3 sm:grid-cols-2 items-start">
+                          <div className="space-y-3">
+                            <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-500 bg-white px-4 py-3 text-cyan-800 font-bold hover:bg-cyan-100/70 transition-all shadow-xs">
+                              <Upload className="h-4 w-4 text-cyan-600" />
+                              <span>{uploadingAboutImage ? "Uploading Image..." : "Upload About Image File"}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleAboutFileUpload}
+                                disabled={uploadingAboutImage}
+                                className="hidden"
+                              />
+                            </label>
+
+                            <input
+                              type="text"
+                              value={eventForm.about_image}
+                              onChange={(e) => setEventForm({ ...eventForm, about_image: e.target.value })}
+                              placeholder="Or paste image URL e.g. /assets/hero-summit.jpg"
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[11px]"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                              About Image Preview
+                            </span>
+                            <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-xs flex items-center justify-center">
+                              {eventForm.about_image ? (
+                                <img
+                                  src={eventForm.about_image}
+                                  alt="About Event Preview"
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = "/assets/hero-summit.jpg";
+                                  }}
+                                />
+                              ) : (
+                                <div className="text-center p-3">
+                                  <ImageIcon className="h-6 w-6 text-slate-300 mx-auto mb-1" />
+                                  <span className="text-[11px] text-slate-400 font-medium block">No About Image Uploaded</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

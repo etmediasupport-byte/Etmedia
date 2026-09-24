@@ -165,7 +165,9 @@ export type EventItem = {
   title: string;
   description: string;
   full_description?: string;
+  about_content?: string;
   image: string;
+  about_image?: string;
   date: string;
   time: string;
   city: string;

@@ -2246,7 +2246,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
     locations,
     description,
     full_description,
+    about_content,
     image,
+    about_image,
     speakers,
     status,
     is_featured,
@@ -2277,8 +2279,8 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `INSERT INTO events (
-          id, slug, title, category, date, time, city, venue, locations, description, full_description, image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -2291,7 +2293,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           locationsStr,
           description,
           full_description || description,
+          about_content || full_description || description,
           image || "/assets/event-cfo-BjslOJNi.jpg",
+          about_image || "",
           speakers || 20,
           status || "published",
           is_featured ? 1 : 0,
@@ -2317,7 +2321,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       locations: locationsStr,
       description,
       full_description,
+      about_content: about_content || full_description || description,
       image,
+      about_image: about_image || "",
       speakers,
       status,
       is_featured,
@@ -2350,7 +2356,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     locations,
     description,
     full_description,
+    about_content,
     image,
+    about_image,
     speakers,
     status,
     is_featured,
@@ -2373,7 +2381,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `UPDATE events SET 
-          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?
          WHERE id = ?`,
         [
           title,
@@ -2385,7 +2393,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
           locationsStr,
           description,
           full_description || description,
+          about_content || full_description || description,
           image,
+          about_image || "",
           speakers,
           status,
           is_featured ? 1 : 0,
@@ -2411,7 +2421,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       locations: locationsStr,
       description,
       full_description,
+      about_content: about_content || full_description || description,
       image,
+      about_image: about_image || "",
       speakers,
       status,
       is_featured,

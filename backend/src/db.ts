@@ -300,7 +300,9 @@ export async function ensureEventsTable() {
         locations TEXT,
         description TEXT NOT NULL,
         full_description LONGTEXT,
+        about_content LONGTEXT,
         image TEXT,
+        about_image LONGTEXT,
         speakers INT DEFAULT 20,
         status VARCHAR(50) DEFAULT 'published',
         is_featured TINYINT(1) DEFAULT 0,
@@ -315,6 +317,8 @@ export async function ensureEventsTable() {
     `);
     try { await pool.query("ALTER TABLE events ADD COLUMN locations TEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN full_description LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN about_content LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN about_image LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN speakers_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN gallery_list LONGTEXT;"); } catch (colErr) {}

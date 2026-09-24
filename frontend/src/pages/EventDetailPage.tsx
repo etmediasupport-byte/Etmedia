@@ -400,11 +400,33 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              <div className="text-slate-300 leading-relaxed text-sm sm:text-base space-y-4 font-medium">
-                <p>{event.full_description || event.description}</p>
-                <p>
-                  ET Media Business Intelligence brings together India’s top C-suite executives, policy leaders, digital architects, and enterprise pioneers under one roof. Designed as a high-octane thought leadership summit, this conclave focuses on strategic roadmaps, disruptive market shifts, cross-industry benchmarks, and meaningful executive networking.
-                </p>
+              <div className="grid gap-8 lg:grid-cols-12 items-start">
+                <div className={`space-y-4 text-slate-300 leading-relaxed text-sm sm:text-base font-medium ${event.about_image ? "lg:col-span-7" : "lg:col-span-12"}`}>
+                  <p className="whitespace-pre-line">{event.about_content || event.full_description || event.description}</p>
+                  <p>
+                    ET Media Business Intelligence brings together India’s top C-suite executives, policy leaders, digital architects, and enterprise pioneers under one roof. Designed as a high-octane thought leadership summit, this conclave focuses on strategic roadmaps, disruptive market shifts, cross-industry benchmarks, and meaningful executive networking.
+                  </p>
+                </div>
+
+                {event.about_image && (
+                  <div className="lg:col-span-5 relative group overflow-hidden rounded-2xl border border-cyan-500/30 bg-zinc-900 shadow-xl">
+                    <img
+                      src={event.about_image}
+                      alt={`${event.title} About`}
+                      className="h-64 sm:h-80 w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                    <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 font-display block">
+                        Featured Event Highlight
+                      </span>
+                      <p className="text-xs text-white font-bold truncate">{event.title}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t border-zinc-800/80">
