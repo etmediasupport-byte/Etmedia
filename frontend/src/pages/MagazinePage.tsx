@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { images, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
-import { Reveal, SectionHeading } from "@/components/site/primitives";
+import { Reveal } from "@/components/site/primitives";
 import { socket } from "@/lib/socket";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Magazine3DViewer } from "@/components/site/Magazine3DViewer";
@@ -174,7 +174,7 @@ export default function MagazinePage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
+    <div className="relative min-h-screen bg-white text-slate-900 selection:bg-cyan-500/30 selection:text-cyan-900 font-sans">
       {/* ========================================== */}
       {/* 1. HERO SECTION WITH 3D FLOATING COVER     */}
       {/* ========================================== */}
@@ -187,26 +187,26 @@ export default function MagazinePage() {
       )}
 
       {/* ========================================== */}
-      {/* 2. EXPLORE OUR EDITIONS (ALL MAGAZINES)    */}
+      {/* 2. EXPLORE OUR EDITIONS (WHITE MODE GRID)  */}
       {/* ========================================== */}
-      <section id="all-magazines" className="py-16 sm:py-24 relative border-b border-slate-800/80">
+      <section id="all-magazines" className="py-16 sm:py-24 relative bg-slate-50/70 border-b border-slate-200">
         <div className="container-x">
           
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-10">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-400 font-display">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-cyan-700 font-display">
               EXPLORE OUR EDITIONS
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white font-display mt-2">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 font-display mt-2">
               All Magazines
             </h2>
-            <p className="mt-3 text-slate-400 text-sm sm:text-base leading-relaxed font-sans font-medium">
+            <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed font-sans font-medium">
               A collection of inspiring conversations, expert perspectives and industry stories from leaders across the globe.
             </p>
           </div>
 
-          {/* Search Bar & Category Filter Pills */}
-          <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-3xl border border-slate-800/80 backdrop-blur-xl shadow-xl">
+          {/* Search Bar & Category Filter Pills (White Mode) */}
+          <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
             {/* Search Input Box */}
             <div className="relative w-full md:w-80">
               <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
@@ -215,7 +215,7 @@ export default function MagazinePage() {
                 placeholder="Search editions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-11 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all font-medium"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none transition-all font-medium"
               />
             </div>
 
@@ -228,8 +228,8 @@ export default function MagazinePage() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     selectedCategory === cat
-                      ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-purple-600/25 border-none"
-                      : "bg-slate-950 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
+                      ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-purple-600/25 border-none"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200"
                   }`}
                 >
                   {cat}
@@ -240,7 +240,7 @@ export default function MagazinePage() {
 
           {/* Magazines Grid (4 Columns Desktop, 2 Columns Tablet, 1 Column Mobile) */}
           {filteredMagazines.length === 0 ? (
-            <div className="py-20 text-center rounded-3xl border border-slate-800 bg-slate-900/40 text-slate-400 text-sm font-medium">
+            <div className="py-20 text-center rounded-3xl border border-slate-200 bg-white text-slate-500 text-sm font-semibold">
               No magazine editions found matching your search.
             </div>
           ) : (
@@ -249,13 +249,13 @@ export default function MagazinePage() {
                 <Reveal key={mag.id || mag.issue || i} delay={i * 0.05}>
                   <div
                     onClick={() => openReader(mag)}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-xl hover:border-cyan-500/60 hover:bg-slate-900 transition-all duration-300 h-full cursor-pointer"
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all duration-300 h-full cursor-pointer"
                   >
                     <div>
                       {/* Cover Image Frame */}
-                      <div className="relative aspect-[1/1.42] w-full overflow-hidden rounded-2xl bg-slate-950 border border-slate-800/80 shadow-md">
+                      <div className="relative aspect-[1/1.42] w-full overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm">
                         {/* Spine Accent */}
-                        <div className="absolute top-0 bottom-0 left-0 w-2.5 bg-gradient-to-r from-black via-slate-900 to-transparent z-20 pointer-events-none" />
+                        <div className="absolute top-0 bottom-0 left-0 w-2.5 bg-gradient-to-r from-slate-400/40 via-slate-300/20 to-transparent z-20 pointer-events-none" />
 
                         <img
                           src={mag.cover}
@@ -269,7 +269,7 @@ export default function MagazinePage() {
 
                         {/* Issue Badge Top Left */}
                         <div className="absolute top-3 left-3 z-10">
-                          <span className="rounded-full bg-slate-950/85 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 border border-slate-800 shadow-md">
+                          <span className="rounded-full bg-slate-900/90 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 border border-slate-700 shadow-md">
                             {mag.issue || "Issue"}
                           </span>
                         </div>
@@ -287,16 +287,16 @@ export default function MagazinePage() {
 
                       {/* Card Title & Info Below Cover */}
                       <div className="mt-4 space-y-1">
-                        <div className="text-[11px] font-extrabold uppercase text-cyan-400 font-mono">
+                        <div className="text-[11px] font-extrabold uppercase text-cyan-700 font-mono">
                           {mag.month || mag.date || "2026 Edition"}
                         </div>
 
-                        <h3 className="text-base font-extrabold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1 leading-snug">
+                        <h3 className="text-base font-extrabold text-slate-900 group-hover:text-cyan-600 transition-colors font-display line-clamp-1 leading-snug">
                           {mag.title}
                         </h3>
 
                         {mag.description && (
-                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed font-sans font-medium">
+                          <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-sans font-medium">
                             {mag.description}
                           </p>
                         )}
@@ -304,8 +304,8 @@ export default function MagazinePage() {
                     </div>
 
                     {/* Bottom Action Bar */}
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-slate-400">
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-slate-500">
                         {mag.category || "Executive Talks"}
                       </span>
                       <button
@@ -314,7 +314,7 @@ export default function MagazinePage() {
                           e.stopPropagation();
                           openReader(mag);
                         }}
-                        className="cursor-pointer text-xs font-extrabold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                        className="cursor-pointer text-xs font-extrabold text-cyan-700 hover:text-cyan-800 flex items-center gap-1 transition-colors"
                       >
                         <span>Read Edition</span>
                         <ChevronRight className="h-3.5 w-3.5" />
@@ -332,9 +332,9 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 3. STAY UPDATED NEWSLETTER BANNER AT BOTTOM */}
       {/* ========================================== */}
-      <section className="py-16 sm:py-20 relative">
+      <section className="py-16 sm:py-20 relative bg-white">
         <div className="container-x">
-          <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-[#0B0F19] via-[#111827] to-[#0D111D] p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+          <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-r from-slate-950 via-[#111827] to-slate-950 text-white p-8 sm:p-12 shadow-2xl relative overflow-hidden">
             {/* Ambient Lighting Orbs */}
             <div className="absolute top-0 right-0 h-80 w-80 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
@@ -370,7 +370,7 @@ export default function MagazinePage() {
                         placeholder="Enter your email address"
                         value={newsletterEmail}
                         onChange={(e) => setNewsletterEmail(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-700 bg-slate-950 pl-11 pr-4 py-3.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                        className="w-full rounded-2xl border border-slate-700 bg-slate-900 pl-11 pr-4 py-3.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
