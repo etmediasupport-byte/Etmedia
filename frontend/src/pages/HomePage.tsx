@@ -570,10 +570,25 @@ function CollaboratorsMarquee() {
                 target={targetUrl ? "_blank" : "_self"}
                 rel={targetUrl ? "noopener noreferrer" : undefined}
                 title={targetUrl ? `Visit ${item.brand_name} website (${item.website})` : item.brand_name}
-                className="group relative flex items-center gap-3.5 rounded-2xl border border-zinc-800 bg-zinc-900/80 px-6 py-3.5 text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-500/60 hover:bg-zinc-800/90 hover:shadow-cyan-500/20 shrink-0 cursor-pointer"
+                className="group relative flex flex-col items-center justify-center text-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/80 px-6 py-4 text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-500/60 hover:bg-zinc-800/90 hover:shadow-cyan-500/20 shrink-0 cursor-pointer min-w-[170px]"
               >
-                {/* Brand Logo Container */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 p-1.5 border border-zinc-800 shadow-inner group-hover:border-cyan-400/50 transition-colors">
+                {/* Brand Name & Category (Top) */}
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-sm font-bold font-display text-slate-100 group-hover:text-cyan-300 transition-colors whitespace-nowrap flex items-center justify-center gap-1.5">
+                    {item.brand_name}
+                    {targetUrl && (
+                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+                    )}
+                  </span>
+                  {item.category && (
+                    <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase font-semibold mt-0.5">
+                      {item.category}
+                    </span>
+                  )}
+                </div>
+
+                {/* Brand Logo Container (Image After Name) */}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 p-2 border border-zinc-800 shadow-inner group-hover:border-cyan-400/50 transition-colors">
                   {item.logo ? (
                     <img
                       src={item.logo}
@@ -585,21 +600,6 @@ function CollaboratorsMarquee() {
                     />
                   ) : (
                     <Building2 className="h-5 w-5 text-cyan-400" />
-                  )}
-                </div>
-
-                {/* Brand Name & Category */}
-                <div className="flex flex-col text-left">
-                  <span className="text-sm font-bold font-display text-slate-100 group-hover:text-cyan-300 transition-colors whitespace-nowrap flex items-center gap-1.5">
-                    {item.brand_name}
-                    {targetUrl && (
-                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-                    )}
-                  </span>
-                  {item.category && (
-                    <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase font-semibold">
-                      {item.category}
-                    </span>
                   )}
                 </div>
               </a>

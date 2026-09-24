@@ -656,28 +656,12 @@ export default function PartnerWithUsPage() {
             {marqueeItems.map((collab, index) => (
               <div
                 key={`${collab.id}-${index}`}
-                className="group relative flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 px-6 shadow-md hover:border-cyan-500/50 hover:bg-slate-900 transition-all shrink-0 min-w-[240px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-2.5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 px-6 shadow-md hover:border-cyan-500/50 hover:bg-slate-900 transition-all shrink-0 min-w-[200px]"
               >
-                {/* Logo Image */}
-                <div className="h-12 w-12 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 p-1 flex items-center justify-center shrink-0">
-                  <img
-                    src={collab.logo}
-                    alt={collab.brand_name}
-                    className="h-full w-full object-cover rounded-lg group-hover:scale-105 transition-transform"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1">
+                {/* Brand Name & Category (Top) */}
+                <div className="flex flex-col items-center text-center">
+                  <h4 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1 flex items-center justify-center gap-1.5">
                     {collab.brand_name}
-                  </h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
-                      {collab.category || "Strategic Partner"}
-                    </span>
                     {collab.website && (
                       <a
                         href={collab.website}
@@ -689,7 +673,24 @@ export default function PartnerWithUsPage() {
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                      {collab.category || "Strategic Partner"}
+                    </span>
                   </div>
+                </div>
+
+                {/* Logo Image (After Name) */}
+                <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 p-1 flex items-center justify-center shrink-0">
+                  <img
+                    src={collab.logo}
+                    alt={collab.brand_name}
+                    className="h-full w-full object-cover rounded-lg group-hover:scale-105 transition-transform"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                  />
                 </div>
               </div>
             ))}
