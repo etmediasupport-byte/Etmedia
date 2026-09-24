@@ -641,8 +641,8 @@ export default function PartnerWithUsPage() {
 
         {/* Continuous Animated Marquee */}
         <div className="relative w-full overflow-hidden py-4">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-950 to-transparent z-10" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-950 to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent z-10" />
 
           <motion.div
             className="flex items-center gap-6 w-max"
@@ -656,18 +656,30 @@ export default function PartnerWithUsPage() {
             {marqueeItems.map((collab, index) => (
               <div
                 key={`${collab.id}-${index}`}
-                className="group relative flex flex-col items-center justify-center text-center gap-2.5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 px-6 shadow-md hover:border-cyan-500/50 hover:bg-slate-900 transition-all shrink-0 min-w-[200px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all shrink-0 min-w-[210px]"
               >
-                {/* Brand Name & Category (Top) */}
+                {/* Logo Image Box (Large Image) */}
+                <div className="h-28 w-48 rounded-xl overflow-hidden bg-white border border-slate-100 p-3 flex items-center justify-center shrink-0 shadow-sm group-hover:border-cyan-200 transition-colors">
+                  <img
+                    src={collab.logo}
+                    alt={collab.brand_name}
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                  />
+                </div>
+
+                {/* Brand Name & Category (Below Image) */}
                 <div className="flex flex-col items-center text-center">
-                  <h4 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors font-display line-clamp-1 flex items-center justify-center gap-1.5">
+                  <h4 className="text-sm font-bold text-slate-800 group-hover:text-cyan-600 transition-colors font-display line-clamp-1 flex items-center justify-center gap-1.5">
                     {collab.brand_name}
                     {collab.website && (
                       <a
                         href={collab.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-slate-400 hover:text-cyan-400 transition-colors"
+                        className="text-slate-400 hover:text-cyan-600 transition-colors"
                         title="Visit Partner Website"
                       >
                         <ExternalLink className="h-3 w-3" />
@@ -675,22 +687,10 @@ export default function PartnerWithUsPage() {
                     )}
                   </h4>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
                       {collab.category || "Strategic Partner"}
                     </span>
                   </div>
-                </div>
-
-                {/* Logo Image (After Name) */}
-                <div className="h-11 w-11 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 p-1 flex items-center justify-center shrink-0">
-                  <img
-                    src={collab.logo}
-                    alt={collab.brand_name}
-                    className="h-full w-full object-cover rounded-lg group-hover:scale-105 transition-transform"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                    }}
-                  />
                 </div>
               </div>
             ))}

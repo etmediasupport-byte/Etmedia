@@ -531,19 +531,19 @@ function CollaboratorsMarquee() {
   const marqueeItems = [...partnerList, ...partnerList, ...partnerList, ...partnerList];
 
   return (
-    <section className="bg-[#0b0f19] py-20 overflow-hidden border-y border-zinc-800/80 relative">
+    <section className="bg-slate-50 py-20 overflow-hidden border-y border-slate-200/90 relative">
       {/* Background glow aura */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-[800px] bg-cyan-500/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-[800px] bg-cyan-500/5 blur-[120px] pointer-events-none" />
 
       <div className="container-x relative z-10 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-300 uppercase font-btn shadow-sm">
-          <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-50 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-800 uppercase font-btn shadow-sm">
+          <Sparkles className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
           <span>Corporate Sponsors & Strategic Partners</span>
         </div>
-        <h3 className="mt-3 text-2xl font-extrabold font-display text-white tracking-tight sm:text-3xl">
+        <h3 className="mt-3 text-2xl font-extrabold font-display text-slate-900 tracking-tight sm:text-3xl">
           Trusted By Industry Leaders & Corporate Sponsors
         </h3>
-        <p className="mt-2 text-xs text-slate-400 max-w-xl mx-auto font-medium">
+        <p className="mt-2 text-xs text-slate-600 max-w-xl mx-auto font-medium">
           Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers. Click any brand logo to visit their website.
         </p>
       </div>
@@ -551,8 +551,8 @@ function CollaboratorsMarquee() {
       {/* INFINITE MARQUEE SCROLLER */}
       <div className="mt-12 overflow-hidden relative z-10">
         {/* Gradient Side Fade Masks */}
-        <div className="absolute top-0 bottom-0 left-0 w-28 bg-gradient-to-r from-[#0b0f19] via-[#0b0f19]/80 to-transparent z-20 pointer-events-none" />
-        <div className="absolute top-0 bottom-0 right-0 w-28 bg-gradient-to-l from-[#0b0f19] via-[#0b0f19]/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 left-0 w-28 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 right-0 w-28 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
 
         <motion.div
           animate={{ x: ["0%", "-50%"] }}
@@ -570,36 +570,36 @@ function CollaboratorsMarquee() {
                 target={targetUrl ? "_blank" : "_self"}
                 rel={targetUrl ? "noopener noreferrer" : undefined}
                 title={targetUrl ? `Visit ${item.brand_name} website (${item.website})` : item.brand_name}
-                className="group relative flex flex-col items-center justify-center text-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/80 px-6 py-4 text-white shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-500/60 hover:bg-zinc-800/90 hover:shadow-cyan-500/20 shrink-0 cursor-pointer min-w-[170px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 text-slate-900 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all duration-300 hover:scale-105 shrink-0 cursor-pointer min-w-[210px]"
               >
-                {/* Brand Name & Category (Top) */}
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-sm font-bold font-display text-slate-100 group-hover:text-cyan-300 transition-colors whitespace-nowrap flex items-center justify-center gap-1.5">
-                    {item.brand_name}
-                    {targetUrl && (
-                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-                    )}
-                  </span>
-                  {item.category && (
-                    <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase font-semibold mt-0.5">
-                      {item.category}
-                    </span>
-                  )}
-                </div>
-
-                {/* Brand Logo Container (Image After Name) */}
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 p-2 border border-zinc-800 shadow-inner group-hover:border-cyan-400/50 transition-colors">
+                {/* Brand Logo Container (Large Image Box matching reference design) */}
+                <div className="flex h-28 w-48 shrink-0 items-center justify-center rounded-xl bg-white p-3 border border-slate-100 shadow-sm group-hover:border-cyan-200 transition-colors overflow-hidden">
                   {item.logo ? (
                     <img
                       src={item.logo}
                       alt={item.brand_name}
-                      className="max-h-full max-w-full object-contain filter group-hover:brightness-110 transition-all"
+                      className="max-h-full max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                       onError={(e: any) => {
                         e.target.style.display = 'none';
                       }}
                     />
                   ) : (
-                    <Building2 className="h-5 w-5 text-cyan-400" />
+                    <Building2 className="h-8 w-8 text-cyan-600" />
+                  )}
+                </div>
+
+                {/* Brand Name & Category (Below Image) */}
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-sm font-bold font-display text-slate-800 group-hover:text-cyan-600 transition-colors whitespace-nowrap flex items-center justify-center gap-1.5">
+                    {item.brand_name}
+                    {targetUrl && (
+                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-600 transition-colors" />
+                    )}
+                  </span>
+                  {item.category && (
+                    <span className="text-[10px] font-mono text-slate-500 tracking-wider uppercase font-semibold mt-0.5">
+                      {item.category}
+                    </span>
                   )}
                 </div>
               </a>
@@ -612,7 +612,7 @@ function CollaboratorsMarquee() {
       <div className="mt-8 text-center relative z-10">
         <Link
           to="/partner"
-          className="inline-flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-2 text-xs font-bold text-cyan-700 hover:text-cyan-600 transition-colors underline-offset-4 hover:underline"
         >
           <span>Become an Official ET Media Sponsor & Strategic Partner</span>
           <ArrowRight className="h-3.5 w-3.5" />
