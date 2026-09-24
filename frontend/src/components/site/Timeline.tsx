@@ -97,7 +97,7 @@ export const Timeline: React.FC = () => {
             >
               {/* Content Card */}
               <div className="w-full md:w-1/2 pl-14 md:pl-0 md:px-8">
-                <div className="group relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 md:p-8 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-cyan-500/50 hover:-translate-y-1">
+                <div className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 md:p-8 shadow-xl transition-all duration-300 hover:shadow-2xl hover:border-cyan-500/50 hover:-translate-y-1">
                   <div className="flex items-center justify-between gap-4 mb-3">
                     <span className="text-sm font-extrabold font-mono text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 px-3 py-1 rounded-full">
                       {item.year}

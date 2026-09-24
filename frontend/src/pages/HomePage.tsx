@@ -410,32 +410,31 @@ function IndustriesWeServe() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-[#060813] py-24 text-white border-y border-zinc-800/80">
-      {/* Background Radial Atmosphere Glows */}
-      <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan-600/15 blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-indigo-600/15 blur-[120px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#060813]/90 to-[#060813] pointer-events-none" />
+    <section className="relative overflow-hidden bg-surface py-20 text-slate-900 border-y border-slate-200/80">
+      {/* Background Floating Orbs */}
+      <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan-400/10 blur-[120px] pointer-events-none float-orb" />
+      <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[120px] pointer-events-none float-orb" />
 
       <FloatingShapes />
 
       <div className="container-x relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-400 uppercase font-btn backdrop-blur-md shadow-[0_0_15px_rgba(0,174,239,0.15)]">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-600 dark:text-cyan-400 uppercase font-btn backdrop-blur-md shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-500 animate-pulse" />
               <span>Sector Focus</span>
             </div>
-            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-white tracking-tight leading-tight">
+            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-slate-900 tracking-tight leading-tight">
               Industries We Serve
             </h2>
-            <p className="mt-3 max-w-2xl text-slate-400 text-base sm:text-lg font-sans">
+            <p className="mt-3 max-w-2xl text-slate-600 text-base sm:text-lg font-sans font-medium text-left">
               Specialized leadership conclaves and executive summits tailored for sector-specific enterprise challenges.
             </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Curated Verticals</span>
-            <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Curated Verticals</span>
+            <div className="h-2.5 w-2.5 rounded-full bg-cyan-500 animate-ping" />
           </div>
         </div>
 
@@ -447,38 +446,38 @@ function IndustriesWeServe() {
               <Reveal key={sec.id || sec.title || i} delay={i * 0.05}>
                 <MouseTiltCard
                   maxTilt={8}
-                  className="group relative h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-zinc-800/90 bg-zinc-900/60 p-7 backdrop-blur-xl transition-all duration-500 hover:border-cyan-500/50 hover:bg-zinc-900/90 hover:shadow-[0_12px_40px_rgba(0,174,239,0.18)] flex flex-col justify-between overflow-hidden"
+                  className="group relative h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/15 flex flex-col justify-between overflow-hidden"
                 >
                   {/* Subtle Card Ambient Highlight */}
-                  <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all duration-500 pointer-events-none" />
+                  <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500 pointer-events-none" />
 
                   <div>
-                    <div className="flex items-center justify-between gap-4 mb-6">
-                      <div className="relative flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3 text-white shadow-lg shadow-cyan-500/25 group-hover:scale-110 group-hover:shadow-cyan-500/40 transition-all duration-300">
+                    <div className="flex items-center justify-between gap-4 mb-5">
+                      <div className="relative flex h-12 w-12 items-center justify-center rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none bg-gradient-to-br from-cyan-500 to-blue-600 p-3 text-white shadow-md shadow-cyan-500/25 group-hover:scale-110 transition-all duration-300">
                         <IconComponent className="h-6 w-6" />
                       </div>
 
                       {sec.tag && (
-                        <span className="rounded-full border border-slate-700/80 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-300 group-hover:border-cyan-500/40 group-hover:text-cyan-300 transition-colors">
+                        <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800 group-hover:border-cyan-400 group-hover:text-cyan-600 transition-colors">
                           {sec.tag}
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-xl font-bold font-display text-white group-hover:text-cyan-400 transition-colors">
+                    <h3 className="text-xl font-bold font-display text-slate-900 group-hover:text-cyan-600 transition-colors text-left">
                       {sec.title}
                     </h3>
-                    <p className="mt-3 text-slate-400 text-sm leading-relaxed font-sans font-normal">
+                    <p className="mt-2.5 text-slate-700 text-sm leading-snug font-sans font-normal text-left">
                       {sec.description}
                     </p>
                   </div>
 
-                  <div className="mt-8 pt-5 border-t border-zinc-800/80 flex items-center justify-between text-xs text-slate-400 font-medium">
-                    <span className="flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
-                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-700 font-semibold">
+                    <span className="flex items-center gap-2 group-hover:text-cyan-600 transition-colors">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
                       Executive Platform
                     </span>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800/80 group-hover:border-cyan-400 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 group-hover:border-cyan-400 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
                       <ArrowUpRight className="h-4 w-4" />
                     </div>
                   </div>
@@ -852,6 +851,57 @@ function GalleryPreview() {
   const previewItems = galleryList.slice(0, 6);
   const currentLightboxItem = lightboxIndex !== null ? previewItems[lightboxIndex] : null;
 
+  const getDirectMediaUrl = (item: any) => {
+    if (item.external_url) return item.external_url;
+
+    const rawUrl = item.video_url || item.url || item.thumbnail_url || "";
+
+    if (rawUrl.includes("youtube.com") || rawUrl.includes("youtu.be")) {
+      let videoId = "";
+      if (rawUrl.includes("/embed/")) {
+        videoId = rawUrl.split("/embed/")[1]?.split("?")[0] || "";
+      } else if (rawUrl.includes("v=")) {
+        videoId = rawUrl.split("v=")[1]?.split("&")[0] || "";
+      } else if (rawUrl.includes("youtu.be/")) {
+        videoId = rawUrl.split("youtu.be/")[1]?.split("?")[0] || "";
+      }
+      if (videoId) return `https://www.youtube.com/watch?v=${videoId}`;
+      return rawUrl;
+    }
+
+    if (rawUrl.includes("instagram.com")) {
+      if (rawUrl.includes("/embed")) {
+        const cleanPath = rawUrl.replace("/embed", "").split("?")[0];
+        return cleanPath.startsWith("http") ? cleanPath : `https://${cleanPath}`;
+      }
+      return rawUrl;
+    }
+
+    return rawUrl;
+  };
+
+  const handleMediaClick = (item: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const targetUrl = getDirectMediaUrl(item);
+    if (targetUrl) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const getMediaLabel = (item: any) => {
+    const url = (item.video_url || item.url || "").toLowerCase();
+    if (url.includes("youtube") || url.includes("youtu.be") || item.platform === "youtube") {
+      return "Open in YouTube";
+    }
+    if (url.includes("instagram") || item.platform === "instagram") {
+      return "Open in Instagram";
+    }
+    return "View Media Asset";
+  };
+
   return (
     <section className="section bg-background relative overflow-hidden">
       <FloatingShapes />
@@ -885,7 +935,7 @@ function GalleryPreview() {
               <MouseTiltCard
                 maxTilt={10}
                 className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-border/80 bg-surface shadow-lg hover:shadow-2xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
-                onClick={() => setLightboxIndex(i)}
+                onClick={(e) => handleMediaClick(item, e)}
               >
                 {/* Media Image Thumbnail Container */}
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
@@ -944,7 +994,7 @@ function GalleryPreview() {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                    <span className="group-hover:text-cyan-500 transition-colors">Click to View High-Res</span>
+                    <span className="group-hover:text-cyan-500 transition-colors">{getMediaLabel(item)}</span>
                     <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </div>

@@ -125,6 +125,46 @@ export default function GalleryPage() {
 
   const currentLightboxItem = lightboxIndex !== null ? filteredItems[lightboxIndex] : null;
 
+  const getDirectMediaUrl = (item: any) => {
+    if (item.external_url) return item.external_url;
+
+    const rawUrl = item.video_url || item.url || item.thumbnail_url || "";
+
+    if (rawUrl.includes("youtube.com") || rawUrl.includes("youtu.be")) {
+      let videoId = "";
+      if (rawUrl.includes("/embed/")) {
+        videoId = rawUrl.split("/embed/")[1]?.split("?")[0] || "";
+      } else if (rawUrl.includes("v=")) {
+        videoId = rawUrl.split("v=")[1]?.split("&")[0] || "";
+      } else if (rawUrl.includes("youtu.be/")) {
+        videoId = rawUrl.split("youtu.be/")[1]?.split("?")[0] || "";
+      }
+      if (videoId) return `https://www.youtube.com/watch?v=${videoId}`;
+      return rawUrl;
+    }
+
+    if (rawUrl.includes("instagram.com")) {
+      if (rawUrl.includes("/embed")) {
+        const cleanPath = rawUrl.replace("/embed", "").split("?")[0];
+        return cleanPath.startsWith("http") ? cleanPath : `https://${cleanPath}`;
+      }
+      return rawUrl;
+    }
+
+    return rawUrl;
+  };
+
+  const handleMediaClick = (item: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const targetUrl = getDirectMediaUrl(item);
+    if (targetUrl) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-background pb-24 text-foreground selection:bg-cyan-500/30 font-sans">
       <GlowBackdrop />
@@ -280,9 +320,9 @@ export default function GalleryPage() {
             <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5 space-y-5">
               {visibleItems.map((item, index) => (
                 <div
-                  key={item.id}
-                  onClick={() => setLightboxIndex(index)}
-                  className="group relative break-inside-avoid overflow-hidden rounded-none border border-slate-200/80 dark:border-slate-800 bg-slate-900 shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
+                  key={item.id || index}
+                  onClick={(e) => handleMediaClick(item, e)}
+                  className="group relative break-inside-avoid overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-200/80 dark:border-slate-800 bg-slate-900 shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
                 >
                   {/* Image / Thumbnail */}
                   <img

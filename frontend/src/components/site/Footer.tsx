@@ -123,21 +123,46 @@ export function Footer() {
               </span>
               <div className="flex flex-wrap gap-2.5">
                 {[
-                  { href: socialLinks.linkedin, Icon: Linkedin, label: "LinkedIn", color: "hover:bg-blue-600" },
-                  { href: socialLinks.instagram, Icon: Instagram, label: "Instagram", color: "hover:bg-rose-600" },
-                  { href: socialLinks.youtube, Icon: Youtube, label: "YouTube", color: "hover:bg-red-600" },
-                  { href: socialLinks.facebook, Icon: Facebook, label: "Facebook", color: "hover:bg-blue-700" },
-                  { href: socialLinks.whatsapp, Icon: MessageCircle, label: "WhatsApp", color: "hover:bg-emerald-600" },
-                ].map(({ href, Icon, label, color }) => (
+                  {
+                    href: socialLinks.linkedin,
+                    Icon: Linkedin,
+                    label: "LinkedIn",
+                    bgColor: "bg-[#0A66C2] shadow-[0_4px_14px_rgba(10,102,194,0.4)] hover:shadow-[0_6px_20px_rgba(10,102,194,0.7)]",
+                  },
+                  {
+                    href: socialLinks.instagram,
+                    Icon: Instagram,
+                    label: "Instagram",
+                    bgColor: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] shadow-[0_4px_14px_rgba(220,39,67,0.4)] hover:shadow-[0_6px_20px_rgba(220,39,67,0.7)]",
+                  },
+                  {
+                    href: socialLinks.youtube,
+                    Icon: Youtube,
+                    label: "YouTube",
+                    bgColor: "bg-[#FF0000] shadow-[0_4px_14px_rgba(255,0,0,0.4)] hover:shadow-[0_6px_20px_rgba(255,0,0,0.7)]",
+                  },
+                  {
+                    href: socialLinks.facebook,
+                    Icon: Facebook,
+                    label: "Facebook",
+                    bgColor: "bg-[#1877F2] shadow-[0_4px_14px_rgba(24,119,242,0.4)] hover:shadow-[0_6px_20px_rgba(24,119,242,0.7)]",
+                  },
+                  {
+                    href: socialLinks.whatsapp,
+                    Icon: MessageCircle,
+                    label: "WhatsApp",
+                    bgColor: "bg-[#25D366] shadow-[0_4px_14px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_20px_rgba(37,211,102,0.7)]",
+                  },
+                ].map(({ href, Icon, label, bgColor }) => (
                   <a
                     key={label}
                     href={href}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className={`flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white transition-all duration-300 hover:scale-110 hover:shadow-lg ${color}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-white transition-all duration-300 hover:scale-110 ${bgColor}`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-5 w-5" />
                   </a>
                 ))}
               </div>

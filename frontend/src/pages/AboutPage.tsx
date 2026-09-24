@@ -133,7 +133,7 @@ export default function AboutPage() {
                     key={i}
                     src={src}
                     alt="ET Media events and workspaces"
-                    className={`h-52 w-full rounded-3xl ${i % 3 === 0 ? "mt-8" : ""}`}
+                    className={`h-52 w-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none ${i % 3 === 0 ? "mt-8" : ""}`}
                   />
                 ),
               )}
