@@ -1014,6 +1014,7 @@ export async function ensureEventPaymentsTable() {
         sponsor_seats INT DEFAULT 5,
         coupons_enabled TINYINT(1) DEFAULT 1,
         coupons LONGTEXT,
+        pricing_plans LONGTEXT,
         payment_required TINYINT(1) DEFAULT 1,
         online_payment_enabled TINYINT(1) DEFAULT 1,
         offline_payment_enabled TINYINT(1) DEFAULT 1,
@@ -1028,6 +1029,7 @@ export async function ensureEventPaymentsTable() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE event_payment_settings ADD COLUMN pricing_plans LONGTEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error creating event_payment_settings table:", err);
   }

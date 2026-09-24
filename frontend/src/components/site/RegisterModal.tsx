@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown } from "lucide-react";
+import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown, Crown } from "lucide-react";
 import { toast } from "sonner";
-import { events as defaultEvents, type EventItem } from "@/lib/site-data";
+import { events as defaultEvents, type EventItem, getDefaultPricingPlans, type PricingPlanTier } from "@/lib/site-data";
+import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import logoUrl from "@/assets/logo-final.png";
 
 interface RegisterModalProps {
@@ -818,8 +819,35 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                   </div>
                 </div>
 
-                {/* Section 2: Category & Preferences (3 Columns) */}
-                <div className="space-y-3 pt-1">
+                {/* Section 2: Registration Tier Plans Grid (Gold Pass, Premium Pass, Platinum Pass) */}
+                {activeMode === "paid" && (
+                  <div className="pt-2">
+                    {(() => {
+                      let parsedPlans: PricingPlanTier[] = [];
+                      if (typeof paymentConfig?.pricing_plans === "string") {
+                        try { parsedPlans = JSON.parse(paymentConfig.pricing_plans); } catch (e) {}
+                      } else if (Array.isArray(paymentConfig?.pricing_plans)) {
+                        parsedPlans = paymentConfig.pricing_plans;
+                      }
+                      if (!parsedPlans || parsedPlans.length === 0) {
+                        parsedPlans = getDefaultPricingPlans();
+                      }
+                      return (
+                        <RegistrationPlansGrid
+                          plans={parsedPlans}
+                          onSelectPlan={(plan) => {
+                            setFormData((prev) => ({ ...prev, registrationCategory: plan.name }));
+                            toast.success(`Selected ${plan.name} (₹${Number(plan.price).toLocaleString("en-IN")})`);
+                          }}
+                          selectedPlanId={formData.registrationCategory}
+                        />
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Section 3: Category & Preferences (3 Columns) */}
+                <div className="space-y-3 pt-3">
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1.5">
                     <Tag className="h-3.5 w-3.5 text-purple-600" />
                     <span>Category & Participation Preferences</span>

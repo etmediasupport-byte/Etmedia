@@ -33,6 +33,7 @@ import {
   GalleryItem,
   AgendaItem,
 } from "@/lib/site-data";
+import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { RegisterModal } from "@/components/site/RegisterModal";
 import { socket } from "@/lib/socket";
 
@@ -43,6 +44,7 @@ export default function EventDetailPage() {
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regMode, setRegMode] = useState<"paid" | "free">("paid");
   const [activeSection, setActiveSection] = useState<string>("overview");
+  const [eventPaymentConfig, setEventPaymentConfig] = useState<any>(null);
 
   // Gallery Lightbox State
   const [lightboxMedia, setLightboxMedia] = useState<GalleryItem | null>(null);
@@ -90,6 +92,20 @@ export default function EventDetailPage() {
       socket.off("event_updated", onEventUpdate);
     };
   }, [slug]);
+
+  // Fetch payment config for pricing tiers
+  useEffect(() => {
+    if (event?.id || event?.slug) {
+      fetch(`/api/event-payments/event/${event.id || event.slug}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.payment) {
+            setEventPaymentConfig(data.payment);
+          }
+        })
+        .catch((err) => console.warn("Could not fetch event payment config for page", err));
+    }
+  }, [event?.id, event?.slug]);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -723,6 +739,26 @@ export default function EventDetailPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* SECTION 6.5: REGISTRATION PLANS TIER CARDS GRID (GOLD, PREMIUM, PLATINUM) */}
+        <section id="pricing" className="scroll-mt-32">
+          <Reveal>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl space-y-6">
+              <RegistrationPlansGrid
+                plans={
+                  typeof eventPaymentConfig?.pricing_plans === "string"
+                    ? JSON.parse(eventPaymentConfig.pricing_plans || "[]")
+                    : eventPaymentConfig?.pricing_plans || []
+                }
+                theme="dark"
+                onSelectPlan={() => {
+                  setRegMode("paid");
+                  setRegModalOpen(true);
+                }}
+              />
             </div>
           </Reveal>
         </section>

@@ -88,10 +88,13 @@ import {
   Save,
   Loader2,
   Linkedin,
+  Crown,
+  Gem,
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
-import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem } from "@/lib/site-data";
+import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem, PricingPlanTier, getDefaultPricingPlans } from "@/lib/site-data";
+import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 
 interface Registration {
   id: string;
@@ -1329,8 +1332,12 @@ export default function AdminDashboardPage() {
   };
 
   // --- EVENT PAYMENT MANAGEMENT HANDLERS ---
+  const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons">("general");
+  const [previewTierModalConfig, setPreviewTierModalConfig] = useState<EventPaymentConfig | null>(null);
+
   const handleOpenAddPaymentConfig = () => {
     setEditingPaymentConfig(null);
+    setPaymentModalTab("general");
     const defaultEvent = cmsEvents[0] || {};
     setPaymentForm({
       event_id: defaultEvent.id || defaultEvent.slug || "cfo-leadership-summit",
@@ -1351,6 +1358,7 @@ export default function AdminDashboardPage() {
         Student: 1499,
         Media: 0,
       },
+      pricing_plans: getDefaultPricingPlans(),
       early_bird_enabled: true,
       early_bird_price: 3999,
       early_bird_start_date: new Date().toISOString().split("T")[0],
@@ -1383,6 +1391,7 @@ export default function AdminDashboardPage() {
 
   const handleEditPaymentConfig = (item: EventPaymentConfig) => {
     setEditingPaymentConfig(item);
+    setPaymentModalTab("general");
     let parsedRegPrices = item.registration_type_prices;
     if (typeof parsedRegPrices === "string") {
       try { parsedRegPrices = JSON.parse(parsedRegPrices); } catch(e) {}
@@ -1391,9 +1400,17 @@ export default function AdminDashboardPage() {
     if (typeof parsedCoupons === "string") {
       try { parsedCoupons = JSON.parse(parsedCoupons); } catch(e) {}
     }
+    let parsedPlans = item.pricing_plans;
+    if (typeof parsedPlans === "string") {
+      try { parsedPlans = JSON.parse(parsedPlans); } catch(e) {}
+    }
+    if (!Array.isArray(parsedPlans) || parsedPlans.length === 0) {
+      parsedPlans = getDefaultPricingPlans();
+    }
     setPaymentForm({
       ...item,
       registration_type_prices: parsedRegPrices || { Delegate: item.registration_fee || 4999 },
+      pricing_plans: parsedPlans,
       coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
     });
     setShowPaymentModal(true);
@@ -4152,234 +4169,249 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
-              {/* EVENT PAYMENTS DATA TABLE */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1000px] text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                        <th className="py-3 px-3 w-10 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedPaymentIds.length === eventPayments.length && eventPayments.length > 0}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedPaymentIds(eventPayments.map((p) => p.id));
-                              } else {
-                                setSelectedPaymentIds([]);
-                              }
-                            }}
-                            className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
-                          />
-                        </th>
-                        <th className="py-3 px-4">Event Details</th>
-                        <th className="py-3 px-4">Base Fee & GST</th>
-                        <th className="py-3 px-4">Total Payable</th>
-                        <th className="py-3 px-4">Seat Capacity</th>
-                        <th className="py-3 px-4">Early Bird / Coupons</th>
-                        <th className="py-3 px-4 text-center">Payment Status</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {eventPayments
-                        .filter((item) => {
-                          const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
-                          const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
-                          const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
-                          return titleMatch && statusMatch && cityMatch;
-                        })
-                        .map((item) => {
-                          const baseFee = Number(item.registration_fee) || 0;
-                          const gstPct = Number(item.gst_percentage) || 18;
-                          const gstAmount = Math.round((baseFee * gstPct) / 100);
-                          const totalPayable = item.gst_included ? baseFee : baseFee + gstAmount;
+              {/* EXECUTIVE EVENT PAYMENTS CARDS GRID */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {eventPayments
+                  .filter((item) => {
+                    const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
+                    const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
+                    const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
+                    return titleMatch && statusMatch && cityMatch;
+                  })
+                  .map((item) => {
+                    const baseFee = Number(item.registration_fee) || 0;
+                    const gstPct = Number(item.gst_percentage) || 18;
+                    const gstAmount = Math.round((baseFee * gstPct) / 100);
+                    const totalPayable = item.gst_included ? baseFee : baseFee + gstAmount;
 
-                          const available = Number(item.available_seats) || 100;
-                          const total = Number(item.total_seats) || 100;
-                          const pctSeats = Math.round(((total - available) / total) * 100);
+                    const available = Number(item.available_seats) || 100;
+                    const total = Number(item.total_seats) || 100;
+                    const pctSeats = Math.round(((total - available) / total) * 100);
 
-                          let parsedCoupons: any[] = [];
-                          if (typeof item.coupons === "string") {
-                            try { parsedCoupons = JSON.parse(item.coupons); } catch(e){}
-                          } else if (Array.isArray(item.coupons)) {
-                            parsedCoupons = item.coupons;
-                          }
+                    let parsedCoupons: any[] = [];
+                    if (typeof item.coupons === "string") {
+                      try { parsedCoupons = JSON.parse(item.coupons); } catch (e) {}
+                    } else if (Array.isArray(item.coupons)) {
+                      parsedCoupons = item.coupons;
+                    }
 
-                          const isSelected = selectedPaymentIds.includes(item.id);
+                    let parsedPlans: PricingPlanTier[] = [];
+                    if (typeof item.pricing_plans === "string") {
+                      try { parsedPlans = JSON.parse(item.pricing_plans); } catch (e) {}
+                    } else if (Array.isArray(item.pricing_plans)) {
+                      parsedPlans = item.pricing_plans as any;
+                    }
+                    if (!parsedPlans || parsedPlans.length === 0) {
+                      parsedPlans = getDefaultPricingPlans();
+                    }
 
-                          return (
-                            <tr key={item.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? "bg-cyan-50/50" : ""}`}>
-                              {/* Select Checkbox */}
-                              <td className="py-4 px-3 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedPaymentIds((prev) => [...prev, item.id]);
-                                    } else {
-                                      setSelectedPaymentIds((prev) => prev.filter((id) => id !== item.id));
-                                    }
-                                  }}
-                                  className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
-                                />
-                              </td>
+                    const isSelected = selectedPaymentIds.includes(item.id);
+                    const isEnabled = (item.payment_status || "Enabled") === "Enabled";
 
-                              {/* Event Details */}
-                              <td className="py-4 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
-                                    <img
-                                      src={item.event_image || logo}
-                                      alt="Event"
-                                      className="h-full w-full object-cover"
-                                      onError={(e: any) => { e.target.src = logo; }}
-                                    />
-                                  </div>
-                                  <div>
-                                    <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm line-clamp-1">
-                                      {item.event_title || item.event_id}
-                                    </h4>
-                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 font-medium">
-                                      <span className="inline-flex items-center gap-1 text-cyan-700 font-semibold">
-                                        <MapPin className="h-3 w-3" />
-                                        {item.event_city || "Pan-India"}
-                                      </span>
-                                      <span>•</span>
-                                      <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
-                                        {item.event_slug || item.event_id}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
+                    return (
+                      <div
+                        key={item.id}
+                        className={`relative rounded-3xl border bg-white p-6 shadow-md transition-all hover:shadow-xl ${
+                          isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 bg-cyan-50/20" : "border-slate-200"
+                        }`}
+                      >
+                        {/* CARD TOP HEADER: SELECT CHECKBOX + TITLE + STATUS TOGGLE */}
+                        <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPaymentIds((prev) => [...prev, item.id]);
+                                } else {
+                                  setSelectedPaymentIds((prev) => prev.filter((id) => id !== item.id));
+                                }
+                              }}
+                              className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer h-4 w-4 shrink-0"
+                            />
 
-                              {/* Base Fee & GST */}
-                              <td className="py-4 px-4">
-                                <div className="space-y-0.5">
-                                  <div className="font-extrabold text-slate-900 text-sm">
-                                    ₹{baseFee.toLocaleString("en-IN")}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-[11px]">
-                                    <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-bold text-indigo-700 border border-indigo-200">
-                                      {gstPct}% GST
-                                    </span>
-                                    <span className="text-slate-500">+ ₹{gstAmount.toLocaleString("en-IN")}</span>
-                                  </div>
-                                </div>
-                              </td>
+                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm">
+                              <img
+                                src={item.event_image || logo}
+                                alt="Event"
+                                className="h-full w-full object-cover"
+                                onError={(e: any) => { e.target.src = logo; }}
+                              />
+                            </div>
 
-                              {/* Total Payable */}
-                              <td className="py-4 px-4">
-                                <div className="space-y-0.5">
-                                  <div className="font-black text-cyan-800 text-sm flex items-center gap-1">
-                                    <span>₹{totalPayable.toLocaleString("en-IN")}</span>
-                                  </div>
-                                  <span className="text-[10px] text-slate-400 block font-medium">
-                                    {item.gst_included ? "GST Included" : "Excl. Platform Fee"}
-                                  </span>
-                                </div>
-                              </td>
+                            <div className="min-w-0">
+                              <h3 className="font-black text-slate-900 text-base line-clamp-1 font-display">
+                                {item.event_title || item.event_id}
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-500 font-medium">
+                                <span className="inline-flex items-center gap-1 text-cyan-700 font-bold">
+                                  <MapPin className="h-3 w-3" />
+                                  {item.event_city || "Pan-India"}
+                                </span>
+                                <span>•</span>
+                                <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
+                                  {item.event_slug || item.event_id}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
 
-                              {/* Seat Capacity Progress */}
-                              <td className="py-4 px-4 min-w-[140px]">
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-[11px] font-bold">
-                                    <span className="text-emerald-700">{available} Available</span>
-                                    <span className="text-slate-500">{total} Total</span>
-                                  </div>
-                                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full transition-all ${
-                                        pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
-                                      }`}
-                                      style={{ width: `${Math.min(pctSeats, 100)}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
+                          {/* Live Status Toggle Pill */}
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
+                            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold border transition-all cursor-pointer shadow-sm ${
+                              isEnabled
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
+                            }`}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${isEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                            {isEnabled ? "Live Checkout" : "Disabled"}
+                          </button>
+                        </div>
 
-                              {/* Early Bird & Coupons */}
-                              <td className="py-4 px-4">
-                                <div className="space-y-1">
-                                  {item.early_bird_enabled ? (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-bold text-purple-800 border border-purple-200">
-                                      <Sparkles className="h-3 w-3 text-purple-600" />
-                                      Early Bird: ₹{item.early_bird_price}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] text-slate-400 font-medium">No Early Bird</span>
-                                  )}
+                        {/* CARD BODY: 3 KEY METRICS GRID */}
+                        <div className="grid gap-4 sm:grid-cols-2 my-5">
+                          {/* 1. Base Fee & GST Box */}
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
+                            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                              Base Fee & Total Payable
+                            </span>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-xl font-black text-slate-900 font-display">
+                                ₹{totalPayable.toLocaleString("en-IN")}
+                              </span>
+                              <span className="text-xs text-slate-500 font-medium">Total</span>
+                            </div>
+                            <div className="text-[11px] text-slate-600 font-medium">
+                              Base: ₹{baseFee.toLocaleString("en-IN")} + <span className="font-bold text-indigo-600">{gstPct}% GST</span> (₹{gstAmount.toLocaleString("en-IN")})
+                            </div>
+                          </div>
 
-                                  <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1">
-                                    <Tag className="h-3 w-3 text-amber-600" />
-                                    <span>{parsedCoupons.length} Active Coupon(s)</span>
-                                  </div>
-                                </div>
-                              </td>
+                          {/* 2. Seats Capacity Progress Box */}
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
+                            <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
+                              <span className="text-slate-500">Seat Capacity</span>
+                              <span className="text-emerald-700">{available} / {total} Free</span>
+                            </div>
+                            <div className="text-base font-black text-slate-900 font-display flex items-baseline gap-1">
+                              <span>{total - available}</span>
+                              <span className="text-xs font-medium text-slate-500">Seats Booked</span>
+                            </div>
+                            <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden mt-1">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${Math.min(pctSeats, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                              {/* Payment Status Toggle */}
-                              <td className="py-4 px-4 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
-                                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold border transition-all cursor-pointer shadow-2xs ${
-                                    (item.payment_status || "Enabled") === "Enabled"
-                                      ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                                      : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
+                        {/* SECTION 3: MULTI-TIER REGISTRATION PLANS SUMMARY */}
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3.5 space-y-2 mb-5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                              <Crown className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Configured Registration Tier Passes ({parsedPlans.length} Plans)</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewTierModalConfig(item)}
+                              className="text-[11px] font-bold text-cyan-700 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="h-3 w-3" /> Preview Public View
+                            </button>
+                          </div>
+
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            {parsedPlans.map((plan, pIdx) => {
+                              const isPopular = plan.is_featured || plan.badge?.toLowerCase().includes("popular") || plan.name.toLowerCase().includes("gold");
+                              return (
+                                <div
+                                  key={pIdx}
+                                  className={`rounded-xl p-2.5 text-xs font-bold border transition-all ${
+                                    isPopular
+                                      ? "bg-white border-amber-300 shadow-xs text-slate-900 ring-1 ring-amber-400/30"
+                                      : "bg-white/80 border-slate-200 text-slate-800"
                                   }`}
                                 >
-                                  <span className={`h-1.5 w-1.5 rounded-full ${
-                                    (item.payment_status || "Enabled") === "Enabled" ? "bg-emerald-500" : "bg-rose-500"
-                                  }`} />
-                                  {item.payment_status || "Enabled"}
-                                </button>
-                              </td>
-
-                              {/* Actions */}
-                              <td className="py-4 px-4 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    onClick={() => {
-                                      setTicketPreviewItem(item);
-                                      setShowTicketPreviewModal(true);
-                                    }}
-                                    title="Preview Ticket Checkout Card"
-                                    className="rounded-xl border border-purple-200 bg-purple-50 p-2 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
-                                  >
-                                    <Ticket className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleEditPaymentConfig(item)}
-                                    title="Edit Payment Config"
-                                    className="rounded-xl border border-cyan-200 bg-cyan-50 p-2 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer"
-                                  >
-                                    <Edit3 className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeletePaymentConfigRow(item.id)}
-                                    title="Delete Config"
-                                    className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                                    <span className="truncate font-extrabold">{plan.name}</span>
+                                    {isPopular && (
+                                      <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full uppercase">
+                                        Popular
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-cyan-700 font-black text-sm">
+                                    ₹{Number(plan.price).toLocaleString("en-IN")}
+                                  </div>
                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                      {eventPayments.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="py-16 text-center text-slate-400">
-                            No event payment configurations found. Click "Add Payment Configuration" to create one!
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        {/* CARD FOOTER: DISCOUNTS & ACTION BUTTONS */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                          {/* Left: Discounts info */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {item.early_bird_enabled ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800 border border-purple-200">
+                                <Sparkles className="h-3 w-3 text-purple-600" />
+                                Early Bird: ₹{item.early_bird_price}
+                              </span>
+                            ) : null}
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
+                              <Tag className="h-3 w-3 text-amber-600" />
+                              {parsedCoupons.length} Active Coupon(s)
+                            </span>
+                          </div>
+
+                          {/* Right: Actions */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewTierModalConfig(item)}
+                              title="Preview Delegate Registration View"
+                              className="flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>Preview View</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleEditPaymentConfig(item)}
+                              className="flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                              <span>Edit Config & Plans</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePaymentConfigRow(item.id)}
+                              title="Delete Config"
+                              className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {eventPayments.length === 0 && (
+                  <div className="col-span-2 rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
+                    No event payment configurations found. Click "Add Payment Configuration" to create one!
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -11408,358 +11440,610 @@ export default function AdminDashboardPage() {
               {editingPaymentConfig ? editingPaymentConfig.event_title || editingPaymentConfig.event_id : "Configure Event Pricing & GST"}
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Set registration prices, GST percentage, category rules, early bird discounts, seat inventory, and coupon codes.
+              Manage base fees, GST %, tiered registration plans (Gold, Premium, Platinum), early bird discounts, and active coupons.
             </p>
 
+            {/* TAB NAVIGATION HEADER */}
+            <div className="flex border-b border-slate-200 mt-5 gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentModalTab("general")}
+                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  paymentModalTab === "general"
+                    ? "border-cyan-600 text-cyan-700 bg-cyan-50/50 rounded-t-xl"
+                    : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                1. General & Taxes
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentModalTab("plans")}
+                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+                  paymentModalTab === "plans"
+                    ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
+                    : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <Crown className="h-3.5 w-3.5 text-amber-500" />
+                <span>2. Tier Registration Plans (Gold/Premium/Platinum)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentModalTab("coupons")}
+                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  paymentModalTab === "coupons"
+                    ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
+                    : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                3. Early Bird & Coupons
+              </button>
+            </div>
+
             <form onSubmit={handleSavePaymentConfigSubmit} className="mt-6 space-y-6 text-xs">
-              {/* SECTION 1: EVENT SELECTION & BASE FEES */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-cyan-600" />
-                  <span>1. Event & Base Registration Fee</span>
-                </h4>
+              {/* TAB 1: GENERAL & TAXES */}
+              {paymentModalTab === "general" && (
+                <div className="space-y-6">
+                  {/* SECTION 1: EVENT SELECTION & BASE FEES */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-cyan-600" />
+                      <span>Event & Base Registration Fee</span>
+                    </h4>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Select Event *</label>
-                    <select
-                      value={paymentForm.event_id || ""}
-                      onChange={(e) => {
-                        const selId = e.target.value;
-                        const selEvent = cmsEvents.find((evt) => (evt.id || evt.slug) === selId);
-                        setPaymentForm((prev: any) => ({
-                          ...prev,
-                          event_id: selId,
-                          event_title: selEvent?.title || selId,
-                          event_slug: selEvent?.slug || selId,
-                          event_city: selEvent?.city || "",
-                          event_date: selEvent?.date || "",
-                          event_image: selEvent?.image || "",
-                        }));
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none"
-                    >
-                      {cmsEvents.map((evt) => (
-                        <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
-                          {evt.title} ({evt.city || "Pan-India"})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Currency *</label>
-                    <select
-                      value={paymentForm.currency || "INR"}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none cursor-pointer"
-                    >
-                      <option value="INR">INR (₹ - Indian Rupee)</option>
-                      <option value="USD">USD ($ - US Dollar)</option>
-                      <option value="EUR">EUR (€ - Euro)</option>
-                      <option value="GBP">GBP (£ - British Pound)</option>
-                      <option value="AED">AED (AED - UAE Dirham)</option>
-                      <option value="SGD">SGD (S$ - Singapore Dollar)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Base Registration Fee (₹) *</label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={paymentForm.registration_fee ?? 4999}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, registration_fee: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">GST Percentage (%) *</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        required
-                        min={0}
-                        max={100}
-                        value={paymentForm.gst_percentage ?? 18}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, gst_percentage: Number(e.target.value) })}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
-                      />
-                      <span className="text-xs font-bold text-slate-500">%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* LIVE PRICE SUMMARY CALCULATOR */}
-                {(() => {
-                  const fee = Number(paymentForm.registration_fee) || 0;
-                  const gst = Number(paymentForm.gst_percentage) || 18;
-                  const gstAmt = Math.round((fee * gst) / 100);
-                  const total = paymentForm.gst_included ? fee : fee + gstAmt;
-                  return (
-                    <div className="rounded-xl border border-cyan-200 bg-cyan-50/80 p-3.5 flex flex-wrap items-center justify-between gap-3 text-cyan-950 font-bold">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <span className="text-xs block text-cyan-800">Live Fee Calculation Breakdown:</span>
-                        <span className="text-xs font-normal">
-                          Base: ₹{fee.toLocaleString("en-IN")} + {gst}% GST (₹{gstAmt.toLocaleString("en-IN")})
-                        </span>
+                        <label className="block text-slate-700 font-bold mb-1">Select Event *</label>
+                        <select
+                          value={paymentForm.event_id || ""}
+                          onChange={(e) => {
+                            const selId = e.target.value;
+                            const selEvent = cmsEvents.find((evt) => (evt.id || evt.slug) === selId);
+                            setPaymentForm((prev: any) => ({
+                              ...prev,
+                              event_id: selId,
+                              event_title: selEvent?.title || selId,
+                              event_slug: selEvent?.slug || selId,
+                              event_city: selEvent?.city || "",
+                              event_date: selEvent?.date || "",
+                              event_image: selEvent?.image || "",
+                            }));
+                          }}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none"
+                        >
+                          {cmsEvents.map((evt) => (
+                            <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
+                              {evt.title} ({evt.city || "Pan-India"})
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] uppercase tracking-wider block text-cyan-700 font-extrabold">Total Payable by Delegate</span>
-                        <span className="text-lg font-black text-cyan-900">₹{total.toLocaleString("en-IN")}</span>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Currency *</label>
+                        <select
+                          value={paymentForm.currency || "INR"}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none cursor-pointer"
+                        >
+                          <option value="INR">INR (₹ - Indian Rupee)</option>
+                          <option value="USD">USD ($ - US Dollar)</option>
+                          <option value="EUR">EUR (€ - Euro)</option>
+                          <option value="GBP">GBP (£ - British Pound)</option>
+                          <option value="AED">AED (AED - UAE Dirham)</option>
+                          <option value="SGD">SGD (S$ - Singapore Dollar)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Base Registration Fee (₹) *</label>
+                        <input
+                          type="number"
+                          required
+                          min={0}
+                          value={paymentForm.registration_fee ?? 4999}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, registration_fee: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">GST Percentage (%) *</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            max={100}
+                            value={paymentForm.gst_percentage ?? 18}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, gst_percentage: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
+                          />
+                          <span className="text-xs font-bold text-slate-500">%</span>
+                        </div>
                       </div>
                     </div>
-                  );
-                })()}
-              </div>
 
-              {/* SECTION 2: EARLY BIRD DISCOUNT */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    <span>2. Early Bird Promotional Price</span>
-                  </h4>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(paymentForm.early_bird_enabled)}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_enabled: e.target.checked })}
-                      className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="text-xs font-bold text-purple-900">Enable Early Bird Pricing</span>
-                  </label>
-                </div>
+                    {/* LIVE PRICE SUMMARY CALCULATOR */}
+                    {(() => {
+                      const fee = Number(paymentForm.registration_fee) || 0;
+                      const gst = Number(paymentForm.gst_percentage) || 18;
+                      const gstAmt = Math.round((fee * gst) / 100);
+                      const total = paymentForm.gst_included ? fee : fee + gstAmt;
+                      return (
+                        <div className="rounded-xl border border-cyan-200 bg-cyan-50/80 p-3.5 flex flex-wrap items-center justify-between gap-3 text-cyan-950 font-bold">
+                          <div>
+                            <span className="text-xs block text-cyan-800">Live Base Fee Calculation:</span>
+                            <span className="text-xs font-normal">
+                              Base: ₹{fee.toLocaleString("en-IN")} + {gst}% GST (₹{gstAmt.toLocaleString("en-IN")})
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] uppercase tracking-wider block text-cyan-700 font-extrabold">Total Base Payable</span>
+                            <span className="text-lg font-black text-cyan-900">₹{total.toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
 
-                {paymentForm.early_bird_enabled && (
-                  <div className="grid gap-4 sm:grid-cols-3 pt-2">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Early Bird Price (₹) *</label>
-                      <input
-                        type="number"
-                        value={paymentForm.early_bird_price ?? 3999}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_price: Number(e.target.value) })}
-                        className="w-full rounded-xl border border-purple-300 bg-white px-3.5 py-2 text-xs font-extrabold text-purple-900"
-                      />
+                  {/* SEAT CAPACITY & INVENTORY */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <Users className="h-4 w-4 text-emerald-600" />
+                      <span>Seat Inventory & Reservation Limits</span>
+                    </h4>
+
+                    <div className="grid gap-3 sm:grid-cols-4">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Total Seats</label>
+                        <input
+                          type="number"
+                          value={paymentForm.total_seats ?? 150}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, total_seats: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Available Seats</label>
+                        <input
+                          type="number"
+                          value={paymentForm.available_seats ?? 120}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, available_seats: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Reserved VIP Seats</label>
+                        <input
+                          type="number"
+                          value={paymentForm.vip_seats ?? 20}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, vip_seats: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-purple-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Speaker Seats</label>
+                        <input
+                          type="number"
+                          value={paymentForm.speaker_seats ?? 10}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, speaker_seats: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        value={paymentForm.early_bird_start_date || ""}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_start_date: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">End Date</label>
-                      <input
-                        type="date"
-                        value={paymentForm.early_bird_end_date || ""}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_end_date: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
-                      />
-                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* SECTION 3: SEAT CAPACITY & INVENTORY */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                  <span>3. Seat Inventory & Reservation Limits</span>
-                </h4>
+                  {/* PAYMENT STATUS TOGGLE */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                      <span>Payment Switches & Gateway Status</span>
+                    </h4>
 
-                <div className="grid gap-3 sm:grid-cols-4">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Total Seats</label>
-                    <input
-                      type="number"
-                      value={paymentForm.total_seats ?? 150}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, total_seats: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Available Seats</label>
-                    <input
-                      type="number"
-                      value={paymentForm.available_seats ?? 120}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, available_seats: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Reserved VIP Seats</label>
-                    <input
-                      type="number"
-                      value={paymentForm.vip_seats ?? 20}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, vip_seats: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-purple-800"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Speaker Seats</label>
-                    <input
-                      type="number"
-                      value={paymentForm.speaker_seats ?? 10}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, speaker_seats: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
-                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Configuration Status</label>
+                        <select
+                          value={paymentForm.payment_status || "Enabled"}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, payment_status: e.target.value as any })}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-extrabold text-slate-900"
+                        >
+                          <option value="Enabled">🟢 Enabled (Live Checkout)</option>
+                          <option value="Disabled">🔴 Disabled (Payments Off)</option>
+                          <option value="Draft">⚪ Draft Mode</option>
+                          <option value="Coming Soon">🟡 Coming Soon</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col justify-center space-y-2 pt-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(paymentForm.online_payment_enabled)}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, online_payment_enabled: e.target.checked })}
+                            className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                          />
+                          <span className="text-xs font-bold text-slate-800">Online Payment Gateway (Razorpay)</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(paymentForm.offline_payment_enabled)}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, offline_payment_enabled: e.target.checked })}
+                            className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                          />
+                          <span className="text-xs font-bold text-slate-800">Offline Bank Transfer Option</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* SECTION 4: COUPONS & PROMO CODES */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-amber-600" />
-                    <span>4. Dynamic Coupon Codes</span>
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentCoupons = Array.isArray(paymentForm.coupons) ? paymentForm.coupons : [];
-                      setPaymentForm({
-                        ...paymentForm,
-                        coupons: [
-                          ...currentCoupons,
-                          {
-                            id: `cp-${Date.now()}`,
-                            code: `PROMO${Math.floor(Math.random() * 900 + 100)}`,
-                            type: "percentage",
-                            value: 15,
-                            usageLimit: 50,
-                            expiryDate: "2026-12-31",
-                            status: "Active",
-                          },
-                        ],
-                      });
-                    }}
-                    className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100"
-                  >
-                    + Add Coupon Code
-                  </button>
-                </div>
+              {/* TAB 2: TIER REGISTRATION PLANS (GOLD, PREMIUM, PLATINUM) */}
+              {paymentModalTab === "plans" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-950">
+                    <div>
+                      <h4 className="font-extrabold text-sm flex items-center gap-1.5 text-amber-900">
+                        <Crown className="h-4 w-4 text-amber-600" />
+                        <span>Event Pricing Tiers Manager (Gold / Premium / Platinum)</span>
+                      </h4>
+                      <p className="text-xs text-amber-800 font-medium mt-0.5">
+                        Define pricing, popularity badges, and feature bullet point details for each pass tier.
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  {(Array.isArray(paymentForm.coupons) ? paymentForm.coupons : []).map((cp: any, idx: number) => (
-                    <div key={idx} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5">
-                      <input
-                        type="text"
-                        value={cp.code}
-                        onChange={(e) => {
-                          const updated = [...(paymentForm.coupons as any[])];
-                          updated[idx].code = e.target.value.toUpperCase();
-                          setPaymentForm({ ...paymentForm, coupons: updated });
-                        }}
-                        placeholder="CODE"
-                        className="w-28 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-mono font-bold uppercase text-slate-900"
-                      />
-
-                      <select
-                        value={cp.type}
-                        onChange={(e) => {
-                          const updated = [...(paymentForm.coupons as any[])];
-                          updated[idx].type = e.target.value;
-                          setPaymentForm({ ...paymentForm, coupons: updated });
-                        }}
-                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-700"
-                      >
-                        <option value="percentage">Percentage (%)</option>
-                        <option value="flat">Flat Amount (₹)</option>
-                      </select>
-
-                      <input
-                        type="number"
-                        value={cp.value}
-                        onChange={(e) => {
-                          const updated = [...(paymentForm.coupons as any[])];
-                          updated[idx].value = Number(e.target.value);
-                          setPaymentForm({ ...paymentForm, coupons: updated });
-                        }}
-                        placeholder="Value"
-                        className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-900"
-                      />
-
-                      <input
-                        type="date"
-                        value={cp.expiryDate || ""}
-                        onChange={(e) => {
-                          const updated = [...(paymentForm.coupons as any[])];
-                          updated[idx].expiryDate = e.target.value;
-                          setPaymentForm({ ...paymentForm, coupons: updated });
-                        }}
-                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700"
-                      />
-
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          const updated = (paymentForm.coupons as any[]).filter((_, i) => i !== idx);
-                          setPaymentForm({ ...paymentForm, coupons: updated });
+                          setPaymentForm({ ...paymentForm, pricing_plans: getDefaultPricingPlans() });
+                          toast.success("Reset pricing plans to standard Gold, Premium & Platinum passes!");
                         }}
-                        className="ml-auto text-rose-600 font-bold hover:text-rose-700 text-xs px-2"
+                        className="rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors"
                       >
-                        Remove
+                        Reset Defaults
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = Array.isArray(paymentForm.pricing_plans) ? paymentForm.pricing_plans : [];
+                          setPaymentForm({
+                            ...paymentForm,
+                            pricing_plans: [
+                              ...current,
+                              {
+                                id: `plan-${Date.now()}`,
+                                name: "VIP Executive Pass",
+                                price: 15000,
+                                badge: "VIP Exclusive",
+                                is_featured: false,
+                                features: ["Access to all sessions", "Front row VIP seating", "Networking dinner", "Certificate"],
+                                button_text: "Register Now",
+                              },
+                            ],
+                          });
+                        }}
+                        className="rounded-xl gradient-brand px-3.5 py-1.5 text-xs font-bold text-white shadow-sm"
+                      >
+                        + Add Dynamic Tier
                       </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* SECTION 5: PAYMENT STATUS TOGGLE */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-cyan-600" />
-                  <span>5. Payment Switches & Status</span>
-                </h4>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Configuration Status</label>
-                    <select
-                      value={paymentForm.payment_status || "Enabled"}
-                      onChange={(e) => setPaymentForm({ ...paymentForm, payment_status: e.target.value as any })}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-extrabold text-slate-900"
-                    >
-                      <option value="Enabled">🟢 Enabled (Live Checkout)</option>
-                      <option value="Disabled">🔴 Disabled (Payments Off)</option>
-                      <option value="Draft">⚪ Draft Mode</option>
-                      <option value="Coming Soon">🟡 Coming Soon</option>
-                    </select>
                   </div>
 
-                  <div className="flex flex-col justify-center space-y-2 pt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(paymentForm.online_payment_enabled)}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, online_payment_enabled: e.target.checked })}
-                        className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
-                      />
-                      <span className="text-xs font-bold text-slate-800">Online Payment Gateway (Razorpay)</span>
-                    </label>
+                  {/* CARDS LIST FOR EDITING TIERS */}
+                  <div className="grid gap-6 md:grid-cols-3">
+                    {(Array.isArray(paymentForm.pricing_plans) ? paymentForm.pricing_plans : []).map((plan: PricingPlanTier, pIdx: number) => (
+                      <div
+                        key={plan.id || pIdx}
+                        className={`rounded-2xl border p-4 space-y-3 bg-white shadow-sm relative ${
+                          plan.is_featured ? "border-amber-400 ring-2 ring-amber-400/20" : "border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1">
+                            {plan.name.toLowerCase().includes("gold") ? (
+                              <Crown className="h-4 w-4 text-amber-500" />
+                            ) : plan.name.toLowerCase().includes("premium") ? (
+                              <Gem className="h-4 w-4 text-blue-600" />
+                            ) : (
+                              <Star className="h-4 w-4 text-blue-500" />
+                            )}
+                            Plan #{pIdx + 1}
+                          </span>
 
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(paymentForm.offline_payment_enabled)}
-                        onChange={(e) => setPaymentForm({ ...paymentForm, offline_payment_enabled: e.target.checked })}
-                        className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
-                      />
-                      <span className="text-xs font-bold text-slate-800">Offline Bank Transfer Option</span>
-                    </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (paymentForm.pricing_plans as PricingPlanTier[]).filter((_, i) => i !== pIdx);
+                              setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                            }}
+                            className="text-rose-600 font-bold hover:text-rose-800 text-xs"
+                          >
+                            Remove Tier
+                          </button>
+                        </div>
+
+                        {/* Plan Name */}
+                        <div>
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Pass Name *</label>
+                          <input
+                            type="text"
+                            required
+                            value={plan.name}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                              updated[pIdx].name = e.target.value;
+                              setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                            }}
+                            placeholder="e.g. Gold Pass"
+                            className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-900"
+                          />
+                        </div>
+
+                        {/* Plan Price */}
+                        <div>
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Price (₹) *</label>
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            value={plan.price}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                              updated[pIdx].price = Number(e.target.value);
+                              setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                            }}
+                            className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-black text-cyan-800"
+                          />
+                        </div>
+
+                        {/* Badge Tag & Featured Checkbox */}
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Popularity Badge</label>
+                            <input
+                              type="text"
+                              value={plan.badge || ""}
+                              onChange={(e) => {
+                                const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                updated[pIdx].badge = e.target.value;
+                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              }}
+                              placeholder="e.g. Most Popular"
+                              className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-800 font-semibold"
+                            />
+                          </div>
+
+                          <label className="flex items-center gap-2 cursor-pointer pt-1">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(plan.is_featured)}
+                              onChange={(e) => {
+                                const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                updated[pIdx].is_featured = e.target.checked;
+                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              }}
+                              className="rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                            />
+                            <span className="text-xs font-bold text-slate-800">Highlight as Featured Pass</span>
+                          </label>
+                        </div>
+
+                        {/* Feature Bullet Points */}
+                        <div className="border-t border-slate-100 pt-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-extrabold text-slate-700 uppercase">Feature Bullet Points</label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                updated[pIdx].features = [...(updated[pIdx].features || []), "New feature item"];
+                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              }}
+                              className="text-[11px] font-bold text-cyan-700 hover:underline"
+                            >
+                              + Add Point
+                            </button>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {(plan.features || []).map((feat: string, fIdx: number) => (
+                              <div key={fIdx} className="flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  value={feat}
+                                  onChange={(e) => {
+                                    const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                    const feats = [...updated[pIdx].features];
+                                    feats[fIdx] = e.target.value;
+                                    updated[pIdx].features = feats;
+                                    setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                  }}
+                                  className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-800 font-medium"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                    updated[pIdx].features = updated[pIdx].features.filter((_, i) => i !== fIdx);
+                                    setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                  }}
+                                  className="text-rose-500 hover:text-rose-700 text-xs font-bold px-1"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 3: EARLY BIRD & COUPONS */}
+              {paymentModalTab === "coupons" && (
+                <div className="space-y-6">
+                  {/* EARLY BIRD DISCOUNT */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-600" />
+                        <span>Early Bird Promotional Price</span>
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentForm.early_bird_enabled)}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_enabled: e.target.checked })}
+                          className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-xs font-bold text-purple-900">Enable Early Bird Pricing</span>
+                      </label>
+                    </div>
+
+                    {paymentForm.early_bird_enabled && (
+                      <div className="grid gap-4 sm:grid-cols-3 pt-2">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Early Bird Price (₹) *</label>
+                          <input
+                            type="number"
+                            value={paymentForm.early_bird_price ?? 3999}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_price: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-purple-300 bg-white px-3.5 py-2 text-xs font-extrabold text-purple-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={paymentForm.early_bird_start_date || ""}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_start_date: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">End Date</label>
+                          <input
+                            type="date"
+                            value={paymentForm.early_bird_end_date || ""}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_end_date: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* COUPONS & PROMO CODES */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-amber-600" />
+                        <span>Dynamic Coupon Codes</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentCoupons = Array.isArray(paymentForm.coupons) ? paymentForm.coupons : [];
+                          setPaymentForm({
+                            ...paymentForm,
+                            coupons: [
+                              ...currentCoupons,
+                              {
+                                id: `cp-${Date.now()}`,
+                                code: `PROMO${Math.floor(Math.random() * 900 + 100)}`,
+                                type: "percentage",
+                                value: 15,
+                                usageLimit: 50,
+                                expiryDate: "2026-12-31",
+                                status: "Active",
+                              },
+                            ],
+                          });
+                        }}
+                        className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100"
+                      >
+                        + Add Coupon Code
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(Array.isArray(paymentForm.coupons) ? paymentForm.coupons : []).map((cp: any, idx: number) => (
+                        <div key={idx} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5">
+                          <input
+                            type="text"
+                            value={cp.code}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.coupons as any[])];
+                              updated[idx].code = e.target.value.toUpperCase();
+                              setPaymentForm({ ...paymentForm, coupons: updated });
+                            }}
+                            placeholder="CODE"
+                            className="w-28 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-mono font-bold uppercase text-slate-900"
+                          />
+
+                          <select
+                            value={cp.type}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.coupons as any[])];
+                              updated[idx].type = e.target.value;
+                              setPaymentForm({ ...paymentForm, coupons: updated });
+                            }}
+                            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-700"
+                          >
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="flat">Flat Amount (₹)</option>
+                          </select>
+
+                          <input
+                            type="number"
+                            value={cp.value}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.coupons as any[])];
+                              updated[idx].value = Number(e.target.value);
+                              setPaymentForm({ ...paymentForm, coupons: updated });
+                            }}
+                            placeholder="Value"
+                            className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-900"
+                          />
+
+                          <input
+                            type="date"
+                            value={cp.expiryDate || ""}
+                            onChange={(e) => {
+                              const updated = [...(paymentForm.coupons as any[])];
+                              updated[idx].expiryDate = e.target.value;
+                              setPaymentForm({ ...paymentForm, coupons: updated });
+                            }}
+                            className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (paymentForm.coupons as any[]).filter((_, i) => i !== idx);
+                              setPaymentForm({ ...paymentForm, coupons: updated });
+                            }}
+                            className="ml-auto text-rose-600 font-bold hover:text-rose-700 text-xs px-2"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* ACTION BUTTONS */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
@@ -11772,10 +12056,57 @@ export default function AdminDashboardPage() {
                   disabled={paymentSaving}
                   className="flex-1 rounded-xl gradient-brand py-3 text-xs font-bold text-white shadow-md hover:scale-[1.01] transition-transform disabled:opacity-50 cursor-pointer"
                 >
-                  {paymentSaving ? "Saving Configuration..." : "Save Payment Settings"}
+                  {paymentSaving ? "Saving Configuration..." : "Save Payment Settings & Pricing Tiers"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* PUBLIC TIER PRICING PREVIEW MODAL          */}
+      {/* ========================================== */}
+      {previewTierModalConfig && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-5xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button
+              type="button"
+              onClick={() => setPreviewTierModalConfig(null)}
+              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-6">
+              <span className="text-xs font-black uppercase tracking-wider text-cyan-600 block">
+                Delegate Registration View Preview
+              </span>
+              <h3 className="text-2xl font-black text-slate-900">
+                {previewTierModalConfig.event_title || previewTierModalConfig.event_id}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                This is how delegates see the Gold, Premium, and Platinum registration pass cards on your website.
+              </p>
+            </div>
+
+            <RegistrationPlansGrid
+              plans={
+                typeof previewTierModalConfig.pricing_plans === "string"
+                  ? JSON.parse(previewTierModalConfig.pricing_plans || "[]")
+                  : previewTierModalConfig.pricing_plans || []
+              }
+            />
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewTierModalConfig(null)}
+                className="rounded-xl gradient-brand px-6 py-2.5 text-xs font-bold text-white shadow-md cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

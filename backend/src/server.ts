@@ -2027,6 +2027,7 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
     platform_fee,
     convenience_fee,
     registration_type_prices,
+    pricing_plans,
     early_bird_enabled,
     early_bird_price,
     early_bird_start_date,
@@ -2058,6 +2059,7 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
 
   const id = req.body.id || `PAY-${event_id}`;
   const regTypePricesStr = typeof registration_type_prices === "string" ? registration_type_prices : JSON.stringify(registration_type_prices || {});
+  const pricingPlansStr = typeof pricing_plans === "string" ? pricing_plans : JSON.stringify(pricing_plans || []);
   const specialPricesStr = typeof special_prices === "string" ? special_prices : JSON.stringify(special_prices || {});
   const couponsStr = typeof coupons === "string" ? coupons : JSON.stringify(coupons || []);
 
@@ -2067,12 +2069,12 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
       await pool.query(
         `INSERT INTO event_payment_settings (
           id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
-          platform_fee, convenience_fee, registration_type_prices, early_bird_enabled, early_bird_price,
+          platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
           early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           event_title = VALUES(event_title),
           event_slug = VALUES(event_slug),
@@ -2083,6 +2085,7 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
           platform_fee = VALUES(platform_fee),
           convenience_fee = VALUES(convenience_fee),
           registration_type_prices = VALUES(registration_type_prices),
+          pricing_plans = VALUES(pricing_plans),
           early_bird_enabled = VALUES(early_bird_enabled),
           early_bird_price = VALUES(early_bird_price),
           early_bird_start_date = VALUES(early_bird_start_date),
@@ -2108,7 +2111,7 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
           payment_status = VALUES(payment_status)`,
         [
           id, event_id, event_title, event_slug, registration_fee || 0, currency || "INR", gst_percentage || 18, gst_included ? 1 : 0,
-          platform_fee || 0, convenience_fee || 0, regTypePricesStr, early_bird_enabled ? 1 : 0, early_bird_price || 0,
+          platform_fee || 0, convenience_fee || 0, regTypePricesStr, pricingPlansStr, early_bird_enabled ? 1 : 0, early_bird_price || 0,
           early_bird_start_date || "", early_bird_end_date || "", specialPricesStr, total_seats || 100, available_seats || 100,
           reserved_seats || 0, vip_seats || 0, speaker_seats || 0, sponsor_seats || 0, coupons_enabled ? 1 : 0, couponsStr,
           payment_required ? 1 : 0, online_payment_enabled ? 1 : 0, offline_payment_enabled ? 1 : 0, free_registration_allowed ? 1 : 0,
@@ -2132,13 +2135,14 @@ app.put("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) => 
     if (pool) {
       await ensureEventPaymentsTable();
       const regTypePricesStr = typeof data.registration_type_prices === "string" ? data.registration_type_prices : JSON.stringify(data.registration_type_prices || {});
+      const pricingPlansStr = typeof data.pricing_plans === "string" ? data.pricing_plans : JSON.stringify(data.pricing_plans || []);
       const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
       const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
 
       await pool.query(
         `UPDATE event_payment_settings SET
           registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?, platform_fee = ?, convenience_fee = ?,
-          registration_type_prices = ?, early_bird_enabled = ?, early_bird_price = ?, early_bird_start_date = ?,
+          registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?, early_bird_price = ?, early_bird_start_date = ?,
           early_bird_end_date = ?, special_prices = ?, total_seats = ?, available_seats = ?, reserved_seats = ?,
           vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?, coupons = ?, payment_required = ?,
           online_payment_enabled = ?, offline_payment_enabled = ?, free_registration_allowed = ?, auto_close_seats_full = ?,
@@ -2146,7 +2150,7 @@ app.put("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) => 
         WHERE id = ? OR event_id = ?`,
         [
           data.registration_fee || 0, data.currency || "INR", data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
-          regTypePricesStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0, data.early_bird_start_date || "",
+          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0, data.early_bird_start_date || "",
           data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100, data.available_seats || 100, data.reserved_seats || 0,
           data.vip_seats || 0, data.speaker_seats || 0, data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0, data.auto_close_seats_full ? 1 : 0,

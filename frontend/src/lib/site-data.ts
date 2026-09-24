@@ -926,6 +926,64 @@ export interface CouponItem {
   status: "Active" | "Inactive";
 }
 
+export interface PricingPlanTier {
+  id: string;
+  name: string;
+  price: number;
+  badge?: string;
+  is_featured?: boolean;
+  features: string[];
+  button_text?: string;
+}
+
+export const getDefaultPricingPlans = (): PricingPlanTier[] => [
+  {
+    id: "plan-premium",
+    name: "Premium Pass",
+    price: 12000,
+    badge: "VIP Access",
+    is_featured: false,
+    features: [
+      "Access to all sessions",
+      "Premium front-row seating",
+      "Networking lunch & high tea",
+      "Executive event kit & certificate",
+      "Access to recorded sessions & slides",
+    ],
+    button_text: "Register Now",
+  },
+  {
+    id: "plan-gold",
+    name: "Gold Pass",
+    price: 8000,
+    badge: "Most Popular",
+    is_featured: true,
+    features: [
+      "Access to all sessions",
+      "General executive seating",
+      "Networking lunch",
+      "Event kit & certificate",
+      "Access to recorded sessions",
+    ],
+    button_text: "Register Now",
+  },
+  {
+    id: "plan-platinum",
+    name: "Platinum Pass",
+    price: 5000,
+    badge: "Standard",
+    is_featured: false,
+    features: [
+      "Access to core sessions",
+      "Standard seating",
+      "Networking tea",
+      "Event certificate",
+      "Access to recorded sessions",
+    ],
+    button_text: "Register Now",
+  },
+];
+
 export interface EventPaymentConfig {
   id: string;
   event_id: string;
@@ -942,6 +1000,7 @@ export interface EventPaymentConfig {
   platform_fee: number;
   convenience_fee: number;
   registration_type_prices: string | Record<string, number>;
+  pricing_plans?: string | PricingPlanTier[];
   early_bird_enabled: number | boolean;
   early_bird_price: number;
   early_bird_start_date: string;
