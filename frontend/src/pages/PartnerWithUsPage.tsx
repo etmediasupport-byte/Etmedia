@@ -656,10 +656,10 @@ export default function PartnerWithUsPage() {
             {marqueeItems.map((collab, index) => (
               <div
                 key={`${collab.id}-${index}`}
-                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all shrink-0 min-w-[210px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-tl-[2rem] rounded-br-[2rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white p-4 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all shrink-0 min-w-[210px]"
               >
                 {/* Logo Image Box (Large Image) */}
-                <div className="h-28 w-48 rounded-xl overflow-hidden bg-white border border-slate-100 p-3 flex items-center justify-center shrink-0 shadow-sm group-hover:border-cyan-200 transition-colors">
+                <div className="h-28 w-48 rounded-tl-[1.25rem] rounded-br-[1.25rem] rounded-tr-none rounded-bl-none overflow-hidden bg-white border border-slate-100 p-3 flex items-center justify-center shrink-0 shadow-sm group-hover:border-cyan-200 transition-colors">
                   <img
                     src={collab.logo}
                     alt={collab.brand_name}

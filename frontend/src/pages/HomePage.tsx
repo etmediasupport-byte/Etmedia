@@ -570,10 +570,10 @@ function CollaboratorsMarquee() {
                 target={targetUrl ? "_blank" : "_self"}
                 rel={targetUrl ? "noopener noreferrer" : undefined}
                 title={targetUrl ? `Visit ${item.brand_name} website (${item.website})` : item.brand_name}
-                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 text-slate-900 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all duration-300 hover:scale-105 shrink-0 cursor-pointer min-w-[210px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-tl-[2rem] rounded-br-[2rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white px-5 py-4 text-slate-900 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all duration-300 hover:scale-105 shrink-0 cursor-pointer min-w-[210px]"
               >
                 {/* Brand Logo Container (Large Image Box matching reference design) */}
-                <div className="flex h-28 w-48 shrink-0 items-center justify-center rounded-xl bg-white p-3 border border-slate-100 shadow-sm group-hover:border-cyan-200 transition-colors overflow-hidden">
+                <div className="flex h-28 w-48 shrink-0 items-center justify-center rounded-tl-[1.25rem] rounded-br-[1.25rem] rounded-tr-none rounded-bl-none bg-white p-3 border border-slate-100 shadow-sm group-hover:border-cyan-200 transition-colors overflow-hidden">
                   {item.logo ? (
                     <img
                       src={item.logo}
