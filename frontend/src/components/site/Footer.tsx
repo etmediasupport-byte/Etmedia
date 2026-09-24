@@ -107,7 +107,7 @@ export function Footer() {
               <img
                 src={logoFinal}
                 alt="ET Media Business Intelligence"
-                className="h-10 sm:h-12 w-auto object-contain"
+                className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain bg-transparent border-none shadow-none drop-shadow-[0_4px_16px_rgba(0,174,239,0.25)] transition-all duration-300"
                 loading="lazy"
               />
             </Link>

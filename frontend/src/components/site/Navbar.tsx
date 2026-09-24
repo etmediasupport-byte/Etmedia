@@ -181,13 +181,13 @@ export function Navbar() {
           {/* LEFT: ET Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.03]"
+            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.04]"
             onClick={handleNavClick}
           >
             <img
               src={logoFinal}
               alt="ET Media"
-              className="h-9 sm:h-11 lg:h-12 w-auto object-contain bg-transparent border-none shadow-none"
+              className="h-10 sm:h-13 lg:h-15 xl:h-16 w-auto object-contain bg-transparent border-none shadow-none filter drop-shadow-[0_2px_10px_rgba(0,174,239,0.2)] transition-all duration-300"
             />
           </Link>
 
