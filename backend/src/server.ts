@@ -30,11 +30,11 @@ const razorpayClient = new Razorpay({
 // Hostinger SMTP Mailer Credentials & Nodemailer Setup
 const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
-const smtpUser = (process.env.SMTP_USER || "registration@etmedia.in").trim();
-const smtpPass = (process.env.SMTP_PASS || "Sri@199004").trim();
+const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
+const smtpPass = (process.env.SMTP_PASS || "ETalks@202602").trim();
 const smtpFrom = process.env.SMTP_FROM || `"ET Media Business Intelligence" <${smtpUser}>`;
-const adminEmail = (process.env.ADMIN_EMAIL || "registration@etmedia.in").trim();
-const supportEmail = process.env.SUPPORT_EMAIL || "registration@etmedia.in";
+const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in").trim();
+const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
 const mailTransporter = nodemailer.createTransport({
   host: smtpHost,

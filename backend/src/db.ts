@@ -937,7 +937,7 @@ export async function seedNewAdminTables() {
         { setting_key: "support_phone_1", setting_value: "+91 91002 66777" },
         { setting_key: "support_phone_2", setting_value: "+91 94930 87788" },
         { setting_key: "support_email_1", setting_value: "contact@etmedia.in" },
-        { setting_key: "support_email_2", setting_value: "registration@etmedia.in" },
+        { setting_key: "support_email_2", setting_value: "registration@executivetalksmedia.in" },
         { setting_key: "whatsapp_link", setting_value: "https://wa.me/919100266777" },
         { setting_key: "office_address", setting_value: "Unit No-1012, 10th Floor, Manjeera Trinity Corporate, JNTU-Hitech Road, KPHB, Hyderabad, Telangana 500072, India" },
         { setting_key: "office_hours", setting_value: "Monday to Sunday · 9 AM — 9 PM" },
