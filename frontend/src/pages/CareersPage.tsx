@@ -695,32 +695,32 @@ export default function CareersPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-6xl rounded-3xl border border-purple-500/40 bg-[#0D111D]/98 p-6 sm:p-8 md:p-10 shadow-2xl text-white backdrop-blur-2xl z-10 my-auto"
+              className="relative w-full max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 md:p-10 shadow-2xl text-slate-900 backdrop-blur-2xl z-10 my-auto"
             >
               <button
                 type="button"
                 onClick={() => setApplyJob(null)}
-                className="absolute top-5 right-5 sm:top-7 sm:right-7 p-3 rounded-full border border-slate-800 bg-[#07090E] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-5 right-5 sm:top-7 sm:right-7 p-3 rounded-full border border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                 aria-label="Close apply modal"
               >
                 <X className="h-5 w-5" />
               </button>
 
-              <div className="mb-6 border-b border-slate-800/80 pb-4">
-                <span className="text-xs font-extrabold uppercase text-purple-400 font-display">
+              <div className="mb-6 border-b border-slate-200 pb-4">
+                <span className="text-xs font-extrabold uppercase text-purple-700 font-display">
                   Job Application
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 font-display">
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-display">
                   Apply for {applyJob.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 font-mono font-medium">
                   {applyJob.department} · {applyJob.location}
                 </p>
               </div>
 
               {formError && (
-                <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-center gap-3">
-                  <X className="h-4 w-4 text-rose-400 shrink-0" />
+                <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm flex items-center gap-3 font-semibold">
+                  <X className="h-4 w-4 text-rose-600 shrink-0" />
                   <span>{formError}</span>
                 </div>
               )}
@@ -729,52 +729,52 @@ export default function CareersPage() {
                 {/* 3 Columns Row 1: Full Name, Email, Phone */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Full Name *
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                       <input
                         type="text"
                         required
                         placeholder="e.g. Rahul Sharma"
                         value={applicantForm.name}
                         onChange={(e) => setApplicantForm({ ...applicantForm, name: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Email Address *
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                       <input
                         type="email"
                         required
                         placeholder="your.email@example.com"
                         value={applicantForm.email}
                         onChange={(e) => setApplicantForm({ ...applicantForm, email: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Phone Number *
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                       <input
                         type="tel"
                         required
                         placeholder="+91 98765 43210"
                         value={applicantForm.phone}
                         onChange={(e) => setApplicantForm({ ...applicantForm, phone: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>
                   </div>
@@ -783,29 +783,29 @@ export default function CareersPage() {
                 {/* 3 Columns Row 2: Experience, Resume, Portfolio */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Years of Experience *
                     </label>
                     <div className="relative">
-                      <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                       <input
                         type="text"
                         required
                         placeholder="e.g. 3 Years 6 Months"
                         value={applicantForm.experience}
                         onChange={(e) => setApplicantForm({ ...applicantForm, experience: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Upload Resume (PDF File) *
                     </label>
                     <div className="relative">
-                      <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-800 bg-[#07090E] p-3 text-xs font-bold text-purple-300 hover:bg-slate-800 transition-colors h-[46px]">
-                        <Upload className="h-4 w-4 text-purple-400 shrink-0" />
+                      <label className="cursor-pointer flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs font-bold text-purple-700 hover:bg-slate-100 transition-colors h-[46px]">
+                        <Upload className="h-4 w-4 text-purple-600 shrink-0" />
                         <span className="truncate">{uploadingResume ? "Uploading PDF..." : "Choose PDF Resume File"}</span>
                         <input
                           type="file"
@@ -817,31 +817,31 @@ export default function CareersPage() {
                     </div>
 
                     {applicantForm.resume_url && (
-                      <div className="mt-2 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                        <FileText className="h-4 w-4 shrink-0" />
+                      <div className="mt-2 p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-bold">
+                        <FileText className="h-4 w-4 shrink-0 text-emerald-600" />
                         <span className="font-mono truncate">Resume PDF Uploaded!</span>
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                       Portfolio / LinkedIn Profile URL
                     </label>
                     <div className="relative">
-                      <Globe className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      <Globe className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                       <input
                         type="url"
                         placeholder="https://linkedin.com/in/yourprofile"
                         value={applicantForm.portfolio_url}
                         onChange={(e) => setApplicantForm({ ...applicantForm, portfolio_url: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-800/80 bg-[#07090E] pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-800/80 flex justify-end">
+                <div className="pt-4 border-t border-slate-200 flex justify-end">
                   <button
                     type="submit"
                     disabled={isSubmitting || uploadingResume}

@@ -393,36 +393,36 @@ export default function ContactPage() {
         <section className="grid gap-12 lg:grid-cols-12 items-start">
           <div className="lg:col-span-7">
             <Reveal>
-              <div className="glass-card rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200/80 dark:border-slate-800">
+              <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200/90 text-slate-900">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-extrabold font-display text-slate-900 dark:text-white">
+                    <h2 className="text-2xl font-extrabold font-display text-slate-900">
                       Send Us a Message
                     </h2>
-                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-slate-600 font-medium">
                       Fill out the form below and our relations team will respond promptly.
                     </p>
                   </div>
 
                   {activeUsers !== null && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                      <Radio className="h-3 w-3 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 border border-emerald-200 shrink-0">
+                      <Radio className="h-3 w-3 animate-pulse text-emerald-600" />
                       Live ({activeUsers} Online)
                     </span>
                   )}
                 </div>
 
                 {realtimeNotification && (
-                  <div className="mt-4 rounded-2xl bg-cyan-500/10 p-3.5 text-xs font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+                  <div className="mt-4 rounded-2xl bg-cyan-50 p-3.5 text-xs font-bold text-cyan-800 border border-cyan-200">
                     {realtimeNotification}
                   </div>
                 )}
 
                 {submitted ? (
-                  <div className="mt-8 rounded-3xl bg-cyan-500/10 p-8 text-center text-cyan-900 dark:text-cyan-200 border border-cyan-500/20">
+                  <div className="mt-8 rounded-3xl bg-cyan-50 p-8 text-center text-cyan-900 border border-cyan-200">
                     <CheckCircle2 className="mx-auto h-14 w-14 text-cyan-600" />
                     <h3 className="mt-4 text-2xl font-extrabold font-display">Message Sent!</h3>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+                    <p className="mt-2 text-xs text-slate-600 max-w-md mx-auto leading-relaxed font-medium">
                       Thank you for contacting ET Media Business Intelligence. Your enquiry has been dispatched directly to our executive team.
                     </p>
                     <button
@@ -436,7 +436,7 @@ export default function ContactPage() {
                   <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                     {/* Name */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                         Full Name *
                       </label>
                       <input
@@ -445,14 +445,14 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="e.g. Rajesh Sharma"
-                        className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none transition-colors"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       />
                     </div>
 
                     {/* Email & Phone */}
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                           Email Address *
                         </label>
                         <input
@@ -461,15 +461,15 @@ export default function ContactPage() {
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder="rajesh@company.com"
-                          className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none transition-colors"
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
                           <span>Phone Number *</span>
                           {phoneTouched && !phoneError && formData.phone && (
-                            <span className="text-[10px] font-extrabold text-emerald-500 flex items-center gap-1">
+                            <span className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
                               ✓ Valid phone number
                             </span>
                           )}
@@ -488,16 +488,16 @@ export default function ContactPage() {
                             setPhoneError(validatePhone(formData.phone));
                           }}
                           placeholder="+91 98765 43210"
-                          className={`w-full rounded-2xl border bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                          className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
                             phoneTouched && phoneError
-                              ? "border-rose-500 focus:border-rose-500"
+                              ? "border-rose-500 bg-rose-50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
                               : phoneTouched && !phoneError && formData.phone
-                              ? "border-emerald-500 focus:border-emerald-500"
-                              : "border-slate-300 dark:border-slate-700 focus:border-cyan-500"
+                              ? "border-emerald-500 bg-slate-50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                              : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
                           }`}
                         />
                         {phoneTouched && phoneError && (
-                          <p className="text-[11px] font-semibold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in">
+                          <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1 animate-in fade-in">
                             <span>⚠️</span> {phoneError}
                           </p>
                         )}
@@ -506,25 +506,25 @@ export default function ContactPage() {
 
                     {/* Subject / Enquiry Type */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                         Subject / Category *
                       </label>
                       <select
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-background px-4 py-3 text-xs font-bold text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none transition-colors"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none transition-colors cursor-pointer"
                       >
-                        <option value="Event Registration & Delegate Passes">Event Registration & Delegate Passes</option>
-                        <option value="Corporate Sponsorship & Partnership">Corporate Sponsorship & Partnership</option>
-                        <option value="Executive Talks Magazine Feature">Executive Talks Magazine Feature</option>
-                        <option value="Speaker & Keynote Nomination">Speaker & Keynote Nomination</option>
-                        <option value="General Media & Press Enquiry">General Media & Press Enquiry</option>
+                        <option value="Event Registration & Delegate Passes" className="bg-white text-slate-900">Event Registration & Delegate Passes</option>
+                        <option value="Corporate Sponsorship & Partnership" className="bg-white text-slate-900">Corporate Sponsorship & Partnership</option>
+                        <option value="Executive Talks Magazine Feature" className="bg-white text-slate-900">Executive Talks Magazine Feature</option>
+                        <option value="Speaker & Keynote Nomination" className="bg-white text-slate-900">Speaker & Keynote Nomination</option>
+                        <option value="General Media & Press Enquiry" className="bg-white text-slate-900">General Media & Press Enquiry</option>
                       </select>
                     </div>
 
                     {/* Message */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                         Message *
                       </label>
                       <textarea
@@ -533,7 +533,7 @@ export default function ContactPage() {
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder="Tell us about your requirements, company, and how we can assist..."
-                        className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-background px-4 py-3 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none transition-colors"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                       />
                     </div>
 

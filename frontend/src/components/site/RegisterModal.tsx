@@ -562,16 +562,16 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
     <>
       {/* 1. REGISTRATION FORM & PAYMENT MODAL */}
       {!successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-6xl max-h-[92vh] flex flex-col rounded-3xl bg-slate-900/95 border border-cyan-500/30 shadow-[0_25px_60px_-15px_rgba(0,174,239,0.35)] text-slate-100 backdrop-blur-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-6xl max-h-[92vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
             
             {/* STICKY MODAL HEADER */}
-            <div className="flex-none border-b border-slate-800/80 p-4 sm:p-5 bg-slate-900/95 relative z-10">
+            <div className="flex-none border-b border-slate-200 p-4 sm:p-5 bg-slate-50/90 relative z-10">
               {/* Close Button */}
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute top-4 right-4 rounded-full bg-slate-800/80 p-2 text-slate-400 hover:bg-slate-700 hover:text-white transition-all shadow-md cursor-pointer"
+                className="absolute top-4 right-4 rounded-full bg-slate-200/80 p-2 text-slate-600 hover:bg-slate-300 hover:text-slate-900 transition-all shadow-sm cursor-pointer"
                 aria-label="Close Modal"
               >
                 <X className="h-5 w-5" />
@@ -579,11 +579,11 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pr-10">
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-400">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
                     <Sparkles className="h-4 w-4 animate-pulse" />
                     <span>Executive Platform Registration</span>
                   </div>
-                  <h3 className="mt-0.5 text-2xl sm:text-3xl font-black font-display tracking-tight text-white">
+                  <h3 className="mt-0.5 text-2xl sm:text-3xl font-black font-display tracking-tight text-slate-900">
                     {activeMode === "free" ? "Register Free Interest" : "Delegate Pass Registration"}
                   </h3>
                   {/* Mode Selector Tabs */}
@@ -594,7 +594,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                         activeMode === "paid"
                           ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                          : "bg-slate-800 text-slate-400 hover:text-white"
+                          : "bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900"
                       }`}
                     >
                       💳 Paid Pass (With Payment)
@@ -604,8 +604,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       onClick={() => { setActiveMode("free"); setModalStep("form"); }}
                       className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                         activeMode === "free"
-                          ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-extrabold"
-                          : "bg-slate-800 text-slate-400 hover:text-white"
+                          ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20 font-extrabold"
+                          : "bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900"
                       }`}
                     >
                       ✨ Free Interest (No Payment)
@@ -614,14 +614,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                 </div>
 
                 {/* Interactive Event Selector Banner */}
-                <div className="rounded-2xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 via-slate-900 to-purple-950/40 p-2.5 sm:px-4 sm:py-2 text-slate-200 shadow-inner sm:w-80 md:w-96 shrink-0">
+                <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:px-4 sm:py-2 text-slate-800 shadow-sm sm:w-80 md:w-96 shrink-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-cyan-400" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-600 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-cyan-600" />
                       <span>Select Summit / Event</span>
                     </span>
                     {eventsList.length > 1 && (
-                      <span className="text-[9px] font-bold text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded-full font-mono">
+                      <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full font-mono">
                         {eventsList.length} Events Available
                       </span>
                     )}
@@ -636,26 +636,26 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                           setSelectedEvent(found);
                         }
                       }}
-                      className="w-full appearance-none rounded-lg border border-cyan-500/50 bg-slate-950/90 py-1.5 pl-3 pr-8 text-xs sm:text-sm font-bold text-white shadow-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 hover:border-cyan-400 transition-all cursor-pointer truncate"
+                      className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-8 text-xs sm:text-sm font-bold text-slate-900 shadow-xs focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600 hover:border-slate-300 transition-all cursor-pointer truncate"
                     >
                       {eventsList.map((ev) => (
-                        <option key={ev.id || ev.slug} value={ev.id || ev.slug} className="bg-slate-900 text-slate-100 py-1 font-semibold">
+                        <option key={ev.id || ev.slug} value={ev.id || ev.slug} className="bg-white text-slate-900 py-1 font-semibold">
                           {ev.title} {ev.city ? `(${ev.city})` : ""}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-600 pointer-events-none" />
                   </div>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-400">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-600">
                     {currentEvent.date && (
-                      <span className="flex items-center gap-1 text-cyan-300 font-semibold">
-                        <Calendar className="h-3 w-3 text-cyan-400 shrink-0" /> {currentEvent.date}
+                      <span className="flex items-center gap-1 text-cyan-700 font-semibold">
+                        <Calendar className="h-3 w-3 text-cyan-600 shrink-0" /> {currentEvent.date}
                       </span>
                     )}
                     {(currentEvent.venue || currentEvent.city) && (
-                      <span className="flex items-center gap-1 text-purple-300 font-semibold truncate">
-                        <MapPin className="h-3 w-3 text-purple-400 shrink-0" /> {currentEvent.venue ? `${currentEvent.venue}, ` : ""}{currentEvent.city}
+                      <span className="flex items-center gap-1 text-purple-700 font-semibold truncate">
+                        <MapPin className="h-3 w-3 text-purple-600 shrink-0" /> {currentEvent.venue ? `${currentEvent.venue}, ` : ""}{currentEvent.city}
                       </span>
                     )}
                   </div>
@@ -665,19 +665,19 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
             {/* STEP 1: FORM INPUTS VIEW */}
             {modalStep === "form" && (
-              <form onSubmit={handleProceedToPayment} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0">
+              <form onSubmit={handleProceedToPayment} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar min-h-0 bg-white">
                 
                 {/* Section 1: Personal & Executive Details (4 Columns on Desktop) */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-1">
-                    <User className="h-3.5 w-3.5 text-cyan-400" />
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1.5">
+                    <User className="h-3.5 w-3.5 text-cyan-600" />
                     <span>Personal & Executive Details</span>
                   </div>
 
                   {/* 4-Column Grid Row 1: Name, Email & Phone */}
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         First Name *
                       </label>
                       <input
@@ -686,12 +686,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         placeholder="e.g. Rajesh"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Last Name *
                       </label>
                       <input
@@ -700,12 +700,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         placeholder="e.g. Sharma"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Work Email *
                       </label>
                       <input
@@ -714,15 +714,15 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="rajesh@company.com"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center justify-between">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
                         <span>Contact Number *</span>
                         {phoneTouched && !phoneError && formData.contactNumber && (
-                          <span className="text-[10px] font-extrabold text-emerald-400 flex items-center gap-1">
+                          <span className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
                             ✓ Valid contact number
                           </span>
                         )}
@@ -741,16 +741,16 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                           setPhoneError(validatePhoneNumber(formData.contactNumber));
                         }}
                         placeholder="+91 98765 43210"
-                        className={`w-full rounded-xl border px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none transition-all ${
+                        className={`w-full rounded-xl border px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all font-medium ${
                           phoneTouched && phoneError
-                            ? "border-rose-500 bg-rose-950/20 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                            ? "border-rose-500 bg-rose-50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
                             : phoneTouched && !phoneError && formData.contactNumber
-                            ? "border-emerald-500/80 bg-slate-950/70 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            : "border-slate-800 bg-slate-950/70 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                            ? "border-emerald-500 bg-slate-50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                            : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
                         }`}
                       />
                       {phoneTouched && phoneError && (
-                        <p className="text-[11px] font-semibold text-rose-400 mt-1 flex items-center gap-1 animate-in fade-in">
+                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1 animate-in fade-in">
                           <span>⚠️</span> {phoneError}
                         </p>
                       )}
@@ -760,7 +760,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                   {/* 4-Column Grid Row 2: Designation, Company, City & Country */}
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Designation *
                       </label>
                       <input
@@ -769,12 +769,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.designation}
                         onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                         placeholder="e.g. Chief Financial Officer"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Company Name *
                       </label>
                       <input
@@ -783,12 +783,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.companyName}
                         onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                         placeholder="e.g. Reliance Industries"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         City *
                       </label>
                       <input
@@ -797,21 +797,21 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         value={formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                         placeholder="e.g. Mumbai"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Country
                       </label>
                       <select
                         value={formData.country}
                         onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium cursor-pointer"
                       >
                         {countriesList.map((c) => (
-                          <option key={c} value={c} className="bg-slate-900 text-slate-100">{c}</option>
+                          <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
                         ))}
                       </select>
                     </div>
@@ -820,59 +820,59 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
                 {/* Section 2: Category & Preferences (3 Columns) */}
                 <div className="space-y-3 pt-1">
-                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-1">
-                    <Tag className="h-3.5 w-3.5 text-purple-400" />
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1.5">
+                    <Tag className="h-3.5 w-3.5 text-purple-600" />
                     <span>Category & Participation Preferences</span>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Registration Category
                       </label>
                       <select
                         value={formData.registrationCategory}
                         onChange={(e) => setFormData({ ...formData, registrationCategory: e.target.value })}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
                       >
-                        <option value="Delegate" className="bg-slate-900">Delegate Pass</option>
-                        <option value="Speaker" className="bg-slate-900">Speaker Slot</option>
-                        <option value="Sponsorship" className="bg-slate-900">Sponsorship Opportunity</option>
+                        <option value="Delegate" className="bg-white text-slate-900">Delegate Pass</option>
+                        <option value="Speaker" className="bg-white text-slate-900">Speaker Slot</option>
+                        <option value="Sponsorship" className="bg-white text-slate-900">Sponsorship Opportunity</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Registering City
                       </label>
                       <select
                         value={formData.registeringCity}
                         onChange={(e) => setFormData({ ...formData, registeringCity: e.target.value })}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
                       >
                         {finalCityOptions.map((c) => (
-                          <option key={c} value={c} className="bg-slate-900">{c}</option>
+                          <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
                         Referral Source
                       </label>
                       <select
                         value={formData.referralSource}
                         onChange={(e) => setFormData({ ...formData, referralSource: e.target.value })}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
                       >
-                        <option value="LinkedIn" className="bg-slate-900">LinkedIn</option>
-                        <option value="Facebook" className="bg-slate-900">Facebook</option>
-                        <option value="Instagram" className="bg-slate-900">Instagram</option>
-                        <option value="Google" className="bg-slate-900">Google Search</option>
-                        <option value="Friend" className="bg-slate-900">Friend / Peer</option>
-                        <option value="Email" className="bg-slate-900">Email Newsletter</option>
-                        <option value="WhatsApp" className="bg-slate-900">WhatsApp</option>
-                        <option value="Other" className="bg-slate-900">Other Channel</option>
+                        <option value="LinkedIn" className="bg-white text-slate-900">LinkedIn</option>
+                        <option value="Facebook" className="bg-white text-slate-900">Facebook</option>
+                        <option value="Instagram" className="bg-white text-slate-900">Instagram</option>
+                        <option value="Google" className="bg-white text-slate-900">Google Search</option>
+                        <option value="Friend" className="bg-white text-slate-900">Friend / Peer</option>
+                        <option value="Email" className="bg-white text-slate-900">Email Newsletter</option>
+                        <option value="WhatsApp" className="bg-white text-slate-900">WhatsApp</option>
+                        <option value="Other" className="bg-white text-slate-900">Other Channel</option>
                       </select>
                     </div>
                   </div>
@@ -882,7 +882,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                 <div className="pt-2 grid gap-3 lg:grid-cols-12 items-center">
                   {/* Google reCAPTCHA Verification */}
                   <div className="lg:col-span-7">
-                    <div className="rounded-xl border border-slate-700/80 bg-slate-950/80 p-3 sm:px-4 sm:py-2.5 shadow-inner transition-all hover:border-cyan-500/40">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:px-4 sm:py-2.5 transition-all hover:border-slate-300">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <button
@@ -901,14 +901,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                             }}
                             className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer ${
                               verifiedCaptcha
-                                ? "border-emerald-500 bg-emerald-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)]"
+                                ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
                                 : captchaVerifying
-                                ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                                : "border-slate-600 bg-slate-900/90 text-transparent hover:border-cyan-400"
+                                ? "border-cyan-600 bg-cyan-50 text-cyan-600"
+                                : "border-slate-300 bg-white text-transparent hover:border-cyan-500"
                             }`}
                           >
                             {captchaVerifying ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-600" />
                             ) : verifiedCaptcha ? (
                               <CheckCircle2 className="h-4 w-4 text-white" />
                             ) : null}
@@ -926,11 +926,11 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                                   }, 400);
                                 }
                               }}
-                              className="text-xs font-semibold text-slate-200 block select-none cursor-pointer hover:text-cyan-400 transition-colors"
+                              className="text-xs font-semibold text-slate-800 block select-none cursor-pointer hover:text-cyan-600 transition-colors"
                             >
                               I'm not a robot
                             </span>
-                            <span className="text-[9px] text-slate-400 font-medium">
+                            <span className="text-[9px] text-slate-500 font-medium">
                               {verifiedCaptcha ? "Verification Complete" : "Click box to verify"}
                             </span>
                           </div>
@@ -938,14 +938,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
                         {/* Google reCAPTCHA Emblem Badge */}
                         <div className="flex flex-col items-end shrink-0 select-none">
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-300">
-                            <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600">
+                            <ShieldCheck className="h-3.5 w-3.5 text-cyan-600" />
                             <span>reCAPTCHA</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[8px] text-slate-500 mt-0.5">
-                            <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-300">Privacy</a>
+                          <div className="flex items-center gap-1 text-[8px] text-slate-400 mt-0.5">
+                            <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Privacy</a>
                             <span>·</span>
-                            <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-300">Terms</a>
+                            <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Terms</a>
                           </div>
                         </div>
                       </div>
@@ -957,7 +957,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer font-btn disabled:opacity-60"
+                      className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer font-btn disabled:opacity-60"
                     >
                       {submitting ? (
                         <>
@@ -980,17 +980,17 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
             {/* STEP 2: ORDER SUMMARY & PAYMENT DETAILS (WIDE 2-COLUMN RESPONSIVE LAYOUT) */}
             {modalStep === "payment" && (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0 bg-white">
                 {/* Top Step Header */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-400">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
                     <CreditCard className="h-4 w-4" />
                     <span>Step 2 of 2: Pricing & Payment Summary</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setModalStep("form")}
-                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-bold text-cyan-600 hover:text-cyan-700 flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Edit Details
                   </button>
@@ -1001,32 +1001,32 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                   
                   {/* LEFT COLUMN: DELEGATE & EVENT RECAP CARD */}
                   <div className="lg:col-span-5 space-y-4">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 space-y-3.5 text-xs shadow-inner">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3.5 text-xs text-slate-800">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Delegate Name</span>
-                        <strong className="text-slate-100 text-sm">{formData.firstName} {formData.lastName}</strong>
-                        <span className="block text-slate-300 mt-0.5">{formData.designation}</span>
-                        <span className="block text-slate-400">{formData.companyName}</span>
-                        <span className="block text-cyan-400 font-mono text-[11px] mt-1">{formData.email}</span>
-                        <span className="block text-slate-400 text-[11px]">Phone: {formData.contactNumber}</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Delegate Name</span>
+                        <strong className="text-slate-900 text-sm">{formData.firstName} {formData.lastName}</strong>
+                        <span className="block text-slate-700 mt-0.5">{formData.designation}</span>
+                        <span className="block text-slate-600">{formData.companyName}</span>
+                        <span className="block text-cyan-700 font-mono text-[11px] mt-1">{formData.email}</span>
+                        <span className="block text-slate-600 text-[11px]">Phone: {formData.contactNumber}</span>
                       </div>
 
-                      <div className="border-t border-slate-800/80 pt-3">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Event & Category</span>
-                        <strong className="text-cyan-300 text-sm block mt-0.5 leading-snug">{currentEvent.title}</strong>
-                        <span className="block text-purple-300 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
-                        <span className="block text-slate-400 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
+                      <div className="border-t border-slate-200 pt-3">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Event & Category</span>
+                        <strong className="text-cyan-800 text-sm block mt-0.5 leading-snug">{currentEvent.title}</strong>
+                        <span className="block text-purple-700 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
+                        <span className="block text-slate-600 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
                       </div>
                     </div>
 
                     {/* Security & Verification Card */}
-                    <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-slate-950 p-4 text-xs space-y-2">
-                      <div className="flex items-center gap-2 text-cyan-300 font-bold">
-                        <ShieldCheck className="h-4 w-4 text-cyan-400 shrink-0" />
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 text-xs space-y-2">
+                      <div className="flex items-center gap-2 text-cyan-800 font-bold">
+                        <ShieldCheck className="h-4 w-4 text-cyan-600 shrink-0" />
                         <span>Instant Ticket & Verification</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-300 font-mono">{formData.email}</span> and <span className="text-cyan-300 font-mono">registration@etmedia.in</span>.
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-800 font-mono font-semibold">{formData.email}</span> and <span className="text-cyan-800 font-mono font-semibold">registration@etmedia.in</span>.
                       </p>
                     </div>
                   </div>
@@ -1036,35 +1036,35 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     {(() => {
                       const pricing = getPricing();
                       return (
-                        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 space-y-4 shadow-xl">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-cyan-400" />
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4 shadow-sm">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-cyan-600" />
                             <span>Registration Fee Breakdown</span>
                           </h4>
 
                           <div className="space-y-2 text-xs">
                             {/* Base Category Price */}
-                            <div className="flex justify-between text-slate-300">
+                            <div className="flex justify-between text-slate-700">
                               <span>Base Fee ({formData.registrationCategory}):</span>
-                              <span className="font-mono font-bold text-slate-100">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
+                              <span className="font-mono font-bold text-slate-900">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
                             </div>
 
                             {/* Early Bird Discount */}
                             {pricing.earlyBirdDiscount > 0 && (
-                              <div className="flex justify-between text-purple-300">
+                              <div className="flex justify-between text-purple-700">
                                 <span className="flex items-center gap-1">
-                                  <Sparkles className="h-3 w-3 text-purple-400" />
+                                  <Sparkles className="h-3 w-3 text-purple-600" />
                                   Early Bird Promotional Discount:
                                 </span>
-                                <span className="font-mono font-bold text-purple-300">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
+                                <span className="font-mono font-bold text-purple-700">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
                               </div>
                             )}
 
                             {/* Coupon Discount */}
                             {pricing.couponDiscount > 0 && (
-                              <div className="flex justify-between text-emerald-400 font-bold">
+                              <div className="flex justify-between text-emerald-700 font-bold">
                                 <span className="flex items-center gap-1">
-                                  <Tag className="h-3 w-3 text-emerald-400" />
+                                  <Tag className="h-3 w-3 text-emerald-600" />
                                   Coupon Discount ({appliedCoupon?.code}):
                                 </span>
                                 <span className="font-mono">- ₹{pricing.couponDiscount.toLocaleString("en-IN")}</span>
@@ -1072,43 +1072,43 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                             )}
 
                             {/* GST Tax */}
-                            <div className="flex justify-between text-slate-400">
+                            <div className="flex justify-between text-slate-600">
                               <span>GST ({pricing.gstPct}% Tax):</span>
-                              <span className="font-mono text-cyan-300">
+                              <span className="font-mono text-cyan-700 font-semibold">
                                 {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
                               </span>
                             </div>
 
-                            <div className="h-px bg-slate-800 my-2" />
+                            <div className="h-px bg-slate-200 my-2" />
 
                             {/* Total Payable */}
                             <div className="flex justify-between items-baseline pt-1">
                               <div>
-                                <span className="text-xs uppercase tracking-wider text-slate-400 block font-bold">Total Amount Payable</span>
+                                <span className="text-xs uppercase tracking-wider text-slate-700 block font-bold">Total Amount Payable</span>
                                 <span className="text-[10px] text-slate-500 font-medium">Includes event pass & networking access</span>
                               </div>
                               <div className="text-right">
-                                <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-400">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
-                                <span className="block text-[10px] text-emerald-400 font-bold">Razorpay Test Gateway Enabled</span>
+                                <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-700">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
+                                <span className="block text-[10px] text-emerald-600 font-bold">Razorpay Test Gateway Enabled</span>
                               </div>
                             </div>
                           </div>
 
                           {/* PROMO COUPON CODE SECTION */}
-                          <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
-                            <label className="block text-[11px] font-bold text-slate-300">Have a Promo / Discount Coupon?</label>
+                          <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+                            <label className="block text-[11px] font-bold text-slate-700">Have a Promo / Discount Coupon?</label>
                             <div className="flex items-center gap-2">
                               <input
                                 type="text"
                                 value={couponInput}
                                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                                 placeholder="e.g. EARLY50 or CXO2026"
-                                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-mono font-bold text-white uppercase placeholder:text-slate-600 focus:border-cyan-500 focus:outline-none"
+                                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={handleApplyCoupon}
-                                className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all cursor-pointer"
+                                className="rounded-xl border border-cyan-600 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-all cursor-pointer"
                               >
                                 Apply Coupon
                               </button>
@@ -1130,7 +1130,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                               }
                               return (
                                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                  <span className="text-[10px] text-slate-400">Available Promo Codes:</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">Available Promo Codes:</span>
                                   {sampleCoupons.map((cp: any, idx: number) => (
                                     <button
                                       key={idx}
@@ -1140,7 +1140,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                                         setAppliedCoupon(cp);
                                         toast.success(`Applied promo code ${cp.code}!`);
                                       }}
-                                      className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
+                                      className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-800 hover:bg-amber-100 transition-all cursor-pointer"
                                     >
                                       {cp.code} ({cp.type === "percentage" ? `${cp.value}% Off` : `₹${cp.value} Off`})
                                     </button>
@@ -1155,7 +1155,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                             type="button"
                             onClick={handleFinalCheckoutAndRegister}
                             disabled={submitting}
-                            className="w-full rounded-xl py-3.5 px-6 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+                            className="w-full rounded-xl py-3.5 px-6 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
                           >
                             {submitting ? (
                               <>
@@ -1188,8 +1188,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
       {/* 2. SUCCESS MODAL (AFTER SUBMISSION) */}
       {successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-3 sm:p-6 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-emerald-500/40 bg-slate-900/95 shadow-[0_25px_70px_-15px_rgba(16,185,129,0.35)] backdrop-blur-2xl overflow-hidden my-auto text-slate-100 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-3 sm:p-6 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl backdrop-blur-2xl overflow-hidden my-auto text-slate-900 animate-in zoom-in-95 duration-200">
             
             {/* CLOSE 'X' BUTTON */}
             <button
@@ -1198,7 +1198,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                 setSuccessModalOpen(false);
                 onClose();
               }}
-              className="absolute top-4 right-4 z-30 rounded-full bg-slate-800/90 p-2.5 text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-xl cursor-pointer border border-slate-700"
+              className="absolute top-4 right-4 z-30 rounded-full bg-slate-100 p-2.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-md cursor-pointer border border-slate-200"
               aria-label="Close Registration Modal"
             >
               <X className="h-5 w-5" />
@@ -1217,35 +1217,35 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-2 rounded-full bg-slate-950/40 border border-emerald-300/40 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-200 backdrop-blur-md shadow-lg shrink-0">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 animate-bounce" />
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/20 border border-white/30 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md shadow-lg shrink-0">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300 animate-bounce" />
                   <span>REGISTRATION CONFIRMED</span>
                 </div>
               </div>
             </div>
 
             {/* MODAL SCROLLABLE BODY */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 scrollbar-thin bg-white">
               
               {/* TOP SALUTATION BANNER */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
-                    <CheckCircle2 className="h-7 w-7 text-emerald-400" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white border border-emerald-500 shrink-0 shadow-md">
+                    <CheckCircle2 className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-black font-display text-white">
-                      Thank You, <span className="text-emerald-400 capitalize">{submittedData?.firstName}!</span>
+                    <h3 className="text-xl sm:text-2xl font-black font-display text-slate-900">
+                      Thank You, <span className="text-emerald-700 capitalize">{submittedData?.firstName}!</span>
                     </h3>
-                    <p className="text-xs text-slate-300 mt-0.5">
-                      Your executive registration for <strong className="text-cyan-300">{submittedData?.eventTitle}</strong> has been successfully confirmed.
+                    <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                      Your executive registration for <strong className="text-cyan-700">{submittedData?.eventTitle}</strong> has been successfully confirmed.
                     </p>
                   </div>
                 </div>
 
                 {submittedData?.paymentId && (
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 border border-cyan-500/40 px-3.5 py-2 text-xs font-mono font-bold text-cyan-300 shrink-0">
-                    <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-mono font-bold text-cyan-800 shrink-0 shadow-xs">
+                    <ShieldCheck className="h-4 w-4 text-cyan-600" />
                     <span>Razorpay ID: {submittedData.paymentId}</span>
                   </div>
                 )}
@@ -1255,49 +1255,49 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
               <div className="grid gap-6 md:grid-cols-2">
                 
                 {/* LEFT COLUMN: REGISTRATION & PAYMENT DETAILS */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 border-b border-slate-800 pb-2.5 flex items-center gap-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-cyan-700 border-b border-slate-200 pb-2.5 flex items-center gap-2">
                     <User className="h-4 w-4" />
                     <span>Registered Delegate Credentials</span>
                   </h4>
 
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Full Name:</span>
-                      <strong className="text-white font-bold capitalize">{submittedData?.firstName} {submittedData?.lastName}</strong>
+                  <div className="space-y-3 text-xs text-slate-800">
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Full Name:</span>
+                      <strong className="text-slate-900 font-bold capitalize">{submittedData?.firstName} {submittedData?.lastName}</strong>
                     </div>
 
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Official Work Email:</span>
-                      <span className="text-cyan-300 font-mono font-semibold">{submittedData?.email}</span>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Official Work Email:</span>
+                      <span className="text-cyan-700 font-mono font-semibold">{submittedData?.email}</span>
                     </div>
 
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Contact Number:</span>
-                      <span className="text-slate-200 font-mono">{submittedData?.contactNumber}</span>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Contact Number:</span>
+                      <span className="text-slate-900 font-mono font-medium">{submittedData?.contactNumber}</span>
                     </div>
 
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Designation:</span>
-                      <span className="text-slate-200 font-semibold">{submittedData?.designation || "Executive Delegate"}</span>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Designation:</span>
+                      <span className="text-slate-900 font-semibold">{submittedData?.designation || "Executive Delegate"}</span>
                     </div>
 
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Company / Organization:</span>
-                      <span className="text-slate-200 font-semibold">{submittedData?.companyName || "N/A"}</span>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Company / Organization:</span>
+                      <span className="text-slate-900 font-semibold">{submittedData?.companyName || "N/A"}</span>
                     </div>
 
-                    <div className="flex justify-between border-b border-slate-800/60 pb-2">
-                      <span className="text-slate-400">Category & Location:</span>
-                      <span className="text-purple-300 font-semibold">{submittedData?.registrationCategory || "Delegate"} ({submittedData?.registeringCity || submittedData?.city})</span>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-medium">Category & Location:</span>
+                      <span className="text-purple-700 font-semibold">{submittedData?.registrationCategory || "Delegate"} ({submittedData?.registeringCity || submittedData?.city})</span>
                     </div>
 
                     <div className="flex justify-between items-center pt-1">
-                      <span className="text-slate-400">Payment Summary:</span>
+                      <span className="text-slate-500 font-medium">Payment Summary:</span>
                       <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
                         submittedData?.totalPaid > 0
-                          ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
-                          : "bg-blue-500/20 border border-blue-500/40 text-blue-300"
+                          ? "bg-emerald-100 border border-emerald-300 text-emerald-800"
+                          : "bg-blue-100 border border-blue-300 text-blue-800"
                       }`}>
                         {submittedData?.totalPaid > 0 ? `Paid ₹${submittedData.totalPaid.toLocaleString("en-IN")}` : "Free Pass"}
                       </span>
@@ -1306,29 +1306,29 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                 </div>
 
                 {/* RIGHT COLUMN: DISPATCHED EMAIL PREVIEW & TICKET INFO */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-purple-400 border-b border-slate-800 pb-2.5 flex items-center gap-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-purple-700 border-b border-slate-200 pb-2.5 flex items-center gap-2">
                     <Mail className="h-4 w-4" />
                     <span>Confirmation Email & Scannable Pass Dispatched</span>
                   </h4>
 
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 text-xs space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                      <span className="text-slate-400 font-mono text-[11px]">Recipient: <strong className="text-cyan-300">{submittedData?.email}</strong></span>
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold">Dispatched</span>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-600 font-mono text-[11px]">Recipient: <strong className="text-cyan-700">{submittedData?.email}</strong></span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">Dispatched</span>
                     </div>
 
-                    <div className="space-y-2 text-slate-300 leading-relaxed text-xs">
+                    <div className="space-y-2 text-slate-700 leading-relaxed text-xs">
                       <p>Dear <strong>{submittedData?.firstName}</strong>,</p>
                       <p>Your registration for <strong>{submittedData?.eventTitle}</strong> has been successfully confirmed.</p>
-                      <p className="text-slate-400 text-[11px]">
-                        📱 A high-resolution scannable QR Delegate Pass has been generated and sent directly to your email inbox (<span className="text-cyan-300">{submittedData?.email}</span>) and admin record.
+                      <p className="text-slate-600 text-[11px]">
+                        📱 A high-resolution scannable QR Delegate Pass has been generated and sent directly to your email inbox (<span className="text-cyan-700 font-medium">{submittedData?.email}</span>) and admin record.
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Support: <a href="mailto:registration@etmedia.in" className="text-cyan-400 hover:underline">registration@etmedia.in</a></span>
-                      <span className="font-semibold text-slate-300">www.etmedia.in</span>
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Support: <a href="mailto:registration@etmedia.in" className="text-cyan-600 hover:underline">registration@etmedia.in</a></span>
+                      <span className="font-semibold text-slate-700">www.etmedia.in</span>
                     </div>
                   </div>
                 </div>
@@ -1338,8 +1338,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
             </div>
 
             {/* STICKY FOOTER ACTION BAR */}
-            <div className="flex-none border-t border-slate-800 p-4 sm:p-5 bg-slate-950/95 flex items-center justify-between gap-4">
-              <span className="text-xs text-slate-400 hidden sm:inline-block font-mono">
+            <div className="flex-none border-t border-slate-200 p-4 sm:p-5 bg-slate-50 flex items-center justify-between gap-4">
+              <span className="text-xs text-slate-500 hidden sm:inline-block font-mono">
                 ET Media Business Intelligence Executive Committee
               </span>
 
@@ -1350,7 +1350,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     setSuccessModalOpen(false);
                     onClose();
                   }}
-                  className="w-full sm:w-auto px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 shadow-[0_10px_30px_-5px_rgba(0,174,239,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(0,174,239,0.7)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl font-black text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer text-sm uppercase tracking-wider flex items-center justify-center gap-2"
                 >
                   <X className="h-4 w-4" />
                   <span>Done & Close</span>

@@ -244,7 +244,7 @@ export function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your corporate work email..."
-                  className="w-full min-w-0 rounded-xl border border-white/15 bg-slate-900/90 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:border-cyan-400 focus:outline-none transition-colors font-medium"
+                  className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all font-medium"
                 />
                 <button
                   type="submit"
