@@ -21,11 +21,13 @@ import {
   Sparkles,
   Play,
   Pause,
+  Bookmark,
   RotateCcw,
   Check,
   Copy,
   ArrowRight,
   ExternalLink,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MagazineItem } from "@/lib/site-data";
@@ -46,18 +48,23 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false); // Auto-play presentation mode
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Drawers & Overlays
   const [tocOpen, setTocOpen] = useState(false);
-  const [thumbnailsOpen, setThumbnailsOpen] = useState(false);
+  const [thumbnailSidebarOpen, setThumbnailSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
 
   // Page Flip Animation Direction & Physics
   const [flipDirection, setFlipDirection] = useState<"next" | "prev">("next");
   const [isHoveringCorner, setIsHoveringCorner] = useState<"left" | "right" | null>(null);
+
+  // Dynamic Mouse Drag Corner Page Flip
+  const [isDraggingPage, setIsDraggingPage] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
 
   // Touch Drag State for Mobile Swipe
   const touchStartX = useRef<number | null>(null);
@@ -78,7 +85,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
         }
         return prev + Math.floor(Math.random() * 15) + 10;
       });
-    }, 90);
+    }, 80);
 
     return () => clearInterval(interval);
   }, [magazine]);
@@ -91,7 +98,6 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
 
-      // Create white noise buffer for realistic paper friction
       const bufferSize = ctx.sampleRate * 0.15; // 150ms duration
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -102,14 +108,13 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       const noise = ctx.createBufferSource();
       noise.buffer = buffer;
 
-      // Filter noise to sound like crisp magazine paper
       const filter = ctx.createBiquadFilter();
       filter.type = "bandpass";
-      filter.frequency.setValueAtTime(800, ctx.currentTime);
-      filter.Q.setValueAtTime(1.5, ctx.currentTime);
+      filter.frequency.setValueAtTime(850, ctx.currentTime);
+      filter.Q.setValueAtTime(1.6, ctx.currentTime);
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.setValueAtTime(0.09, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
 
       noise.connect(filter);
@@ -117,14 +122,13 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       gain.connect(ctx.destination);
 
       noise.start();
-    } catch (e) {
-      // Audio autoplay restrictions safety fallback
-    }
+    } catch (e) {}
   };
 
   // Ensure pages array is non-empty
   const activePages = pages.length > 0 ? pages : [magazine.cover, magazine.cover];
   const totalSpreads = Math.max(1, Math.ceil((activePages.length + 1) / 2));
+  const totalPages = activePages.length;
 
   // Get pages for a given spread index (0 = Cover spread)
   const getSpread = (spreadIdx: number) => {
@@ -167,6 +171,17 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     }
   };
 
+  // Toggle Bookmark
+  const toggleBookmark = () => {
+    if (bookmarkedPages.includes(currentSpreadIndex)) {
+      setBookmarkedPages((prev) => prev.filter((p) => p !== currentSpreadIndex));
+      toast.info(`Bookmark removed for Spread ${currentSpreadIndex + 1}`);
+    } else {
+      setBookmarkedPages((prev) => [...prev, currentSpreadIndex]);
+      toast.success(`Spread ${currentSpreadIndex + 1} bookmarked!`);
+    }
+  };
+
   // Auto-play presentation timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -187,7 +202,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (tocOpen) setTocOpen(false);
-        else if (thumbnailsOpen) setThumbnailsOpen(false);
+        else if (thumbnailSidebarOpen) setThumbnailSidebarOpen(false);
         else if (searchOpen) setSearchOpen(false);
         else onClose();
       } else if (e.key === "ArrowRight" || e.key === " ") {
@@ -198,7 +213,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSpreadIndex, totalSpreads, tocOpen, thumbnailsOpen, searchOpen]);
+  }, [currentSpreadIndex, totalSpreads, tocOpen, thumbnailSidebarOpen, searchOpen]);
 
   // Fullscreen toggle handler
   const toggleFullscreen = () => {
@@ -210,7 +225,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     }
   };
 
-  // Print current spread or trigger window print
+  // Print current spread
   const handlePrint = () => {
     toast.info("Preparing Executive Talks Magazine spread for printing...");
     setTimeout(() => window.print(), 500);
@@ -246,9 +261,9 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     if (!touchStartX.current || !touchEndX.current) return;
     const diff = touchStartX.current - touchEndX.current;
     if (diff > 50) {
-      goNext(); // Swipe left -> next page
+      goNext();
     } else if (diff < -50) {
-      goPrev(); // Swipe right -> prev page
+      goPrev();
     }
     touchStartX.current = null;
     touchEndX.current = null;
@@ -256,25 +271,31 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
   // Table of Contents entries list
   const tocEntries = [
-    { title: "Executive Cover & Editorial Edition Overview", spread: 0, page: 1 },
+    { title: "Editor's Note & Executive Overview", spread: 0, page: 1 },
     { title: "Publisher's Letter: India's C-Suite Growth Blueprint", spread: 1, page: 2 },
-    { title: "Keynote Interview: Resilient Leadership in 2026", spread: 2, page: 4 },
-    { title: "CFO Intelligence: Strategic Capital & Tech Allocations", spread: 3, page: 6 },
-    { title: "HR Conclave: AI Workforce Intelligence & Talent Scale", spread: 4, page: 8 },
-    { title: "Tech Pioneers: Enterprise Cloud & Security Benchmarks", spread: 5, page: 10 },
+    { title: "Leadership Interviews: Resilient C-Suite Strategy", spread: 2, page: 4 },
+    { title: "Executive Insights: CFO Capital & Growth Benchmarks", spread: 3, page: 6 },
+    { title: "Industry Reports: HR Intelligence & AI Workforce Scale", spread: 4, page: 8 },
+    { title: "Innovation Stories: Tech Pioneers & Enterprise Cloud", spread: 5, page: 10 },
+    { title: "Partner Spotlight: Global Tech & GCC Alliances", spread: 6, page: 12 },
+    { title: "Events & Flagship Conclaves Retrospective", spread: 7, page: 14 },
+    { title: "Back Cover & ET Media Network Directory", spread: Math.max(0, totalSpreads - 1), page: totalPages },
   ];
+
+  // Calculate current reading percentage
+  const readingPercentage = Math.round(((currentSpreadIndex + 1) / totalSpreads) * 100);
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0F172A] via-[#0B1020] to-[#161B2F] text-white overflow-hidden select-none font-sans"
+      className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#08111F] via-[#7A0019]/25 to-[#050505] text-white overflow-hidden select-none font-sans"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Background Spotlight Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-[#7A0019]/15 blur-[160px] pointer-events-none rounded-full" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(15,23,42,0.95)_100%)] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[700px] bg-[#7A0019]/20 blur-[180px] pointer-events-none rounded-full" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,5,5,0.96)_100%)] pointer-events-none" />
 
       {/* ========================================================= */}
       {/* 1. LOADING ANIMATION SCREEN                               */}
@@ -285,12 +306,11 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0F172A] p-6 text-center"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#08111F] p-6 text-center"
           >
-            {/* ET Media Branding Header */}
             <div className="relative flex flex-col items-center">
-              <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-[#7A0019] via-[#9e0021] to-[#0F172A] p-0.5 shadow-[0_0_50px_rgba(122,0,25,0.6)]">
-                <div className="flex h-full w-full items-center justify-center rounded-[22px] bg-[#0F172A]">
+              <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-[#7A0019] via-[#9e0021] to-[#08111F] p-0.5 shadow-[0_0_50px_rgba(122,0,25,0.6)]">
+                <div className="flex h-full w-full items-center justify-center rounded-[22px] bg-[#08111F]">
                   <BookOpen className="h-10 w-10 text-[#D4AF37] animate-pulse" />
                 </div>
                 <div className="absolute -inset-1 rounded-3xl border border-[#D4AF37]/40 animate-ping opacity-20" />
@@ -304,11 +324,10 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
               </p>
             </div>
 
-            {/* Circular Progress Bar Container */}
             <div className="mt-8 flex flex-col items-center space-y-4 w-64">
               <div className="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden border border-slate-700 p-0.5 shadow-inner">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-[#7A0019] via-[#D4AF37] to-cyan-400 rounded-full"
+                  className="h-full bg-gradient-to-r from-[#7A0019] via-[#D4AF37] to-amber-300 rounded-full"
                   initial={{ width: "0%" }}
                   animate={{ width: `${loadProgress}%` }}
                   transition={{ duration: 0.1 }}
@@ -328,25 +347,25 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       </AnimatePresence>
 
       {/* ========================================================= */}
-      {/* 2. TOP INTERACTIVE CONTROL TOOLBAR                        */}
+      {/* 2. TOP GLASSMORPER TOOLBAR (Blur 24px, Gold Border)       */}
       {/* ========================================================= */}
-      <div className="relative z-30 flex items-center justify-between border-b border-slate-800/90 bg-[#0F172A]/90 px-4 py-3 sm:px-6 shadow-2xl backdrop-blur-2xl shrink-0">
-        {/* Magazine Title & Edition Metadata */}
+      <div className="relative z-30 flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#08111F]/80 px-4 py-3 sm:px-6 shadow-2xl backdrop-blur-[24px] shrink-0">
+        {/* ET Media Branding & Title */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-[#7A0019] to-[#0F172A] border border-[#D4AF37]/50 text-[#D4AF37] shrink-0 shadow-md">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-[#7A0019] to-[#08111F] border border-[#D4AF37]/50 text-[#D4AF37] shrink-0 shadow-md">
             <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div className="min-w-0">
             <h3 className="text-xs sm:text-sm font-extrabold text-white truncate font-display flex items-center gap-2">
               <span>{magazine.title}</span>
-              <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-mono font-extrabold text-[#D4AF37] bg-[#7A0019]/30 border border-[#D4AF37]/30 rounded-full uppercase">
+              <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-mono font-extrabold text-[#D4AF37] bg-[#7A0019]/40 border border-[#D4AF37]/40 rounded-full uppercase">
                 {magazine.issue}
               </span>
             </h3>
             <p className="text-[10px] text-slate-400 font-mono hidden sm:flex items-center gap-2">
               <span>{magazine.month || magazine.date}</span>
               <span>·</span>
-              <span className="text-slate-300">Luxury 3D Reader Edition</span>
+              <span className="text-[#D4AF37] font-semibold">Premium 3D Flipbook</span>
             </p>
           </div>
         </div>
@@ -358,13 +377,13 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             type="button"
             onClick={() => {
               setTocOpen((v) => !v);
-              setThumbnailsOpen(false);
+              setThumbnailSidebarOpen(false);
               setSearchOpen(false);
             }}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               tocOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white shadow-lg shadow-[#7A0019]/40"
-                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-slate-700"
+                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
             }`}
             title="Table of Contents"
           >
@@ -372,20 +391,20 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             <span className="hidden md:inline font-btn">Contents</span>
           </button>
 
-          {/* Thumbnail View Grid */}
+          {/* Thumbnail Sidebar Toggle */}
           <button
             type="button"
             onClick={() => {
-              setThumbnailsOpen((v) => !v);
+              setThumbnailSidebarOpen((v) => !v);
               setTocOpen(false);
               setSearchOpen(false);
             }}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              thumbnailsOpen
+              thumbnailSidebarOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white shadow-lg shadow-[#7A0019]/40"
-                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-slate-700"
+                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
             }`}
-            title="Thumbnail View Grid"
+            title="Thumbnail Grid Sidebar"
           >
             <Grid className="h-4 w-4 text-[#D4AF37]" />
             <span className="hidden md:inline font-btn">Thumbnails</span>
@@ -397,16 +416,30 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             onClick={() => {
               setSearchOpen((v) => !v);
               setTocOpen(false);
-              setThumbnailsOpen(false);
+              setThumbnailSidebarOpen(false);
             }}
             className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
               searchOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white"
-                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-slate-700"
+                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
             }`}
             title="Search Magazine Spreads"
           >
             <Search className="h-4 w-4 text-[#D4AF37]" />
+          </button>
+
+          {/* Bookmark Button */}
+          <button
+            type="button"
+            onClick={toggleBookmark}
+            className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              bookmarkedPages.includes(currentSpreadIndex)
+                ? "bg-[#D4AF37] border-[#D4AF37] text-slate-950 shadow-md"
+                : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
+            }`}
+            title="Bookmark Current Page"
+          >
+            <Bookmark className="h-4 w-4" />
           </button>
 
           {/* Audio Flip Sound Toggle */}
@@ -423,25 +456,15 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             )}
           </button>
 
-          {/* Zoom Toggle (100% -> 140% -> 180% -> 220%) */}
+          {/* Zoom Toggle (100% -> 150% -> 200% -> 300%) */}
           <button
             type="button"
-            onClick={() => setZoomLevel((prev) => (prev >= 2.2 ? 1 : prev === 1 ? 1.4 : prev === 1.4 ? 1.8 : 2.2))}
+            onClick={() => setZoomLevel((prev) => (prev >= 3 ? 1 : prev === 1 ? 1.5 : prev === 1.5 ? 2 : 3))}
             className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold"
-            title="Zoom Level (100% / 140% / 180% / 220%)"
+            title="Zoom Level (100% / 150% / 200% / 300%)"
           >
             {zoomLevel > 1 ? <ZoomOut className="h-4 w-4 text-[#D4AF37]" /> : <ZoomIn className="h-4 w-4" />}
             <span className="hidden lg:inline font-mono">{Math.round(zoomLevel * 100)}%</span>
-          </button>
-
-          {/* Print Spread */}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer hidden sm:flex"
-            title="Print Current Spread"
-          >
-            <Printer className="h-4 w-4" />
           </button>
 
           {/* Download PDF */}
@@ -491,7 +514,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       </div>
 
       {/* ========================================================= */}
-      {/* 3. TABLE OF CONTENTS DRAWER OVERLAY                        */}
+      {/* 3. TABLE OF CONTENTS POPUP DRAWER                         */}
       {/* ========================================================= */}
       <AnimatePresence>
         {tocOpen && (
@@ -500,7 +523,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -320 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute top-16 left-0 bottom-16 w-80 sm:w-96 z-40 bg-[#0F172A]/98 border-r border-slate-800 p-6 shadow-2xl backdrop-blur-2xl overflow-y-auto space-y-4"
+            className="absolute top-16 left-0 bottom-16 w-80 sm:w-96 z-40 bg-[#08111F]/98 border-r border-[#D4AF37]/30 p-6 shadow-2xl backdrop-blur-2xl overflow-y-auto space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h4 className="text-sm font-extrabold text-white uppercase tracking-wider font-display flex items-center gap-2">
@@ -552,11 +575,11 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-xl z-40 bg-[#0F172A]/98 border border-slate-800 p-6 shadow-2xl rounded-b-3xl backdrop-blur-2xl space-y-4"
+            className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-xl z-40 bg-[#08111F]/98 border border-[#D4AF37]/30 p-6 shadow-2xl rounded-b-3xl backdrop-blur-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h4 className="text-sm font-extrabold text-white uppercase tracking-wider font-display flex items-center gap-2">
-                <Search className="h-4 w-4 text-[#D4AF37]" /> Search Magazine Content
+                <Search className="h-4 w-4 text-[#D4AF37]" /> Search Magazine Pages
               </h4>
               <button type="button" onClick={() => setSearchOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="h-4 w-4" />
@@ -568,7 +591,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search keywords (e.g. CEO, CFO, AI, Leadership, Conclave)..."
+                placeholder="Search keywords (e.g. Editor's Note, CEO, CFO, AI, Reports, Conclave)..."
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
                 autoFocus
               />
@@ -601,71 +624,71 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       </AnimatePresence>
 
       {/* ========================================================= */}
-      {/* 5. THUMBNAIL GRID OVERLAY MODAL                           */}
+      {/* 5. RIGHT SLIDE-IN THUMBNAIL SIDEBAR (3 Columns Grid)      */}
       {/* ========================================================= */}
       <AnimatePresence>
-        {thumbnailsOpen && (
+        {thumbnailSidebarOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="absolute inset-x-0 top-16 bottom-16 z-40 bg-[#0F172A]/98 p-6 overflow-y-auto backdrop-blur-2xl"
+            initial={{ opacity: 0, x: 380 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 380 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="absolute top-16 right-0 bottom-16 w-80 sm:w-[420px] z-40 bg-[#08111F]/98 border-l border-[#D4AF37]/30 p-6 shadow-2xl backdrop-blur-2xl overflow-y-auto space-y-6"
           >
-            <div className="max-w-6xl mx-auto space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h4 className="text-base font-extrabold text-white font-display flex items-center gap-2">
-                  <Grid className="h-5 w-5 text-[#D4AF37]" /> All Magazine Spreads Grid ({totalSpreads} Spreads)
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => setThumbnailsOpen(false)}
-                  className="p-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-slate-800"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 className="text-sm font-extrabold text-white font-display flex items-center gap-2">
+                <Grid className="h-4 w-4 text-[#D4AF37]" /> Thumbnail Grid ({totalSpreads} Spreads)
+              </h4>
+              <button
+                type="button"
+                onClick={() => setThumbnailSidebarOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-              <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {Array.from({ length: totalSpreads }).map((_, sIdx) => {
-                  const sp = getSpread(sIdx);
-                  const isCurrent = sIdx === currentSpreadIndex;
-                  return (
-                    <div
-                      key={sIdx}
-                      onClick={() => {
-                        setCurrentSpreadIndex(sIdx);
-                        setThumbnailsOpen(false);
-                        playPaperSound();
-                      }}
-                      className={`group relative rounded-2xl border-2 p-2 bg-slate-900 cursor-pointer transition-all ${
-                        isCurrent
-                          ? "border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.4)] scale-105"
-                          : "border-slate-800 hover:border-[#D4AF37]/50 hover:scale-102"
-                      }`}
-                    >
-                      <div className="flex h-36 gap-1 overflow-hidden rounded-xl bg-slate-950 border border-slate-800">
-                        {sp.left ? (
-                          <img src={sp.left} alt="Left Page" className="h-full w-1/2 object-cover" />
-                        ) : (
-                          <div className="h-full w-1/2 bg-slate-950 flex items-center justify-center text-[10px] text-slate-600 font-mono">
-                            Spine Area
-                          </div>
-                        )}
-                        {sp.right ? (
-                          <img src={sp.right} alt="Right Page" className="h-full w-1/2 object-cover" />
-                        ) : (
-                          <div className="h-full w-1/2 bg-slate-950 flex items-center justify-center text-[10px] text-slate-600 font-mono">
-                            Spine Area
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-2 text-center text-[11px] font-mono font-bold text-slate-300">
-                        {sIdx === 0 ? "Cover (Page 1)" : `Spread P.${sp.leftNum}-${sp.rightNum}`}
-                      </div>
+            {/* 3-Column Miniature Previews */}
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: totalSpreads }).map((_, sIdx) => {
+                const sp = getSpread(sIdx);
+                const isCurrent = sIdx === currentSpreadIndex;
+                return (
+                  <div
+                    key={sIdx}
+                    onClick={() => {
+                      setCurrentSpreadIndex(sIdx);
+                      setThumbnailSidebarOpen(false);
+                      playPaperSound();
+                    }}
+                    className={`group relative rounded-xl border p-1 bg-slate-950 cursor-pointer transition-all ${
+                      isCurrent
+                        ? "border-[#7A0019] ring-2 ring-[#7A0019] shadow-[0_0_20px_rgba(122,0,25,0.7)] scale-105"
+                        : "border-slate-800 hover:border-[#D4AF37]/50"
+                    }`}
+                  >
+                    <div className="flex h-24 gap-0.5 overflow-hidden rounded-lg bg-slate-900 border border-slate-800">
+                      {sp.left ? (
+                        <img src={sp.left} alt="Left Page" className="h-full w-1/2 object-cover" />
+                      ) : (
+                        <div className="h-full w-1/2 bg-slate-950 flex items-center justify-center text-[8px] text-slate-600 font-mono">
+                          Cover
+                        </div>
+                      )}
+                      {sp.right ? (
+                        <img src={sp.right} alt="Right Page" className="h-full w-1/2 object-cover" />
+                      ) : (
+                        <div className="h-full w-1/2 bg-slate-950 flex items-center justify-center text-[8px] text-slate-600 font-mono">
+                          End
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="mt-1 text-center text-[9px] font-mono font-bold text-slate-300 truncate">
+                      {sIdx === 0 ? "Cover (P.1)" : `P.${sp.leftNum}-${sp.rightNum}`}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -680,14 +703,14 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
           type="button"
           disabled={currentSpreadIndex === 0}
           onClick={goPrev}
-          className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#0F172A]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
+          className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#08111F]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
           title="Previous Page (Flip Left / ArrowLeft)"
         >
           <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7 group-hover:-translate-x-0.5 transition-transform" />
         </button>
 
-        {/* 3D BOOK DOUBLE-PAGE SPREAD PERSPECTIVE CONTAINER */}
-        <div className="relative w-full max-w-5xl h-full flex items-center justify-center [perspective:2500px]">
+        {/* 3D BOOK DOUBLE-PAGE SPREAD PERSPECTIVE CONTAINER (1200px CSS Perspective) */}
+        <div className="relative w-full max-w-5xl h-full flex items-center justify-center [perspective:1200px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSpreadIndex}
@@ -707,9 +730,9 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                 scale: 0.95,
               }}
               transition={{ duration: 0.55, ease: [0.25, 1, 0.5, 1] }}
-              className="relative flex items-center justify-center shadow-[0_70px_140px_-30px_rgba(0,0,0,0.95)] rounded-2xl overflow-hidden [transform-style:preserve-3d] border border-slate-800 max-h-[76vh] group"
+              className="relative flex items-center justify-center shadow-[0_70px_140px_-30px_rgba(0,0,0,0.95)] rounded-2xl overflow-hidden [transform-style:preserve-3d] border border-slate-800 max-h-[76vh] group cursor-grab active:cursor-grabbing"
             >
-              {/* 3D Hardcover Reflection Gloss Sweep */}
+              {/* Glossy Cover Reflection Gloss Sweep */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-30" />
 
               {/* 2-PAGE FACING SPREAD LAYOUT */}
@@ -717,16 +740,16 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                 {/* LEFT PAGE */}
                 {currentSpreadIndex === 0 ? (
                   /* Front Cover Hardcover Left Spine Backing */
-                  <div className="hidden md:flex h-[62vh] sm:h-[70vh] w-[40vw] max-w-[430px] bg-gradient-to-r from-[#0F172A] via-[#0B1020] to-[#0F172A] border-r border-slate-800 items-center justify-center p-8 text-center select-none shadow-[inset_-35px_0_45px_rgba(0,0,0,0.85)]">
-                    <div className="space-y-4 opacity-70">
-                      <div className="h-16 w-16 mx-auto rounded-2xl bg-[#7A0019]/40 border border-[#D4AF37]/40 flex items-center justify-center">
+                  <div className="hidden md:flex h-[62vh] sm:h-[70vh] w-[40vw] max-w-[430px] bg-gradient-to-r from-[#08111F] via-[#7A0019]/40 to-[#08111F] border-r border-slate-800 items-center justify-center p-8 text-center select-none shadow-[inset_-35px_0_45px_rgba(0,0,0,0.85)]">
+                    <div className="space-y-4 opacity-75">
+                      <div className="h-16 w-16 mx-auto rounded-2xl bg-[#7A0019]/50 border border-[#D4AF37]/50 flex items-center justify-center">
                         <BookOpen className="h-8 w-8 text-[#D4AF37]" />
                       </div>
                       <p className="text-sm font-extrabold text-white font-display uppercase tracking-wider">
                         {magazine.title}
                       </p>
                       <p className="text-xs text-[#D4AF37] font-mono font-bold">{magazine.issue}</p>
-                      <p className="text-[10px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                      <p className="text-[10px] text-slate-400 max-w-xs mx-auto leading-relaxed font-sans">
                         Official C-Suite Business Publication by ET Media Business Intelligence.
                       </p>
                     </div>
@@ -735,8 +758,8 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                   <div
                     onMouseEnter={() => setIsHoveringCorner("left")}
                     onMouseLeave={() => setIsHoveringCorner(null)}
-                    className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-slate-950 overflow-hidden border-r border-slate-800 shadow-[inset_-30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
-                      isHoveringCorner === "left" ? "cursor-grab" : ""
+                    className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-[#F7F8FA] overflow-hidden border-r border-slate-300 shadow-[inset_-30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
+                      isHoveringCorner === "left" ? "rotate-[-1deg]" : ""
                     }`}
                   >
                     {currentSpread.left ? (
@@ -756,20 +779,20 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
                     {/* Page Number Badge */}
                     <span className="absolute bottom-3 left-4 bg-black/80 text-[10px] font-mono font-bold text-[#D4AF37] px-2.5 py-1 rounded-lg border border-slate-800 shadow-md">
-                      P. {currentSpread.leftNum}
+                      Page {currentSpread.leftNum} / {totalPages}
                     </span>
                   </div>
                 )}
 
                 {/* CENTRAL 3D BOOK SPINE ACCENT */}
-                <div className="h-[62vh] sm:h-[70vh] w-2.5 bg-gradient-to-r from-[#0F172A] via-slate-700 to-[#0F172A] z-20 shrink-0 shadow-[0_0_20px_rgba(0,0,0,0.9)]" />
+                <div className="h-[62vh] sm:h-[70vh] w-2.5 bg-gradient-to-r from-[#08111F] via-slate-600 to-[#08111F] z-20 shrink-0 shadow-[0_0_20px_rgba(0,0,0,0.9)]" />
 
                 {/* RIGHT PAGE */}
                 <div
                   onMouseEnter={() => setIsHoveringCorner("right")}
                   onMouseLeave={() => setIsHoveringCorner(null)}
-                  className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-slate-950 overflow-hidden border-l border-slate-800 shadow-[inset_30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
-                    isHoveringCorner === "right" ? "cursor-grab" : ""
+                  className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-[#F7F8FA] overflow-hidden border-l border-slate-300 shadow-[inset_30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
+                    isHoveringCorner === "right" ? "rotate-[1deg]" : ""
                   }`}
                 >
                   {currentSpread.right ? (
@@ -789,7 +812,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
                   {/* Page Number Badge */}
                   <span className="absolute bottom-3 right-4 bg-black/80 text-[10px] font-mono font-bold text-[#D4AF37] px-2.5 py-1 rounded-lg border border-slate-800 shadow-md">
-                    P. {currentSpreadIndex === 0 ? 1 : currentSpread.rightNum}
+                    Page {currentSpreadIndex === 0 ? 1 : currentSpread.rightNum} / {totalPages}
                   </span>
                 </div>
               </div>
@@ -802,7 +825,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
           type="button"
           disabled={currentSpreadIndex >= totalSpreads - 1}
           onClick={goNext}
-          className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#0F172A]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
+          className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#08111F]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
           title="Next Page (Flip Right / ArrowRight)"
         >
           <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7 group-hover:translate-x-0.5 transition-transform" />
@@ -812,16 +835,14 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       {/* ========================================================= */}
       {/* 7. BOTTOM CONTROL & SCRUBBER TOOLBAR                      */}
       {/* ========================================================= */}
-      <div className="border-t border-slate-800/90 bg-[#0F172A]/95 px-4 py-3 sm:px-8 z-30 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl backdrop-blur-2xl">
+      <div className="border-t border-slate-800/90 bg-[#08111F]/95 px-4 py-3 sm:px-8 z-30 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl backdrop-blur-2xl">
         {/* Current Spread Badge */}
         <div className="flex items-center gap-3 text-xs font-mono font-bold text-slate-300 shrink-0">
           <span className="bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner flex items-center gap-2">
             <span className="text-[#D4AF37] font-extrabold">
-              {currentSpreadIndex === 0
-                ? "Cover (P.1)"
-                : `Spread P.${currentSpread.leftNum}-${currentSpread.rightNum}`}
+              Page {currentSpreadIndex === 0 ? "01" : String(currentSpread.leftNum).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
             </span>
-            <span className="text-slate-500 font-normal">/ {activePages.length} Pages</span>
+            <span className="text-slate-500 font-normal">({readingPercentage}% read)</span>
           </span>
 
           {/* Auto-play Presentation Mode Button */}
@@ -851,7 +872,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
         {/* Interactive Scrub Range Slider Bar */}
         <div className="flex-1 w-full max-w-xl flex items-center gap-3">
-          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0">P.1</span>
+          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0">Page 01</span>
           <input
             type="range"
             min={0}
@@ -867,7 +888,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             }}
             className="w-full accent-[#7A0019] cursor-pointer h-2 rounded-full bg-slate-800"
           />
-          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0">P.{activePages.length}</span>
+          <span className="text-[10px] font-mono font-bold text-slate-500 shrink-0">Page {totalPages}</span>
         </div>
 
         {/* Quick Prev / Next Navigation Pill Buttons */}

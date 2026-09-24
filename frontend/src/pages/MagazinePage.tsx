@@ -26,6 +26,7 @@ import { FloatingShapes } from "@/components/ui/FloatingShapes";
 import { socket } from "@/lib/socket";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Magazine3DViewer } from "@/components/site/Magazine3DViewer";
+import { ThreeDMagazineHero } from "@/components/site/3DMagazineHero";
 
 export default function MagazinePage() {
   const [magazinesList, setMagazinesList] = useState<MagazineItem[]>([]);
@@ -237,114 +238,15 @@ export default function MagazinePage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-black text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
-      <PageHero
-        crumb="Executive Talks Magazine"
-        title="Executive Talks Magazine"
-        subtitle="A premium digital library of C-suite leadership interviews, sector intelligence, and enterprise perspectives."
-        image={images.magazineCover}
-      />
-
+    <div className="relative min-h-screen bg-[#08111F] text-slate-100 selection:bg-[#7A0019]/40 selection:text-[#D4AF37] font-sans">
       {/* ========================================== */}
-      {/* 1. FEATURED MAGAZINE COVER SHOWCASE        */}
+      {/* 1. 3D HARDCOVER FLOATING HERO EXPERIENCE   */}
       {/* ========================================== */}
       {featuredMagazine && (
-        <section className="py-16 md:py-20 border-b border-zinc-800/80 relative overflow-hidden bg-zinc-950">
-          <FloatingShapes />
-          <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-          <div className="container-x grid items-center gap-10 lg:grid-cols-12 relative z-10">
-            {/* Left Column: 3D Animated Magazine Cover (No Border Radius) */}
-            <div className="lg:col-span-5 [perspective:1600px]">
-              <Reveal>
-                <motion.div
-                  initial={{ rotateY: -18 }}
-                  animate={{ rotateY: [-18, -8, -18] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                  whileHover={{ rotateY: -2, scale: 1.02 }}
-                  onClick={() => openReader(featuredMagazine)}
-                  className="relative mx-auto w-64 sm:w-80 cursor-pointer [transform-style:preserve-3d] group"
-                >
-                  {/* Magazine 3D Spine Depth Layer */}
-                  <div className="bg-zinc-800 absolute inset-y-3 -right-4 [transform:rotateY(-16deg)_translateZ(-25px)] border border-zinc-700 shadow-2xl rounded-none" />
-                  <div className="bg-zinc-700 absolute inset-y-1.5 -right-2 [transform:rotateY(-9deg)_translateZ(-12px)] border border-zinc-600 shadow-xl rounded-none" />
-
-                  {/* Main Front Cover Image */}
-                  <div className="relative aspect-[1/1.5] w-full overflow-hidden bg-black border border-zinc-700 group-hover:border-cyan-500/80 transition-all duration-300 shadow-[0_40px_80px_-25px_rgba(0,0,0,0.95)] rounded-none">
-                    <img
-                      src={featuredMagazine.cover}
-                      alt={`${featuredMagazine.title} Cover`}
-                      loading="lazy"
-                      className="h-full w-full object-cover rounded-none"
-                    />
-
-                    {/* Glossy Sheen Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none rounded-none opacity-60 group-hover:opacity-100 transition-opacity" />
-
-                    {/* Hover Read Badge */}
-                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-colors rounded-none flex items-center justify-center p-4">
-                      <span className="gradient-brand rounded-none px-6 py-3 text-xs font-extrabold text-white shadow-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-105 flex items-center gap-2 font-btn">
-                        <BookOpen className="h-4 w-4" /> Open Fullscreen 3D Reader
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              </Reveal>
-            </div>
-
-            {/* Right Column: Featured Details & CTAs */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 rounded-none border border-purple-500/40 bg-purple-950/80 px-3.5 py-1 text-xs font-extrabold text-purple-300">
-                  <Flame className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-                  <span>Featured Edition · {featuredMagazine.issue}</span>
-                </div>
-                <span className="rounded-none bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 text-xs font-extrabold text-cyan-300 font-mono">
-                  {featuredMagazine.month || featuredMagazine.date}
-                </span>
-              </div>
-
-              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-display leading-tight">
-                {featuredMagazine.title}
-              </h2>
-
-              <p className="text-slate-300 text-base leading-relaxed font-medium">
-                {featuredMagazine.description || "Explore how benchmark CEOs, CFOs, and tech leaders are driving enterprise resilience, digital transformation, and executive innovation across India's premier markets."}
-              </p>
-
-              <div className="pt-2 flex flex-wrap items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => openReader(featuredMagazine)}
-                  className="gradient-brand inline-flex items-center gap-3 rounded-none px-8 py-3.5 text-sm font-extrabold text-white shadow-2xl shadow-cyan-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-btn border-none"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span>Open Fullscreen 3D Flipbook</span>
-                </button>
-
-                {featuredMagazine.pdf_url && (
-                  <a
-                    href={featuredMagazine.pdf_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2.5 rounded-none border border-zinc-800 bg-zinc-900/90 px-7 py-3.5 text-sm font-bold text-slate-200 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer font-btn shadow-md"
-                  >
-                    <Download className="h-4 w-4 text-cyan-400" />
-                    <span>Download PDF</span>
-                  </a>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => handleShare(featuredMagazine)}
-                  className="p-3.5 rounded-none border border-zinc-800 bg-zinc-900/90 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all cursor-pointer"
-                  title="Share Magazine"
-                >
-                  <Share2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <ThreeDMagazineHero
+          magazine={featuredMagazine}
+          onOpenReader={openReader}
+        />
       )}
 
       {/* ========================================== */}
