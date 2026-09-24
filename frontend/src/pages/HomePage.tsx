@@ -322,9 +322,20 @@ function UpcomingEvents() {
             </Reveal>
           ))}
         </div>
-        <Reveal className="mt-12 text-center">
-          <MagneticButton strength={18} className="hover:bg-accent rounded-full border border-border px-8 py-3.5 text-sm font-semibold transition-colors">
-            <Link to="/events">View All Upcoming Events</Link>
+        <Reveal className="mt-12 flex justify-center">
+          <MagneticButton
+            strength={20}
+            className="group relative inline-flex items-center justify-center rounded-full gradient-brand px-9 py-4 text-base font-extrabold text-white shadow-[0_4px_25px_rgba(0,174,239,0.45)] hover:shadow-[0_8px_35px_rgba(0,174,239,0.75)] hover:scale-105 transition-all duration-300 cursor-pointer border-none"
+          >
+            <Link
+              to="/events"
+              className="flex items-center gap-3 font-btn text-white text-base font-extrabold tracking-wide"
+            >
+              <span>View All Upcoming Events</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white group-hover:bg-white group-hover:text-cyan-600 transition-all duration-300 shadow-sm">
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+              </div>
+            </Link>
           </MagneticButton>
         </Reveal>
       </div>
@@ -353,9 +364,9 @@ function WhyEtMedia() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.08}>
-              <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-3xl p-7 border border-border/80">
+              <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 border border-border/80">
                 <div>
-                  <div className="w-12 h-12 rounded-2xl gradient-soft text-brand-blue flex items-center justify-center shadow-sm shrink-0">
+                  <div className="w-12 h-12 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none gradient-soft text-brand-blue flex items-center justify-center shadow-sm shrink-0">
                     <p.icon className="h-6 w-6" />
                   </div>
                   <h3 className="mt-6 text-lg font-bold font-display">{p.title}</h3>
@@ -437,7 +448,7 @@ function IndustriesWeServe() {
               <Reveal key={sec.id || sec.title || i} delay={i * 0.05}>
                 <MouseTiltCard
                   maxTilt={8}
-                  className="group relative h-full rounded-3xl border border-zinc-800/90 bg-zinc-900/60 p-7 backdrop-blur-xl transition-all duration-500 hover:border-cyan-500/50 hover:bg-zinc-900/90 hover:shadow-[0_12px_40px_rgba(0,174,239,0.18)] flex flex-col justify-between overflow-hidden"
+                  className="group relative h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-zinc-800/90 bg-zinc-900/60 p-7 backdrop-blur-xl transition-all duration-500 hover:border-cyan-500/50 hover:bg-zinc-900/90 hover:shadow-[0_12px_40px_rgba(0,174,239,0.18)] flex flex-col justify-between overflow-hidden"
                 >
                   {/* Subtle Card Ambient Highlight */}
                   <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all duration-500 pointer-events-none" />
@@ -714,7 +725,7 @@ function TestimonialsSection() {
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             >
               {t && (
-                <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-3xl border border-border/80 shadow-2xl p-6 sm:p-10">
+                <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-border/80 shadow-2xl p-6 sm:p-10">
                   <div className="grid gap-8 lg:grid-cols-12 items-center">
                     <div className={`lg:col-span-6 relative rounded-2xl overflow-hidden shadow-lg border border-border bg-slate-950 ${isInstagram ? "aspect-[9/16] max-h-[480px] mx-auto w-full max-w-[320px]" : "aspect-video w-full"}`}>
                       {videoEmbedUrl ? (
@@ -874,7 +885,7 @@ function GalleryPreview() {
             <Reveal key={item.id || i} delay={i * 0.08}>
               <MouseTiltCard
                 maxTilt={10}
-                className="group relative overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-lg hover:shadow-2xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
+                className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-border/80 bg-surface shadow-lg hover:shadow-2xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
                 onClick={() => setLightboxIndex(i)}
               >
                 {/* Media Image Thumbnail Container */}

@@ -38,7 +38,7 @@ export function StatisticsSection() {
               <Reveal key={s.label} delay={i * 0.08}>
                 <MouseTiltCard
                   maxTilt={14}
-                  className="group relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white/90 p-7 text-center shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-2xl hover:shadow-cyan-500/15"
+                  className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white/90 p-7 text-center shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400/60 hover:shadow-2xl hover:shadow-cyan-500/15"
                 >
                   {/* Subtle Top Accent Glow Bar */}
                   <div className="absolute inset-x-0 top-0 h-1 gradient-brand opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

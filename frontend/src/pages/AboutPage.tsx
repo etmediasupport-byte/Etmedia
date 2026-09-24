@@ -174,9 +174,9 @@ export default function AboutPage() {
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
             {pillars.map((p, i) => (
               <Reveal key={p.title} delay={i * 0.08}>
-                <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-3xl p-8 border border-border/80">
+                <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-8 border border-border/80">
                   <div>
-                    <div className="w-12 h-12 rounded-2xl gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
+                    <div className="w-12 h-12 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
                       <p.icon className="h-6 w-6" />
                     </div>
                     <h3 className="mt-6 text-xl font-bold font-display">{p.title}</h3>
@@ -203,7 +203,7 @@ export default function AboutPage() {
               <Reveal key={step.title} delay={i * 0.05}>
                 <MouseTiltCard
                   maxTilt={10}
-                  className="glass-card gradient-ring group h-full rounded-3xl p-6 border border-border/80 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10"
+                  className="glass-card gradient-ring group h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-6 border border-border/80 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10"
                 >
                   <div>
                     {/* Top Row: Step Number Badge + Gradient Icon Box */}
@@ -211,7 +211,7 @@ export default function AboutPage() {
                       <span className="text-xs font-black font-display uppercase tracking-widest text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-3 py-1">
                         Step {step.step}
                       </span>
-                      <div className={`p-3 rounded-2xl text-white bg-gradient-to-r shadow-md group-hover:scale-110 transition-transform ${step.gradient}`}>
+                      <div className={`p-3 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none text-white bg-gradient-to-r shadow-md group-hover:scale-110 transition-transform ${step.gradient}`}>
                         <step.icon className="h-5 w-5" />
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export default function AboutPage() {
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {team.map((m, i) => (
               <Reveal key={m.name} delay={i * 0.08}>
-                <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-3xl p-7 text-center border border-border">
+                <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 text-center border border-border">
                   <img
                     src={m.image}
                     alt={m.name}

@@ -292,7 +292,7 @@ export default function CareersPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: idx * 0.05, duration: 0.4 }}
-                    className="group relative flex flex-col justify-between rounded-3xl border border-slate-800/80 bg-[#0B0F19]/90 p-6 sm:p-7 shadow-xl hover:border-purple-500/50 hover:bg-[#0D111D] transition-all duration-300 backdrop-blur-xl"
+                    className="group relative flex flex-col justify-between rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-800/80 bg-[#0B0F19]/90 p-6 sm:p-7 shadow-xl hover:border-purple-500/50 hover:bg-[#0D111D] transition-all duration-300 backdrop-blur-xl"
                   >
                     <div>
                       {/* Top Header: Department Icon, Category Badge & Hiring Badge */}

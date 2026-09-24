@@ -33,7 +33,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
   };
 
   return (
-    <MouseTiltCard className="group relative overflow-hidden rounded-3xl h-full flex flex-col justify-between border border-slate-200/80 dark:border-slate-800/90 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/70 dark:from-slate-900/95 dark:via-slate-900 dark:to-slate-950/90 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
+    <MouseTiltCard className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none h-full flex flex-col justify-between border border-slate-200/80 dark:border-slate-800/90 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/70 dark:from-slate-900/95 dark:via-slate-900 dark:to-slate-950/90 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
       {/* Top Right Atmospheric Glow */}
       <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all pointer-events-none z-10" />
 

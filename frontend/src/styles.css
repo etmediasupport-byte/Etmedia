@@ -235,12 +235,20 @@
   backdrop-filter: blur(22px) saturate(150%);
   border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
   box-shadow: var(--shadow-luxe);
+  border-top-left-radius: 2.5rem;
+  border-bottom-right-radius: 2.5rem;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 0px;
 }
 
 @utility glass-dark {
   background: color-mix(in oklab, oklch(0.14 0.02 268) 45%, transparent);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid oklch(1 0 0 / 14%);
+  border-top-left-radius: 2.5rem;
+  border-bottom-right-radius: 2.5rem;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 0px;
 }
 
 @utility gradient-brand {
