@@ -17,6 +17,7 @@ import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import VerifyPassPage from "@/pages/VerifyPassPage";
+import { Toaster } from "@/components/ui/sonner";
 
 function PageTracker() {
   const location = useLocation();
@@ -36,6 +37,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
+        <Toaster position="top-right" richColors />
         <PageTracker />
         <Routes>
           <Route path="/admin/login" element={<AdminLoginPage />} />

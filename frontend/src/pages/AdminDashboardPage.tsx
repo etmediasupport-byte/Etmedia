@@ -582,6 +582,7 @@ export default function AdminDashboardPage() {
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [submittingEvent, setSubmittingEvent] = useState(false);
+  const [eventSaveNotification, setEventSaveNotification] = useState<{ message: string; type: "success" | "draft" } | null>(null);
 
   const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue">("basic");
   const [openLocationSlots, setOpenLocationSlots] = useState<number[]>([0]);
@@ -2565,6 +2566,7 @@ export default function AdminDashboardPage() {
   // --- EVENT CMS CRUD HANDLERS ---
   const handleOpenAddEvent = () => {
     setEditingEvent(null);
+    setEventSaveNotification(null);
     setBuilderTab("basic");
     setEventForm({
       title: "",
@@ -2600,6 +2602,7 @@ export default function AdminDashboardPage() {
 
   const handleOpenEditEvent = (evt: any) => {
     setEditingEvent(evt);
+    setEventSaveNotification(null);
     setBuilderTab("basic");
 
     let parsedLocations: any[] = [];
@@ -2776,13 +2779,21 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
-        // Requirement 3: Premium Toast Notification
-        toast.success(editingEvent ? "✅ Event Updated Successfully!" : "✅ Event Created Successfully!", {
-          description: "All event details have been saved successfully.",
-          duration: 3000,
+        const isUpdate = Boolean(editingEvent);
+        const eventTitle = eventForm.title || "Event";
+        
+        setEventSaveNotification({
+          message: isUpdate
+            ? `🎉 Event "${eventTitle}" Updated Successfully!`
+            : `🚀 Event "${eventTitle}" Created & Saved Successfully!`,
+          type: targetStatus === "draft" ? "draft" : "success",
         });
 
-        // Requirement 4: Stay on Same Page
+        toast.success(isUpdate ? "🎉 Event Updated Successfully!" : "🚀 Event Created Successfully!", {
+          description: `All changes for "${eventTitle}" have been saved and synced.`,
+          duration: 5000,
+        });
+
         if (data.data) {
           setEditingEvent(data.data);
         }
@@ -5233,6 +5244,28 @@ export default function AdminDashboardPage() {
 
             {/* Scrollable Form Body */}
             <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+              {/* Event Save Success Notification Banner */}
+              {eventSaveNotification && (
+                <div className="rounded-2xl bg-emerald-50 border border-emerald-300 p-4 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-emerald-500 p-1.5 text-white shadow-xs shrink-0">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-xs block text-emerald-950">{eventSaveNotification.message}</span>
+                      <span className="text-[11px] text-emerald-700 font-medium">All changes, venue schedules, agenda, speakers & sponsors are updated live on the website.</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEventSaveNotification(null)}
+                    className="rounded-full p-1 text-emerald-700 hover:bg-emerald-200/60 transition-colors text-sm font-extrabold cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
               {/* TAB 1: BASIC INFO & LOCATIONS WITH DYNAMIC VENUE BLOCKS */}
               {builderTab === "basic" && (
                 <div className="space-y-6">
