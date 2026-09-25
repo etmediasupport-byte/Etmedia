@@ -314,24 +314,7 @@ export function HeroSection() {
               <AnimatedGlobe />
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="absolute bottom-0 right-2 sm:right-6 select-none pointer-events-none z-20"
-            >
-              <div className="relative">
-                <span
-                  style={{ fontFamily: "'Dancing Script', 'Caveat', 'Brush Script MT', cursive" }}
-                  className="text-lg sm:text-2xl font-extrabold text-slate-200 tracking-wide transform -rotate-6 block drop-shadow-[0_2px_10px_rgba(0,174,239,0.3)]"
-                >
-                  A More Connected Tomorrow
-                </span>
-                <svg className="w-32 sm:w-40 h-2 sm:h-2.5 text-cyan-400/80 ml-auto -mt-0.5" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 8C50 2 150 12 198 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
-              </div>
-            </motion.div>
+
 
           </div>
 
