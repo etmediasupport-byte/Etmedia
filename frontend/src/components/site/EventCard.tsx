@@ -46,7 +46,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
             loading="lazy"
             width={800}
             height={450}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+            className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-108"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
 

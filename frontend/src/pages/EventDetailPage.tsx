@@ -210,49 +210,81 @@ export default function EventDetailPage() {
     speakersList = [
       {
         id: "spk-1",
-        name: "Ramesh Kumar",
-        designation: "CHRO",
-        company: "TCS",
+        name: "Nazime Tuncay",
+        designation: "Individual Researcher",
+        company: "Educator",
+        location: "Cyprus",
+        linkedin_url: "https://linkedin.com",
         companyLogo: "https://logo.clearbit.com/tcs.com",
-        photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-2",
-        name: "Priya Sharma",
-        designation: "VP – People & Culture",
-        company: "Microsoft",
-        companyLogo: "https://logo.clearbit.com/microsoft.com",
         photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
       },
       {
+        id: "spk-2",
+        name: "Egor Kraev",
+        designation: "Co-Founder and CTO",
+        company: "Motley",
+        location: "Switzerland",
+        linkedin_url: "https://linkedin.com",
+        companyLogo: "https://logo.clearbit.com/microsoft.com",
+        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+      },
+      {
         id: "spk-3",
-        name: "Arjun Mehta",
-        designation: "Head of HR",
-        company: "Google",
+        name: "Armand",
+        designation: "VP",
+        company: "DFCG",
+        location: "France",
+        linkedin_url: "https://linkedin.com",
         companyLogo: "https://logo.clearbit.com/google.com",
-        photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
+        photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
       },
       {
         id: "spk-4",
-        name: "Sneha Reddy",
-        designation: "Director – Talent",
-        company: "Amazon",
+        name: "Priya Sharma",
+        designation: "VP – People & Culture",
+        company: "Microsoft",
+        location: "India",
+        linkedin_url: "https://linkedin.com",
         companyLogo: "https://logo.clearbit.com/amazon.com",
         photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400",
       },
       {
         id: "spk-5",
+        name: "Arjun Mehta",
+        designation: "Head of HR",
+        company: "Google",
+        location: "United States",
+        linkedin_url: "https://linkedin.com",
+        companyLogo: "https://logo.clearbit.com/infosys.com",
+        photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
+      },
+      {
+        id: "spk-6",
+        name: "Sneha Reddy",
+        designation: "Director – Talent",
+        company: "Amazon",
+        location: "United Kingdom",
+        linkedin_url: "https://linkedin.com",
+        companyLogo: "https://logo.clearbit.com/deloitte.com",
+        photo: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400",
+      },
+      {
+        id: "spk-7",
         name: "Vikram Sinha",
         designation: "CHRO",
         company: "Infosys",
+        location: "India",
+        linkedin_url: "https://linkedin.com",
         companyLogo: "https://logo.clearbit.com/infosys.com",
         photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
       },
       {
-        id: "spk-6",
+        id: "spk-8",
         name: "Ananya Rao",
         designation: "People Partner",
         company: "Deloitte",
+        location: "France",
+        linkedin_url: "https://linkedin.com",
         companyLogo: "https://logo.clearbit.com/deloitte.com",
         photo: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400",
       },
@@ -282,23 +314,80 @@ export default function EventDetailPage() {
     ];
   }
 
-  // Curated Sponsors Tiers matching reference image
-  const titleSponsor = { name: "Microsoft", logo: "https://logo.clearbit.com/microsoft.com" };
-  const platinumSponsors = [
-    { name: "Google", logo: "https://logo.clearbit.com/google.com" },
-    { name: "Amazon", logo: "https://logo.clearbit.com/amazon.com" },
-  ];
-  const goldSponsors = [
-    { name: "Deloitte", logo: "https://logo.clearbit.com/deloitte.com" },
-    { name: "Infosys", logo: "https://logo.clearbit.com/infosys.com" },
-    { name: "HCL", logo: "https://logo.clearbit.com/hcltech.com" },
-  ];
-  const silverSponsors = [
-    { name: "Wipro", logo: "https://logo.clearbit.com/wipro.com" },
-    { name: "Accenture", logo: "https://logo.clearbit.com/accenture.com" },
-    { name: "IBM", logo: "https://logo.clearbit.com/ibm.com" },
-    { name: "Capgemini", logo: "https://logo.clearbit.com/capgemini.com" },
-  ];
+  // Curated Sponsors & Media Partners array with logos, badges, and site links
+  let sponsorsList: any[] = [];
+  try {
+    if (typeof event.sponsors_list === "string") {
+      sponsorsList = JSON.parse(event.sponsors_list);
+    } else if (Array.isArray(event.sponsors_list)) {
+      sponsorsList = event.sponsors_list;
+    }
+  } catch (e) {}
+
+  if (!sponsorsList || sponsorsList.length === 0) {
+    sponsorsList = [
+      {
+        name: "Times Of AI",
+        badge: "Media Partner",
+        logo: "https://logo.clearbit.com/nytimes.com",
+        url: "https://timesofai.com",
+      },
+      {
+        name: "AI Staffing Ninja",
+        badge: "Media Partner",
+        logo: "https://logo.clearbit.com/openai.com",
+        url: "https://staffingninja.com",
+      },
+      {
+        name: "CapitalBay News",
+        badge: "Media Partner",
+        logo: "https://logo.clearbit.com/bloomberg.com",
+        url: "https://capitalbay.news",
+      },
+      {
+        name: "Microsoft",
+        badge: "Title Partner",
+        logo: "https://logo.clearbit.com/microsoft.com",
+        url: "https://microsoft.com",
+      },
+      {
+        name: "Crypto ML Insights",
+        badge: "Media Partner",
+        logo: "https://logo.clearbit.com/coinbase.com",
+        url: "https://crypto.com",
+      },
+      {
+        name: "Google Cloud",
+        badge: "Platinum Partner",
+        logo: "https://logo.clearbit.com/google.com",
+        url: "https://cloud.google.com",
+      },
+      {
+        name: "Amazon AWS",
+        badge: "Platinum Partner",
+        logo: "https://logo.clearbit.com/aws.amazon.com",
+        url: "https://aws.amazon.com",
+      },
+      {
+        name: "Deloitte",
+        badge: "Gold Partner",
+        logo: "https://logo.clearbit.com/deloitte.com",
+        url: "https://deloitte.com",
+      },
+      {
+        name: "Infosys",
+        badge: "Executive Partner",
+        logo: "https://logo.clearbit.com/infosys.com",
+        url: "https://infosys.com",
+      },
+      {
+        name: "Wipro Technologies",
+        badge: "Silver Partner",
+        logo: "https://logo.clearbit.com/wipro.com",
+        url: "https://wipro.com",
+      },
+    ];
+  }
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 pb-32 font-sans">
@@ -321,15 +410,15 @@ export default function EventDetailPage() {
         {/* ========================================================= */}
         <section className="grid gap-6 lg:grid-cols-12 items-stretch">
           {/* LEFT COLUMN: LARGE BANNER WITH EVENT CARD IMAGE */}
-          <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-slate-950 text-white shadow-2xl min-h-[440px] flex flex-col justify-between p-6 sm:p-10 group">
+          <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-slate-950 text-white shadow-2xl min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] flex flex-col justify-between p-5 sm:p-8 lg:p-10 group">
             {/* Background Event Card Image */}
             <div className="absolute inset-0 z-0">
               <img
                 src={event.image || "/assets/event-cfo-BjslOJNi.jpg"}
                 alt={event.title}
-                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/30" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/20" />
             </div>
 
             {/* Top Badge */}
@@ -340,11 +429,11 @@ export default function EventDetailPage() {
             </div>
 
             {/* Middle Title & Description */}
-            <div className="relative z-10 space-y-3 my-auto pt-12 pb-6">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white leading-tight">
+            <div className="relative z-10 space-y-3 my-auto pt-8 sm:pt-12 pb-6">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white leading-tight">
                 {event.title}
               </h1>
-              <p className="text-cyan-300 font-bold text-base sm:text-lg">
+              <p className="text-cyan-300 font-bold text-sm sm:text-base lg:text-lg">
                 People. Purpose. Performance.
               </p>
               <p className="text-xs sm:text-sm text-slate-200 line-clamp-3 leading-relaxed max-w-2xl font-medium">
@@ -353,7 +442,7 @@ export default function EventDetailPage() {
             </div>
 
             {/* Bottom Overlay Info Strip */}
-            <div className="relative z-10 border-t border-white/20 pt-4 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-200">
+            <div className="relative z-10 border-t border-white/20 pt-4 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 text-[11px] sm:text-xs font-semibold text-slate-200">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-cyan-400 shrink-0" />
                 <span>{dateText} • Thu, 9:00 AM – 6:00 PM</span>
@@ -374,16 +463,16 @@ export default function EventDetailPage() {
           </div>
 
           {/* RIGHT COLUMN: QUICK REGISTRATION CARD */}
-          <div className="lg:col-span-4 rounded-3xl bg-white border border-slate-200 p-6 sm:p-7 shadow-xl flex flex-col justify-between space-y-6">
+          <div className="lg:col-span-4 rounded-3xl bg-slate-50/70 p-6 sm:p-7 flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-extrabold text-emerald-800">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Registrations Open
                 </span>
                 <button
                   type="button"
                   onClick={shareEvent}
-                  className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="rounded-full bg-white/80 p-2 text-slate-600 hover:bg-white transition-colors cursor-pointer"
                   title="Share Event"
                 >
                   <Share2 className="h-4 w-4" />
@@ -394,7 +483,7 @@ export default function EventDetailPage() {
                 {event.title}
               </h3>
 
-              <div className="space-y-3 border-y border-slate-100 py-4 text-xs font-medium text-slate-700">
+              <div className="space-y-3 border-y border-slate-200/50 py-4 text-xs font-medium text-slate-700">
                 <div className="flex items-start gap-3">
                   <CalendarDays className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
                   <div>
@@ -414,15 +503,15 @@ export default function EventDetailPage() {
 
               {/* 3 STAT BADGES */}
               <div className="grid grid-cols-3 gap-2 text-center py-1">
-                <div className="rounded-2xl bg-cyan-50 border border-cyan-100 p-2.5">
+                <div className="rounded-2xl bg-cyan-100/60 p-2.5">
                   <div className="text-base font-black text-cyan-900">500+</div>
                   <div className="text-[10px] font-bold text-cyan-700">Delegates</div>
                 </div>
-                <div className="rounded-2xl bg-purple-50 border border-purple-100 p-2.5">
+                <div className="rounded-2xl bg-purple-100/60 p-2.5">
                   <div className="text-base font-black text-purple-900">30+</div>
                   <div className="text-[10px] font-bold text-purple-700">Speakers</div>
                 </div>
-                <div className="rounded-2xl bg-amber-50 border border-amber-100 p-2.5">
+                <div className="rounded-2xl bg-amber-100/60 p-2.5">
                   <div className="text-base font-black text-amber-900">25+</div>
                   <div className="text-[10px] font-bold text-amber-700">Sponsors</div>
                 </div>
@@ -433,7 +522,7 @@ export default function EventDetailPage() {
               <button
                 type="button"
                 onClick={() => handleOpenRegister("paid")}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white shadow-lg shadow-cyan-500/25 hover:scale-[1.02] transition-all cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer"
               >
                 <span>Register Now</span>
                 <ArrowRight className="h-4 w-4" />
@@ -444,7 +533,7 @@ export default function EventDetailPage() {
                 onClick={() => {
                   toast.success("Downloading Event Executive Brochure...");
                 }}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-slate-50 py-3 px-6 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white py-3 px-6 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <Download className="h-4 w-4 text-cyan-600" />
                 <span>Download Brochure</span>
@@ -453,34 +542,7 @@ export default function EventDetailPage() {
           </div>
         </section>
 
-        {/* ========================================================= */}
-        {/* STICKY QUICK NAVIGATION ANCHOR BAR                        */}
-        {/* ========================================================= */}
-        <nav className="sticky top-20 z-30 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200 p-2 shadow-md overflow-x-auto custom-scrollbar">
-          <div className="flex items-center gap-1 min-w-max text-xs font-bold">
-            {[
-              { id: "about", label: "Overview" },
-              { id: "agenda", label: "Agenda" },
-              { id: "speakers", label: "Speakers" },
-              { id: "pricing", label: "Pricing" },
-              { id: "sponsors", label: "Sponsors" },
-              { id: "venue", label: "Venue" },
-              { id: "faq", label: "FAQ" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => scrollToSection(tab.id)}
-                className={`px-5 py-2 rounded-xl transition-all cursor-pointer ${
-                  activeSection === tab.id
-                    ? "bg-cyan-600 text-white font-extrabold shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </nav>
+
 
         {/* ========================================================= */}
         {/* SECTION 1: ABOUT THE EVENT                                */}
@@ -488,7 +550,7 @@ export default function EventDetailPage() {
         <section id="about" className="scroll-mt-36">
           <div className="grid gap-8 lg:grid-cols-12 items-stretch">
             {/* Left Description Box */}
-            <div className="lg:col-span-7 rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+            <div className="lg:col-span-7 rounded-3xl bg-slate-50/60 p-6 sm:p-8 space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
@@ -507,20 +569,20 @@ export default function EventDetailPage() {
               </div>
 
               {/* 4 HIGHLIGHT PILLS */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2.5 rounded-2xl bg-cyan-50/80 border border-cyan-100 p-3">
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-200/50">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-white p-3">
                   <Lightbulb className="h-5 w-5 text-cyan-600 shrink-0" />
                   <span className="text-xs font-extrabold text-cyan-950">Thought Leadership Sessions</span>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-2xl bg-purple-50/80 border border-purple-100 p-3">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-white p-3">
                   <Users className="h-5 w-5 text-purple-600 shrink-0" />
                   <span className="text-xs font-extrabold text-purple-950">Industry Networking</span>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-2xl bg-amber-50/80 border border-amber-100 p-3">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-white p-3">
                   <Trophy className="h-5 w-5 text-amber-600 shrink-0" />
                   <span className="text-xs font-extrabold text-amber-950">Excellence Awards</span>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-100 p-3">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-white p-3">
                   <GraduationCap className="h-5 w-5 text-emerald-600 shrink-0" />
                   <span className="text-xs font-extrabold text-emerald-950">Interactive Discussions</span>
                 </div>
@@ -528,31 +590,19 @@ export default function EventDetailPage() {
             </div>
 
             {/* Right Media Box & Event Highlights */}
-            <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm space-y-6 flex flex-col justify-between">
-              {/* Media Thumbnail with Play Overlay */}
-              <div className="relative overflow-hidden rounded-2xl bg-slate-900 h-52 group cursor-pointer" onClick={() => setShowVideoModal(true)}>
+            <div className="lg:col-span-5 rounded-3xl bg-slate-50/60 p-6 space-y-6 flex flex-col justify-between">
+              {/* Featured Event Image Banner */}
+              <div className="relative overflow-hidden rounded-2xl bg-slate-100 h-56 sm:h-64 group">
                 <img
                   src={event.about_image || event.image || "/assets/event-cfo-BjslOJNi.jpg"}
-                  alt="Event Highlight"
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  alt={event.title || "Event Highlight"}
+                  className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors" />
-
-                <div className="absolute top-3 left-3">
-                  <span className="rounded-full bg-cyan-600 px-3 py-1 text-[10px] font-black text-white uppercase tracking-wider">
-                    Event Highlights
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold text-cyan-300 uppercase tracking-wider">
+                    Event Overview Media
                   </span>
                 </div>
-
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-14 w-14 rounded-full bg-white/90 text-cyan-600 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                    <Play className="h-6 w-6 fill-current ml-1" />
-                  </div>
-                </div>
-
-                <span className="absolute bottom-3 right-3 rounded-lg bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
-                  2:45
-                </span>
               </div>
 
               {/* Event Highlights List */}
@@ -593,7 +643,7 @@ export default function EventDetailPage() {
         {/* SECTION 2: EVENT AGENDA                                   */}
         {/* ========================================================= */}
         <section id="agenda" className="scroll-mt-36 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-3">
               <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
               <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
@@ -610,9 +660,9 @@ export default function EventDetailPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 items-stretch">
             {agendaList.map((item: any, idx: number) => (
-              <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3 flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div key={idx} className="rounded-2xl bg-slate-50/80 p-5 space-y-3 flex flex-col justify-between hover:bg-slate-100/80 transition-colors">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-blue-100/70 px-3 py-1 text-xs font-black text-blue-800">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{item.time}</span>
                   </div>
@@ -632,7 +682,7 @@ export default function EventDetailPage() {
         {/* SECTION 3: FEATURED SPEAKERS                              */}
         {/* ========================================================= */}
         <section id="speakers" className="scroll-mt-36 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-3">
               <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
               <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
@@ -647,23 +697,112 @@ export default function EventDetailPage() {
             </button>
           </div>
 
-          <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-            {speakersList.map((spk: any, idx: number) => (
-              <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center space-y-3 hover:shadow-lg transition-all group">
-                <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200">
-                  <img
-                    src={spk.photo || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400"}
-                    alt={spk.name}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {speakersList.map((spk: any, idx: number) => {
+              const profileLink = spk.linkedin_url || spk.linkedinUrl || spk.url || spk.link || "https://linkedin.com";
+              return (
+                <div
+                  key={idx}
+                  className="rounded-[28px] bg-slate-50/70 p-5 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col items-center text-center relative group overflow-hidden"
+                >
+                  {/* Top Right Linked Page Badge */}
+                  <a
+                    href={profileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`View ${spk.name}'s Profile`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-4 right-4 h-8 w-8 rounded-full bg-purple-100/70 text-purple-700 hover:bg-purple-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer z-10"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+
+                  {/* Circular Avatar Container with Hover Social Bar Overlay */}
+                  <div className="relative mb-3 pt-1">
+                    <div className="p-1 rounded-full bg-purple-100/60 group-hover:bg-purple-200/80 transition-colors duration-300">
+                      <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden relative bg-slate-100">
+                        <img
+                          src={
+                            spk.photo ||
+                            "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400"
+                          }
+                          alt={spk.name}
+                          className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Floating Social Pill Badge on Hover */}
+                    <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
+                      <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2.5 backdrop-blur-md">
+                        <a
+                          href={profileLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:scale-125 transition-transform text-white p-0.5"
+                          title="LinkedIn Profile"
+                        >
+                          <Linkedin className="h-3.5 w-3.5 fill-current" />
+                        </a>
+                        <a
+                          href={spk.url || spk.website || profileLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:scale-125 transition-transform text-white p-0.5"
+                          title="Official Link"
+                        >
+                          <Globe className="h-3.5 w-3.5" />
+                        </a>
+                        <a
+                          href={profileLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:scale-125 transition-transform text-white p-0.5"
+                          title="Linked Page"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Speaker Details */}
+                  <div className="space-y-1 mt-2 w-full">
+                    <h4 className="font-extrabold text-slate-900 text-base sm:text-lg font-display line-clamp-1 group-hover:text-purple-700 transition-colors">
+                      <a
+                        href={profileLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {spk.name}
+                      </a>
+                    </h4>
+
+                    <p className="text-xs font-bold text-violet-600 line-clamp-1">
+                      {spk.designation || "Executive Speaker"}
+                    </p>
+
+                    <div className="w-6 h-0.5 bg-slate-200/80 mx-auto my-2 rounded-full group-hover:w-10 group-hover:bg-purple-300 transition-all duration-300" />
+
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 line-clamp-1">
+                      <Building className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                      <span>{spk.company || spk.organization || "ET Media"}</span>
+                    </div>
+
+                    {(spk.location || spk.country || spk.city) && (
+                      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400 line-clamp-1 mt-0.5">
+                        <MapPin className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                        <span>{spk.location || spk.country || spk.city}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-black text-slate-900 text-sm font-display line-clamp-1">{spk.name}</h4>
-                  <p className="text-[11px] font-semibold text-slate-500 line-clamp-1 mt-0.5">{spk.designation}</p>
-                  <p className="text-[11px] font-bold text-cyan-700 line-clamp-1 mt-0.5">{spk.company || spk.organization}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -682,9 +821,9 @@ export default function EventDetailPage() {
             onSelectPlan={() => handleOpenRegister("paid")}
           />
 
-          {/* OUR SPONSORS GRID */}
-          <div id="sponsors" className="scroll-mt-36 rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          {/* OUR SPONSORS & PARTNERS AUTO-SCROLLING ROW */}
+          <div id="sponsors" className="scroll-mt-36 rounded-3xl bg-slate-50/60 p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-3">
                 <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
                 <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
@@ -696,49 +835,63 @@ export default function EventDetailPage() {
               </span>
             </div>
 
-            <div className="space-y-6 text-xs font-bold">
-              {/* Title Sponsor */}
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-extrabold tracking-widest block mb-2">Title Sponsor</span>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 w-48 flex items-center justify-center shadow-xs">
-                  <span className="text-base font-black text-slate-800">{titleSponsor.name}</span>
-                </div>
-              </div>
+            {/* AUTOMATIC CONTINUOUS HORIZONTAL MARQUEE ROW */}
+            <div className="relative w-full overflow-hidden py-2">
+              {/* Left & Right gradient masks for smooth edge fade */}
+              <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
 
-              {/* Platinum Sponsors */}
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-extrabold tracking-widest block mb-2">Platinum Sponsors</span>
-                <div className="flex flex-wrap gap-4">
-                  {platinumSponsors.map((sp, i) => (
-                    <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 w-44 flex items-center justify-center shadow-xs">
-                      <span className="text-sm font-black text-slate-800">{sp.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <div className="flex gap-5 animate-marquee w-max">
+                {[...sponsorsList, ...sponsorsList].map((sp: any, idx: number) => {
+                  const websiteUrl = sp.url || sp.website || sp.link || "https://google.com";
+                  return (
+                    <div
+                      key={idx}
+                      className="relative group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:shadow-lg hover:border-purple-300 transition-all duration-300 flex flex-col justify-between items-center w-[230px] sm:w-[260px] h-[160px] shrink-0 overflow-hidden"
+                    >
+                      {/* Top Right Partner Badge */}
+                      <span className="absolute top-3 right-3 bg-purple-100/80 text-purple-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md shadow-2xs">
+                        {sp.badge || sp.tier || "Media Partner"}
+                      </span>
 
-              {/* Gold Sponsors */}
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-extrabold tracking-widest block mb-2">Gold Sponsors</span>
-                <div className="flex flex-wrap gap-4">
-                  {goldSponsors.map((sp, i) => (
-                    <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 w-36 flex items-center justify-center shadow-xs">
-                      <span className="text-xs font-bold text-slate-700">{sp.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                      {/* Center Logo Image / Title */}
+                      <div className="h-16 w-full flex items-center justify-center p-1 my-auto">
+                        {sp.logo || sp.image ? (
+                          <img
+                            src={sp.logo || sp.image}
+                            alt={sp.name}
+                            className="max-h-12 max-w-[170px] object-contain group-hover:scale-105 transition-transform duration-300"
+                            onError={(e: any) => {
+                              e.target.onerror = null;
+                              e.target.style.display = "none";
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = "block";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <span
+                          style={{ display: sp.logo || sp.image ? "none" : "block" }}
+                          className="text-base font-black text-slate-900 font-display line-clamp-1"
+                        >
+                          {sp.name}
+                        </span>
+                      </div>
 
-              {/* Silver Sponsors */}
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-extrabold tracking-widest block mb-2">Silver Sponsors</span>
-                <div className="flex flex-wrap gap-3">
-                  {silverSponsors.map((sp, i) => (
-                    <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-3 w-32 flex items-center justify-center">
-                      <span className="text-[11px] font-semibold text-slate-600">{sp.name}</span>
+                      {/* Bottom Visit Website Link */}
+                      <a
+                        href={websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-bold text-purple-600 group-hover:text-purple-700 flex items-center gap-1.5 hover:underline cursor-pointer transition-colors mt-auto"
+                      >
+                        <span>Visit Website</span>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -750,8 +903,8 @@ export default function EventDetailPage() {
         <section id="venue" className="scroll-mt-36">
           <div className="grid gap-8 lg:grid-cols-12 items-stretch">
             {/* Left Venue Box */}
-            <div id="venue-box" className="lg:col-span-8 rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+            <div id="venue-box" className="lg:col-span-8 rounded-3xl bg-slate-50/60 p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-3">
                   <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
                   <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
@@ -771,7 +924,7 @@ export default function EventDetailPage() {
                     href={`https://maps.google.com/?q=${encodeURIComponent(`${venueText}, ${cityText}`)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-all"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-5 py-2.5 text-xs font-extrabold text-white hover:opacity-95 transition-all"
                   >
                     <span>Get Directions</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -779,7 +932,7 @@ export default function EventDetailPage() {
                 </div>
 
                 {/* Map iframe */}
-                <div className="overflow-hidden rounded-2xl border border-slate-200 h-48 bg-slate-100 relative shadow-inner">
+                <div className="overflow-hidden rounded-2xl h-48 bg-slate-100 relative">
                   <iframe
                     title="Venue Google Map"
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(`${venueText}, ${cityText}`)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
@@ -791,7 +944,7 @@ export default function EventDetailPage() {
             </div>
 
             {/* Right "Have Questions?" FAQ Box */}
-            <div id="faq" className="scroll-mt-36 lg:col-span-4 rounded-3xl bg-blue-50/80 border border-blue-100 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
+            <div id="faq" className="scroll-mt-36 lg:col-span-4 rounded-3xl bg-blue-50/60 p-6 sm:p-8 flex flex-col justify-between space-y-6">
               <div className="space-y-3">
                 <h3 className="text-xl font-black text-slate-900 font-display">Have Questions?</h3>
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
@@ -799,10 +952,10 @@ export default function EventDetailPage() {
                 </p>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-blue-200/60">
+              <div className="space-y-3 pt-4 border-t border-blue-200/50">
                 <Link
                   to="/contact"
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3 px-5 text-xs font-black text-white shadow-md hover:scale-[1.02] transition-all"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3 px-5 text-xs font-black text-white hover:opacity-95 transition-all"
                 >
                   <span>Contact Us</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -811,7 +964,7 @@ export default function EventDetailPage() {
                 <button
                   type="button"
                   onClick={() => toast.info("FAQs section coming soon. Please contact us for support!")}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white py-3 px-5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white py-3 px-5 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   <span>FAQs</span>
                 </button>
@@ -821,39 +974,7 @@ export default function EventDetailPage() {
         </section>
       </div>
 
-      {/* ========================================================= */}
-      {/* STICKY BOTTOM FLOATING BAR                                */}
-      {/* ========================================================= */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-2xl border-t border-slate-200 p-3 sm:p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
-        <div className="container-x flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h4 className="font-extrabold text-slate-900 text-xs sm:text-base truncate font-display">{event.title}</h4>
-            <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
-              📅 {dateText} • 📍 {cityText}
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleOpenRegister("paid")}
-              className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-full px-5 sm:px-7 py-2.5 text-xs sm:text-sm font-black text-white shadow-md hover:scale-105 transition-all flex items-center gap-1.5 cursor-pointer border-none"
-            >
-              <Zap className="h-4 w-4" />
-              <span>Register Now</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleOpenRegister("free")}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-full px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer border-none"
-            >
-              <Sparkles className="h-4 w-4 text-cyan-600" />
-              <span>Register Free</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* VIDEO HIGHLIGHT MODAL */}
       {showVideoModal && (
