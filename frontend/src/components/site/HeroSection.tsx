@@ -32,8 +32,22 @@ const heroPhrases = [
 
 function CounterUp({ value, active = false }: { value: string; active?: boolean }) {
   const [displayValue, setDisplayValue] = useState("0");
+  const [startCounting, setStartCounting] = useState(false);
+
+  // Sync with website preloader finish (~1.6s delay on initial load/refresh)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setStartCounting(true);
+    }, 1600);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
+    if (!startCounting) {
+      setDisplayValue("0");
+      return;
+    }
+
     const match = value.match(/[\d,]+/);
     if (!match) {
       setDisplayValue(value);
@@ -51,8 +65,8 @@ function CounterUp({ value, active = false }: { value: string; active?: boolean 
     const prefix = parts[0] || "";
     const suffix = parts[1] || "";
 
-    // Super fast 950ms counting duration
-    const duration = 950;
+    // Rapid 1200ms counting duration
+    const duration = 1200;
     let animFrameId: number;
     const startTime = performance.now();
 
@@ -60,7 +74,7 @@ function CounterUp({ value, active = false }: { value: string; active?: boolean 
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      // Ease out quad step so numbers 1, 2, 3... count rapidly and visibly
+      // Linear-to-easeOut step so numbers 1, 2, 3... count up rapidly and visibly
       const easeProgress = progress * (2 - progress);
       const currentNum = Math.floor(easeProgress * target);
 
@@ -75,7 +89,7 @@ function CounterUp({ value, active = false }: { value: string; active?: boolean 
 
     animFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrameId);
-  }, [value, active]);
+  }, [value, active, startCounting]);
 
   return <span className="tabular-nums font-black">{displayValue}</span>;
 }
