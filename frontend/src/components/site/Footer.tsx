@@ -21,7 +21,7 @@ import {
   Facebook,
 } from "lucide-react";
 import { toast } from "sonner";
-import logoFinal from "@/assets/logo-final.png";
+import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
 import { contact } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 
@@ -105,15 +105,15 @@ export function Footer() {
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">
             <Link to="/" className="inline-flex transition-transform hover:scale-105 bg-transparent">
               <img
-                src={logoFinal}
-                alt="ET Media Business Intelligence"
-                className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain bg-transparent border-none shadow-none drop-shadow-[0_4px_16px_rgba(0,174,239,0.25)] transition-all duration-300"
+                src={logoUpdated}
+                alt="Executive Talks Media Business Intelligence"
+                className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain bg-transparent border-none shadow-none drop-shadow-[0_4px_16px_rgba(0,174,239,0.25)] transition-all duration-300 rounded-md"
                 loading="lazy"
               />
             </Link>
 
             <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-sm">
-              ET Media Business Intelligence builds India's most credible C-suite leadership platforms — national conferences, executive summits, corporate awards, and industry intelligence.
+              Executive Talks Media Business Intelligence builds India's most credible C-suite leadership platforms — national conferences, executive summits, corporate awards, and industry intelligence.
             </p>
 
             {/* Social Icons Bar */}
@@ -308,7 +308,7 @@ export function Footer() {
         {/* BOTTOM COPYRIGHT BAR                                 */}
         {/* ==================================================== */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/10 text-xs text-slate-400 font-medium">
-          <p>© {new Date().getFullYear()} ET Media Business Intelligence. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Executive Talks Media Business Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link to="/contact" className="hover:text-cyan-400 transition-colors">
               Contact Desk

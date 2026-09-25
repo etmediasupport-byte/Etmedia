@@ -417,7 +417,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
           key: activeKey,
           amount: Math.round(pricing.totalPayable * 100), // Amount in paise
           currency: paymentConfig?.currency || "INR",
-          name: "ET Media Business Intelligence",
+          name: "Executive Talks Media Business Intelligence",
           description: `${formData.registrationCategory} Pass: ${currentEvent.title}`,
           image: logoUrl,
           order_id: razorpayOrderId || undefined,
@@ -1237,10 +1237,10 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
               <div className="flex flex-wrap items-center justify-between gap-4 pr-12 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="bg-transparent shrink-0">
-                    <img src={logoUrl} alt="ET Media Logo" className="h-9 w-auto object-contain" />
+                    <img src={logoUrl} alt="Executive Talks Media Logo" className="h-9 w-auto object-contain" />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-black uppercase tracking-wider font-display">ET MEDIA BUSINESS INTELLIGENCE</h2>
+                    <h2 className="text-base sm:text-lg font-black uppercase tracking-wider font-display">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h2>
                     <p className="text-xs text-emerald-100 font-semibold tracking-wide uppercase">Official Executive Delegate Pass & Confirmation</p>
                   </div>
                 </div>
@@ -1368,7 +1368,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
             {/* STICKY FOOTER ACTION BAR */}
             <div className="flex-none border-t border-slate-200 p-4 sm:p-5 bg-slate-50 flex items-center justify-between gap-4">
               <span className="text-xs text-slate-500 hidden sm:inline-block font-mono">
-                ET Media Business Intelligence Executive Committee
+                Executive Talks Media Business Intelligence Executive Committee
               </span>
 
               <div className="flex items-center gap-3 w-full sm:w-auto ml-auto">

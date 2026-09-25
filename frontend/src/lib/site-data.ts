@@ -22,7 +22,7 @@ export const contact = {
   phones: ["+91 91002 66777", "+91 94930 87788"],
   emails: ["contact@etmedia.in", "registration@etmedia.in"],
   address: [
-    "ET Media Business Intelligence",
+    "Executive Talks Media Business Intelligence",
     "Unit No-1012, 10th Floor",
     "Manjeera Trinity Corporate",
     "JNTU-Hitech Road, KPHB",

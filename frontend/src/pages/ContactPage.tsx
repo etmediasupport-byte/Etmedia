@@ -162,7 +162,7 @@ export default function ContactPage() {
       {/* Hero Section */}
       <PageHero
         crumb="Contact Us"
-        title="Connect With ET Media"
+        title="Connect With Executive Talks Media"
         subtitle="Whether you wish to sponsor, attend, or feature in Executive Talks Magazine, our executive relations team is at your service."
         image={images.heroNetworking}
       />
@@ -423,7 +423,7 @@ export default function ContactPage() {
                     <CheckCircle2 className="mx-auto h-14 w-14 text-cyan-600" />
                     <h3 className="mt-4 text-2xl font-extrabold font-display">Message Sent!</h3>
                     <p className="mt-2 text-xs text-slate-600 max-w-md mx-auto leading-relaxed font-medium">
-                      Thank you for contacting ET Media Business Intelligence. Your enquiry has been dispatched directly to our executive team.
+                      Thank you for contacting Executive Talks Media Business Intelligence. Your enquiry has been dispatched directly to our executive team.
                     </p>
                     <button
                       onClick={() => setSubmitted(false)}
@@ -561,7 +561,7 @@ export default function ContactPage() {
                   <span>Connect Across Platforms</span>
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Follow ET Media Business Intelligence for live summit announcements, C-suite interviews, and industry intelligence reports.
+                  Follow Executive Talks Media Business Intelligence for live summit announcements, C-suite interviews, and industry intelligence reports.
                 </p>
 
                 {/* SOCIAL ICONS GRID */}
@@ -630,7 +630,7 @@ export default function ContactPage() {
                   Corporate Location
                 </span>
                 <h2 className="text-2xl font-extrabold font-display text-slate-900 dark:text-white">
-                  Visit ET Media Headquarters
+                  Visit Executive Talks Media Headquarters
                 </h2>
               </div>
               <a
@@ -648,7 +648,7 @@ export default function ContactPage() {
           <Reveal>
             <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-slate-100 dark:bg-slate-900">
               <iframe
-                title="ET Media Business Intelligence Headquarters Map"
+                title="Executive Talks Media Business Intelligence Headquarters Map"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3805.281144085444!2d78.38685717596001!3d17.493976399710305!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb91f42d2077e5%3A0xbceb03b22b64d1f2!2sManjeera%20Trinity%20Corporate!5e0!3m2!1sen!2sin!4v1710300000000!5m2!1sen!2sin"
                 width="100%"
                 height="450"

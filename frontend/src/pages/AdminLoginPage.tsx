@@ -82,10 +82,10 @@ export default function AdminLoginPage() {
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-transparent">
-              <img src={logo} alt="ET Media Business Intelligence" className="h-9 w-auto object-contain" />
+              <img src={logo} alt="Executive Talks Media Business Intelligence" className="h-9 w-auto object-contain" />
             </div>
             <div>
-              <span className="block text-sm font-black tracking-wider text-white font-display">ET Media</span>
+              <span className="block text-sm font-black tracking-wider text-white font-display">Executive Talks Media</span>
               <span className="block text-[9px] font-extrabold uppercase tracking-widest text-cyan-400">
                 Business Intelligence
               </span>
@@ -176,7 +176,7 @@ export default function AdminLoginPage() {
             {/* Header Logo & Title */}
             <div className="text-center space-y-2">
               <div className="inline-flex items-center justify-center bg-transparent mb-2">
-                <img src={logo} alt="ET Media" className="h-10 w-auto object-contain" />
+                <img src={logo} alt="Executive Talks Media" className="h-10 w-auto object-contain" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-display">
                 Welcome Back
@@ -295,7 +295,7 @@ export default function AdminLoginPage() {
 
         {/* Bottom Quote Note */}
         <div className="text-center text-xs text-slate-500 font-medium">
-          "Connecting Ideas. Creating Opportunities." — <strong className="text-slate-800 font-extrabold">ET Media</strong>
+          "Connecting Ideas. Creating Opportunities." — <strong className="text-slate-800 font-extrabold">Executive Talks Media</strong>
         </div>
       </div>
     </div>

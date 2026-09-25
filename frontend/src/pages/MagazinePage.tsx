@@ -394,7 +394,7 @@ export default function MagazinePage() {
                       className="rounded border-slate-700 text-cyan-500 focus:ring-cyan-500 h-3.5 w-3.5 cursor-pointer"
                     />
                     <label htmlFor="newsletterAgree" className="text-[11px] text-slate-400 cursor-pointer font-medium">
-                      I agree to receive publication updates from ET Media
+                      I agree to receive publication updates from Executive Talks Media
                     </label>
                   </div>
                 </form>

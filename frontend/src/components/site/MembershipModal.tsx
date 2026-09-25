@@ -291,7 +291,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-cyan-700 bg-cyan-100 border border-cyan-300 px-2.5 py-0.5 rounded-full">
-                      ET Media Business Intelligence
+                      Executive Talks Media Business Intelligence
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 font-display mt-1">
@@ -333,7 +333,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                     Membership Application Received!
                   </h3>
                   <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Dear <strong className="text-slate-900">{submittedData.fullName}</strong>, thank you for applying for <strong className="text-cyan-700">{MEMBERSHIP_TIERS.find(t => t.id === submittedData.selectedTier)?.title || "Executive Membership"}</strong> at ET Media.
+                    Dear <strong className="text-slate-900">{submittedData.fullName}</strong>, thank you for applying for <strong className="text-cyan-700">{MEMBERSHIP_TIERS.find(t => t.id === submittedData.selectedTier)?.title || "Executive Membership"}</strong> at Executive Talks Media.
                   </p>
                 </div>
 
@@ -422,7 +422,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                             Executive Contact & Corporate Identity
                           </h3>
                           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-                            Provide your official business credentials for verification by the ET Media Advisory Desk.
+                            Provide your official business credentials for verification by the Executive Talks Media Advisory Desk.
                           </p>
                         </div>
 
@@ -718,7 +718,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                             className="mt-0.5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 h-4 w-4 cursor-pointer"
                           />
                           <label htmlFor="agreeTerms" className="text-xs text-slate-700 leading-relaxed cursor-pointer font-medium">
-                            I confirm that the details provided are accurate. I authorize ET Media Business Intelligence to contact me regarding executive membership privileges and event invitations.
+                            I confirm that the details provided are accurate. I authorize Executive Talks Media Business Intelligence to contact me regarding executive membership privileges and event invitations.
                           </label>
                         </div>
                       </motion.div>

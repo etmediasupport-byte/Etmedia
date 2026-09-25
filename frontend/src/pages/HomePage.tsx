@@ -221,7 +221,7 @@ function EventNetwork() {
       <div className="container-x relative z-10">
         <SectionHeading
           kicker="Platform Formats"
-          title="ET Media Event Network"
+          title="Executive Talks Media Event Network"
           description="Four signature conference and event formats engineered to connect decision makers with high-value commercial outcomes."
           align="left"
         />
@@ -258,20 +258,20 @@ function AboutSnapshot() {
       <FloatingShapes />
       <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
         <Reveal>
-          <ImageZoomCard src={images.aboutOffice} alt="ET Media Executive Office" className="aspect-[4/3] rounded-4xl shadow-2xl">
+          <ImageZoomCard src={images.aboutOffice} alt="Executive Talks Media Executive Office" className="aspect-[4/3] rounded-4xl shadow-2xl">
             <div className="gradient-soft absolute inset-0 pointer-events-none" />
           </ImageZoomCard>
         </Reveal>
         <Reveal delay={0.1}>
           <span className="text-brand-blue text-xs font-bold tracking-[0.24em] uppercase font-btn">
-            About ET Media
+            About Executive Talks Media
           </span>
           <h2 className="mt-4 text-3xl font-bold font-display sm:text-5xl leading-tight">
             Building India's Premier Corporate Platforms
           </h2>
           <div className="text-muted-foreground mt-6 space-y-4 leading-relaxed text-base sm:text-lg">
             <p>
-              ET Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
+              Executive Talks Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
             </p>
             <p>
               From CFO leadership summits to national HR excellence awards and GCC expansion conclaves, our events connect more than 50,000 corporate delegates each year.
@@ -356,8 +356,8 @@ function WhyEtMedia() {
       <div className="container-x relative z-10">
         <SectionHeading
           kicker="Why Choose Us"
-          title={<span className="sm:whitespace-nowrap">Why Enterprises Partner With ET Media</span>}
-          description="Four core pillars that set ET Media Business Intelligence apart in corporate event curation."
+          title={<span className="sm:whitespace-nowrap">Why Enterprises Partner With Executive Talks Media</span>}
+          description="Four core pillars that set Executive Talks Media Business Intelligence apart in corporate event curation."
           className="max-w-full"
         />
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -614,7 +614,7 @@ function CollaboratorsMarquee() {
           to="/partner"
           className="inline-flex items-center gap-2 text-xs font-bold text-cyan-700 hover:text-cyan-600 transition-colors underline-offset-4 hover:underline"
         >
-          <span>Become an Official ET Media Sponsor & Strategic Partner</span>
+          <span>Become an Official Executive Talks Media Sponsor & Strategic Partner</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -710,7 +710,7 @@ function TestimonialsSection() {
         <SectionHeading
           kicker="Testimonials"
           title="What Industry Leaders Say"
-          description="Hear from C-Suite executives who participate in ET Media platforms."
+          description="Hear from C-Suite executives who participate in Executive Talks Media platforms."
         />
 
         <div className="mt-16 relative max-w-4xl mx-auto">
@@ -1125,8 +1125,8 @@ export default function HomePage() {
   return (
     <>
       <SEOHead
-        title="ET Media Business Intelligence | India's Premier CXO Leadership Summit Platform"
-        description="ET Media Business Intelligence bridges C-Suite leaders, Global Capability Centers, and enterprise growth opportunities across India."
+        title="Executive Talks Media Business Intelligence | India's Premier CXO Leadership Summit Platform"
+        description="Executive Talks Media Business Intelligence bridges C-Suite leaders, Global Capability Centers, and enterprise growth opportunities across India."
         keywords="CFO Summit, HR Excellence Awards, Enterprise AI Conclave, CXO Conferences, Business Intelligence India"
       />
       {/* 1. Hero Carousel */}

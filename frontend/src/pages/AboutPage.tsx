@@ -117,7 +117,7 @@ export default function AboutPage() {
     <>
       <PageHero
         crumb="About Us"
-        title="About ET Media Business Intelligence"
+        title="About Executive Talks Media Business Intelligence"
         subtitle="A corporate media and conference house building the platforms where Indian business leadership meets."
         image={images.heroLeadership}
       />
@@ -132,7 +132,7 @@ export default function AboutPage() {
                   <ImageZoomCard
                     key={i}
                     src={src}
-                    alt="ET Media events and workspaces"
+                    alt="Executive Talks Media events and workspaces"
                     className={`h-52 w-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none ${i % 3 === 0 ? "mt-8" : ""}`}
                   />
                 ),
@@ -148,7 +148,7 @@ export default function AboutPage() {
             </h2>
             <div className="text-muted-foreground mt-6 space-y-4 leading-relaxed text-base sm:text-lg">
               <p>
-                ET Media Business Intelligence was founded on a simple observation: India's most
+                Executive Talks Media Business Intelligence was founded on a simple observation: India's most
                 valuable business insight rarely leaves the room it is spoken in. We built a company
                 to change that — designing{" "}
                 <strong className="text-foreground">leadership conferences</strong>,{" "}

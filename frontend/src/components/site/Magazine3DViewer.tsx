@@ -237,7 +237,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     if (navigator.share) {
       navigator.share({
         title: magazine.title,
-        text: `Read ${magazine.title} on ET Media Business Intelligence!`,
+        text: `Read ${magazine.title} on Executive Talks Media Business Intelligence!`,
         url: shareUrl,
       }).catch(() => {});
     } else {
@@ -279,7 +279,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
     { title: "Innovation Stories: Tech Pioneers & Enterprise Cloud", spread: 5, page: 10 },
     { title: "Partner Spotlight: Global Tech & GCC Alliances", spread: 6, page: 12 },
     { title: "Events & Flagship Conclaves Retrospective", spread: 7, page: 14 },
-    { title: "Back Cover & ET Media Network Directory", spread: Math.max(0, totalSpreads - 1), page: totalPages },
+    { title: "Back Cover & Executive Talks Media Network Directory", spread: Math.max(0, totalSpreads - 1), page: totalPages },
   ];
 
   // Calculate current reading percentage
@@ -317,7 +317,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
               </div>
 
               <h2 className="text-2xl font-extrabold tracking-tight text-white font-display sm:text-3xl">
-                ET MEDIA <span className="text-[#D4AF37]">EXECUTIVE TALKS</span>
+                EXECUTIVE TALKS MEDIA <span className="text-[#D4AF37]">BUSINESS INTELLIGENCE</span>
               </h2>
               <p className="mt-1 text-xs font-mono tracking-widest text-slate-400 uppercase">
                 {magazine.title} · {magazine.issue}
@@ -750,7 +750,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                       </p>
                       <p className="text-xs text-[#D4AF37] font-mono font-bold">{magazine.issue}</p>
                       <p className="text-[10px] text-slate-400 max-w-xs mx-auto leading-relaxed font-sans">
-                        Official C-Suite Business Publication by ET Media Business Intelligence.
+                        Official C-Suite Business Publication by Executive Talks Media Business Intelligence.
                       </p>
                     </div>
                   </div>

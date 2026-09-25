@@ -27,7 +27,7 @@ export function StatisticsSection() {
       <div className="container-x relative z-10">
         <SectionHeading
           kicker="Impact & Reach"
-          title="ET Media By The Numbers"
+          title="Executive Talks Media By The Numbers"
           description="Quantifying our executive network, conference reach, and corporate partnerships across India and global hubs."
         />
 

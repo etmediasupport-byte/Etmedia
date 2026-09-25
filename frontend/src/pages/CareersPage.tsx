@@ -406,13 +406,13 @@ export default function CareersPage() {
               {/* Left Column: Heading & CTA */}
               <div className="lg:col-span-5 space-y-4 text-left">
                 <div className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400 font-display">
-                  WHY JOIN ET MEDIA
+                  WHY JOIN EXECUTIVE TALKS MEDIA
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display leading-tight">
                   Make an Impact with Us
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed font-sans">
-                  Join ET Media and be part of a team that brings ideas to life, connects C-suite leaders, and shapes corporate summit ecosystems across India.
+                  Join Executive Talks Media and be part of a team that brings ideas to life, connects C-suite leaders, and shapes corporate summit ecosystems across India.
                 </p>
                 <div className="pt-2">
                   <button
@@ -535,7 +535,7 @@ export default function CareersPage() {
                 <h4 className="text-base font-bold text-white font-display">Get Hired</h4>
               </div>
               <p className="text-xs text-slate-400 font-medium leading-relaxed font-sans">
-                Join the ET Media team
+                Join the Executive Talks Media team
               </p>
             </div>
           </div>
@@ -901,7 +901,7 @@ export default function CareersPage() {
               </h3>
 
               <p className="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-                Thank you for applying to <strong className="text-white">ET Media Business Intelligence</strong>. Our talent team will review your resume and contact you if your profile matches the role requirements.
+                Thank you for applying to <strong className="text-white">Executive Talks Media Business Intelligence</strong>. Our talent team will review your resume and contact you if your profile matches the role requirements.
               </p>
 
               <button

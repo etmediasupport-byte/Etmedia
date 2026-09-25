@@ -20,7 +20,7 @@ import {
   Phone,
   Crown,
 } from "lucide-react";
-import logoFinal from "@/assets/logo-final.png";
+import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
@@ -178,16 +178,16 @@ export function Navbar() {
           )}
         </AnimatePresence>
         <nav className="container-x flex items-center justify-between gap-2 lg:gap-3 xl:gap-5">
-          {/* LEFT: ET Media Logo */}
+          {/* LEFT: Executive Talks Media Logo */}
           <Link
             to="/"
             className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.04]"
             onClick={handleNavClick}
           >
             <img
-              src={logoFinal}
-              alt="ET Media"
-              className="h-10 sm:h-13 lg:h-15 xl:h-16 w-auto object-contain bg-transparent border-none shadow-none filter drop-shadow-[0_2px_10px_rgba(0,174,239,0.2)] transition-all duration-300"
+              src={logoUpdated}
+              alt="Executive Talks Media"
+              className="h-10 sm:h-13 lg:h-15 xl:h-16 w-auto object-contain bg-transparent border-none shadow-none filter drop-shadow-[0_2px_10px_rgba(0,174,239,0.2)] transition-all duration-300 rounded-md"
             />
           </Link>
 
@@ -236,7 +236,7 @@ export function Navbar() {
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-cyan-400" />
                         <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 font-display">
-                          ET Media Business Intelligence Conferences
+                          Executive Talks Media Business Intelligence Conferences
                         </span>
                       </div>
                       <Link

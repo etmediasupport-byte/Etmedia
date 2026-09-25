@@ -181,7 +181,7 @@ export default function DelegateRegistrationPage() {
               <div className="hidden sm:flex flex-col items-end shrink-0">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                   <ShieldCheck className="h-5 w-5 text-cyan-600" />
-                  ET Media Verified
+                  Executive Talks Media Verified
                 </span>
                 <span className="text-[10px] text-slate-500 font-mono mt-0.5 font-medium">CMS Synchronized</span>
               </div>

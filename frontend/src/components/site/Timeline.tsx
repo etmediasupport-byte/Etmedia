@@ -13,7 +13,7 @@ interface Milestone {
 const milestones: Milestone[] = [
   {
     year: "2021",
-    title: "Foundation of ET Media Hub",
+    title: "Foundation of Executive Talks Media Hub",
     description: "Launched in Hyderabad to bring C-suite leaders and enterprise decision-makers onto a single strategic platform.",
     icon: Rocket,
     tag: "Inception",

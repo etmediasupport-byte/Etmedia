@@ -538,7 +538,7 @@ export default function PartnerWithUsPage() {
               Partnership Benefits
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 font-display">
-              Why Partner With ET Media Business Intelligence?
+              Why Partner With Executive Talks Media Business Intelligence?
             </h2>
             <p className="mt-4 text-slate-400 text-sm sm:text-base">
               Tailored sponsorship and strategic engagement tiers engineered for maximum brand resonance and high-value lead acquisition.
@@ -727,7 +727,7 @@ export default function PartnerWithUsPage() {
                     Application Submitted Successfully
                   </h3>
                   <p className="text-xs text-cyan-400 font-semibold">
-                    ET Media Business Intelligence
+                    Executive Talks Media Business Intelligence
                   </p>
                 </div>
               </div>
@@ -736,7 +736,7 @@ export default function PartnerWithUsPage() {
               <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans bg-slate-950/70 p-5 rounded-2xl border border-slate-800">
                 <p>Dear <strong className="text-white">{submittedPartnerName || "Partner"}</strong>,</p>
                 <p>
-                  Thank you for expressing your interest in partnering with ET Media Business Intelligence.
+                  Thank you for expressing your interest in partnering with Executive Talks Media Business Intelligence.
                 </p>
                 <p className="text-cyan-300 font-medium">
                   Our team will get in touch with you shortly.
@@ -749,7 +749,7 @@ export default function PartnerWithUsPage() {
                 </p>
                 <div className="pt-3 border-t border-slate-800 text-slate-400 space-y-1">
                   <p className="font-bold text-white">Regards,</p>
-                  <p className="font-semibold text-slate-200">ET Media Business Intelligence</p>
+                  <p className="font-semibold text-slate-200">Executive Talks Media Business Intelligence</p>
                   <p>
                     <a
                       href="mailto:partner.support@etmedia.in"

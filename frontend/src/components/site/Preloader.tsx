@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import logoFinal from "@/assets/logo-final.png";
+import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
 import { Sparkles } from "lucide-react";
 
 export function Preloader() {
@@ -67,9 +67,9 @@ export function Preloader() {
               className="relative z-10 flex items-center justify-center p-3 bg-transparent"
             >
               <img
-                src={logoFinal}
-                alt="ET Media"
-                className="h-16 sm:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_0_25px_rgba(0,174,239,0.5)]"
+                src={logoUpdated}
+                alt="Executive Talks Media"
+                className="h-16 sm:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_0_25px_rgba(0,174,239,0.5)] rounded-lg"
               />
             </motion.div>
           </div>
@@ -84,7 +84,7 @@ export function Preloader() {
             {/* Brand Title */}
             <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold uppercase tracking-[0.25em] text-cyan-400 font-display">
               <Sparkles className="h-4 w-4 text-cyan-400 animate-spin" />
-              <span>ET Media</span>
+              <span>Executive Talks Media</span>
             </div>
 
             {/* Subtitle */}

@@ -108,7 +108,7 @@ export default function VerifyPassPage() {
           <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-12 text-center space-y-4 backdrop-blur-2xl">
             <div className="mx-auto h-12 w-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-500 animate-spin" />
             <h2 className="text-xl font-bold font-display text-white">Verifying Registration Pass...</h2>
-            <p className="text-xs text-slate-400">Communicating with ET Media Business Intelligence Verification Database</p>
+            <p className="text-xs text-slate-400">Communicating with Executive Talks Media Business Intelligence Verification Database</p>
           </div>
         )}
 
@@ -137,10 +137,10 @@ export default function VerifyPassPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="bg-transparent shrink-0">
-                    <img src={logo} alt="ET Media Logo" className="h-10 w-auto object-contain" />
+                    <img src={logo} alt="Executive Talks Media Logo" className="h-10 w-auto object-contain" />
                   </div>
                   <div>
-                    <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider font-display">ET MEDIA BUSINESS INTELLIGENCE</h1>
+                    <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider font-display">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
                     <p className="text-xs text-cyan-200 font-semibold tracking-wide uppercase">Official Executive Delegate Pass & Confirmation</p>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function VerifyPassPage() {
 
               {/* FOOTER VERIFICATION NOTICE */}
               <div className="border-t border-slate-800 pt-6 text-center space-y-2 text-xs text-slate-400">
-                <p className="font-semibold text-slate-300">ET Media Business Intelligence Executive Committee</p>
+                <p className="font-semibold text-slate-300">Executive Talks Media Business Intelligence Executive Committee</p>
                 <p>Support Contact: <a href="mailto:registration@etmedia.in" className="text-cyan-400 hover:underline">registration@etmedia.in</a> | Website: <a href="https://www.etmedia.in" className="text-cyan-400 hover:underline">www.etmedia.in</a></p>
               </div>
 

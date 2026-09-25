@@ -130,7 +130,7 @@ export default function EventDetailPage() {
   const shareEvent = () => {
     if (navigator.share) {
       navigator.share({
-        title: event?.title || "ET Media Event",
+        title: event?.title || "Executive Talks Media Event",
         text: event?.description || "",
         url: window.location.href,
       });
@@ -304,7 +304,7 @@ export default function EventDetailPage() {
   if (!agendaList || agendaList.length === 0) {
     agendaList = [
       { time: "09:00 AM", title: "Registration & Networking Tea", description: "Welcome kit distribution & morning networking" },
-      { time: "10:00 AM", title: "Inauguration & Welcome Address", description: "Opening remarks by ET Media & keynote address" },
+      { time: "10:00 AM", title: "Inauguration & Welcome Address", description: "Opening remarks by Executive Talks Media & keynote address" },
       { time: "11:00 AM", title: "Keynote Session: The Future of Work", description: "Exploring AI, automation & human-centric strategy" },
       { time: "12:30 PM", title: "Panel Discussion: Talent in the AI Era", description: "CXO insights on upskilling & retention" },
       { time: "02:00 PM", title: "Networking Lunch", description: "Curated 5-star networking executive lunch" },
@@ -581,7 +581,7 @@ function getValidImageUrl(url?: string): string {
 
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                   {event.about_content ||
-                    `The ${event.title} is a flagship summit organized by ET Media Hub that brings together HR leaders, industry experts, and thought influencers to explore the future of work, people strategies, and organizational transformation.`}
+                    `The ${event.title} is a flagship summit organized by Executive Talks Media that brings together HR leaders, industry experts, and thought influencers to explore the future of work, people strategies, and organizational transformation.`}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                   Through keynote sessions, panel discussions, awards, and high-level networking opportunities, this summit aims to inspire, educate, and empower leaders to build more resilient, innovative, and people-centric organizations.
@@ -810,7 +810,7 @@ function getValidImageUrl(url?: string): string {
 
                     <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 line-clamp-1">
                       <Building className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                      <span>{spk.company || spk.organization || "ET Media"}</span>
+                      <span>{spk.company || spk.organization || "Executive Talks Media"}</span>
                     </div>
 
                     {(spk.location || spk.country || spk.city) && (

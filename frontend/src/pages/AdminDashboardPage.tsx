@@ -439,9 +439,9 @@ export default function AdminDashboardPage() {
   const [activeSeoPage, setActiveSeoPage] = useState<string>("home");
   const [seoForm, setSeoForm] = useState<SeoSettingItem>({
     page_key: "home",
-    title: "ET Media Hub | India's Premier B2B Executive Summits",
+    title: "Executive Talks Media Hub | India's Premier B2B Executive Summits",
     description: "Discover premier executive leadership conclaves, CFO summits, tech forums, and CXO intelligence across India.",
-    keywords: "ET Media, CFO Summit, Business Intelligence, Leadership Forums, India",
+    keywords: "Executive Talks Media, CFO Summit, Business Intelligence, Leadership Forums, India",
     og_image: "/assets/hero-banner.jpg",
   });
   const [seoSaving, setSeoSaving] = useState(false);
@@ -459,11 +459,11 @@ export default function AdminDashboardPage() {
 
   // Website Settings State
   const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
-    site_name: "ET Media Hub",
+    site_name: "Executive Talks Media Hub",
     support_email: "partner.support@etmedia.in",
     support_phone: "+91 98765 43210",
     whatsapp_number: "+91 98765 43210",
-    office_address: "ET Media Business Intelligence, Cyber City, Hyderabad, India",
+    office_address: "Executive Talks Media Business Intelligence, Cyber City, Hyderabad, India",
     office_hours: "Mon - Fri: 9:00 AM - 6:00 PM IST",
     facebook_url: "https://facebook.com/etmediahub",
     twitter_url: "https://twitter.com/etmediahub",
@@ -1134,9 +1134,9 @@ export default function AdminDashboardPage() {
     } else {
       setSeoForm({
         page_key: pageKey,
-        title: `${pageKey.charAt(0).toUpperCase() + pageKey.slice(1)} | ET Media Hub`,
-        description: `Official ${pageKey} page of ET Media Business Intelligence - India's premier B2B executive summits & leadership forums.`,
-        keywords: "ET Media, Business Intelligence, Leadership Summits, CXO Forums, India",
+        title: `${pageKey.charAt(0).toUpperCase() + pageKey.slice(1)} | Executive Talks Media Hub`,
+        description: `Official ${pageKey} page of Executive Talks Media Business Intelligence - India's premier B2B executive summits & leadership forums.`,
+        keywords: "Executive Talks Media, Business Intelligence, Leadership Summits, CXO Forums, India",
         og_image: "/assets/hero-banner.jpg",
       });
     }
