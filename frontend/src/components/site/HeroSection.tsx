@@ -30,6 +30,52 @@ const heroPhrases = [
   },
 ];
 
+function CounterUp({ value }: { value: string }) {
+  const [displayValue, setDisplayValue] = useState("0");
+
+  useEffect(() => {
+    const match = value.match(/[\d,]+/);
+    if (!match) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const rawNumStr = match[0].replace(/,/g, "");
+    const target = parseInt(rawNumStr, 10);
+    if (isNaN(target)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const parts = value.split(match[0]);
+    const prefix = parts[0] || "";
+    const suffix = parts[1] || "";
+
+    const duration = 1800; // 1.8 seconds counting duration
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Cubic ease-out
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const currentNum = Math.floor(easeProgress * target);
+
+      setDisplayValue(`${prefix}${currentNum.toLocaleString()}${suffix}`);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(value);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value]);
+
+  return <span>{displayValue}</span>;
+}
+
 export function HeroSection() {
   const [activeStatIndex, setActiveStatIndex] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -39,7 +85,7 @@ export function HeroSection() {
 
   // Dynamic hero stats loaded from database settings
   const [heroStats, setHeroStats] = useState({
-    hero_stat_1_value: "100+",
+    hero_stat_1_value: "101+",
     hero_stat_1_label: "Events Hosted",
     hero_stat_2_value: "50,000+",
     hero_stat_2_label: "Delegates Connected",
@@ -74,10 +120,11 @@ export function HeroSection() {
     {
       id: "stat_1",
       icon: Calendar,
-      value: heroStats.hero_stat_1_value || "100+",
+      value: heroStats.hero_stat_1_value || "101+",
       label: heroStats.hero_stat_1_label || "Events Hosted",
       color: "text-cyan-400 bg-cyan-950/70 border-cyan-500/40",
-      activeBorder: "border-cyan-400/90 bg-cyan-950/50 shadow-[0_0_25px_rgba(0,174,239,0.35)]",
+      activeBorder: "border-cyan-400/90 bg-gradient-to-r from-cyan-950/80 via-zinc-900 to-cyan-950/50 shadow-[0_0_30px_rgba(0,174,239,0.4)]",
+      pulseGlow: "bg-cyan-500/20",
     },
     {
       id: "stat_2",
@@ -85,7 +132,8 @@ export function HeroSection() {
       value: heroStats.hero_stat_2_value || "50,000+",
       label: heroStats.hero_stat_2_label || "Delegates Connected",
       color: "text-purple-400 bg-purple-950/70 border-purple-500/40",
-      activeBorder: "border-purple-400/90 bg-purple-950/50 shadow-[0_0_25px_rgba(168,85,247,0.35)]",
+      activeBorder: "border-purple-400/90 bg-gradient-to-r from-purple-950/80 via-zinc-900 to-purple-950/50 shadow-[0_0_30px_rgba(168,85,247,0.4)]",
+      pulseGlow: "bg-purple-500/20",
     },
     {
       id: "stat_3",
@@ -93,7 +141,8 @@ export function HeroSection() {
       value: heroStats.hero_stat_3_value || "500+",
       label: heroStats.hero_stat_3_label || "Industry Partners",
       color: "text-blue-400 bg-blue-950/70 border-blue-500/40",
-      activeBorder: "border-blue-400/90 bg-blue-950/50 shadow-[0_0_25px_rgba(59,130,246,0.35)]",
+      activeBorder: "border-blue-400/90 bg-gradient-to-r from-blue-950/80 via-zinc-900 to-blue-950/50 shadow-[0_0_30px_rgba(59,130,246,0.4)]",
+      pulseGlow: "bg-blue-500/20",
     },
     {
       id: "stat_4",
@@ -101,7 +150,8 @@ export function HeroSection() {
       value: heroStats.hero_stat_4_value || "8+",
       label: heroStats.hero_stat_4_label || "Countries",
       color: "text-emerald-400 bg-emerald-950/70 border-emerald-500/40",
-      activeBorder: "border-emerald-400/90 bg-emerald-950/50 shadow-[0_0_25px_rgba(16,185,129,0.35)]",
+      activeBorder: "border-emerald-400/90 bg-gradient-to-r from-emerald-950/80 via-zinc-900 to-emerald-950/50 shadow-[0_0_30px_rgba(16,185,129,0.4)]",
+      pulseGlow: "bg-emerald-500/20",
     },
   ];
 
@@ -113,9 +163,6 @@ export function HeroSection() {
     }, 3500);
     return () => clearInterval(timer);
   }, [isPaused, statsList.length]);
-
-  // Auto-rotate stats highlight active index
-  // (No scrollIntoView needed as all items fit inside grid layout without scrollbars)
 
   // Auto-rotate text transition phrases every 4.5s
   useEffect(() => {
@@ -274,47 +321,64 @@ export function HeroSection() {
 
         {/* BOTTOM FLOATING AUTO-SCROLLING STATS CARD BAR */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          initial={{ opacity: 0, y: 30, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/85 p-2.5 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl overflow-hidden"
+          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/90 p-2.5 sm:p-4 shadow-[0_25px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden group/stats"
         >
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 overflow-hidden">
+          {/* Ambient Inner Glow Beam */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-blue-500/10 blur-xl opacity-50 group-hover/stats:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-3 overflow-hidden">
             
             {/* CAROUSEL COUNTER STATISTICS GRID CONTAINER */}
             <div
               ref={scrollContainerRef}
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 flex-1 no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden overflow-hidden py-1 px-0.5"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 flex-1 no-scrollbar scrollbar-none [&::-webkit-scrollbar]:hidden overflow-hidden py-1 px-0.5"
             >
               {statsList.map((st, idx) => {
                 const IconComp = st.icon;
                 const isActive = idx === activeStatIndex;
                 return (
-                  <div
+                  <motion.div
                     key={st.id}
                     ref={(el) => { cardRefs.current[idx] = el; }}
                     onClick={() => setActiveStatIndex(idx)}
-                    className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
+                    whileHover={{ scale: 1.035, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    className={`relative w-full flex items-center gap-2.5 sm:gap-3.5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-500 cursor-pointer select-none overflow-hidden ${
                       isActive
-                        ? `${st.activeBorder} scale-[1.02] z-10`
-                        : "bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-800/70 opacity-80 hover:opacity-100"
+                        ? `${st.activeBorder} scale-[1.02] z-10 shadow-lg`
+                        : "bg-zinc-900/70 border-zinc-800/80 hover:bg-zinc-800/80 hover:border-zinc-700 opacity-85 hover:opacity-100"
                     }`}
                   >
-                    <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border ${st.color}`}>
-                      <IconComp className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+                    {/* Active Pulsing Backdrop Aura */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeHeroStatGlow"
+                        className={`absolute inset-0 ${st.pulseGlow} pointer-events-none blur-md`}
+                        transition={{ duration: 0.4 }}
+                      />
+                    )}
+
+                    <div className={`relative flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border ${st.color} transition-transform duration-300 ${isActive ? "scale-110 shadow-md" : ""}`}>
+                      <IconComp className={`h-5 w-5 sm:h-5.5 sm:w-5.5 ${isActive ? "animate-pulse" : ""}`} />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-lg sm:text-2xl font-black font-display text-white leading-tight tracking-tight">
-                        {st.value}
+                    
+                    <div className="relative min-w-0 flex-1">
+                      <div className="text-xl sm:text-2xl xl:text-3xl font-black font-display text-white leading-none tracking-tight flex items-center gap-0.5">
+                        <CounterUp value={st.value} />
                       </div>
-                      <div className="text-[10px] sm:text-[11px] font-extrabold text-slate-300 mt-0.5 truncate uppercase tracking-wider">
+                      <div className="text-[10px] sm:text-[11px] font-extrabold text-slate-300 mt-1 truncate uppercase tracking-wider">
                         {st.label}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

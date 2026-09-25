@@ -147,22 +147,22 @@ export function Navbar() {
 
   const navLinkStyle = (isActive: boolean) =>
     cn(
-      "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-200 hover:text-cyan-400",
-      "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-400 after:to-purple-500 after:transition-transform after:duration-300 hover:after:scale-x-100",
-      isActive && "text-cyan-400 font-extrabold after:scale-x-100"
+      "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-bold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-800 hover:text-cyan-600",
+      "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-500 after:to-purple-600 after:transition-transform after:duration-300 hover:after:scale-x-100",
+      isActive && "text-cyan-600 font-extrabold after:scale-x-100"
     );
 
   return (
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-500",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm",
           isLoading
-            ? "bg-black border-b border-cyan-500/50 shadow-[0_4px_30px_rgba(0,174,239,0.35)] animate-navbar-loading"
-            : "bg-black border-b border-zinc-800",
+            ? "border-b-cyan-500 shadow-[0_4px_25px_rgba(0,174,239,0.25)] animate-navbar-loading"
+            : "border-slate-200/90",
           scrolled
-            ? "py-2.5 shadow-lg shadow-black/80"
-            : "py-3 shadow-md shadow-black/40"
+            ? "py-2.5 shadow-md shadow-slate-200/60"
+            : "py-3 shadow-xs"
         )}
       >
         {/* Animated Scanning Beam on Loading State */}
@@ -230,19 +230,19 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.96 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[34rem] mt-2 rounded-3xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl backdrop-blur-2xl text-slate-100 z-50"
+                    className="absolute top-full left-1/2 -translate-x-1/2 w-[34rem] mt-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl backdrop-blur-2xl text-slate-900 z-50"
                   >
-                    <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-cyan-400" />
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 font-display">
+                        <Sparkles className="h-4 w-4 text-cyan-600" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-600 font-display">
                           Executive Talks Media Business Intelligence Conferences
                         </span>
                       </div>
                       <Link
                         to="/events"
                         onClick={handleNavClick}
-                        className="text-xs font-bold text-cyan-400 hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-cyan-600 hover:underline flex items-center gap-1"
                       >
                         All Events <ArrowRight className="h-3 w-3" />
                       </Link>
@@ -254,17 +254,17 @@ export function Navbar() {
                           key={cat.to}
                           to={cat.to}
                           onClick={handleNavClick}
-                          className="group flex flex-col p-3 rounded-2xl border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
+                          className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
                               <cat.icon className="h-4 w-4" />
                             </span>
-                            <span className="text-sm font-bold font-btn text-slate-100 group-hover:text-cyan-400 transition-colors">
+                            <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
                               {cat.title}
                             </span>
                           </div>
-                          <p className="mt-2 text-xs text-slate-400 leading-snug">
+                          <p className="mt-2 text-xs text-slate-500 leading-snug">
                             {cat.desc}
                           </p>
                         </Link>
@@ -290,11 +290,11 @@ export function Navbar() {
                 window.dispatchEvent(new CustomEvent("open-membership-modal"));
               }}
               className={cn(
-                "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-semibold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-200 hover:text-cyan-400 bg-transparent border-none",
-                "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-amber-400 after:to-cyan-400 after:transition-transform after:duration-300 hover:after:scale-x-100 inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-extrabold"
+                "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-bold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-800 hover:text-cyan-600 bg-transparent border-none",
+                "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-amber-500 after:to-cyan-500 after:transition-transform after:duration-300 hover:after:scale-x-100 inline-flex items-center gap-1.5 text-amber-600 hover:text-amber-700 font-extrabold"
               )}
             >
-              <Crown className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+              <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
               <span>Membership</span>
             </button>
 
@@ -329,7 +329,7 @@ export function Navbar() {
               type="button"
               aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="p-2 sm:p-2.5 rounded-full border border-zinc-800 bg-zinc-900 text-slate-200 hover:bg-zinc-800 hover:text-white lg:hidden cursor-pointer transition-colors"
+              className="p-2 sm:p-2.5 rounded-full border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:text-black lg:hidden cursor-pointer transition-colors"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -346,7 +346,7 @@ export function Navbar() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="container-x overflow-hidden lg:hidden"
             >
-              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/95 p-4 text-slate-100 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
+              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
                 {[
                   { to: "/", label: "Home" },
                   { to: "/about", label: "About" },
@@ -365,13 +365,13 @@ export function Navbar() {
                         setMobileMenuOpen(false);
                         window.dispatchEvent(new CustomEvent("open-membership-modal"));
                       }}
-                      className="w-full text-left block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-amber-300 hover:bg-zinc-900 hover:text-amber-200 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-between"
+                      className="w-full text-left block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-amber-600 hover:bg-slate-100 hover:text-amber-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-between"
                     >
                       <span className="flex items-center gap-2">
-                        <Crown className="h-4 w-4 text-amber-400" />
+                        <Crown className="h-4 w-4 text-amber-500" />
                         <span>Membership</span>
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                         Apply Now
                       </span>
                     </button>
@@ -380,7 +380,7 @@ export function Navbar() {
                       key={item.label}
                       to={item.to!}
                       onClick={handleNavClick}
-                      className="block rounded-2xl px-4 py-2.5 text-sm font-semibold font-btn text-slate-200 hover:bg-zinc-900 hover:text-cyan-400 transition-colors"
+                      className="block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-slate-800 hover:bg-slate-100 hover:text-cyan-600 transition-colors"
                     >
                       {item.label}
                     </Link>
