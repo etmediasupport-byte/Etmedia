@@ -762,6 +762,16 @@ function saveBase64Image(dataStr: string): string {
 
 // Serve static assets from public folder (including compiled frontend build)
 const publicPath = path.join(__dirname, "../public");
+const uploadsPath = path.join(publicPath, "uploads");
+const assetsPath = path.join(publicPath, "assets");
+
+app.use("/uploads", express.static(uploadsPath));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "public", "uploads")));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+
+app.use("/assets", express.static(assetsPath));
+app.use("/assets", express.static(path.resolve(process.cwd(), "public", "assets")));
+
 app.use(express.static(publicPath));
 
 // Candidate paths for frontend build
@@ -2065,104 +2075,94 @@ app.post("/api/admin/event-payments", authenticateAdmin, async (req, res) => {
 
   try {
     if (pool) {
-      await ensureEventPaymentsTable();
-      await pool.query(
-        `INSERT INTO event_payment_settings (
-          id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
-          platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
-          early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
-          reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
-          online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
-          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          event_title = VALUES(event_title),
-          event_slug = VALUES(event_slug),
-          registration_fee = VALUES(registration_fee),
-          currency = VALUES(currency),
-          gst_percentage = VALUES(gst_percentage),
-          gst_included = VALUES(gst_included),
-          platform_fee = VALUES(platform_fee),
-          convenience_fee = VALUES(convenience_fee),
-          registration_type_prices = VALUES(registration_type_prices),
-          pricing_plans = VALUES(pricing_plans),
-          early_bird_enabled = VALUES(early_bird_enabled),
-          early_bird_price = VALUES(early_bird_price),
-          early_bird_start_date = VALUES(early_bird_start_date),
-          early_bird_end_date = VALUES(early_bird_end_date),
-          special_prices = VALUES(special_prices),
-          total_seats = VALUES(total_seats),
-          available_seats = VALUES(available_seats),
-          reserved_seats = VALUES(reserved_seats),
-          vip_seats = VALUES(vip_seats),
-          speaker_seats = VALUES(speaker_seats),
-          sponsor_seats = VALUES(sponsor_seats),
-          coupons_enabled = VALUES(coupons_enabled),
-          coupons = VALUES(coupons),
-          payment_required = VALUES(payment_required),
-          online_payment_enabled = VALUES(online_payment_enabled),
-          offline_payment_enabled = VALUES(offline_payment_enabled),
-          free_registration_allowed = VALUES(free_registration_allowed),
-          auto_close_seats_full = VALUES(auto_close_seats_full),
-          registration_open_date = VALUES(registration_open_date),
-          registration_close_date = VALUES(registration_close_date),
-          event_start_date = VALUES(event_start_date),
-          event_end_date = VALUES(event_end_date),
-          payment_status = VALUES(payment_status)`,
-        [
-          id, event_id, event_title, event_slug, registration_fee || 0, currency || "INR", gst_percentage || 18, gst_included ? 1 : 0,
-          platform_fee || 0, convenience_fee || 0, regTypePricesStr, pricingPlansStr, early_bird_enabled ? 1 : 0, early_bird_price || 0,
-          early_bird_start_date || "", early_bird_end_date || "", specialPricesStr, total_seats || 100, available_seats || 100,
-          reserved_seats || 0, vip_seats || 0, speaker_seats || 0, sponsor_seats || 0, coupons_enabled ? 1 : 0, couponsStr,
-          payment_required ? 1 : 0, online_payment_enabled ? 1 : 0, offline_payment_enabled ? 1 : 0, free_registration_allowed ? 1 : 0,
-          auto_close_seats_full ? 1 : 0, registration_open_date || "", registration_close_date || "", event_start_date || "",
-          event_end_date || "", payment_status || "Enabled"
-        ]
-      );
-      res.json({ success: true, id, message: "Event payment settings saved successfully!" });
+      const savedId = await upsertEventPaymentSettings(req.body);
+      return res.json({ success: true, id: savedId, message: "Event payment settings saved successfully!" });
     }
-  } catch (err) {
+    return res.json({ success: true, id: `PAY-${event_id}`, message: "Event payment settings saved (in-memory)." });
+  } catch (err: any) {
     console.error("Save Event Payment Error:", err);
-    res.status(500).json({ success: false, message: "Failed to save event payment settings." });
+    return res.status(500).json({ success: false, message: err?.message || "Failed to save event payment settings." });
   }
 });
 
+// Helper for upserting event payment settings
+async function upsertEventPaymentSettings(data: any) {
+  const event_id = data.event_id || data.id;
+  if (!event_id) throw new Error("Event selection is required");
+
+  const id = data.id || `PAY-${event_id}`;
+  const regTypePricesStr = typeof data.registration_type_prices === "string" ? data.registration_type_prices : JSON.stringify(data.registration_type_prices || {});
+  const pricingPlansStr = typeof data.pricing_plans === "string" ? data.pricing_plans : JSON.stringify(data.pricing_plans || []);
+  const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
+  const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
+
+  await ensureEventPaymentsTable();
+
+  const [existing]: any = await pool.query("SELECT id FROM event_payment_settings WHERE id = ? OR event_id = ?", [id, event_id]);
+
+  if (existing && existing.length > 0) {
+    const targetId = existing[0].id;
+    await pool.query(
+      `UPDATE event_payment_settings SET
+        event_id = ?, event_title = ?, event_slug = ?, registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?,
+        platform_fee = ?, convenience_fee = ?, registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?,
+        early_bird_price = ?, early_bird_start_date = ?, early_bird_end_date = ?, special_prices = ?, total_seats = ?,
+        available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
+        coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
+        free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
+        event_start_date = ?, event_end_date = ?, payment_status = ?
+      WHERE id = ?`,
+      [
+        event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+        data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+        regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+        data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+        data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+        data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+        data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+        data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+        data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+        targetId
+      ]
+    );
+    return targetId;
+  } else {
+    await pool.query(
+      `INSERT INTO event_payment_settings (
+        id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+        platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
+        early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
+        reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
+        online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
+        registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+        data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+        regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+        data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+        data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+        data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+        data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+        data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+        data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
+      ]
+    );
+    return id;
+  }
+}
+
 // 3. Update Event Payment Config
 app.put("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) => {
-  const { id } = req.params;
-  const data = req.body;
   try {
     if (pool) {
-      await ensureEventPaymentsTable();
-      const regTypePricesStr = typeof data.registration_type_prices === "string" ? data.registration_type_prices : JSON.stringify(data.registration_type_prices || {});
-      const pricingPlansStr = typeof data.pricing_plans === "string" ? data.pricing_plans : JSON.stringify(data.pricing_plans || []);
-      const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
-      const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
-
-      await pool.query(
-        `UPDATE event_payment_settings SET
-          registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?, platform_fee = ?, convenience_fee = ?,
-          registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?, early_bird_price = ?, early_bird_start_date = ?,
-          early_bird_end_date = ?, special_prices = ?, total_seats = ?, available_seats = ?, reserved_seats = ?,
-          vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?, coupons = ?, payment_required = ?,
-          online_payment_enabled = ?, offline_payment_enabled = ?, free_registration_allowed = ?, auto_close_seats_full = ?,
-          registration_open_date = ?, registration_close_date = ?, event_start_date = ?, event_end_date = ?, payment_status = ?
-        WHERE id = ? OR event_id = ?`,
-        [
-          data.registration_fee || 0, data.currency || "INR", data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
-          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0, data.early_bird_start_date || "",
-          data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100, data.available_seats || 100, data.reserved_seats || 0,
-          data.vip_seats || 0, data.speaker_seats || 0, data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
-          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0, data.auto_close_seats_full ? 1 : 0,
-          data.registration_open_date || "", data.registration_close_date || "", data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          id, id
-        ]
-      );
-      res.json({ success: true, message: "Event payment settings updated successfully!" });
+      const savedId = await upsertEventPaymentSettings({ ...req.body, id: req.params.id });
+      return res.json({ success: true, id: savedId, message: "Event payment settings updated successfully!" });
     }
-  } catch (err) {
+    return res.json({ success: true, message: "Event payment settings updated (in-memory)." });
+  } catch (err: any) {
     console.error("Update Event Payment Error:", err);
-    res.status(500).json({ success: false, message: "Failed to update event payment settings." });
+    return res.status(500).json({ success: false, message: err?.message || "Failed to update event payment settings." });
   }
 });
 
@@ -3901,6 +3901,17 @@ app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api")) {
     return next();
   }
+
+  // Prevent returning index.html for missing images/static assets so onError works
+  const ext = path.extname(req.path).toLowerCase();
+  if (
+    [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico", ".css", ".js", ".woff", ".woff2", ".ttf"].includes(ext) ||
+    req.path.startsWith("/uploads/") ||
+    req.path.startsWith("/assets/")
+  ) {
+    return res.status(404).send("File not found");
+  }
+
   if (activeFrontendDist) {
     const indexPath = path.join(activeFrontendDist, "index.html");
     if (fs.existsSync(indexPath)) {

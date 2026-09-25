@@ -3,6 +3,20 @@ import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap } from "lucide-react"
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 
+function getValidImageUrl(url?: string): string {
+  if (!url || typeof url !== "string" || !url.trim()) {
+    return "/assets/event-cfo-BjslOJNi.jpg";
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  if (!trimmed.startsWith("/")) {
+    return `/${trimmed}`;
+  }
+  return trimmed;
+}
+
 export function EventCard({ event, onRegister }: { event: any; onRegister?: (event: any, mode?: "paid" | "free") => void }) {
   let parsedLocations: any[] = [];
   try {
@@ -32,6 +46,8 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
     }
   };
 
+  const imageSrc = getValidImageUrl(event.image || event.about_image || event.photo);
+
   return (
     <MouseTiltCard className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none h-full flex flex-col justify-between border border-slate-200/80 dark:border-slate-800/90 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/70 dark:from-slate-900/95 dark:via-slate-900 dark:to-slate-950/90 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
       {/* Top Right Atmospheric Glow */}
@@ -41,11 +57,13 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
         {/* Banner Image Container */}
         <div className="relative h-44 sm:h-48 md:h-52 w-full overflow-hidden shrink-0">
           <img
-            src={event.image || "/assets/event-cfo-BjslOJNi.jpg"}
+            src={imageSrc}
             alt={event.title}
             loading="lazy"
-            width={800}
-            height={450}
+            onError={(e: any) => {
+              e.target.onerror = null;
+              e.target.src = "/assets/event-cfo-BjslOJNi.jpg";
+            }}
             className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-108"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />

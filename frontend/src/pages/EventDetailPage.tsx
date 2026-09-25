@@ -389,8 +389,24 @@ export default function EventDetailPage() {
     ];
   }
 
+function getValidImageUrl(url?: string): string {
+  if (!url || typeof url !== "string" || !url.trim()) {
+    return "/assets/event-cfo-BjslOJNi.jpg";
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  if (!trimmed.startsWith("/")) {
+    return `/${trimmed}`;
+  }
+  return trimmed;
+}
+
+  const heroImageSrc = getValidImageUrl(event?.image || event?.about_image);
+
   return (
-    <div className="relative min-h-screen bg-white text-slate-900 pb-32 font-sans">
+    <div className="relative min-h-screen bg-white text-slate-900 pb-32 font-sans pt-20 sm:pt-24">
       {/* ========================================================= */}
       {/* BREADCRUMBS & NAVIGATION                                  */}
       {/* ========================================================= */}
@@ -414,9 +430,13 @@ export default function EventDetailPage() {
             {/* Background Event Card Image */}
             <div className="absolute inset-0 z-0">
               <img
-                src={event.image || "/assets/event-cfo-BjslOJNi.jpg"}
+                src={heroImageSrc}
                 alt={event.title}
-                className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                onError={(e: any) => {
+                  e.target.onerror = null;
+                  e.target.src = "/assets/event-cfo-BjslOJNi.jpg";
+                }}
+                className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-700 opacity-70"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/20" />
             </div>
