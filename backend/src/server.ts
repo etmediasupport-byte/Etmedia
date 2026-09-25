@@ -877,6 +877,261 @@ const requireRole = (allowedRoles: string[]) => {
 
 // --- PUBLIC REST API ENDPOINTS ---
 
+// --- POPUP ADVERTISEMENT API ENDPOINTS ---
+
+// GET /api/popup/active - Fetch active popup settings and configured active events for site visitors
+app.get("/api/popup/active", async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, settings: null, events: [] });
+    }
+    const [settingsRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1 LIMIT 1");
+    const settings = settingsRows.length > 0 ? settingsRows[0] : null;
+
+    const [eventRows]: any = await pool.query(`
+      SELECT pe.id as popup_event_id, pe.priority, pe.active, e.*
+      FROM popup_events pe
+      JOIN events e ON pe.event_id = e.id
+      WHERE pe.active = 1
+      ORDER BY pe.priority ASC, e.created_at DESC
+    `);
+
+    res.json({
+      success: true,
+      settings,
+      events: eventRows,
+    });
+  } catch (err: any) {
+    console.error("[API] Error fetching active popup data:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/popup/settings - Fetch popup settings
+app.get("/api/popup/settings", async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, settings: {} });
+    }
+    const [rows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1 LIMIT 1");
+    res.json({ success: true, settings: rows[0] || {} });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/popup/settings - Update popup settings (Admin)
+app.put("/api/popup/settings", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) return res.status(500).json({ success: false, message: "Database not connected" });
+    const s = req.body;
+    await pool.query(`
+      UPDATE popup_settings SET
+        popup_title = ?, popup_subtitle = ?, theme_color = ?, button_color = ?,
+        background_color = ?, border_color = ?, overlay_opacity = ?, border_radius = ?,
+        animation_type = ?, position = ?, show_on_load = ?, show_after_delay = ?,
+        delay_seconds = ?, show_on_scroll = ?, scroll_percentage = ?, once_per_session = ?,
+        cookie_duration_days = ?, status = ?, popup_logo = ?, popup_banner = ?,
+        show_close_button = ?, enable_maybe_later = ?, popup_width = ?, blur_background = ?,
+        trigger_mode = ?, priority = ?, start_date = ?, end_date = ?,
+        daily_start_time = ?, daily_end_time = ?
+      WHERE id = 1
+    `, [
+      s.popup_title || 'Nominations are Open',
+      s.popup_subtitle || '',
+      s.theme_color || '#D4AF37',
+      s.button_color || '#D4AF37',
+      s.background_color || '#0B0F19',
+      s.border_color || 'rgba(212,175,55,0.3)',
+      s.overlay_opacity ?? 80,
+      s.border_radius ?? 28,
+      s.animation_type || 'scale_fade',
+      s.position || 'center',
+      s.show_on_load ? 1 : 0,
+      s.show_after_delay ? 1 : 0,
+      s.delay_seconds ?? 5,
+      s.show_on_scroll ? 1 : 0,
+      s.scroll_percentage ?? 40,
+      s.once_per_session ? 1 : 0,
+      s.cookie_duration_days ?? 1,
+      s.status || 'active',
+      s.popup_logo || '',
+      s.popup_banner || '',
+      s.show_close_button !== undefined ? (s.show_close_button ? 1 : 0) : 1,
+      s.enable_maybe_later !== undefined ? (s.enable_maybe_later ? 1 : 0) : 1,
+      s.popup_width || 'max-w-2xl',
+      s.blur_background !== undefined ? (s.blur_background ? 1 : 0) : 1,
+      s.trigger_mode || 'all',
+      s.priority || 'high',
+      s.start_date || '',
+      s.end_date || '',
+      s.daily_start_time || '',
+      s.daily_end_time || ''
+    ]);
+
+    const [updatedRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1 LIMIT 1");
+    const updatedSettings = updatedRows[0];
+    io.emit("popup_settings_updated", updatedSettings);
+
+    res.json({ success: true, message: "Popup settings updated successfully", settings: updatedSettings });
+  } catch (err: any) {
+    console.error("[API] Error updating popup settings:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/popup/events - List all popup events with full event details
+app.get("/api/popup/events", async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, events: [] });
+    const [rows]: any = await pool.query(`
+      SELECT pe.id as popup_event_id, pe.event_id, pe.priority, pe.active, e.*
+      FROM popup_events pe
+      JOIN events e ON pe.event_id = e.id
+      ORDER BY pe.priority ASC
+    `);
+    res.json({ success: true, events: rows });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/popup/events - Batch save / update selected active popup events (Admin)
+app.post("/api/popup/events", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) return res.status(500).json({ success: false, message: "Database not connected" });
+    const { selected_event_ids } = req.body; // Array of event_id strings
+    if (!Array.isArray(selected_event_ids)) {
+      return res.status(400).json({ success: false, message: "selected_event_ids must be an array of event IDs" });
+    }
+
+    // Clear existing popup_events mapping and insert new ones
+    await pool.query("DELETE FROM popup_events");
+    let priority = 1;
+    for (const eid of selected_event_ids) {
+      await pool.query(
+        "INSERT INTO popup_events (event_id, priority, active) VALUES (?, ?, 1)",
+        [eid, priority++]
+      );
+    }
+
+    const [rows]: any = await pool.query(`
+      SELECT pe.id as popup_event_id, pe.event_id, pe.priority, pe.active, e.*
+      FROM popup_events pe
+      JOIN events e ON pe.event_id = e.id
+      ORDER BY pe.priority ASC
+    `);
+
+    io.emit("popup_events_updated", rows);
+    res.json({ success: true, message: "Popup active events updated successfully", events: rows });
+  } catch (err: any) {
+    console.error("[API] Error updating popup events:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/popup/events/:id - Delete / remove single popup event mapping
+app.delete("/api/popup/events/:id", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) return res.status(500).json({ success: false, message: "Database not connected" });
+    const { id } = req.params;
+    await pool.query("DELETE FROM popup_events WHERE id = ? OR event_id = ?", [id, id]);
+    res.json({ success: true, message: "Popup event removed" });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Analytics Tracking Endpoints
+app.post("/api/popup/view", async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true });
+    const { event_id, session_id } = req.body;
+    const ip = req.ip || req.headers["x-forwarded-for"] || "127.0.0.1";
+    await pool.query(
+      "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'view', ?, ?)",
+      [event_id || "ALL", session_id || "ANON", Array.isArray(ip) ? ip[0] : ip]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post("/api/popup/click", async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true });
+    const { event_id, session_id } = req.body;
+    const ip = req.ip || req.headers["x-forwarded-for"] || "127.0.0.1";
+    await pool.query(
+      "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'click', ?, ?)",
+      [event_id || "ALL", session_id || "ANON", Array.isArray(ip) ? ip[0] : ip]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post("/api/popup/close", async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true });
+    const { event_id, session_id } = req.body;
+    const ip = req.ip || req.headers["x-forwarded-for"] || "127.0.0.1";
+    await pool.query(
+      "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'close', ?, ?)",
+      [event_id || "ALL", session_id || "ANON", Array.isArray(ip) ? ip[0] : ip]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/popup/analytics - Fetch overall analytics metrics for Admin Dashboard
+app.get("/api/popup/analytics", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, summary: {}, eventsBreakdown: [] });
+
+    const [viewCount]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'view'");
+    const [clickCount]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'click'");
+    const [closeCount]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'close'");
+
+    const views = viewCount[0]?.count || 0;
+    const clicks = clickCount[0]?.count || 0;
+    const closes = closeCount[0]?.count || 0;
+    const ctr = views > 0 ? ((clicks / views) * 100).toFixed(2) : "0.00";
+
+    const [breakdown]: any = await pool.query(`
+      SELECT 
+        pa.event_id,
+        COALESCE(e.title, pa.event_id) as event_title,
+        SUM(CASE WHEN pa.action_type = 'view' THEN 1 ELSE 0 END) as views,
+        SUM(CASE WHEN pa.action_type = 'click' THEN 1 ELSE 0 END) as clicks,
+        SUM(CASE WHEN pa.action_type = 'close' THEN 1 ELSE 0 END) as closes
+      FROM popup_analytics pa
+      LEFT JOIN events e ON pa.event_id = e.id
+      GROUP BY pa.event_id, e.title
+    `);
+
+    res.json({
+      success: true,
+      summary: {
+        total_views: views,
+        total_clicks: clicks,
+        total_closes: closes,
+        ctr: `${ctr}%`,
+      },
+      eventsBreakdown: breakdown.map((item: any) => ({
+        ...item,
+        ctr: item.views > 0 ? `${((item.clicks / item.views) * 100).toFixed(2)}%` : "0.00%",
+      })),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 1. Health check
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -1682,6 +1937,266 @@ app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Admin Stats Error:", err);
     res.status(500).json({ success: false, message: "Failed to load dashboard stats." });
+  }
+});
+
+// ==========================================
+// POPUP ADV MANAGEMENT APIs
+// ==========================================
+
+// GET /api/popup/active - Public active popup settings & events for website visitors
+app.get("/api/popup/active", async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, active: false, settings: null, events: [] });
+    }
+
+    const [settingsRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
+    const settings = settingsRows[0] || null;
+
+    if (!settings || settings.status === "inactive") {
+      return res.json({ success: true, active: false, settings, events: [] });
+    }
+
+    // Get active selected events
+    const [eventRows]: any = await pool.query(`
+      SELECT pe.id as popup_event_id, pe.priority, pe.active, e.*
+      FROM popup_events pe
+      JOIN events e ON pe.event_id = e.id OR pe.event_id = e.slug
+      WHERE pe.active = 1
+      ORDER BY pe.priority ASC, pe.id ASC
+    `);
+
+    return res.json({
+      success: true,
+      active: true,
+      settings,
+      events: eventRows,
+    });
+  } catch (err) {
+    console.error("Popup Active Fetch Error:", err);
+    return res.status(500).json({ success: false, message: "Error fetching active popup" });
+  }
+});
+
+// GET /api/popup/settings - Admin/Public settings
+app.get("/api/popup/settings", async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, settings: {} });
+    }
+    const [rows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
+    return res.json({ success: true, settings: rows[0] || {} });
+  } catch (err) {
+    console.error("Popup Settings Error:", err);
+    return res.status(500).json({ success: false, message: "Error fetching popup settings" });
+  }
+});
+
+// PUT /api/popup/settings - Admin update settings
+app.put("/api/popup/settings", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database not connected" });
+    }
+
+    const body = req.body || {};
+    const fields = [
+      "popup_title", "popup_subtitle", "theme_color", "button_color", "background_color", "border_color",
+      "popup_logo", "popup_banner", "show_close_button", "enable_maybe_later", "popup_width", "popup_height",
+      "popup_animation", "popup_position", "border_radius", "shadow_style", "blur_background", "overlay_opacity",
+      "show_on_load", "show_after_delay", "delay_seconds", "show_on_scroll", "scroll_percentage", "trigger_rule",
+      "show_every_visit", "once_per_session", "once_per_day", "cookie_duration_days", "priority_level",
+      "start_date", "end_date", "daily_start_time", "daily_end_time", "timezone", "status"
+    ];
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    for (const f of fields) {
+      if (body[f] !== undefined) {
+        updates.push(`${f} = ?`);
+        values.push(body[f]);
+      }
+    }
+
+    if (updates.length > 0) {
+      values.push(1); // WHERE id = 1
+      await pool.query(`UPDATE popup_settings SET ${updates.join(", ")} WHERE id = ?`, values);
+    }
+
+    const [updatedRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
+    io.emit("popup_settings_updated", updatedRows[0]);
+
+    return res.json({
+      success: true,
+      message: "Popup settings updated successfully!",
+      settings: updatedRows[0],
+    });
+  } catch (err) {
+    console.error("Update Popup Settings Error:", err);
+    return res.status(500).json({ success: false, message: "Error updating popup settings" });
+  }
+});
+
+// GET /api/popup/events - Admin selected popup events
+app.get("/api/popup/events", async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, events: [] });
+    }
+    const [rows]: any = await pool.query(`
+      SELECT pe.id as popup_event_id, pe.priority, pe.active, e.*
+      FROM popup_events pe
+      JOIN events e ON pe.event_id = e.id OR pe.event_id = e.slug
+      ORDER BY pe.priority ASC, pe.id ASC
+    `);
+    return res.json({ success: true, events: rows });
+  } catch (err) {
+    console.error("Popup Events Error:", err);
+    return res.status(500).json({ success: false, message: "Error fetching popup events" });
+  }
+});
+
+// POST /api/popup/events - Save selected events for popup
+app.post("/api/popup/events", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database not connected" });
+    }
+    const { eventIds } = req.body;
+    if (!Array.isArray(eventIds)) {
+      return res.status(400).json({ success: false, message: "eventIds must be an array" });
+    }
+
+    // Clear existing and re-insert selected events
+    await pool.query("DELETE FROM popup_events");
+    for (let i = 0; i < eventIds.length; i++) {
+      await pool.query(
+        "INSERT INTO popup_events (event_id, priority, active) VALUES (?, ?, 1)",
+        [eventIds[i], i + 1]
+      );
+    }
+
+    io.emit("popup_events_updated", { count: eventIds.length });
+
+    return res.json({
+      success: true,
+      message: "Popup events saved successfully!",
+    });
+  } catch (err) {
+    console.error("Save Popup Events Error:", err);
+    return res.status(500).json({ success: false, message: "Error saving popup events" });
+  }
+});
+
+// DELETE /api/popup/events/:id - Remove event from popup
+app.delete("/api/popup/events/:id", authenticateAdmin, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database not connected" });
+    }
+    const { id } = req.params;
+    await pool.query("DELETE FROM popup_events WHERE id = ? OR event_id = ?", [id, id]);
+    io.emit("popup_events_updated", { deleted: id });
+    return res.json({ success: true, message: "Event removed from popup!" });
+  } catch (err) {
+    console.error("Delete Popup Event Error:", err);
+    return res.status(500).json({ success: false, message: "Error removing event from popup" });
+  }
+});
+
+// Analytics APIs: Track View, Click, Close
+app.post("/api/popup/view", async (req, res) => {
+  try {
+    if (pool) {
+      const { eventId, sessionId } = req.body;
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
+      await pool.query(
+        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'view', ?, ?)",
+        [eventId || "all", sessionId || "", ip]
+      );
+    }
+    return res.json({ success: true });
+  } catch (e) {
+    return res.json({ success: true });
+  }
+});
+
+app.post("/api/popup/click", async (req, res) => {
+  try {
+    if (pool) {
+      const { eventId, sessionId } = req.body;
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
+      await pool.query(
+        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'click', ?, ?)",
+        [eventId || "all", sessionId || "", ip]
+      );
+    }
+    return res.json({ success: true });
+  } catch (e) {
+    return res.json({ success: true });
+  }
+});
+
+app.post("/api/popup/close", async (req, res) => {
+  try {
+    if (pool) {
+      const { eventId, sessionId } = req.body;
+      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
+      await pool.query(
+        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'close', ?, ?)",
+        [eventId || "all", sessionId || "", ip]
+      );
+    }
+    return res.json({ success: true });
+  } catch (e) {
+    return res.json({ success: true });
+  }
+});
+
+// GET /api/popup/analytics - Aggregated Analytics for Admin Dashboard
+app.get("/api/popup/analytics", authenticateAdmin, async (_req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ success: true, analytics: { totalViews: 0, totalClicks: 0, totalCloses: 0, ctr: 0, eventBreakdown: [] } });
+    }
+
+    const [viewsRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'view'");
+    const [clicksRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'click'");
+    const [closesRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'close'");
+
+    const totalViews = viewsRow[0]?.count || 0;
+    const totalClicks = clicksRow[0]?.count || 0;
+    const totalCloses = closesRow[0]?.count || 0;
+    const ctr = totalViews > 0 ? Number(((totalClicks / totalViews) * 100).toFixed(2)) : 0;
+
+    const [eventBreakdown]: any = await pool.query(`
+      SELECT 
+        e.id, e.title, e.category,
+        SUM(CASE WHEN pa.action_type = 'view' THEN 1 ELSE 0 END) as views,
+        SUM(CASE WHEN pa.action_type = 'click' THEN 1 ELSE 0 END) as clicks,
+        SUM(CASE WHEN pa.action_type = 'close' THEN 1 ELSE 0 END) as closes
+      FROM events e
+      LEFT JOIN popup_analytics pa ON pa.event_id = e.id OR pa.event_id = e.slug
+      GROUP BY e.id, e.title, e.category
+      HAVING views > 0 OR clicks > 0
+      ORDER BY clicks DESC, views DESC
+    `);
+
+    return res.json({
+      success: true,
+      analytics: {
+        totalViews,
+        totalClicks,
+        totalCloses,
+        ctr,
+        eventBreakdown,
+      },
+    });
+  } catch (err) {
+    console.error("Popup Analytics Error:", err);
+    return res.status(500).json({ success: false, message: "Error fetching popup analytics" });
   }
 });
 

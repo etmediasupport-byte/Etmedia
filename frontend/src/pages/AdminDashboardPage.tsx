@@ -95,6 +95,7 @@ import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem, PricingPlanTier, getDefaultPricingPlans } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
+import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
 
 interface Registration {
   id: string;
@@ -249,6 +250,7 @@ type TabType =
   | "users"
   | "settings"
   | "careers"
+  | "popup"
   | "database";
 
 export default function AdminDashboardPage() {
@@ -606,6 +608,49 @@ export default function AdminDashboardPage() {
     payment_status: "Enabled",
   });
 
+  // --- POPUP ADVERTISEMENT MANAGEMENT STATE ---
+  const [popupSubTab, setPopupSubTab] = useState<"settings" | "triggers" | "events" | "analytics">("settings");
+  const [popupSettingsForm, setPopupSettingsForm] = useState<any>({
+    popup_title: "Nominations are Open",
+    popup_subtitle: "Choose the event you'd like to nominate yourself for.",
+    theme_color: "#D4AF37",
+    button_color: "#D4AF37",
+    background_color: "#0B0F19",
+    border_color: "rgba(212,175,55,0.3)",
+    overlay_opacity: 80,
+    border_radius: 28,
+    animation_type: "scale_fade",
+    position: "center",
+    show_on_load: 1,
+    show_after_delay: 1,
+    delay_seconds: 5,
+    show_on_scroll: 1,
+    scroll_percentage: 40,
+    once_per_session: 1,
+    cookie_duration_days: 1,
+    status: "active",
+    popup_logo: "",
+    popup_banner: "",
+    show_close_button: 1,
+    enable_maybe_later: 1,
+    popup_width: "max-w-2xl",
+    blur_background: 1,
+    trigger_mode: "all",
+    priority: "high",
+    start_date: "",
+    end_date: "",
+    daily_start_time: "",
+    daily_end_time: "",
+  });
+  const [selectedPopupEventIds, setSelectedPopupEventIds] = useState<string[]>([]);
+  const [popupAnalytics, setPopupAnalytics] = useState<{ summary: any; eventsBreakdown: any[] }>({
+    summary: { total_views: 0, total_clicks: 0, total_closes: 0, ctr: "0.00%" },
+    eventsBreakdown: [],
+  });
+  const [popupSettingsSaving, setPopupSettingsSaving] = useState(false);
+  const [showPopupPreviewModal, setShowPopupPreviewModal] = useState(false);
+  const [popupEventSearch, setPopupEventSearch] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
@@ -953,6 +998,38 @@ export default function AdminDashboardPage() {
         }
       } catch (e) {
         console.warn("Could not fetch visitor analytics", e);
+      }
+
+      // 18. Fetch Popup Settings & Active Mapped Events
+      try {
+        const popRes = await fetch("/api/popup/active");
+        const popData = await popRes.json();
+        if (popData.success) {
+          if (popData.settings) {
+            setPopupSettingsForm((prev: any) => ({ ...prev, ...popData.settings }));
+          }
+          if (Array.isArray(popData.events)) {
+            setSelectedPopupEventIds(popData.events.map((e: any) => e.id));
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch popup settings", e);
+      }
+
+      // 19. Fetch Popup Analytics
+      try {
+        const popAnaRes = await fetch("/api/popup/analytics", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const popAnaData = await popAnaRes.json();
+        if (popAnaData.success) {
+          setPopupAnalytics({
+            summary: popAnaData.summary || {},
+            eventsBreakdown: popAnaData.eventsBreakdown || [],
+          });
+        }
+      } catch (e) {
+        console.warn("Could not fetch popup analytics", e);
       }
     } catch (err) {
       console.error(err);
@@ -3451,6 +3528,101 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // --- POPUP MODAL CMS ACTION HANDLERS ---
+  const handleSavePopupSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPopupSettingsSaving(true);
+    try {
+      const res = await fetch("/api/popup/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(popupSettingsForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("✅ Popup settings & trigger configurations saved successfully!");
+      } else {
+        toast.error(data.message || "Failed to save popup settings.");
+      }
+    } catch (err) {
+      toast.error("Network error while updating popup settings.");
+    } finally {
+      setPopupSettingsSaving(false);
+    }
+  };
+
+  const handleSavePopupEvents = async () => {
+    setPopupSettingsSaving(true);
+    try {
+      const res = await fetch("/api/popup/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ selected_event_ids: selectedPopupEventIds }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`✅ Updated popup modal with ${selectedPopupEventIds.length} active event(s)!`);
+      } else {
+        toast.error(data.message || "Failed to update popup events.");
+      }
+    } catch (err) {
+      toast.error("Network error while updating popup events.");
+    } finally {
+      setPopupSettingsSaving(false);
+    }
+  };
+
+  const handleTogglePopupEventSelect = (eventId: string) => {
+    setSelectedPopupEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+    );
+  };
+
+  const handleSelectAllPopupEvents = () => {
+    const allIds = cmsEvents.map((e) => e.id);
+    setSelectedPopupEventIds(allIds);
+  };
+
+  const handleUnselectAllPopupEvents = () => {
+    setSelectedPopupEventIds([]);
+  };
+
+  const handleExportPopupAnalyticsCSV = () => {
+    if (!popupAnalytics.eventsBreakdown || popupAnalytics.eventsBreakdown.length === 0) {
+      toast.error("No analytics data available to export.");
+      return;
+    }
+    const headers = ["Event ID", "Event Title", "Views", "Clicks", "Closes", "CTR %"];
+    const csvRows = [
+      headers.join(","),
+      ...popupAnalytics.eventsBreakdown.map((item) =>
+        [
+          `"${item.event_id || ""}"`,
+          `"${(item.event_title || "").replace(/"/g, '""')}"`,
+          item.views || 0,
+          item.clicks || 0,
+          item.closes || 0,
+          `"${item.ctr || "0.00%"}"`,
+        ].join(",")
+      ),
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ET_Media_Popup_Analytics_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Exported Popup Analytics CSV!");
+  };
+
   const eventRegistrationsList = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
 
   const filteredRegistrations = eventRegistrationsList.filter(
@@ -3490,6 +3662,7 @@ export default function AdminDashboardPage() {
     { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
     { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
     { id: "event-payments", label: "Event Payments", icon: CreditCard, count: eventPayments.length },
+    { id: "popup", label: "Event Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
     { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
     { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
     { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
@@ -4798,6 +4971,503 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* TAB: EVENT POPUP ADVERTISEMENT MANAGEMENT MODULE */}
+          {activeTab === "popup" && (
+            <div className="space-y-6">
+              {/* TOP HEADER */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-amber-600 font-extrabold text-xs uppercase tracking-wider">
+                      <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+                      <span>Triumphs of Talent — Event Popup Modal CMS</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
+                      Event Advertisement Popup Control Center
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                      Configure dynamic event advertisement popups, trigger rules (website load, time delay, scroll percentage), active event cards selection, and real-time view/click analytics.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowPopupPreviewModal(true)}
+                      className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-5 py-3 text-xs font-black text-slate-950 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Preview Live Popup</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* SUB-MODULE NAVIGATION TABS */}
+                <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pt-6">
+                  {[
+                    { id: "settings", label: "1. Popup Settings & Aesthetics", icon: Settings },
+                    { id: "triggers", label: "2. Trigger & Schedule Rules", icon: Clock },
+                    { id: "events", label: `3. Popup Events (${selectedPopupEventIds.length} Selected)`, icon: Calendar },
+                    { id: "analytics", label: "4. Popup Analytics", icon: TrendingUp },
+                  ].map((tab) => {
+                    const IconComp = tab.icon;
+                    const isActive = popupSubTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setPopupSubTab(tab.id as any)}
+                        className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                          isActive
+                            ? "border-amber-500 text-amber-600 font-black"
+                            : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
+                        }`}
+                      >
+                        <IconComp className={`h-4 w-4 ${isActive ? "text-amber-500" : "text-slate-400"}`} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SUB-TAB 1: POPUP SETTINGS & AESTHETICS */}
+              {popupSubTab === "settings" && (
+                <form onSubmit={handleSavePopupSettings} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-amber-500" />
+                      Visual Design & Content Customization
+                    </h3>
+                    <button
+                      type="submit"
+                      disabled={popupSettingsSaving}
+                      className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      <span>{popupSettingsSaving ? "Saving..." : "Save Popup Settings"}</span>
+                    </button>
+                  </div>
+
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Popup Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={popupSettingsForm.popup_title || ""}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, popup_title: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        placeholder="e.g. Nominations are Open"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Popup Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        value={popupSettingsForm.popup_subtitle || ""}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, popup_subtitle: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        placeholder="Choose the event you'd like to nominate yourself for."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Theme / Accent Color (HEX / HSL)
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={popupSettingsForm.theme_color || "#D4AF37"}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, theme_color: e.target.value })}
+                          className="h-10 w-12 rounded-xl border border-slate-300 cursor-pointer p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={popupSettingsForm.theme_color || "#D4AF37"}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, theme_color: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Background Color
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={popupSettingsForm.background_color || "#0B0F19"}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, background_color: e.target.value })}
+                          className="h-10 w-12 rounded-xl border border-slate-300 cursor-pointer p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={popupSettingsForm.background_color || "#0B0F19"}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, background_color: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Border Radius (px)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={popupSettingsForm.border_radius ?? 28}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, border_radius: Number(e.target.value) })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Background Overlay Opacity ({popupSettingsForm.overlay_opacity ?? 80}%)
+                      </label>
+                      <input
+                        type="range"
+                        min={10}
+                        max={100}
+                        step={5}
+                        value={popupSettingsForm.overlay_opacity ?? 80}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, overlay_opacity: Number(e.target.value) })}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-2"
+                      />
+                    </div>
+                  </div>
+
+                  {/* TOGGLES ROW */}
+                  <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t border-slate-200">
+                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
+                      <span className="text-xs font-bold text-slate-800">Show Close ('X') Button</span>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(popupSettingsForm.show_close_button !== 0)}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_close_button: e.target.checked ? 1 : 0 })}
+                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
+                      <span className="text-xs font-bold text-slate-800">Enable "Maybe Later" Button</span>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(popupSettingsForm.enable_maybe_later !== 0)}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, enable_maybe_later: e.target.checked ? 1 : 0 })}
+                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
+                      <span className="text-xs font-bold text-slate-800">Blur Background Backdrop</span>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(popupSettingsForm.blur_background !== 0)}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, blur_background: e.target.checked ? 1 : 0 })}
+                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                      />
+                    </label>
+                  </div>
+                </form>
+              )}
+
+              {/* SUB-TAB 2: TRIGGER & SCHEDULE RULES */}
+              {popupSubTab === "triggers" && (
+                <form onSubmit={handleSavePopupSettings} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      Trigger Rules & Timing Settings
+                    </h3>
+                    <button
+                      type="submit"
+                      disabled={popupSettingsSaving}
+                      className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      <span>{popupSettingsSaving ? "Saving..." : "Save Trigger Rules"}</span>
+                    </button>
+                  </div>
+
+                  {/* STATUS TOGGLE */}
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-900">Popup Active Status</h4>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">Enable or disable the active popup modal globally across website.</p>
+                    </div>
+                    <select
+                      value={popupSettingsForm.status || "active"}
+                      onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, status: e.target.value })}
+                      className="rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-extrabold text-slate-900 shadow-xs focus:outline-none"
+                    >
+                      <option value="active">🟢 Active (Visible to Visitors)</option>
+                      <option value="inactive">🔴 Inactive (Disabled)</option>
+                    </select>
+                  </div>
+
+                  {/* TRIGGERS GRID */}
+                  <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-slate-900 uppercase">1. On Website Load</span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(popupSettingsForm.show_on_load)}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_on_load: e.target.checked ? 1 : 0 })}
+                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-500">Triggers immediately when visitor opens website.</p>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-slate-900 uppercase">2. After Time Delay</span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(popupSettingsForm.show_after_delay)}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_after_delay: e.target.checked ? 1 : 0 })}
+                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Delay Seconds ({popupSettingsForm.delay_seconds || 5}s)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={60}
+                          value={popupSettingsForm.delay_seconds ?? 5}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, delay_seconds: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-slate-900 uppercase">3. On Scroll Percentage</span>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(popupSettingsForm.show_on_scroll)}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_on_scroll: e.target.checked ? 1 : 0 })}
+                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Scroll Target %</label>
+                        <select
+                          value={popupSettingsForm.scroll_percentage || 40}
+                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, scroll_percentage: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-bold text-slate-900"
+                        >
+                          <option value={25}>25% Page Scroll</option>
+                          <option value={40}>40% Page Scroll (Default)</option>
+                          <option value={50}>50% Halfway Scroll</option>
+                          <option value={75}>75% Deep Scroll</option>
+                          <option value={100}>100% Page Bottom</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* FREQUENCY & COOKIE DURATION */}
+                  <div className="grid gap-6 sm:grid-cols-2 pt-4 border-t border-slate-200">
+                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">Show Once Per Session</span>
+                        <span className="text-[11px] text-slate-500 font-normal">Prevents popup from reappearing every time user navigates pages.</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(popupSettingsForm.once_per_session !== 0)}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, once_per_session: e.target.checked ? 1 : 0 })}
+                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
+                      />
+                    </label>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Cookie Dismissal Duration (Days)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={popupSettingsForm.cookie_duration_days || 1}
+                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, cookie_duration_days: Number(e.target.value) })}
+                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-bold text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* SUB-TAB 3: POPUP EVENT SELECTION */}
+              {popupSubTab === "events" && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-amber-500" />
+                        Select Active Events to Feature in Popup
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                        Selected events will automatically render inside the visitor advertisement popup carousel.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllPopupEvents}
+                        className="rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUnselectAllPopupEvents}
+                        className="rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                      >
+                        Unselect All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSavePopupEvents}
+                        disabled={popupSettingsSaving}
+                        className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 text-xs font-extrabold text-slate-950 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4" />
+                        <span>{popupSettingsSaving ? "Saving..." : "Save Selection"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* EVENT CARDS GRID WITH CHECKBOXES */}
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {cmsEvents.map((evt) => {
+                      const isSelected = selectedPopupEventIds.includes(evt.id);
+                      return (
+                        <div
+                          key={evt.id}
+                          onClick={() => handleTogglePopupEventSelect(evt.id)}
+                          className={`relative rounded-2xl border p-4 cursor-pointer transition-all ${
+                            isSelected
+                              ? "border-amber-500 bg-amber-50/20 ring-2 ring-amber-500/20 shadow-md"
+                              : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleTogglePopupEventSelect(evt.id)}
+                              className="mt-1 h-4 w-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                            />
+                            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-950 border border-slate-200">
+                              <img src={evt.image || "/assets/event-cfo-BjslOJNi.jpg"} alt={evt.title} className="h-full w-full object-cover" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider block">
+                                {evt.category || "Event"}
+                              </span>
+                              <h4 className="text-xs font-extrabold text-slate-900 truncate mt-0.5">{evt.title}</h4>
+                              <p className="text-[11px] text-slate-500 truncate mt-0.5">{evt.date || evt.city || "Pan-India"}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 4: POPUP ANALYTICS */}
+              {popupSubTab === "analytics" && (
+                <div className="space-y-6">
+                  {/* KPI SUMMARY CARDS */}
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Popup Impressions (Views)</span>
+                      <div className="mt-2 text-3xl font-black text-slate-900">{popupAnalytics.summary?.total_views || 0}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Register Clicks</span>
+                      <div className="mt-2 text-3xl font-black text-amber-600">{popupAnalytics.summary?.total_clicks || 0}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dismissals (Closes)</span>
+                      <div className="mt-2 text-3xl font-black text-slate-500">{popupAnalytics.summary?.total_closes || 0}</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Click-Through Rate (CTR)</span>
+                      <div className="mt-2 text-3xl font-black text-emerald-600">{popupAnalytics.summary?.ctr || "0.00%"}</div>
+                    </div>
+                  </div>
+
+                  {/* EVENT WISE ANALYTICS TABLE */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                      <h3 className="text-base font-extrabold text-slate-900">Event-wise Performance Analytics</h3>
+                      <button
+                        onClick={handleExportPopupAnalyticsCSV}
+                        className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Download className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
+
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                            <th className="py-3 px-4">Event Title</th>
+                            <th className="py-3 px-4">Impressions (Views)</th>
+                            <th className="py-3 px-4">Clicks</th>
+                            <th className="py-3 px-4">Closes</th>
+                            <th className="py-3 px-4 text-right">CTR %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {popupAnalytics.eventsBreakdown?.map((item: any, idx: number) => (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="py-3.5 px-4 font-bold text-slate-900">{item.event_title || item.event_id}</td>
+                              <td className="py-3.5 px-4 text-slate-700">{item.views || 0}</td>
+                              <td className="py-3.5 px-4 text-amber-600 font-bold">{item.clicks || 0}</td>
+                              <td className="py-3.5 px-4 text-slate-500">{item.closes || 0}</td>
+                              <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600">{item.ctr || "0.00%"}</td>
+                            </tr>
+                          ))}
+
+                          {(!popupAnalytics.eventsBreakdown || popupAnalytics.eventsBreakdown.length === 0) && (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-slate-400">
+                                No visitor interaction recorded for popup modal yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -12790,6 +13460,20 @@ export default function AdminDashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* LIVE POPUP PREVIEW MODAL FOR ADMIN */}
+      {showPopupPreviewModal && (
+        <EventAdvertisementPopup
+          previewMode={true}
+          onClosePreview={() => setShowPopupPreviewModal(false)}
+          customSettings={popupSettingsForm}
+          customEvents={
+            cmsEvents.filter((e) => selectedPopupEventIds.includes(e.id)).length > 0
+              ? cmsEvents.filter((e) => selectedPopupEventIds.includes(e.id))
+              : cmsEvents
+          }
+        />
       )}
     </div>
   );

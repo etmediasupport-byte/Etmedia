@@ -188,6 +188,8 @@ export async function initDatabase() {
     await ensureEventPaymentsTable();
     await seedDefaultEventPayments();
     await ensureCollectionAliases();
+    await ensurePopupTables();
+    await seedDefaultPopupData();
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -285,8 +287,91 @@ export async function initDatabase() {
       await pool.query("UPDATE admins SET password = ? WHERE email = ?", [hashedPassword, adminEmail]);
       console.log(`[MySQL] Admin password verified for: ${adminEmail}`);
     }
+
+    await ensurePopupTables();
   } catch (tableErr) {
     console.error("[MySQL] Error setting up database tables:", tableErr);
+  }
+}
+
+export async function ensurePopupTables() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS popup_settings (
+        id INT PRIMARY KEY DEFAULT 1,
+        popup_title VARCHAR(255) DEFAULT 'Nominations are Open',
+        popup_subtitle VARCHAR(255) DEFAULT 'Choose the event you would like to nominate yourself for.',
+        theme_color VARCHAR(50) DEFAULT '#06b6d4',
+        button_color VARCHAR(50) DEFAULT '#eab308',
+        background_color VARCHAR(50) DEFAULT '#0f172a',
+        border_color VARCHAR(50) DEFAULT '#334155',
+        popup_logo VARCHAR(500) DEFAULT '',
+        popup_banner VARCHAR(500) DEFAULT '',
+        show_close_button TINYINT(1) DEFAULT 1,
+        enable_maybe_later TINYINT(1) DEFAULT 1,
+        popup_width VARCHAR(50) DEFAULT '600px',
+        popup_height VARCHAR(50) DEFAULT 'auto',
+        popup_animation VARCHAR(50) DEFAULT 'scale',
+        popup_position VARCHAR(50) DEFAULT 'center',
+        border_radius VARCHAR(20) DEFAULT '28px',
+        shadow_style VARCHAR(50) DEFAULT '2xl',
+        blur_background TINYINT(1) DEFAULT 1,
+        overlay_opacity FLOAT DEFAULT 0.7,
+        show_on_load TINYINT(1) DEFAULT 1,
+        show_after_delay TINYINT(1) DEFAULT 1,
+        delay_seconds INT DEFAULT 5,
+        show_on_scroll TINYINT(1) DEFAULT 1,
+        scroll_percentage INT DEFAULT 40,
+        trigger_rule VARCHAR(50) DEFAULT 'all',
+        show_every_visit TINYINT(1) DEFAULT 0,
+        once_per_session TINYINT(1) DEFAULT 1,
+        once_per_day TINYINT(1) DEFAULT 0,
+        cookie_duration_days INT DEFAULT 1,
+        priority_level VARCHAR(20) DEFAULT 'High',
+        start_date VARCHAR(50) DEFAULT '',
+        end_date VARCHAR(50) DEFAULT '',
+        daily_start_time VARCHAR(50) DEFAULT '',
+        daily_end_time VARCHAR(50) DEFAULT '',
+        timezone VARCHAR(50) DEFAULT 'Asia/Kolkata',
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS popup_events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        event_id VARCHAR(100) NOT NULL,
+        priority INT DEFAULT 0,
+        active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS popup_analytics (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        event_id VARCHAR(100) DEFAULT 'all',
+        action_type VARCHAR(50) NOT NULL,
+        session_id VARCHAR(100) DEFAULT '',
+        ip_address VARCHAR(100) DEFAULT '',
+        viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Ensure default settings row exists
+    const [rows]: any = await pool.query("SELECT id FROM popup_settings WHERE id = 1");
+    if (rows.length === 0) {
+      await pool.query(`
+        INSERT INTO popup_settings (id, popup_title, popup_subtitle, status) 
+        VALUES (1, 'Nominations are Open', 'Choose the event you would like to nominate yourself for.', 'active');
+      `);
+      console.log("[MySQL] Seeded default popup settings!");
+    }
+  } catch (e) {
+    console.error("[MySQL] Popup tables setup error:", e);
   }
 }
 
@@ -1316,6 +1401,45 @@ export async function seedDefaultSectors() {
     }
   } catch (err) {
     console.error("[MySQL] Error seeding sectors:", err);
+  }
+}
+
+
+
+export async function seedDefaultPopupData() {
+  if (!pool) return;
+  try {
+    const [settings]: any = await pool.query("SELECT COUNT(*) as count FROM popup_settings");
+    if (settings[0]?.count === 0) {
+      await pool.query(`
+        INSERT INTO popup_settings (
+          id, popup_title, popup_subtitle, theme_color, button_color, background_color, border_color,
+          overlay_opacity, border_radius, animation_type, position, show_on_load, show_after_delay,
+          delay_seconds, show_on_scroll, scroll_percentage, once_per_session, cookie_duration_days,
+          status, show_close_button, enable_maybe_later, popup_width, blur_background, trigger_mode, priority
+        ) VALUES (
+          1, 'Nominations are Open', 'Choose the event you''d like to nominate yourself or your organization for.',
+          '#D4AF37', '#D4AF37', '#0B0F19', 'rgba(212,175,55,0.3)', 80, 28, 'scale_fade', 'center',
+          1, 1, 5, 1, 40, 1, 1, 'active', 1, 1, 'max-w-2xl', 1, 'all', 'high'
+        )
+      `);
+      console.log("[MySQL] Seeded default popup settings!");
+    }
+
+    const [pEvents]: any = await pool.query("SELECT COUNT(*) as count FROM popup_events");
+    if (pEvents[0]?.count === 0) {
+      const defaultEventIds = ["EVT-101", "EVT-102", "EVT-103"];
+      let priority = 1;
+      for (const eid of defaultEventIds) {
+        await pool.query(
+          "INSERT INTO popup_events (event_id, priority, active) VALUES (?, ?, 1)",
+          [eid, priority++]
+        );
+      }
+      console.log("[MySQL] Seeded default popup active events!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding popup data:", err);
   }
 }
 

@@ -12,6 +12,8 @@ import { events as defaultEvents, EventItem } from "@/lib/site-data";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 
+import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
+
 export function Layout() {
   const location = useLocation();
   const lenisRef = useRef<Lenis | null>(null);
@@ -119,6 +121,9 @@ export function Layout() {
         isOpen={membershipModalOpen}
         onClose={() => setMembershipModalOpen(false)}
       />
+
+      {/* Global Dynamic Premium Advertisement Popup Modal */}
+      <EventAdvertisementPopup />
     </div>
   );
 }
