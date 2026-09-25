@@ -715,9 +715,11 @@ export default function AdminDashboardPage() {
     venue_address: "",
   });
 
+  const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token") || "";
+
   const fetchDashboardData = async () => {
-    const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
-    if (!token) {
+    const activeToken = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
+    if (!activeToken) {
       navigate("/admin/login");
       return;
     }
@@ -1063,7 +1065,7 @@ export default function AdminDashboardPage() {
       socket.off("new_newsletter_subscriber", onNewSubscriber);
       socket.off("settings_updated", onSettingsUpdate);
     };
-  }, [token]);
+  }, []);
 
   // --- TESTIMONIALS CMS HANDLERS ---
   const handleSaveTestimonial = async (e: React.FormEvent) => {
