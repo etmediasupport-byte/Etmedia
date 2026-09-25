@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo-final.png";
+import logo from "@/assets/UPDATED LOGO.jpeg";
 import {
   Lock,
   Mail,
@@ -27,11 +27,7 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleQuickFill = () => {
-    setEmail("srikanth@executivetalksmedia.in");
-    setPassword("Executivetalksmedia@2026");
-    toast.info("Admin credentials pre-filled!");
-  };
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,21 +182,7 @@ export default function AdminLoginPage() {
               </p>
             </div>
 
-            {/* Default credentials quick-fill trigger */}
-            <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-3.5 text-xs flex items-center justify-between">
-              <div>
-                <span className="font-extrabold text-cyan-900 block">Default Credentials</span>
-                <span className="text-[11px] font-mono text-slate-600">srikanth@executivetalksmedia.in</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleQuickFill}
-                className="flex items-center gap-1 rounded-xl bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-cyan-700 transition-colors cursor-pointer"
-              >
-                <KeyRound className="h-3.5 w-3.5" />
-                <span>Auto-fill</span>
-              </button>
-            </div>
+
 
             <form onSubmit={handleLogin} className="space-y-4">
               {/* Email Address */}
