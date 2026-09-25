@@ -243,7 +243,7 @@ export default function AdminLoginPage() {
 
                 <button
                   type="button"
-                  onClick={handleQuickFill}
+                  onClick={() => toast.info("Please contact srikanth@executivetalksmedia.in to reset your admin password.")}
                   className="font-extrabold text-cyan-700 hover:underline cursor-pointer"
                 >
                   Forgot password?
