@@ -275,6 +275,7 @@ export default function AdminDashboardPage() {
 
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [cmsDelegates, setCmsDelegates] = useState<CmsDelegateRegistration[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
   const [eventFilter, setEventFilter] = useState<"all" | "live" | "upcoming" | "past">("all");
 
