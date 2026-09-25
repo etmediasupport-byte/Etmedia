@@ -53,7 +53,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
       {/* Top Right Atmospheric Glow */}
       <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all pointer-events-none z-10" />
 
-      <Link to={`/events/${event.slug || event.id}`} className="flex-1 flex flex-col justify-between group/card">
+      <Link to={`/events/${event.slug || event.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex flex-col justify-between group/card">
         {/* Banner Image Container */}
         <div className="relative h-44 sm:h-48 md:h-52 w-full overflow-hidden shrink-0">
           <img
