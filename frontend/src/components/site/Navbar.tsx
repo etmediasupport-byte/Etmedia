@@ -156,13 +156,11 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm",
-          isLoading
-            ? "border-b-cyan-500 shadow-[0_4px_25px_rgba(0,174,239,0.25)] animate-navbar-loading"
-            : "border-slate-200/90",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-white border-b border-slate-200 shadow-sm",
+          isLoading && "border-b-cyan-500 shadow-[0_4px_25px_rgba(0,174,239,0.25)] animate-navbar-loading",
           scrolled
-            ? "py-2.5 shadow-md shadow-slate-200/60"
-            : "py-3 shadow-xs"
+            ? "py-2 shadow-md shadow-slate-300/40"
+            : "py-2.5 shadow-xs"
         )}
       >
         {/* Animated Scanning Beam on Loading State */}
@@ -181,13 +179,13 @@ export function Navbar() {
           {/* LEFT: Executive Talks Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-transparent transition-transform hover:scale-[1.04]"
+            className="flex min-w-0 shrink-0 items-center bg-white transition-transform hover:scale-[1.03]"
             onClick={handleNavClick}
           >
             <img
               src={logoUpdated}
               alt="Executive Talks Media"
-              className="h-10 sm:h-13 lg:h-15 xl:h-16 w-auto object-contain bg-transparent border-none shadow-none filter drop-shadow-[0_2px_10px_rgba(0,174,239,0.2)] transition-all duration-300 rounded-md"
+              className="h-10 sm:h-12 lg:h-14 xl:h-15 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
             />
           </Link>
 
