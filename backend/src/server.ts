@@ -33,7 +33,7 @@ const smtpPort = Number(process.env.SMTP_PORT) || 465;
 const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
 const smtpPass = (process.env.SMTP_PASS || "ETalks@202602").trim();
 const smtpFrom = process.env.SMTP_FROM || `"ET Media Business Intelligence" <${smtpUser}>`;
-const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in").trim();
+const adminEmail = (process.env.ADMIN_EMAIL || "srikanth@executivetalksmedia.in").trim();
 const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
 const mailTransporter = nodemailer.createTransport({

@@ -275,9 +275,39 @@ export default function AdminDashboardPage() {
 
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [cmsDelegates, setCmsDelegates] = useState<CmsDelegateRegistration[]>([]);
-  const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
-  const [partnersList, setPartnersList] = useState<Collaborator[]>([]);
+  const [eventFilter, setEventFilter] = useState<"all" | "live" | "upcoming" | "past">("all");
+
+  // Helper function to check whether an event is in the past based on its scheduled date
+  const isEventPast = (evt: any): boolean => {
+    let dateStr = evt.date;
+    try {
+      let locs = typeof evt.locations === "string" ? JSON.parse(evt.locations) : evt.locations;
+      if (Array.isArray(locs) && locs[0]?.date) {
+        dateStr = locs[0].date;
+      }
+    } catch (e) {}
+
+    if (!dateStr) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate < today;
+    }
+
+    const yearMatch = dateStr.match(/\b(20\d\d)\b/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[1], 10);
+      const currentYear = new Date().getFullYear();
+      if (year < currentYear) return true;
+      if (year > currentYear) return false;
+    }
+
+    return false;
+  };
   const [partnerSubmissions, setPartnerSubmissions] = useState<any[]>([]);
   const [weeklyVisitors, setWeeklyVisitors] = useState<number>(0);
   const [partnerSubTab, setPartnerSubTab] = useState<"brands" | "leads">("brands");
@@ -3564,7 +3594,7 @@ export default function AdminDashboardPage() {
                   {adminUser?.name || "Super Admin"}
                 </p>
                 <p className="truncate text-[10px] text-slate-500 font-medium">
-                  {adminUser?.email || "etmediaworld@gmail.com"}
+                  {adminUser?.email || "srikanth@executivetalksmedia.in"}
                 </p>
               </div>
             </div>
@@ -5006,178 +5036,285 @@ export default function AdminDashboardPage() {
           )}
 
           {/* EVENTS TAB (DYNAMIC CMS) */}
-          {activeTab === "events" && (
-            <div className="space-y-6">
-              {/* Header Action Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
-                <p className="text-xs text-slate-500 font-medium">
-                  Control public upcoming event listings, publish/draft statuses, featured cards, agendas, and pricing.
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
-                    Total Summits: {cmsEvents.length}
-                  </span>
+          {activeTab === "events" && (() => {
+            const liveEventsCount = cmsEvents.filter((evt) => evt.status === "live" || evt.is_live || evt.isLive).length;
+            const upcomingEventsCount = cmsEvents.filter((evt) => !isEventPast(evt)).length;
+            const pastEventsCount = cmsEvents.filter((evt) => isEventPast(evt)).length;
+            const allEventsCount = cmsEvents.length;
+
+            const filteredCmsEvents = cmsEvents.filter((evt) => {
+              if (eventFilter === "live") return evt.status === "live" || evt.is_live || evt.isLive;
+              if (eventFilter === "upcoming") return !isEventPast(evt);
+              if (eventFilter === "past") return isEventPast(evt);
+              return true;
+            });
+
+            return (
+              <div className="space-y-6">
+                {/* Header Action Bar */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                  <p className="text-xs text-slate-500 font-medium">
+                    Control public upcoming event listings, publish/draft statuses, featured cards, agendas, and pricing.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
+                      Total Summits: {cmsEvents.length}
+                    </span>
+                    <button
+                      onClick={handleOpenAddEvent}
+                      className="flex items-center gap-2 rounded-2xl bg-cyan-600 hover:bg-cyan-700 px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 stroke-[3]" />
+                      <span>Add New Event</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter Pills Bar */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 py-1">
+                  {/* Live Pill */}
                   <button
-                    onClick={handleOpenAddEvent}
-                    className="flex items-center gap-2 rounded-2xl bg-cyan-600 hover:bg-cyan-700 px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 transition-all hover:scale-105"
+                    type="button"
+                    onClick={() => setEventFilter("live")}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      eventFilter === "live"
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/50"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100/80"
+                    }`}
                   >
-                    <Plus className="h-4 w-4 stroke-[3]" />
-                    <span>Add New Event</span>
+                    <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>Live ({liveEventsCount})</span>
+                  </button>
+
+                  {/* All Events Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setEventFilter("all")}
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      eventFilter === "all"
+                        ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    All Events ({allEventsCount})
+                  </button>
+
+                  {/* Upcoming Events Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setEventFilter("upcoming")}
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      eventFilter === "upcoming"
+                        ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    Upcoming Events ({upcomingEventsCount})
+                  </button>
+
+                  {/* Past Events Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setEventFilter("past")}
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                      eventFilter === "past"
+                        ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    Past Events ({pastEventsCount})
                   </button>
                 </div>
-              </div>
 
-              {/* Events Cards Grid */}
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {cmsEvents.map((evt) => {
-                  let parsedLocs: any[] = [];
-                  try {
-                    if (typeof evt.locations === "string") parsedLocs = JSON.parse(evt.locations);
-                    else if (Array.isArray(evt.locations)) parsedLocs = evt.locations;
-                  } catch (e) {}
+                {/* Empty State */}
+                {filteredCmsEvents.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 mb-4">
+                      <Calendar className="h-7 w-7" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900">No events found</h3>
+                    <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+                      There are no events categorized under <span className="font-semibold text-slate-700 uppercase">{eventFilter}</span> at the moment.
+                    </p>
+                    {eventFilter !== "all" && (
+                      <button
+                        onClick={() => setEventFilter("all")}
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                      >
+                        View All Events
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  /* Events Cards Grid */
+                  <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredCmsEvents.map((evt) => {
+                      let parsedLocs: any[] = [];
+                      try {
+                        if (typeof evt.locations === "string") parsedLocs = JSON.parse(evt.locations);
+                        else if (Array.isArray(evt.locations)) parsedLocs = evt.locations;
+                      } catch (e) {}
 
-                  if (!parsedLocs || parsedLocs.length === 0) {
-                    parsedLocs = [{ city: evt.city, venue: evt.venue, date: evt.date, time: evt.time }];
-                  }
+                      if (!parsedLocs || parsedLocs.length === 0) {
+                        parsedLocs = [{ city: evt.city, venue: evt.venue, date: evt.date, time: evt.time }];
+                      }
 
-                  return (
-                    <div
-                      key={evt.id || evt.slug}
-                      className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-xl min-w-0 overflow-hidden"
-                    >
-                      <div className="space-y-3 sm:space-y-4 min-w-0">
-                        {/* Image Banner & Badges */}
-                        <div className="relative h-40 sm:h-48 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                          <img
-                            src={evt.image}
-                            alt={evt.title}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-black/10" />
+                      const isPast = isEventPast(evt);
 
-                          {/* Top Badges */}
-                          <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 right-2.5 sm:right-3 flex items-center justify-between gap-1">
-                            <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-extrabold text-cyan-800 border border-cyan-500/30 backdrop-blur-md max-w-[55%] truncate shadow-xs">
-                              {evt.category}
-                            </span>
+                      return (
+                        <div
+                          key={evt.id || evt.slug}
+                          className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-3.5 sm:p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-xl min-w-0 overflow-hidden"
+                        >
+                          <div className="space-y-3 sm:space-y-4 min-w-0">
+                            {/* Image Banner & Badges */}
+                            <div className="relative h-40 sm:h-48 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                              <img
+                                src={evt.image}
+                                alt={evt.title}
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-black/10" />
+
+                              {/* Top Badges */}
+                              <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 right-2.5 sm:right-3 flex items-center justify-between gap-1">
+                                <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-extrabold text-cyan-800 border border-cyan-500/30 backdrop-blur-md max-w-[55%] truncate shadow-xs">
+                                  {evt.category}
+                                </span>
+
+                                <button
+                                  onClick={() => handleToggleFeatured(evt)}
+                                  title={evt.is_featured ? "Featured on Homepage" : "Set as Featured"}
+                                  className={`flex items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md transition-all shrink-0 ${
+                                    evt.is_featured === 1 || evt.is_featured === true
+                                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
+                                      : "bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-sm"
+                                  }`}
+                                >
+                                  <Star className={`h-3 w-3 ${evt.is_featured ? "fill-slate-950" : ""}`} />
+                                  <span>{evt.is_featured ? "Featured" : "Normal"}</span>
+                                </button>
+                              </div>
+
+                              {/* Status Overlay Badge */}
+                              <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 flex items-center gap-2 flex-wrap">
+                                <span
+                                  className={`flex items-center gap-1 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md border ${
+                                    evt.status === "published"
+                                      ? "bg-emerald-500/90 text-white border-emerald-400"
+                                      : "bg-amber-500/90 text-slate-950 border-amber-400"
+                                  }`}
+                                >
+                                  <span
+                                    className={`h-1.5 w-1.5 rounded-full ${
+                                      evt.status === "published" ? "bg-white animate-pulse" : "bg-slate-950"
+                                    }`}
+                                  />
+                                  <span className="capitalize">{evt.status || "published"}</span>
+                                </span>
+
+                                {/* Date Category Badge */}
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border backdrop-blur-md ${
+                                    isPast
+                                      ? "bg-slate-900/80 text-slate-200 border-slate-700"
+                                      : "bg-sky-500/90 text-white border-sky-400 shadow-xs"
+                                  }`}
+                                >
+                                  {isPast ? "Past Event" : "Upcoming"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Event Details */}
+                            <div className="min-w-0">
+                              <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-2 group-hover:text-cyan-700 transition-colors break-words">
+                                {evt.title}
+                              </h3>
+                              <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed break-words">
+                                {evt.description}
+                              </p>
+                            </div>
+
+                            {/* Meta List */}
+                            <div className="space-y-1.5 text-xs text-slate-700 font-medium pt-2 border-t border-slate-100">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-500">📅 Date:</span>
+                                <span className="text-slate-900 font-bold">{parsedLocs[0]?.date || evt.date}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-500">📍 Location:</span>
+                                <span className="text-slate-800 truncate max-w-[180px] font-semibold">
+                                  {parsedLocs.map((l: any) => l.city).filter(Boolean).join(", ") || evt.city}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-500">⏰ Timing:</span>
+                                <span className="text-slate-700 font-mono text-[11px]">
+                                  {parsedLocs[0]?.time || evt.time || "09:00 AM — 06:00 PM"}
+                                </span>
+                              </div>
+                              {parsedLocs.length > 1 && (
+                                <div className="mt-1 pt-1.5 border-t border-slate-100 text-[11px] text-cyan-800 font-bold flex items-center justify-between">
+                                  <span>✨ {parsedLocs.length} Locations</span>
+                                  <span className="text-slate-600 font-normal truncate max-w-[150px]">
+                                    {parsedLocs.map((l: any) => l.city).join(" • ")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Admin Action Buttons */}
+                          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => handleToggleStatus(evt)}
+                              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold border transition-all ${
+                                evt.status === "published"
+                                  ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                                  : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                              }`}
+                            >
+                              {evt.status === "published" ? (
+                                <>
+                                  <EyeOff className="h-3.5 w-3.5" />
+                                  <span>Unpublish</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span>Publish</span>
+                                </>
+                              )}
+                            </button>
 
                             <button
-                              onClick={() => handleToggleFeatured(evt)}
-                              title={evt.is_featured ? "Featured on Homepage" : "Set as Featured"}
-                              className={`flex items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md transition-all shrink-0 ${
-                                evt.is_featured === 1 || evt.is_featured === true
-                                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
-                                  : "bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-sm"
-                              }`}
+                              onClick={() => handleOpenEditEvent(evt)}
+                              className="flex items-center justify-center gap-1 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 transition-colors hover:bg-cyan-100"
                             >
-                              <Star className={`h-3 w-3 ${evt.is_featured ? "fill-slate-950" : ""}`} />
-                              <span>{evt.is_featured ? "Featured" : "Normal"}</span>
+                              <Edit3 className="h-3.5 w-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id)}
+                              className="flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100"
+                              title="Delete Event"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
-
-                          {/* Status Overlay Badge */}
-                          <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 flex items-center gap-2">
-                            <span
-                              className={`flex items-center gap-1 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md border ${
-                                evt.status === "published"
-                                  ? "bg-emerald-500/90 text-white border-emerald-400"
-                                  : "bg-amber-500/90 text-slate-950 border-amber-400"
-                              }`}
-                            >
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full ${
-                                  evt.status === "published" ? "bg-white animate-pulse" : "bg-slate-950"
-                                }`}
-                              />
-                              <span className="capitalize">{evt.status || "published"}</span>
-                            </span>
-                          </div>
                         </div>
-
-                        {/* Event Details */}
-                        <div className="min-w-0">
-                          <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-2 group-hover:text-cyan-700 transition-colors break-words">
-                            {evt.title}
-                          </h3>
-                          <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed break-words">
-                            {evt.description}
-                          </p>
-                        </div>
-
-                        {/* Meta List */}
-                        <div className="space-y-1.5 text-xs text-slate-700 font-medium pt-2 border-t border-slate-100">
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">📅 Date:</span>
-                            <span className="text-slate-900 font-bold">{parsedLocs[0]?.date || evt.date}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">📍 Location:</span>
-                            <span className="text-slate-800 truncate max-w-[180px] font-semibold">
-                              {parsedLocs.map((l: any) => l.city).filter(Boolean).join(", ") || evt.city}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">⏰ Timing:</span>
-                            <span className="text-slate-700 font-mono text-[11px]">
-                              {parsedLocs[0]?.time || evt.time || "09:00 AM — 06:00 PM"}
-                            </span>
-                          </div>
-                          {parsedLocs.length > 1 && (
-                            <div className="mt-1 pt-1.5 border-t border-slate-100 text-[11px] text-cyan-800 font-bold flex items-center justify-between">
-                              <span>✨ {parsedLocs.length} Locations</span>
-                              <span className="text-slate-600 font-normal truncate max-w-[150px]">
-                                {parsedLocs.map((l: any) => l.city).join(" • ")}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Admin Action Buttons */}
-                      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <button
-                          onClick={() => handleToggleStatus(evt)}
-                          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold border transition-all ${
-                            evt.status === "published"
-                              ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                              : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                          }`}
-                        >
-                          {evt.status === "published" ? (
-                            <>
-                              <EyeOff className="h-3.5 w-3.5" />
-                              <span>Unpublish</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>Publish</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => handleOpenEditEvent(evt)}
-                          className="flex items-center justify-center gap-1 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-800 transition-colors hover:bg-cyan-100"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                          <span>Edit</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteEvent(evt.id)}
-                          className="flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100"
-                          title="Delete Event"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
       {/* ========================================== */}
       {/* RIGHT SIDE CONTAINER DRAWER (EVENT BUILDER) */}

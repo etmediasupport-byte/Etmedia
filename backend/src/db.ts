@@ -264,15 +264,21 @@ export async function initDatabase() {
       console.log("[MySQL] Seeded default events into events table!");
     }
 
-    // Seed admin user: etmediaworld@gmail.com / ETMedia@2026
-    const adminEmail = "etmediaworld@gmail.com";
+    // Seed admin user: srikanth@executivetalksmedia.in / Executivetalksmedia@2026
+    const adminEmail = "srikanth@executivetalksmedia.in";
+    const hashedPassword = await bcrypt.hash("Executivetalksmedia@2026", 10);
+
+    // Update any legacy etmediaworld@gmail.com account
+    try {
+      await pool.query("UPDATE admins SET email = ?, password = ? WHERE email = 'etmediaworld@gmail.com'", [adminEmail, hashedPassword]);
+    } catch (e) {}
+
     const [existingAdmins]: any = await pool.query("SELECT * FROM admins WHERE email = ?", [adminEmail]);
 
-    const hashedPassword = await bcrypt.hash("ETMedia@2026", 10);
     if (existingAdmins.length === 0) {
       await pool.query(
         "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)",
-        ["ET Media Super Admin", adminEmail, hashedPassword, "super_admin"]
+        ["Executive Talks Media Admin", adminEmail, hashedPassword, "super_admin"]
       );
       console.log(`[MySQL] Admin account created: ${adminEmail}`);
     } else {

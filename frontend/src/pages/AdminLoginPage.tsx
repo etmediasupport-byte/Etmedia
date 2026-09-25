@@ -28,8 +28,8 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleQuickFill = () => {
-    setEmail("etmediaworld@gmail.com");
-    setPassword("ETMedia@2026");
+    setEmail("srikanth@executivetalksmedia.in");
+    setPassword("Executivetalksmedia@2026");
     toast.info("Admin credentials pre-filled!");
   };
 
@@ -190,7 +190,7 @@ export default function AdminLoginPage() {
             <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-3.5 text-xs flex items-center justify-between">
               <div>
                 <span className="font-extrabold text-cyan-900 block">Default Credentials</span>
-                <span className="text-[11px] font-mono text-slate-600">etmediaworld@gmail.com</span>
+                <span className="text-[11px] font-mono text-slate-600">srikanth@executivetalksmedia.in</span>
               </div>
               <button
                 type="button"
@@ -215,7 +215,7 @@ export default function AdminLoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="etmediaworld@gmail.com"
+                    placeholder="srikanth@executivetalksmedia.in"
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-11 pr-4 py-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/15 transition-all font-medium"
                   />
                 </div>
