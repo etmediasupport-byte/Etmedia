@@ -2246,27 +2246,44 @@ export default function AdminDashboardPage() {
   const handleSpeakerImgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingSpeakerImg(true);
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setSpeakerForm((prev) => ({ ...prev, photo: data.url }));
-        toast.success("Speaker photo uploaded!");
-      } else {
-        toast.error(data.message || "Upload failed.");
-      }
-    } catch (err) {
-      toast.error("Error uploading photo.");
-    } finally {
-      setUploadingSpeakerImg(false);
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be under 10MB");
+      return;
     }
+
+    setUploadingSpeakerImg(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      setSpeakerForm((prev) => ({ ...prev, photo: base64Data }));
+
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            filename: file.name,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          setSpeakerForm((prev) => ({ ...prev, photo: data.url }));
+          toast.success("Speaker photo uploaded!");
+        } else {
+          toast.success("Speaker photo loaded into preview!");
+        }
+      } catch (err) {
+        toast.success("Speaker photo loaded into preview!");
+      } finally {
+        setUploadingSpeakerImg(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveSpeakerModal = (e: React.FormEvent) => {
@@ -2323,27 +2340,44 @@ export default function AdminDashboardPage() {
   const handleSponsorLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingSponsorLogo(true);
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setSponsorForm((prev) => ({ ...prev, logo: data.url }));
-        toast.success("Sponsor logo uploaded!");
-      } else {
-        toast.error(data.message || "Upload failed.");
-      }
-    } catch (err) {
-      toast.error("Error uploading logo.");
-    } finally {
-      setUploadingSponsorLogo(false);
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be under 10MB");
+      return;
     }
+
+    setUploadingSponsorLogo(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      setSponsorForm((prev) => ({ ...prev, logo: base64Data }));
+
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            filename: file.name,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          setSponsorForm((prev) => ({ ...prev, logo: data.url }));
+          toast.success("Sponsor logo uploaded!");
+        } else {
+          toast.success("Sponsor logo loaded into preview!");
+        }
+      } catch (err) {
+        toast.success("Sponsor logo loaded into preview!");
+      } finally {
+        setUploadingSponsorLogo(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveSponsorModal = (e: React.FormEvent) => {
@@ -2466,26 +2500,37 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingGalleryImg(true);
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setGalleryForm((prev) => ({ ...prev, url: data.url }));
-        toast.success("✅ Gallery image uploaded successfully!");
-      } else {
-        toast.error(data.message || "Upload failed.");
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      setGalleryForm((prev) => ({ ...prev, url: base64Data }));
+
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            filename: file.name,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          setGalleryForm((prev) => ({ ...prev, url: data.url }));
+          toast.success("✅ Gallery image uploaded successfully!");
+        } else {
+          toast.success("Gallery image loaded into form preview!");
+        }
+      } catch (err) {
+        toast.success("Gallery image loaded into form preview!");
+      } finally {
+        setUploadingGalleryImg(false);
       }
-    } catch (err) {
-      toast.error("Network error uploading image.");
-    } finally {
-      setUploadingGalleryImg(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveGalleryModal = (e: React.FormEvent) => {
