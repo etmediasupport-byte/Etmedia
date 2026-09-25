@@ -53,7 +53,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
       {/* Top Right Atmospheric Glow */}
       <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/25 transition-all pointer-events-none z-10" />
 
-      <div onClick={(e) => handleRegisterClick(e, "free")} className="cursor-pointer flex-1 flex flex-col justify-between">
+      <Link to={`/events/${event.slug || event.id}`} className="flex-1 flex flex-col justify-between group/card">
         {/* Banner Image Container */}
         <div className="relative h-44 sm:h-48 md:h-52 w-full overflow-hidden shrink-0">
           <img
@@ -114,7 +114,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
             </span>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Card Action Footer: BOTH Register Now (Paid) and Register Free Interest Buttons */}
       <div className="p-4 sm:p-5 pt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">

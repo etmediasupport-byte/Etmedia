@@ -16,13 +16,44 @@ export default function EventsPage() {
       ? "upcoming"
       : "all";
 
-  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "past">(initialFilter);
+  const [statusFilter, setStatusFilter] = useState<"all" | "live" | "upcoming" | "past">(initialFilter as any);
   const [eventList, setEventList] = useState<EventItem[]>(defaultEvents);
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [regForm, setRegForm] = useState({ name: "", email: "", phone: "", organization: "", designation: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  // Helper function to check whether an event is in the past based on its scheduled date
+  const isEventPast = (evt: any): boolean => {
+    let dateStr = evt.date;
+    try {
+      let locs = typeof evt.locations === "string" ? JSON.parse(evt.locations) : evt.locations;
+      if (Array.isArray(locs) && locs[0]?.date) {
+        dateStr = locs[0].date;
+      }
+    } catch (e) {}
+
+    if (!dateStr) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate < today;
+    }
+
+    const yearMatch = dateStr.match(/\b(20\d\d)\b/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[1], 10);
+      const currentYear = new Date().getFullYear();
+      if (year < currentYear) return true;
+      if (year > currentYear) return false;
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     // Fetch live events list from backend if available
@@ -63,9 +94,16 @@ export default function EventsPage() {
     };
   }, []);
 
+  const liveEventsCount = eventList.filter((e) => e.status === "live" || (e as any).is_live).length;
+  const upcomingEventsCount = eventList.filter((e) => !isEventPast(e)).length;
+  const pastEventsCount = eventList.filter((e) => isEventPast(e)).length;
+  const allEventsCount = eventList.length;
+
   const filteredEvents = eventList.filter((e) => {
-    if (statusFilter === "all") return true;
-    return e.status === statusFilter;
+    if (statusFilter === "live") return e.status === "live" || (e as any).is_live;
+    if (statusFilter === "upcoming") return !isEventPast(e);
+    if (statusFilter === "past") return isEventPast(e);
+    return true;
   });
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -116,25 +154,58 @@ export default function EventsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {activeUsers !== null && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
-                <Radio className="h-3 w-3 animate-pulse" />
-                Live ({activeUsers})
-              </span>
-            )}
-            {(["all", "upcoming", "past"] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setStatusFilter(filter)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all cursor-pointer ${
-                  statusFilter === filter
-                    ? "gradient-brand text-white shadow-md"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
-                }`}
-              >
-                {filter === "all" ? "All Events" : `${filter} Events`}
-              </button>
-            ))}
+            {/* Live Filter Pill */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter("live")}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === "live"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/50"
+                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+              }`}
+            >
+              <Radio className="h-3 w-3 animate-pulse" />
+              Live ({activeUsers !== null ? activeUsers : liveEventsCount})
+            </button>
+
+            {/* All Events Pill */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === "all"
+                  ? "gradient-brand text-white shadow-md"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+              }`}
+            >
+              All Events ({allEventsCount})
+            </button>
+
+            {/* Upcoming Events Pill */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter("upcoming")}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === "upcoming"
+                  ? "gradient-brand text-white shadow-md"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+              }`}
+            >
+              Upcoming Events ({upcomingEventsCount})
+            </button>
+
+            {/* Past Events Pill */}
+            <button
+              type="button"
+              onClick={() => setStatusFilter("past")}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === "past"
+                  ? "gradient-brand text-white shadow-md"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+              }`}
+            >
+              Past Events ({pastEventsCount})
+            </button>
           </div>
         </div>
 
@@ -142,9 +213,7 @@ export default function EventsPage() {
         <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => (
             <Reveal key={event.id || event.slug} className="h-full">
-              <div onClick={() => setSelectedEvent(event)} className="h-full">
-                <EventCard event={event} />
-              </div>
+              <EventCard event={event} onRegister={(evt) => setSelectedEvent(evt)} />
             </Reveal>
           ))}
         </div>
