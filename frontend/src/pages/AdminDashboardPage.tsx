@@ -715,9 +715,8 @@ export default function AdminDashboardPage() {
     venue_address: "",
   });
 
-  const token = localStorage.getItem("etmedia_admin_token");
-
   const fetchDashboardData = async () => {
+    const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
     if (!token) {
       navigate("/admin/login");
       return;
@@ -960,13 +959,18 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("etmedia_admin_user");
-    if (!token) {
+    const currentToken = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
+    const storedUser = localStorage.getItem("etmedia_admin_user") || localStorage.getItem("et_admin_user");
+    if (!currentToken) {
       navigate("/admin/login");
       return;
     }
     if (storedUser) {
-      setAdminUser(JSON.parse(storedUser));
+      try {
+        setAdminUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.warn("Invalid admin user json in storage", e);
+      }
     }
 
     fetchDashboardData();
