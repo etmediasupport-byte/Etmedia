@@ -13,11 +13,11 @@ export function CountUpNumber({
   value,
   suffix = "",
   prefix = "",
-  duration = 2.2,
+  duration = 1.0,
   className,
 }: CountUpNumberProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const isInView = useInView(ref, { once: false, margin: "-20px" });
   const motionVal = useMotionValue(0);
   const [displayValue, setDisplayValue] = useState("0");
 
@@ -25,7 +25,7 @@ export function CountUpNumber({
     if (!isInView) return;
     const controls = animate(motionVal, value, {
       duration,
-      ease: [0.16, 1, 0.3, 1], // Smooth cubic ease-out
+      ease: "easeOut",
       onUpdate: (latest) => {
         setDisplayValue(Math.floor(latest).toLocaleString("en-IN"));
       },

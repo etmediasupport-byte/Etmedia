@@ -30,7 +30,7 @@ const heroPhrases = [
   },
 ];
 
-function CounterUp({ value }: { value: string }) {
+function CounterUp({ value, active = false }: { value: string; active?: boolean }) {
   const [displayValue, setDisplayValue] = useState("0");
 
   useEffect(() => {
@@ -51,29 +51,33 @@ function CounterUp({ value }: { value: string }) {
     const prefix = parts[0] || "";
     const suffix = parts[1] || "";
 
-    const duration = 1800; // 1.8 seconds counting duration
+    // Super fast 950ms counting duration
+    const duration = 950;
+    let animFrameId: number;
     const startTime = performance.now();
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Cubic ease-out
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      // Ease out quad step so numbers 1, 2, 3... count rapidly and visibly
+      const easeProgress = progress * (2 - progress);
       const currentNum = Math.floor(easeProgress * target);
 
       setDisplayValue(`${prefix}${currentNum.toLocaleString()}${suffix}`);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animFrameId = requestAnimationFrame(animate);
       } else {
         setDisplayValue(value);
       }
     };
 
-    requestAnimationFrame(animate);
-  }, [value]);
+    animFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animFrameId);
+  }, [value, active]);
 
-  return <span>{displayValue}</span>;
+  return <span className="tabular-nums font-black">{displayValue}</span>;
 }
 
 export function HeroSection() {
@@ -372,7 +376,7 @@ export function HeroSection() {
                     
                     <div className="relative min-w-0 flex-1">
                       <div className="text-xl sm:text-2xl xl:text-3xl font-black font-display text-white leading-none tracking-tight flex items-center gap-0.5">
-                        <CounterUp value={st.value} />
+                        <CounterUp value={st.value} active={isActive} />
                       </div>
                       <div className="text-[10px] sm:text-[11px] font-extrabold text-slate-300 mt-1 truncate uppercase tracking-wider">
                         {st.label}
