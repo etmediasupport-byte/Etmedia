@@ -48,6 +48,20 @@ interface EventItem {
   priority?: number;
 }
 
+function getValidImageUrl(url?: string): string {
+  if (!url || typeof url !== "string" || !url.trim()) {
+    return "/assets/hero-summit-ClCGVqfO.jpg";
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  if (!trimmed.startsWith("/")) {
+    return `/${trimmed}`;
+  }
+  return trimmed;
+}
+
 interface Props {
   previewMode?: boolean;
   onClosePreview?: () => void;
@@ -332,8 +346,18 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
             {/* Top Banner Image with Overlay */}
             <div className="relative h-40 sm:h-44 w-full overflow-hidden bg-slate-950">
               <img
-                src={currentEvent.image || "/assets/hero-summit-ClCGVqfO.jpg"}
-                alt={currentEvent.title}
+                src={getValidImageUrl(
+                  currentEvent.image ||
+                  (currentEvent as any).photo ||
+                  (currentEvent as any).about_image ||
+                  (currentEvent as any).banner ||
+                  settings.popup_banner
+                )}
+                alt={currentEvent.title || "Event Advertisement"}
+                onError={(e: any) => {
+                  e.target.onerror = null;
+                  e.target.src = "/assets/hero-summit-ClCGVqfO.jpg";
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/40 to-transparent" />
