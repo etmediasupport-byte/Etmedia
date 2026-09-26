@@ -2613,56 +2613,120 @@ async function upsertEventPaymentSettings(data: any) {
 
   await ensureEventPaymentsTable();
 
-  const [existing]: any = await pool.query("SELECT id FROM event_payment_settings WHERE id = ? OR event_id = ?", [id, event_id]);
+  // Safely check existing row by event_id or id
+  let existingRows: any[] = [];
+  try {
+    const [rows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE event_id = ? OR id = ?", [event_id, id]);
+    existingRows = rows || [];
+  } catch (err) {
+    try {
+      const [rows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE event_id = ?", [event_id]);
+      existingRows = rows || [];
+    } catch (e) {
+      existingRows = [];
+    }
+  }
 
-  if (existing && existing.length > 0) {
-    const targetId = existing[0].id;
-    await pool.query(
-      `UPDATE event_payment_settings SET
-        event_id = ?, event_title = ?, event_slug = ?, registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?,
-        platform_fee = ?, convenience_fee = ?, registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?,
-        early_bird_price = ?, early_bird_start_date = ?, early_bird_end_date = ?, special_prices = ?, total_seats = ?,
-        available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
-        coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
-        free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
-        event_start_date = ?, event_end_date = ?, payment_status = ?
-      WHERE id = ?`,
-      [
-        event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
-        data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
-        regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
-        data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
-        data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
-        data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
-        data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
-        data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
-        data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-        targetId
-      ]
-    );
-    return targetId;
+  if (existingRows && existingRows.length > 0) {
+    const targetKey = existingRows[0].id || existingRows[0].event_id || id;
+    const targetEventId = existingRows[0].event_id || event_id;
+
+    try {
+      await pool.query(
+        `UPDATE event_payment_settings SET
+          id = ?, event_id = ?, event_title = ?, event_slug = ?, registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?,
+          platform_fee = ?, convenience_fee = ?, registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?,
+          early_bird_price = ?, early_bird_start_date = ?, early_bird_end_date = ?, special_prices = ?, total_seats = ?,
+          available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
+          coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
+          free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
+          event_start_date = ?, event_end_date = ?, payment_status = ?
+        WHERE event_id = ? OR id = ?`,
+        [
+          id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+          data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+          data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+          data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+          data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          targetEventId, targetKey
+        ]
+      );
+    } catch (updErr) {
+      await pool.query(
+        `UPDATE event_payment_settings SET
+          event_id = ?, event_title = ?, event_slug = ?, registration_fee = ?, currency = ?, gst_percentage = ?, gst_included = ?,
+          platform_fee = ?, convenience_fee = ?, registration_type_prices = ?, pricing_plans = ?, early_bird_enabled = ?,
+          early_bird_price = ?, early_bird_start_date = ?, early_bird_end_date = ?, special_prices = ?, total_seats = ?,
+          available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
+          coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
+          free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
+          event_start_date = ?, event_end_date = ?, payment_status = ?
+        WHERE event_id = ?`,
+        [
+          event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+          data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+          data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+          data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+          data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          targetEventId
+        ]
+      );
+    }
+    return id;
   } else {
-    await pool.query(
-      `INSERT INTO event_payment_settings (
-        id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
-        platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
-        early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
-        reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
-        online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
-        registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
-        data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
-        regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
-        data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
-        data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
-        data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
-        data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
-        data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
-        data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
-      ]
-    );
+    try {
+      await pool.query(
+        `INSERT INTO event_payment_settings (
+          id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+          platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
+          early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
+          reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
+          online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
+          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+          data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+          data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+          data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+          data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
+        ]
+      );
+    } catch (insErr) {
+      await pool.query(
+        `INSERT INTO event_payment_settings (
+          event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+          platform_fee, convenience_fee, registration_type_prices, pricing_plans, early_bird_enabled, early_bird_price,
+          early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
+          reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
+          online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
+          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
+          regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
+          data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
+          data.available_seats || 100, data.reserved_seats || 0, data.vip_seats || 0, data.speaker_seats || 0,
+          data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
+          data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
+          data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
+        ]
+      );
+    }
     return id;
   }
 }
@@ -2704,13 +2768,13 @@ app.post("/api/admin/event-payments/bulk", authenticateAdmin, async (req, res) =
   try {
     if (pool) {
       if (action === "enable") {
-        await pool.query("UPDATE event_payment_settings SET payment_status = 'Enabled' WHERE id IN (?)", [ids]);
+        await pool.query("UPDATE event_payment_settings SET payment_status = 'Enabled' WHERE id IN (?) OR event_id IN (?)", [ids, ids]);
       } else if (action === "disable") {
-        await pool.query("UPDATE event_payment_settings SET payment_status = 'Disabled' WHERE id IN (?)", [ids]);
+        await pool.query("UPDATE event_payment_settings SET payment_status = 'Disabled' WHERE id IN (?) OR event_id IN (?)", [ids, ids]);
       } else if (action === "update_gst" && gst_percentage !== undefined) {
-        await pool.query("UPDATE event_payment_settings SET gst_percentage = ? WHERE id IN (?)", [gst_percentage, ids]);
+        await pool.query("UPDATE event_payment_settings SET gst_percentage = ? WHERE id IN (?) OR event_id IN (?)", [gst_percentage, ids, ids]);
       } else if (action === "delete") {
-        await pool.query("DELETE FROM event_payment_settings WHERE id IN (?)", [ids]);
+        await pool.query("DELETE FROM event_payment_settings WHERE id IN (?) OR event_id IN (?)", [ids, ids]);
       }
       res.json({ success: true, message: `Bulk action '${action}' completed successfully!` });
     }

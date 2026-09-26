@@ -1120,6 +1120,7 @@ export async function ensureEventPaymentsTable() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       );
     `);
+    try { await pool.query("ALTER TABLE event_payment_settings ADD COLUMN id VARCHAR(100);"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE event_payment_settings ADD COLUMN pricing_plans LONGTEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error creating event_payment_settings table:", err);
