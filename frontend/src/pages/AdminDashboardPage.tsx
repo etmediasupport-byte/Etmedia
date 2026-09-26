@@ -4477,10 +4477,8 @@ export default function AdminDashboardPage() {
                     return titleMatch && statusMatch && cityMatch;
                   })
                   .map((item) => {
-                    const baseFee = Number(item.registration_fee) || 0;
+                    const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date);
                     const gstPct = Number(item.gst_percentage) || 18;
-                    const gstAmount = Math.round((baseFee * gstPct) / 100);
-                    const totalPayable = item.gst_included ? baseFee : baseFee + gstAmount;
 
                     const available = Number(item.available_seats) || 100;
                     const total = Number(item.total_seats) || 100;
@@ -4570,21 +4568,24 @@ export default function AdminDashboardPage() {
                           </button>
                         </div>
 
-                        {/* CARD BODY: 3 KEY METRICS GRID */}
+                        {/* CARD BODY: 2 KEY METRICS GRID */}
                         <div className="grid gap-4 sm:grid-cols-2 my-5">
-                          {/* 1. Base Fee & GST Box */}
+                          {/* 1. Tax & Tier Pricing Policy Box */}
                           <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
-                            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                              Base Fee & Total Payable
-                            </span>
+                            <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                              <span>TAX & PRICING POLICY</span>
+                              <span className="text-cyan-700 font-bold">{item.currency || "INR (₹)"}</span>
+                            </div>
                             <div className="flex items-baseline gap-1.5">
                               <span className="text-xl font-black text-slate-900 font-display">
-                                ₹{totalPayable.toLocaleString("en-IN")}
+                                {gstPct}% GST
                               </span>
-                              <span className="text-xs text-slate-500 font-medium">Total</span>
+                              <span className="text-xs text-slate-500 font-medium">
+                                ({item.gst_included ? "Included" : "Excluded"})
+                              </span>
                             </div>
                             <div className="text-[11px] text-slate-600 font-medium">
-                              Base: ₹{baseFee.toLocaleString("en-IN")} + <span className="font-bold text-indigo-600">{gstPct}% GST</span> (₹{gstAmount.toLocaleString("en-IN")})
+                              Dynamic Pass Tiers • {isEarlyBirdActive ? "⚡ Early Bird Active" : "Regular Pricing"}
                             </div>
                           </div>
 
@@ -4628,6 +4629,7 @@ export default function AdminDashboardPage() {
                           <div className="grid gap-2 sm:grid-cols-3">
                             {parsedPlans.map((plan, pIdx) => {
                               const isPopular = plan.is_featured || plan.badge?.toLowerCase().includes("popular") || plan.name.toLowerCase().includes("gold");
+                              const hasEb = isEarlyBirdActive && typeof plan.early_bird_price === "number" && plan.early_bird_price > 0;
                               return (
                                 <div
                                   key={pIdx}
@@ -4637,7 +4639,7 @@ export default function AdminDashboardPage() {
                                       : "bg-white/80 border-slate-200 text-slate-800"
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                                  <div className="flex items-center justify-between gap-1 mb-1">
                                     <span className="truncate font-extrabold">{plan.name}</span>
                                     {isPopular && (
                                       <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full uppercase">
@@ -4645,9 +4647,26 @@ export default function AdminDashboardPage() {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-cyan-700 font-black text-sm">
-                                    ₹{Number(plan.price).toLocaleString("en-IN")}
-                                  </div>
+
+                                  {hasEb ? (
+                                    <div className="space-y-0.5">
+                                      <div className="flex items-baseline gap-1.5">
+                                        <span className="text-purple-700 font-black text-sm">
+                                          ₹{Number(plan.early_bird_price).toLocaleString("en-IN")}
+                                        </span>
+                                        <span className="text-[11px] text-slate-400 line-through">
+                                          ₹{Number(plan.price).toLocaleString("en-IN")}
+                                        </span>
+                                      </div>
+                                      <div className="text-[9px] font-extrabold text-purple-600 uppercase tracking-tight">
+                                        Save ₹{(Number(plan.price) - Number(plan.early_bird_price!)).toLocaleString("en-IN")}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-cyan-700 font-black text-sm">
+                                      ₹{Number(plan.price).toLocaleString("en-IN")}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
@@ -4658,10 +4677,15 @@ export default function AdminDashboardPage() {
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
                           {/* Left: Discounts info */}
                           <div className="flex flex-wrap items-center gap-2">
-                            {item.early_bird_enabled ? (
+                            {isEarlyBirdActive ? (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800 border border-purple-200">
                                 <Sparkles className="h-3 w-3 text-purple-600" />
-                                Early Bird: ₹{item.early_bird_price}
+                                Early Bird Active
+                              </span>
+                            ) : item.early_bird_enabled ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200">
+                                <Clock className="h-3 w-3 text-slate-500" />
+                                Early Bird Inactive
                               </span>
                             ) : null}
                             <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
@@ -12795,16 +12819,43 @@ export default function AdminDashboardPage() {
 
               {/* Price Calculation Card */}
               {(() => {
-                const base = Number(ticketPreviewItem.registration_fee) || 4999;
+                let parsedPlans: PricingPlanTier[] = [];
+                if (typeof ticketPreviewItem.pricing_plans === "string") {
+                  try { parsedPlans = JSON.parse(ticketPreviewItem.pricing_plans); } catch (e) {}
+                } else if (Array.isArray(ticketPreviewItem.pricing_plans)) {
+                  parsedPlans = ticketPreviewItem.pricing_plans as any;
+                }
+                if (!parsedPlans || parsedPlans.length === 0) {
+                  parsedPlans = getDefaultPricingPlans();
+                }
+
+                const isEb = checkEarlyBirdStatus(
+                  ticketPreviewItem.early_bird_enabled,
+                  ticketPreviewItem.early_bird_start_date,
+                  ticketPreviewItem.early_bird_end_date
+                );
+
+                const goldPlan = parsedPlans.find((p) => p.name.toLowerCase().includes("gold")) || parsedPlans[0];
+                const basePassPrice = isEb && typeof goldPlan?.early_bird_price === "number" && goldPlan.early_bird_price > 0
+                  ? goldPlan.early_bird_price
+                  : goldPlan?.price || 5999;
+
                 const gstPct = Number(ticketPreviewItem.gst_percentage) || 18;
-                const gstAmt = Math.round((base * gstPct) / 100);
-                const total = base + gstAmt;
+                const gstAmt = Math.round((basePassPrice * gstPct) / 100);
+                const total = ticketPreviewItem.gst_included ? basePassPrice : basePassPrice + gstAmt;
+
                 return (
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between text-slate-300">
-                      <span>Executive Pass Fee:</span>
-                      <span className="font-mono font-bold text-white">₹{base.toLocaleString("en-IN")}</span>
+                      <span>Selected Pass Tier ({goldPlan?.name || "Gold Pass"}):</span>
+                      <span className="font-mono font-bold text-white">₹{basePassPrice.toLocaleString("en-IN")}</span>
                     </div>
+                    {isEb && (
+                      <div className="flex justify-between text-purple-300 text-[11px]">
+                        <span>Pricing Tier Status:</span>
+                        <span className="font-bold text-purple-400">⚡ Early Bird Applied</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-slate-400 text-[11px]">
                       <span>GST ({gstPct}% Tax):</span>
                       <span className="font-mono text-cyan-300">+ ₹{gstAmt.toLocaleString("en-IN")}</span>

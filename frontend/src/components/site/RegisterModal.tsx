@@ -143,10 +143,13 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
       fetch(`/api/event-payments/event/${currentEvent.id || currentEvent.slug}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.payment) {
+          if (data.success && data.pricingAvailable && data.payment) {
             setPaymentConfig(data.payment);
           } else {
             setPaymentConfig(null);
+            if (activeMode === "paid") {
+              setActiveMode("free");
+            }
           }
         })
         .catch((err) => {
@@ -843,12 +846,11 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       } else if (Array.isArray(paymentConfig?.pricing_plans)) {
                         parsedPlans = paymentConfig.pricing_plans;
                       }
-                      if (!parsedPlans || parsedPlans.length === 0) {
-                        parsedPlans = getDefaultPricingPlans();
-                      }
+                      const isAvailable = Boolean(paymentConfig && parsedPlans.length > 0);
                       return (
                         <RegistrationPlansGrid
-                          plans={parsedPlans}
+                          pricingAvailable={isAvailable}
+                          plans={isAvailable ? parsedPlans : []}
                           earlyBirdEnabled={paymentConfig?.early_bird_enabled}
                           earlyBirdStartDate={paymentConfig?.early_bird_start_date}
                           earlyBirdEndDate={paymentConfig?.early_bird_end_date}

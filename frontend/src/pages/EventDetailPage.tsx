@@ -52,6 +52,7 @@ export default function EventDetailPage() {
   const [regMode, setRegMode] = useState<"paid" | "free">("paid");
   const [activeSection, setActiveSection] = useState<string>("overview");
   const [eventPaymentConfig, setEventPaymentConfig] = useState<any>(null);
+  const [isPricingAvailable, setIsPricingAvailable] = useState<boolean>(false);
 
   // Video / Highlight Modal State
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -106,11 +107,22 @@ export default function EventDetailPage() {
       fetch(`/api/event-payments/event/${event.id || event.slug}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.payment) {
+          if (data.success && data.pricingAvailable && data.payment) {
             setEventPaymentConfig(data.payment);
+            setIsPricingAvailable(true);
+          } else {
+            setEventPaymentConfig(null);
+            setIsPricingAvailable(false);
           }
         })
-        .catch((err) => console.warn("Could not fetch event payment config for page", err));
+        .catch((err) => {
+          console.warn("Could not fetch event payment config for page", err);
+          setEventPaymentConfig(null);
+          setIsPricingAvailable(false);
+        });
+    } else {
+      setEventPaymentConfig(null);
+      setIsPricingAvailable(false);
     }
   }, [event?.id, event?.slug]);
 
@@ -832,6 +844,7 @@ function getValidImageUrl(url?: string): string {
         <section id="pricing" className="scroll-mt-36 space-y-10">
           {/* REGISTRATION PLANS TIER CARDS GRID */}
           <RegistrationPlansGrid
+            pricingAvailable={isPricingAvailable}
             plans={
               typeof eventPaymentConfig?.pricing_plans === "string"
                 ? JSON.parse(eventPaymentConfig.pricing_plans || "[]")
@@ -841,7 +854,7 @@ function getValidImageUrl(url?: string): string {
             earlyBirdStartDate={eventPaymentConfig?.early_bird_start_date}
             earlyBirdEndDate={eventPaymentConfig?.early_bird_end_date}
             theme="light"
-            onSelectPlan={() => handleOpenRegister("paid")}
+            onSelectPlan={() => handleOpenRegister(isPricingAvailable ? "paid" : "free")}
           />
 
           {/* OUR SPONSORS & PARTNERS AUTO-SCROLLING ROW */}

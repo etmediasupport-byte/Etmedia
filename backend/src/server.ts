@@ -2731,25 +2731,33 @@ app.get("/api/event-payments/event/:eventId", async (req, res) => {
         [eventId, eventId]
       );
       if (rows.length > 0) {
-        return res.json({ success: true, payment: rows[0] });
+        const payment = rows[0];
+        const status = String(payment.payment_status || "Enabled").toLowerCase();
+        const isPublished = status === "enabled" || status === "published";
+        if (isPublished) {
+          return res.json({
+            success: true,
+            pricingAvailable: true,
+            payment,
+          });
+        } else {
+          return res.json({
+            success: true,
+            pricingAvailable: false,
+            payment: null,
+            message: "Pricing for this event is saved in Draft mode and not published yet.",
+          });
+        }
       }
     }
-    res.json({
+    return res.json({
       success: true,
-      payment: {
-        event_id: eventId,
-        registration_fee: 4999,
-        currency: "INR",
-        gst_percentage: 18,
-        gst_included: 0,
-        platform_fee: 99,
-        convenience_fee: 0,
-        payment_status: "Enabled",
-        registration_type_prices: JSON.stringify({ Delegate: 4999, Speaker: 0, VIP: 9999, Student: 1499 }),
-      },
+      pricingAvailable: false,
+      payment: null,
+      message: "Pricing not configured for this event in Admin Dashboard.",
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Failed to fetch event payment settings." });
+    res.status(500).json({ success: false, pricingAvailable: false, message: "Failed to fetch event payment settings." });
   }
 });
 
