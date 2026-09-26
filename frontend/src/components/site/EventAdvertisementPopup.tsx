@@ -174,68 +174,47 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
     };
   }, [previewMode, customSettings, customEvents]);
 
-  // 2. Trigger Logic
+  // 2. Trigger Logic: Open on website load, auto-dismiss in 10s, re-open every 2.5 minutes (150s)
   useEffect(() => {
-    if (previewMode || !settings || settings.status === "inactive" || hasTriggered) return;
+    if (previewMode) return;
 
-    // Session dismissal check
-    if (settings.once_per_session) {
-      const dismissedAt = sessionStorage.getItem("et_popup_dismissed_time");
-      if (dismissedAt) return;
-    }
+    // Show popup immediately when site is opened
+    setIsOpen(true);
+    fetch("/api/popup/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id: events[0]?.id ?? "ALL",
+        session_id: sessionStorage.getItem("et_session_id") || "SESSION_" + Date.now(),
+      }),
+    }).catch(() => {});
 
-    const triggerPopup = () => {
-      if (!hasTriggered) {
-        setHasTriggered(true);
-        setIsOpen(true);
-        // Track View Analytics
-        fetch("/api/popup/view", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event_id: events[0]?.id ?? "ALL",
-            session_id: sessionStorage.getItem("et_session_id") || "SESSION_" + Date.now(),
-          }),
-        }).catch(() => {});
-      }
-    };
+    // Re-open popup every 2.5 minutes (150,000 ms)
+    const interval = setInterval(() => {
+      setIsOpen(true);
+      fetch("/api/popup/view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: events[0]?.id ?? "ALL",
+          session_id: sessionStorage.getItem("et_session_id") || "SESSION_" + Date.now(),
+        }),
+      }).catch(() => {});
+    }, 150000);
 
-    // Trigger 1: Immediate / Load
-    if (settings.show_on_load && (!settings.delay_seconds || settings.delay_seconds === 0)) {
-      triggerPopup();
-    }
+    return () => clearInterval(interval);
+  }, [previewMode, events]);
 
-    // Trigger 2: Delay
-    let delayTimer: any = null;
-    if (settings.show_after_delay && settings.delay_seconds > 0) {
-      delayTimer = setTimeout(() => {
-        triggerPopup();
-      }, settings.delay_seconds * 1000);
-    }
+  // 3. Auto-Dismiss Timer (10 Seconds Time Limit)
+  useEffect(() => {
+    if (!isOpen || previewMode) return;
 
-    // Trigger 3: Scroll Percentage
-    const handleScroll = () => {
-      if (settings.show_on_scroll && settings.scroll_percentage) {
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        if (scrollHeight > 0) {
-          const scrollPct = (scrollTop / scrollHeight) * 100;
-          if (scrollPct >= settings.scroll_percentage) {
-            triggerPopup();
-          }
-        }
-      }
-    };
+    const timer = setTimeout(() => {
+      setIsOpen(false);
+    }, 10000);
 
-    if (settings.show_on_scroll) {
-      window.addEventListener("scroll", handleScroll, { passive: true });
-    }
-
-    return () => {
-      if (delayTimer) clearTimeout(delayTimer);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [settings, hasTriggered, previewMode, events]);
+    return () => clearTimeout(timer);
+  }, [isOpen, previewMode]);
 
   // Lock Body Scroll when Open
   useEffect(() => {
@@ -266,8 +245,6 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
       onClosePreview();
       return;
     }
-    // Store dismissal in sessionStorage
-    sessionStorage.setItem("et_popup_dismissed_time", Date.now().toString());
 
     // Track Close Analytics
     fetch("/api/popup/close", {
@@ -339,6 +316,19 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(212, 175, 55, 0.2)",
             }}
           >
+            {/* 10-Second Countdown Progress Bar */}
+            {!previewMode && (
+              <div className="w-full bg-slate-900/90 h-1 overflow-hidden relative z-30">
+                <motion.div
+                  key={Date.now()}
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 10, ease: "linear" }}
+                  className="h-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 shadow-sm"
+                />
+              </div>
+            )}
+
             {/* Top Banner Image with Overlay */}
             <div className="relative h-40 sm:h-44 w-full overflow-hidden bg-slate-950">
               <img

@@ -5077,13 +5077,13 @@ export default function AdminDashboardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-amber-600 font-extrabold text-xs uppercase tracking-wider">
                       <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
-                      <span>Triumphs of Talent — Event Popup Modal CMS</span>
+                      <span>Event Popup Control Center</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
-                      Event Advertisement Popup Control Center
+                      Event Popup Selection
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                      Configure dynamic event advertisement popups, trigger rules (website load, time delay, scroll percentage), active event cards selection, and real-time view/click analytics.
+                      Select active events to feature in the visitor advertisement popup. Popup auto-triggers on site load (10s time limit) and recurs every 2-3 minutes.
                     </p>
                   </div>
 
@@ -5097,320 +5097,10 @@ export default function AdminDashboardPage() {
                     </button>
                   </div>
                 </div>
-
-                {/* SUB-MODULE NAVIGATION TABS */}
-                <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pt-6">
-                  {[
-                    { id: "settings", label: "1. Popup Settings & Aesthetics", icon: Settings },
-                    { id: "triggers", label: "2. Trigger & Schedule Rules", icon: Clock },
-                    { id: "events", label: `3. Popup Events (${selectedPopupEventIds.length} Selected)`, icon: Calendar },
-                    { id: "analytics", label: "4. Popup Analytics", icon: TrendingUp },
-                  ].map((tab) => {
-                    const IconComp = tab.icon;
-                    const isActive = popupSubTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setPopupSubTab(tab.id as any)}
-                        className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-                          isActive
-                            ? "border-amber-500 text-amber-600 font-black"
-                            : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
-                        }`}
-                      >
-                        <IconComp className={`h-4 w-4 ${isActive ? "text-amber-500" : "text-slate-400"}`} />
-                        <span>{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
-              {/* SUB-TAB 1: POPUP SETTINGS & AESTHETICS */}
-              {popupSubTab === "settings" && (
-                <form onSubmit={handleSavePopupSettings} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-amber-500" />
-                      Visual Design & Content Customization
-                    </h3>
-                    <button
-                      type="submit"
-                      disabled={popupSettingsSaving}
-                      className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Save className="h-4 w-4" />
-                      <span>{popupSettingsSaving ? "Saving..." : "Save Popup Settings"}</span>
-                    </button>
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Popup Title
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={popupSettingsForm.popup_title || ""}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, popup_title: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
-                        placeholder="e.g. Nominations are Open"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Popup Subtitle
-                      </label>
-                      <input
-                        type="text"
-                        value={popupSettingsForm.popup_subtitle || ""}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, popup_subtitle: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
-                        placeholder="Choose the event you'd like to nominate yourself for."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Theme / Accent Color (HEX / HSL)
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={popupSettingsForm.theme_color || "#D4AF37"}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, theme_color: e.target.value })}
-                          className="h-10 w-12 rounded-xl border border-slate-300 cursor-pointer p-0.5"
-                        />
-                        <input
-                          type="text"
-                          value={popupSettingsForm.theme_color || "#D4AF37"}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, theme_color: e.target.value })}
-                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono font-bold text-slate-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Background Color
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={popupSettingsForm.background_color || "#0B0F19"}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, background_color: e.target.value })}
-                          className="h-10 w-12 rounded-xl border border-slate-300 cursor-pointer p-0.5"
-                        />
-                        <input
-                          type="text"
-                          value={popupSettingsForm.background_color || "#0B0F19"}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, background_color: e.target.value })}
-                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono font-bold text-slate-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Border Radius (px)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={50}
-                        value={popupSettingsForm.border_radius ?? 28}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, border_radius: Number(e.target.value) })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Background Overlay Opacity ({popupSettingsForm.overlay_opacity ?? 80}%)
-                      </label>
-                      <input
-                        type="range"
-                        min={10}
-                        max={100}
-                        step={5}
-                        value={popupSettingsForm.overlay_opacity ?? 80}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, overlay_opacity: Number(e.target.value) })}
-                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* TOGGLES ROW */}
-                  <div className="grid gap-4 sm:grid-cols-3 pt-4 border-t border-slate-200">
-                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
-                      <span className="text-xs font-bold text-slate-800">Show Close ('X') Button</span>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(popupSettingsForm.show_close_button !== 0)}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_close_button: e.target.checked ? 1 : 0 })}
-                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
-                      <span className="text-xs font-bold text-slate-800">Enable "Maybe Later" Button</span>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(popupSettingsForm.enable_maybe_later !== 0)}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, enable_maybe_later: e.target.checked ? 1 : 0 })}
-                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
-                      <span className="text-xs font-bold text-slate-800">Blur Background Backdrop</span>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(popupSettingsForm.blur_background !== 0)}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, blur_background: e.target.checked ? 1 : 0 })}
-                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                      />
-                    </label>
-                  </div>
-                </form>
-              )}
-
-              {/* SUB-TAB 2: TRIGGER & SCHEDULE RULES */}
-              {popupSubTab === "triggers" && (
-                <form onSubmit={handleSavePopupSettings} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-amber-500" />
-                      Trigger Rules & Timing Settings
-                    </h3>
-                    <button
-                      type="submit"
-                      disabled={popupSettingsSaving}
-                      className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-5 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Save className="h-4 w-4" />
-                      <span>{popupSettingsSaving ? "Saving..." : "Save Trigger Rules"}</span>
-                    </button>
-                  </div>
-
-                  {/* STATUS TOGGLE */}
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-slate-900">Popup Active Status</h4>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">Enable or disable the active popup modal globally across website.</p>
-                    </div>
-                    <select
-                      value={popupSettingsForm.status || "active"}
-                      onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, status: e.target.value })}
-                      className="rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-extrabold text-slate-900 shadow-xs focus:outline-none"
-                    >
-                      <option value="active">🟢 Active (Visible to Visitors)</option>
-                      <option value="inactive">🔴 Inactive (Disabled)</option>
-                    </select>
-                  </div>
-
-                  {/* TRIGGERS GRID */}
-                  <div className="grid gap-6 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-slate-900 uppercase">1. On Website Load</span>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(popupSettingsForm.show_on_load)}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_on_load: e.target.checked ? 1 : 0 })}
-                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-500">Triggers immediately when visitor opens website.</p>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-slate-900 uppercase">2. After Time Delay</span>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(popupSettingsForm.show_after_delay)}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_after_delay: e.target.checked ? 1 : 0 })}
-                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-600 uppercase">Delay Seconds ({popupSettingsForm.delay_seconds || 5}s)</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={60}
-                          value={popupSettingsForm.delay_seconds ?? 5}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, delay_seconds: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-bold text-slate-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-slate-900 uppercase">3. On Scroll Percentage</span>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(popupSettingsForm.show_on_scroll)}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, show_on_scroll: e.target.checked ? 1 : 0 })}
-                          className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-600 uppercase">Scroll Target %</label>
-                        <select
-                          value={popupSettingsForm.scroll_percentage || 40}
-                          onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, scroll_percentage: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-bold text-slate-900"
-                        >
-                          <option value={25}>25% Page Scroll</option>
-                          <option value={40}>40% Page Scroll (Default)</option>
-                          <option value={50}>50% Halfway Scroll</option>
-                          <option value={75}>75% Deep Scroll</option>
-                          <option value={100}>100% Page Bottom</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* FREQUENCY & COOKIE DURATION */}
-                  <div className="grid gap-6 sm:grid-cols-2 pt-4 border-t border-slate-200">
-                    <label className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-200 cursor-pointer">
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 block">Show Once Per Session</span>
-                        <span className="text-[11px] text-slate-500 font-normal">Prevents popup from reappearing every time user navigates pages.</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(popupSettingsForm.once_per_session !== 0)}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, once_per_session: e.target.checked ? 1 : 0 })}
-                        className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400"
-                      />
-                    </label>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Cookie Dismissal Duration (Days)
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={popupSettingsForm.cookie_duration_days || 1}
-                        onChange={(e) => setPopupSettingsForm({ ...popupSettingsForm, cookie_duration_days: Number(e.target.value) })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-bold text-slate-900"
-                      />
-                    </div>
-                  </div>
-                </form>
-              )}
-
-              {/* SUB-TAB 3: POPUP EVENT SELECTION */}
-              {popupSubTab === "events" && (
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+              {/* POPUP EVENT SELECTION */}
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
                     <div>
                       <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
@@ -5467,7 +5157,11 @@ export default function AdminDashboardPage() {
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={() => handleTogglePopupEventSelect(evt.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleTogglePopupEventSelect(evt.id);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                               className="mt-1 h-4 w-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
                             />
                             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-950 border border-slate-200">
@@ -5486,82 +5180,7 @@ export default function AdminDashboardPage() {
                     })}
                   </div>
                 </div>
-              )}
 
-              {/* SUB-TAB 4: POPUP ANALYTICS */}
-              {popupSubTab === "analytics" && (
-                <div className="space-y-6">
-                  {/* KPI SUMMARY CARDS */}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Popup Impressions (Views)</span>
-                      <div className="mt-2 text-3xl font-black text-slate-900">{popupAnalytics.summary?.total_views || 0}</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Register Clicks</span>
-                      <div className="mt-2 text-3xl font-black text-amber-600">{popupAnalytics.summary?.total_clicks || 0}</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dismissals (Closes)</span>
-                      <div className="mt-2 text-3xl font-black text-slate-500">{popupAnalytics.summary?.total_closes || 0}</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Click-Through Rate (CTR)</span>
-                      <div className="mt-2 text-3xl font-black text-emerald-600">{popupAnalytics.summary?.ctr || "0.00%"}</div>
-                    </div>
-                  </div>
-
-                  {/* EVENT WISE ANALYTICS TABLE */}
-                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                      <h3 className="text-base font-extrabold text-slate-900">Event-wise Performance Analytics</h3>
-                      <button
-                        onClick={handleExportPopupAnalyticsCSV}
-                        className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
-                      >
-                        <Download className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Export CSV</span>
-                      </button>
-                    </div>
-
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                            <th className="py-3 px-4">Event Title</th>
-                            <th className="py-3 px-4">Impressions (Views)</th>
-                            <th className="py-3 px-4">Clicks</th>
-                            <th className="py-3 px-4">Closes</th>
-                            <th className="py-3 px-4 text-right">CTR %</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {popupAnalytics.eventsBreakdown?.map((item: any, idx: number) => (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="py-3.5 px-4 font-bold text-slate-900">{item.event_title || item.event_id}</td>
-                              <td className="py-3.5 px-4 text-slate-700">{item.views || 0}</td>
-                              <td className="py-3.5 px-4 text-amber-600 font-bold">{item.clicks || 0}</td>
-                              <td className="py-3.5 px-4 text-slate-500">{item.closes || 0}</td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600">{item.ctr || "0.00%"}</td>
-                            </tr>
-                          ))}
-
-                          {(!popupAnalytics.eventsBreakdown || popupAnalytics.eventsBreakdown.length === 0) && (
-                            <tr>
-                              <td colSpan={5} className="py-8 text-center text-slate-400">
-                                No visitor interaction recorded for popup modal yet.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
