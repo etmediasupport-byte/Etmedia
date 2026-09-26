@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase,
@@ -54,6 +55,7 @@ const getDepartmentIcon = (department: string) => {
 };
 
 export default function CareersPage() {
+  const navigate = useNavigate();
   const [jobsList, setJobsList] = useState<JobItem[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -372,8 +374,7 @@ export default function CareersPage() {
                           type="button"
                           disabled={isClosed}
                           onClick={() => {
-                            setApplyJob(job);
-                            setFormError(null);
+                            navigate(`/careers/apply?jobId=${job.id}&title=${encodeURIComponent(job.title)}`);
                           }}
                           className="w-full sm:w-36 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-md shadow-purple-600/20 hover:shadow-lg hover:shadow-purple-600/35 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
                         >
@@ -677,9 +678,9 @@ export default function CareersPage() {
                   type="button"
                   disabled={selectedJobDetail.status === "Closed"}
                   onClick={() => {
-                    setApplyJob(selectedJobDetail);
+                    const job = selectedJobDetail;
                     setSelectedJobDetail(null);
-                    setFormError(null);
+                    navigate(`/careers/apply?jobId=${job.id}&title=${encodeURIComponent(job.title)}`);
                   }}
                   className="px-8 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer text-xs sm:text-sm font-extrabold flex items-center gap-2 disabled:opacity-40"
                 >
@@ -692,11 +693,8 @@ export default function CareersPage() {
         )}
       </AnimatePresence>
 
-      {/* ========================================== */}
-      {/* 5. APPLY FORM MODAL                        */}
-      {/* ========================================== */}
       <AnimatePresence>
-        {applyJob && (
+        {false && (
           <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
             {/* Backdrop Blur Overlay */}
             <motion.div
@@ -728,10 +726,10 @@ export default function CareersPage() {
                   Job Application
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-display">
-                  Apply for {applyJob.title}
+                  Apply for {applyJob?.title || "Position"}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 font-mono font-medium">
-                  {applyJob.department} · {applyJob.location}
+                  {applyJob?.department || ""} · {applyJob?.location || ""}
                 </p>
               </div>
 

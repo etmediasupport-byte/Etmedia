@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHero } from "@/components/site/PageHero";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { contact, images } from "@/lib/site-data";
@@ -23,6 +24,7 @@ import {
 import { toast } from "sonner";
 
 export default function ContactPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -394,22 +396,24 @@ export default function ContactPage() {
           <div className="lg:col-span-7">
             <Reveal>
               <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200/90 text-slate-900">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6 mb-6">
                   <div>
                     <h2 className="text-2xl font-extrabold font-display text-slate-900">
-                      Send Us a Message
+                      Executive Enquiry Desk
                     </h2>
                     <p className="mt-1 text-xs text-slate-600 font-medium">
-                      Fill out the form below and our relations team will respond promptly.
+                      Fill out our step-by-step full page enquiry wizard for rapid assistance.
                     </p>
                   </div>
 
-                  {activeUsers !== null && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 border border-emerald-200 shrink-0">
-                      <Radio className="h-3 w-3 animate-pulse text-emerald-600" />
-                      Live ({activeUsers} Online)
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/contact/form")}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-6 py-3 text-xs font-black text-white hover:bg-cyan-500 transition-all cursor-pointer shadow-lg shadow-cyan-600/20 shrink-0"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>Open Multi-Step Form</span>
+                  </button>
                 </div>
 
                 {realtimeNotification && (

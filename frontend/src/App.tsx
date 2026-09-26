@@ -21,6 +21,10 @@ import EventRegistrationWizardPage from "@/pages/EventRegistrationWizardPage";
 import RegistrationSuccessPage from "@/pages/RegistrationSuccessPage";
 import FreeRegistrationPage from "@/pages/FreeRegistrationPage";
 import FreeRegistrationPendingPage from "@/pages/FreeRegistrationPendingPage";
+import PartnerApplicationWizardPage from "@/pages/PartnerApplicationWizardPage";
+import CareerApplicationWizardPage from "@/pages/CareerApplicationWizardPage";
+import MembershipApplicationWizardPage from "@/pages/MembershipApplicationWizardPage";
+import ContactFormWizardPage from "@/pages/ContactFormWizardPage";
 import { Toaster } from "@/components/ui/sonner";
 
 interface ErrorBoundaryProps {
@@ -134,13 +138,19 @@ export default function App() {
               <Route path="events/:slug/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="events/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="partner" element={<PartnerWithUsPage />} />
+              <Route path="partner/apply" element={<PartnerApplicationWizardPage />} />
+              <Route path="partners/apply" element={<PartnerApplicationWizardPage />} />
               <Route path="events/partner" element={<PartnerWithUsPage />} />
               <Route path="membership" element={<DelegateRegistrationPage />} />
+              <Route path="membership/apply" element={<MembershipApplicationWizardPage />} />
               <Route path="delegate-registration" element={<DelegateRegistrationPage />} />
+              <Route path="delegate-registration/apply" element={<MembershipApplicationWizardPage />} />
               <Route path="events/register" element={<EventRegistrationWizardPage />} />
               <Route path="careers" element={<CareersPage />} />
+              <Route path="careers/apply" element={<CareerApplicationWizardPage />} />
               <Route path="gallery" element={<GalleryPage />} />
               <Route path="contact" element={<ContactPage />} />
+              <Route path="contact/form" element={<ContactFormWizardPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
