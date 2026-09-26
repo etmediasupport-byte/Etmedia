@@ -1721,6 +1721,44 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleApproveFreeRegistration = async (regId: string, email: string) => {
+    toast.info(`Approving application & sending QR ticket pass email to ${email}...`);
+    try {
+      const res = await fetch(`/api/admin/registrations/${regId}/approve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `✅ Free Delegate Application Approved for ${email}!`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to approve application.");
+      }
+    } catch (err) {
+      toast.error("Network error approving application.");
+    }
+  };
+
+  const handleRejectFreeRegistration = async (regId: string, name: string) => {
+    if (!window.confirm(`Reject free delegate application for ${name}?`)) return;
+    try {
+      const res = await fetch(`/api/admin/registrations/${regId}/reject`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Application marked as Rejected.`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to reject application.");
+      }
+    } catch (err) {
+      toast.error("Network error rejecting application.");
+    }
+  };
+
   const getRegistrationStatus = (reg: any): "Confirmed" | "Pending" => {
     if (!reg) return "Pending";
     if (reg.status === "Confirmed" || reg.status === "Pending") {
@@ -5008,6 +5046,28 @@ export default function AdminDashboardPage() {
                         {/* Status */}
                         <td className="py-4 px-4">
                           {(() => {
+                            const pStatus = (reg.payment_status || "").toString();
+                            if (pStatus === "Pending Approval") {
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-1 text-[11px] font-black animate-pulse">
+                                  ⏳ Pending Approval
+                                </span>
+                              );
+                            }
+                            if (pStatus === "Approved (Free Pass)") {
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 px-2.5 py-1 text-[11px] font-black">
+                                  ✅ Approved (Free Pass)
+                                </span>
+                              );
+                            }
+                            if (pStatus === "Rejected") {
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 px-2.5 py-1 text-[11px] font-black">
+                                  ❌ Rejected
+                                </span>
+                              );
+                            }
                             const regStatus = getRegistrationStatus(reg);
                             return (
                               <button
@@ -5029,15 +5089,40 @@ export default function AdminDashboardPage() {
                           })()}
                         </td>
 
-                        {/* Actions / View Details */}
+                        {/* Actions / View Details + Approve / Reject */}
                         <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedRegDetail(reg)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                            <span>View Details</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {reg.payment_status === "Pending Approval" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
+                                  title="Approve Free Pass and Send Ticket Pass"
+                                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-black text-white hover:bg-emerald-700 shadow-sm cursor-pointer transition-all hover:scale-105"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Approve & Send Ticket</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectFreeRegistration(reg.id, reg.name)}
+                                  title="Reject Application"
+                                  className="inline-flex items-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer transition-all"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  <span>Reject</span>
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              onClick={() => setSelectedRegDetail(reg)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                              <span>View Details</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -41,7 +41,11 @@ export function Layout() {
         eventSlug = detail.id;
       }
 
-      navigate(`/events/${eventSlug}/register`);
+      if (detail.mode === "free") {
+        navigate(`/events/${eventSlug}/register-free`);
+      } else {
+        navigate(`/events/${eventSlug}/register`);
+      }
     };
 
     const handleOpenMembershipModal = () => {

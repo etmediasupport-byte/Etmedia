@@ -1617,6 +1617,173 @@ app.get("/api/registrations/:registrationId", async (req, res) => {
   }
 });
 
+// 5. POST /api/registrations/free-start - Submit Free Delegate Interest Application (Pending Admin Approval)
+app.post("/api/registrations/free-start", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      workEmail,
+      contactNumber,
+      designation,
+      companyName,
+      city,
+      country = "India",
+      industry,
+      linkedinUrl,
+      category = "Free Interest Delegate",
+      participationPreference = "In-Person Delegate",
+      interestTracks,
+      reasonForAttending,
+      eventId = "hr-recall-2k26",
+      eventSlug,
+      eventTitle = "HR RECALL 2K26",
+    } = req.body;
+
+    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName) {
+      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
+    }
+
+    const regId = `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullName = `${firstName} ${lastName}`.trim();
+    const effectiveEventSlug = eventSlug || eventId;
+    const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
+
+    const newRegistration = {
+      id: regId,
+      name: fullName,
+      first_name: firstName,
+      last_name: lastName,
+      email: workEmail.trim(),
+      phone: contactNumber,
+      organization: companyName,
+      designation,
+      city: city || "N/A",
+      country,
+      industry: industry || "Technology",
+      linkedin_url: linkedinUrl || "",
+      registration_category: category,
+      participation_preference: participationPreference,
+      interest_tracks: tracksStr,
+      pass_name: "Complimentary Pass (Pending Approval)",
+      event_id: effectiveEventSlug,
+      event_title: eventTitle,
+      payment_status: "Pending Approval",
+      payment_amount: 0,
+      coupon_applied: reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application",
+      created_at: new Date().toISOString(),
+    };
+
+    if (pool) {
+      await pool.query(
+        `INSERT INTO registrations (
+          id, name, first_name, last_name, email, phone, organization, designation,
+          city, country, industry, linkedin_url, registration_category, participation_preference,
+          interest_tracks, pass_name, event_id, event_title, payment_status, payment_amount, coupon_applied, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 0, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
+          phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
+          city = VALUES(city), country = VALUES(country), industry = VALUES(industry),
+          linkedin_url = VALUES(linkedin_url), registration_category = VALUES(registration_category),
+          participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks),
+          coupon_applied = VALUES(coupon_applied);`,
+        [
+          regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
+          city || "N/A", country, industry || "Technology", linkedinUrl || "", category,
+          participationPreference, tracksStr, "Complimentary Pass (Pending Approval)", effectiveEventSlug, eventTitle,
+          reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application"
+        ]
+      );
+    }
+
+    // Realtime broadcast to Admin Dashboard
+    if (io) {
+      io.emit("new_registration", {
+        registration: newRegistration,
+        message: `📋 New Free Delegate Application received from ${fullName} (${companyName}) for ${eventTitle}! Status: Pending Approval.`,
+      });
+    }
+
+    return res.json({
+      success: true,
+      registrationId: regId,
+      message: "Free delegate registration application submitted for admin approval.",
+    });
+  } catch (err: any) {
+    console.error("[API] Error in /api/registrations/free-start:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to submit free delegate application." });
+  }
+});
+
+// Admin Approve Free Registration & Send Ticket Pass
+app.post("/api/admin/registrations/:id/approve", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    let reg: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [id]);
+      if (rows && rows.length > 0) {
+        reg = rows[0];
+      }
+    }
+    if (!reg) {
+      return res.status(404).json({ success: false, message: "Registration record not found." });
+    }
+
+    if (pool) {
+      await pool.query("UPDATE registrations SET payment_status = 'Approved (Free Pass)', pass_name = 'Complimentary VIP Pass' WHERE id = ?", [id]);
+    }
+
+    // Send confirmation email with QR Ticket Pass
+    const emailSent = await sendRegistrationConfirmationEmail({
+      registrationId: reg.id,
+      firstName: reg.first_name || reg.name.split(" ")[0],
+      lastName: reg.last_name || "",
+      fullName: reg.name,
+      email: reg.email,
+      phone: reg.phone,
+      organization: reg.organization,
+      designation: reg.designation,
+      city: reg.city,
+      country: reg.country || "India",
+      registrationCategory: reg.registration_category || "Free Approved Delegate",
+      registeringCity: reg.registering_city || reg.city || "Mumbai",
+      referralSource: "Admin Approved",
+      eventId: reg.event_id,
+      eventTitle: reg.event_title,
+      paymentStatus: "Approved (Free Pass)",
+      paymentId: "ADMIN-APPROVED-FREE",
+      paymentAmount: 0,
+      couponApplied: reg.coupon_applied || "Admin Approved",
+      createdAt: reg.created_at,
+    });
+
+    return res.json({
+      success: true,
+      message: `✅ Approved application for ${reg.name}! Confirmation email & ticket pass sent to ${reg.email}.`,
+      emailSent,
+    });
+  } catch (err: any) {
+    console.error("[API] Error approving registration:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to approve registration." });
+  }
+});
+
+// Admin Reject Free Registration Application
+app.post("/api/admin/registrations/:id/reject", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("UPDATE registrations SET payment_status = 'Rejected' WHERE id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Application marked as Rejected." });
+  } catch (err: any) {
+    console.error("[API] Error rejecting registration:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to reject application." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {

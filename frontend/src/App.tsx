@@ -19,6 +19,8 @@ import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import VerifyPassPage from "@/pages/VerifyPassPage";
 import EventRegistrationWizardPage from "@/pages/EventRegistrationWizardPage";
 import RegistrationSuccessPage from "@/pages/RegistrationSuccessPage";
+import FreeRegistrationPage from "@/pages/FreeRegistrationPage";
+import FreeRegistrationPendingPage from "@/pages/FreeRegistrationPendingPage";
 import { Toaster } from "@/components/ui/sonner";
 
 interface ErrorBoundaryProps {
@@ -125,6 +127,10 @@ export default function App() {
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="events/:slug/register" element={<EventRegistrationWizardPage />} />
+              <Route path="events/:slug/register-free" element={<FreeRegistrationPage />} />
+              <Route path="events/register-free" element={<FreeRegistrationPage />} />
+              <Route path="events/:slug/free-registration-pending" element={<FreeRegistrationPendingPage />} />
+              <Route path="events/free-registration-pending" element={<FreeRegistrationPendingPage />} />
               <Route path="events/:slug/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="events/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="partner" element={<PartnerWithUsPage />} />
