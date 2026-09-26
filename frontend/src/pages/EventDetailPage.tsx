@@ -837,6 +837,9 @@ function getValidImageUrl(url?: string): string {
                 ? JSON.parse(eventPaymentConfig.pricing_plans || "[]")
                 : eventPaymentConfig?.pricing_plans || []
             }
+            earlyBirdEnabled={eventPaymentConfig?.early_bird_enabled}
+            earlyBirdStartDate={eventPaymentConfig?.early_bird_start_date}
+            earlyBirdEndDate={eventPaymentConfig?.early_bird_end_date}
             theme="light"
             onSelectPlan={() => handleOpenRegister("paid")}
           />

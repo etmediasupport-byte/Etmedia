@@ -930,55 +930,81 @@ export interface PricingPlanTier {
   id: string;
   name: string;
   price: number;
+  early_bird_price?: number;
   badge?: string;
   is_featured?: boolean;
   features: string[];
   button_text?: string;
+  displayOrder?: number;
+  activeStatus?: boolean;
 }
 
+export const checkEarlyBirdStatus = (
+  enabled: boolean | number | undefined,
+  startDate?: string,
+  endDate?: string
+): { status: "ACTIVE" | "UPCOMING" | "EXPIRED" | "DISABLED"; isActive: boolean } => {
+  if (!enabled || !startDate || !endDate) {
+    return { status: "DISABLED", isActive: false };
+  }
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0] || "";
+
+  if (todayStr < startDate) {
+    return { status: "UPCOMING", isActive: false };
+  } else if (todayStr >= startDate && todayStr <= endDate) {
+    return { status: "ACTIVE", isActive: true };
+  } else {
+    return { status: "EXPIRED", isActive: false };
+  }
+};
+
 export const getDefaultPricingPlans = (): PricingPlanTier[] => [
-  {
-    id: "plan-premium",
-    name: "Premium Pass",
-    price: 12000,
-    badge: "VIP Access",
-    is_featured: false,
-    features: [
-      "Access to all sessions",
-      "Premium front-row seating",
-      "Networking lunch & high tea",
-      "Executive event kit & certificate",
-      "Access to recorded sessions & slides",
-    ],
-    button_text: "Register Now",
-  },
   {
     id: "plan-gold",
     name: "Gold Pass",
     price: 8000,
+    early_bird_price: 5999,
     badge: "Most Popular",
     is_featured: true,
     features: [
       "Access to all sessions",
       "General executive seating",
-      "Networking lunch",
+      "Networking lunch & high tea",
       "Event kit & certificate",
       "Access to recorded sessions",
     ],
     button_text: "Register Now",
   },
   {
-    id: "plan-platinum",
-    name: "Platinum Pass",
-    price: 5000,
-    badge: "Standard",
+    id: "plan-premium",
+    name: "Premium Pass",
+    price: 12000,
+    early_bird_price: 8999,
+    badge: "VIP Access",
     is_featured: false,
     features: [
-      "Access to core sessions",
-      "Standard seating",
-      "Networking tea",
-      "Event certificate",
-      "Access to recorded sessions",
+      "Access to all sessions",
+      "Premium front-row seating",
+      "Executive VIP lounge access",
+      "Executive event kit & certificate",
+      "Access to recorded sessions & slides",
+    ],
+    button_text: "Register Now",
+  },
+  {
+    id: "plan-platinum",
+    name: "Platinum Pass",
+    price: 18000,
+    early_bird_price: 13999,
+    badge: "Ultra VIP",
+    is_featured: false,
+    features: [
+      "All Premium Pass features",
+      "1-on-1 Speaker meet & greet",
+      "Exclusive CXO Gala Dinner seat",
+      "Custom branded certificate",
+      "Priority networking concierge",
     ],
     button_text: "Register Now",
   },

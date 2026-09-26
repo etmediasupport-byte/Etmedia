@@ -93,8 +93,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
-import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem, PricingPlanTier, getDefaultPricingPlans } from "@/lib/site-data";
+import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem, PricingPlanTier, getDefaultPricingPlans, checkEarlyBirdStatus } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
+import { EarlyBirdCountdownTimer } from "@/components/site/EarlyBirdCountdownTimer";
 import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
 
 interface Registration {
@@ -12027,14 +12028,14 @@ export default function AdminDashboardPage() {
               {/* TAB 1: GENERAL & TAXES */}
               {paymentModalTab === "general" && (
                 <div className="space-y-6">
-                  {/* SECTION 1: EVENT SELECTION & BASE FEES */}
+                  {/* SECTION 1: EVENT SELECTION & TAXES */}
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
                     <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-cyan-600" />
-                      <span>Event & Base Registration Fee</span>
+                      <span>Event & Tax Settings</span>
                     </h4>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-3">
                       <div>
                         <label className="block text-slate-700 font-bold mb-1">Select Event *</label>
                         <select
@@ -12067,7 +12068,7 @@ export default function AdminDashboardPage() {
                         <select
                           value={paymentForm.currency || "INR"}
                           onChange={(e) => setPaymentForm({ ...paymentForm, currency: e.target.value })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none cursor-pointer"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:border-cyan-600 focus:outline-none cursor-pointer"
                         >
                           <option value="INR">INR (₹ - Indian Rupee)</option>
                           <option value="USD">USD ($ - US Dollar)</option>
@@ -12076,18 +12077,6 @@ export default function AdminDashboardPage() {
                           <option value="AED">AED (AED - UAE Dirham)</option>
                           <option value="SGD">SGD (S$ - Singapore Dollar)</option>
                         </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Base Registration Fee (₹) *</label>
-                        <input
-                          type="number"
-                          required
-                          min={0}
-                          value={paymentForm.registration_fee ?? 4999}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, registration_fee: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 font-extrabold focus:border-cyan-600 focus:outline-none"
-                        />
                       </div>
 
                       <div>
@@ -12106,28 +12095,6 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* LIVE PRICE SUMMARY CALCULATOR */}
-                    {(() => {
-                      const fee = Number(paymentForm.registration_fee) || 0;
-                      const gst = Number(paymentForm.gst_percentage) || 18;
-                      const gstAmt = Math.round((fee * gst) / 100);
-                      const total = paymentForm.gst_included ? fee : fee + gstAmt;
-                      return (
-                        <div className="rounded-xl border border-cyan-200 bg-cyan-50/80 p-3.5 flex flex-wrap items-center justify-between gap-3 text-cyan-950 font-bold">
-                          <div>
-                            <span className="text-xs block text-cyan-800">Live Base Fee Calculation:</span>
-                            <span className="text-xs font-normal">
-                              Base: ₹{fee.toLocaleString("en-IN")} + {gst}% GST (₹{gstAmt.toLocaleString("en-IN")})
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] uppercase tracking-wider block text-cyan-700 font-extrabold">Total Base Payable</span>
-                            <span className="text-lg font-black text-cyan-900">₹{total.toLocaleString("en-IN")}</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
 
                   {/* SEAT CAPACITY & INVENTORY */}
@@ -12329,23 +12296,47 @@ export default function AdminDashboardPage() {
                           />
                         </div>
 
-                        {/* Plan Price */}
-                        <div>
-                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Price (₹) *</label>
-                          <input
-                            type="number"
-                            required
-                            min={0}
-                            value={plan.price}
-                            onChange={(e) => {
-                              const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                              if (updated[pIdx]) {
-                                updated[pIdx].price = Number(e.target.value);
-                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
-                              }
-                            }}
-                            className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-black text-cyan-800"
-                          />
+                        {/* Original Price & Early Bird Price Grid */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Original Price (₹) *</label>
+                            <input
+                              type="number"
+                              required
+                              min={0}
+                              value={plan.price}
+                              onChange={(e) => {
+                                const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                if (updated[pIdx]) {
+                                  updated[pIdx].price = Number(e.target.value);
+                                  setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                }
+                              }}
+                              className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-black text-slate-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-extrabold text-purple-800 uppercase mb-1">Early Bird Price (₹)</label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={plan.early_bird_price ?? ""}
+                              onChange={(e) => {
+                                const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                if (updated[pIdx]) {
+                                  if (e.target.value) {
+                                    updated[pIdx].early_bird_price = Number(e.target.value);
+                                  } else {
+                                    delete updated[pIdx].early_bird_price;
+                                  }
+                                  setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                }
+                              }}
+                              placeholder="e.g. 5999"
+                              className="w-full rounded-xl border border-purple-300 bg-purple-50/50 px-3 py-1.5 text-xs font-black text-purple-900 focus:border-purple-600 focus:bg-white"
+                            />
+                          </div>
                         </div>
 
                         {/* Badge Tag & Featured Checkbox */}
@@ -12446,53 +12437,151 @@ export default function AdminDashboardPage() {
               {/* TAB 3: EARLY BIRD & COUPONS */}
               {paymentModalTab === "coupons" && (
                 <div className="space-y-6">
-                  {/* EARLY BIRD DISCOUNT */}
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
-                        <span>Early Bird Promotional Price</span>
-                      </h4>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(paymentForm.early_bird_enabled)}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_enabled: e.target.checked })}
-                          className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="text-xs font-bold text-purple-900">Enable Early Bird Pricing</span>
-                      </label>
+                  {/* EARLY BIRD DISCOUNT PROMOTIONAL SECTION */}
+                  <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/50 via-white to-amber-50/40 p-4 space-y-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-purple-600 animate-pulse" />
+                          <span>Dynamic Early Bird Pricing Manager (Pass-Wise)</span>
+                        </h4>
+                        <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+                          Set custom early bird promotional rates for Gold, Premium, and Platinum passes bounded by date range.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* DYNAMIC STATUS BADGE */}
+                        {(() => {
+                          const ebInfo = checkEarlyBirdStatus(
+                            paymentForm.early_bird_enabled,
+                            paymentForm.early_bird_start_date,
+                            paymentForm.early_bird_end_date
+                          );
+                          if (!paymentForm.early_bird_enabled) {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">
+                                ⚪ DISABLED
+                              </span>
+                            );
+                          }
+                          if (ebInfo.status === "ACTIVE") {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-black text-emerald-800 shadow-xs animate-pulse">
+                                🟢 ACTIVE (LIVE OFFER)
+                              </span>
+                            );
+                          } else if (ebInfo.status === "UPCOMING") {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-black text-amber-800">
+                                🟠 UPCOMING
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 px-3 py-1 text-xs font-black text-rose-800">
+                                🔴 EXPIRED
+                              </span>
+                            );
+                          }
+                        })()}
+
+                        <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-purple-200 shadow-xs">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(paymentForm.early_bird_enabled)}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_enabled: e.target.checked })}
+                            className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-xs font-extrabold text-purple-900">Enable Early Bird</span>
+                        </label>
+                      </div>
                     </div>
 
                     {paymentForm.early_bird_enabled && (
-                      <div className="grid gap-4 sm:grid-cols-3 pt-2">
-                        <div>
-                          <label className="block text-slate-700 font-bold mb-1">Early Bird Price (₹) *</label>
-                          <input
-                            type="number"
-                            value={paymentForm.early_bird_price ?? 3999}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_price: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-purple-300 bg-white px-3.5 py-2 text-xs font-extrabold text-purple-900"
-                          />
+                      <div className="space-y-4">
+                        {/* DATE RANGE SELECTORS */}
+                        <div className="grid gap-4 sm:grid-cols-2 bg-white p-3.5 rounded-xl border border-slate-200">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Early Bird Start Date *</label>
+                            <input
+                              type="date"
+                              required
+                              value={paymentForm.early_bird_start_date || ""}
+                              onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_start_date: e.target.value })}
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-600 focus:outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Early Bird End Date *</label>
+                            <input
+                              type="date"
+                              required
+                              value={paymentForm.early_bird_end_date || ""}
+                              onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_end_date: e.target.value })}
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-600 focus:outline-none"
+                            />
+                          </div>
                         </div>
+
+                        {/* PASS TIER EARLY BIRD PRICING GRID */}
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Start Date</label>
-                          <input
-                            type="date"
-                            value={paymentForm.early_bird_start_date || ""}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_start_date: e.target.value })}
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
-                          />
+                          <label className="block text-[11px] font-extrabold text-purple-950 uppercase tracking-wider mb-2">
+                            Pass-Wise Early Bird Promotional Rates:
+                          </label>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            {(Array.isArray(paymentForm.pricing_plans) ? paymentForm.pricing_plans : []).map((plan: PricingPlanTier, pIdx: number) => (
+                              <div key={plan.id || pIdx} className="rounded-xl border border-purple-200 bg-white p-3 space-y-2 shadow-xs">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                                  <span className="font-extrabold text-xs text-slate-900">{plan.name}</span>
+                                  <span className="text-[10px] font-bold text-slate-400 line-through">
+                                    ₹{plan.price.toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[10px] font-bold text-purple-800 uppercase mb-0.5">Early Bird Price (₹)</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={plan.early_bird_price ?? ""}
+                                    onChange={(e) => {
+                                      const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
+                                      if (updated[pIdx]) {
+                                        if (e.target.value) {
+                                          updated[pIdx].early_bird_price = Number(e.target.value);
+                                        } else {
+                                          delete updated[pIdx].early_bird_price;
+                                        }
+                                        setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                      }
+                                    }}
+                                    placeholder={`e.g. ${Math.round(plan.price * 0.75)}`}
+                                    className="w-full rounded-lg border border-purple-300 bg-purple-50/40 px-3 py-1.5 text-xs font-black text-purple-900 focus:border-purple-600 focus:bg-white"
+                                  />
+                                </div>
+
+                                {plan.early_bird_price && plan.early_bird_price < plan.price && (
+                                  <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex justify-between">
+                                    <span>Discount:</span>
+                                    <span>Save ₹{(plan.price - plan.early_bird_price).toLocaleString("en-IN")}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-slate-700 font-bold mb-1">End Date</label>
-                          <input
-                            type="date"
-                            value={paymentForm.early_bird_end_date || ""}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, early_bird_end_date: e.target.value })}
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
-                          />
-                        </div>
+
+                        {/* LIVE PREVIEW BANNER */}
+                        {paymentForm.early_bird_end_date && (
+                          <div className="pt-2">
+                            <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">
+                              Live Delegate Timer Preview:
+                            </label>
+                            <EarlyBirdCountdownTimer targetDate={paymentForm.early_bird_end_date} />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -12652,6 +12741,9 @@ export default function AdminDashboardPage() {
                   ? JSON.parse(previewTierModalConfig.pricing_plans || "[]")
                   : previewTierModalConfig.pricing_plans || []
               }
+              earlyBirdEnabled={previewTierModalConfig.early_bird_enabled}
+              earlyBirdStartDate={previewTierModalConfig.early_bird_start_date}
+              earlyBirdEndDate={previewTierModalConfig.early_bird_end_date}
             />
 
             <div className="mt-6 flex justify-end">

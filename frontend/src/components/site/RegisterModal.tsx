@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown, Crown } from "lucide-react";
 import { toast } from "sonner";
-import { events as defaultEvents, type EventItem, getDefaultPricingPlans, type PricingPlanTier } from "@/lib/site-data";
+import { events as defaultEvents, type EventItem, getDefaultPricingPlans, checkEarlyBirdStatus, type PricingPlanTier } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import logoUrl from "@/assets/logo-final.png";
 
@@ -173,59 +173,73 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
   }
   const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [currentEvent.city || "Mumbai"]));
 
-  // Calculate pricing breakdown
+  // Calculate pricing breakdown tier-wise with dynamic early bird status
   const getPricing = () => {
-    let baseFee = Number(paymentConfig?.registration_fee) || 4999;
-
-    if (paymentConfig?.registration_type_prices) {
-      let categoryPrices: any = {};
-      if (typeof paymentConfig.registration_type_prices === "string") {
-        try { categoryPrices = JSON.parse(paymentConfig.registration_type_prices); } catch (e) {}
-      } else {
-        categoryPrices = paymentConfig.registration_type_prices;
-      }
-      
-      const catKey = formData.registrationCategory;
-      if (categoryPrices[catKey] !== undefined) {
-        baseFee = Number(categoryPrices[catKey]);
-      } else if (catKey === "Delegate" && categoryPrices["Delegate Pass"] !== undefined) {
-        baseFee = Number(categoryPrices["Delegate Pass"]);
-      } else if (catKey === "Speaker" && categoryPrices["Speaker Slot"] !== undefined) {
-        baseFee = Number(categoryPrices["Speaker Slot"]);
-      } else if (catKey === "Sponsorship" && categoryPrices["Sponsorship Opportunity"] !== undefined) {
-        baseFee = Number(categoryPrices["Sponsorship Opportunity"]);
-      }
+    let parsedPlans: PricingPlanTier[] = [];
+    if (typeof paymentConfig?.pricing_plans === "string") {
+      try { parsedPlans = JSON.parse(paymentConfig.pricing_plans); } catch (e) {}
+    } else if (Array.isArray(paymentConfig?.pricing_plans)) {
+      parsedPlans = paymentConfig.pricing_plans;
+    }
+    if (!parsedPlans || parsedPlans.length === 0) {
+      parsedPlans = getDefaultPricingPlans();
     }
 
-    let earlyBirdDiscount = 0;
-    if (paymentConfig?.early_bird_enabled && paymentConfig?.early_bird_price && baseFee > paymentConfig.early_bird_price) {
-      earlyBirdDiscount = baseFee - Number(paymentConfig.early_bird_price);
-    }
+    // Find selected tier pass matching registrationCategory
+    const catName = formData.registrationCategory;
+    const matchedPlan =
+      parsedPlans.find(
+        (p) => p.name.toLowerCase() === catName.toLowerCase() || p.id === catName
+      ) ||
+      parsedPlans.find((p) => p.is_featured) ||
+      parsedPlans[0];
 
+    const originalPrice = matchedPlan ? Number(matchedPlan.price) : 8000;
+
+    // Check early bird date-based status automatically
+    const ebStatus = checkEarlyBirdStatus(
+      paymentConfig?.early_bird_enabled ?? true,
+      paymentConfig?.early_bird_start_date || "2026-01-01",
+      paymentConfig?.early_bird_end_date || "2026-12-31"
+    );
+
+    const isEarlyBirdActive = ebStatus.isActive;
+    const ebPrice = matchedPlan?.early_bird_price ?? paymentConfig?.early_bird_price ?? originalPrice;
+
+    // Effective Base Price: Early Bird Price if active, else Original Price
+    const effectiveBasePrice = isEarlyBirdActive && ebPrice < originalPrice ? ebPrice : originalPrice;
+    const earlyBirdDiscount = isEarlyBirdActive && ebPrice < originalPrice ? originalPrice - ebPrice : 0;
+
+    // Coupon discount applied after Early Bird price
     let couponDiscount = 0;
     if (appliedCoupon) {
       if (appliedCoupon.type === "percentage") {
-        couponDiscount = Math.round((baseFee * Number(appliedCoupon.value)) / 100);
+        couponDiscount = Math.round((effectiveBasePrice * Number(appliedCoupon.value)) / 100);
       } else {
         couponDiscount = Number(appliedCoupon.value);
       }
     }
 
-    const totalDiscount = Math.min(baseFee, earlyBirdDiscount + couponDiscount);
-    const netBase = Math.max(0, baseFee - totalDiscount);
-    const gstPct = Number(paymentConfig?.gst_percentage) || 18;
+    const netBase = Math.max(0, effectiveBasePrice - couponDiscount);
+    const gstPct = Number(paymentConfig?.gst_percentage) ?? 18;
     const gstAmt = paymentConfig?.gst_included ? 0 : Math.round((netBase * gstPct) / 100);
     const totalPayable = paymentConfig?.gst_included ? netBase : netBase + gstAmt;
 
     return {
-      baseFee,
+      selectedPlan: matchedPlan,
+      passName: matchedPlan?.name || "Gold Pass",
+      baseFee: originalPrice,
+      originalPrice,
+      isEarlyBirdActive,
+      earlyBirdPrice: ebPrice,
       earlyBirdDiscount,
+      effectiveBasePrice,
       couponDiscount,
-      totalDiscount,
       netBase,
       gstPct,
       gstAmt,
       totalPayable,
+      priceType: isEarlyBirdActive && ebPrice < originalPrice ? "EARLY_BIRD" : "REGULAR",
     };
   };
 
@@ -835,9 +849,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       return (
                         <RegistrationPlansGrid
                           plans={parsedPlans}
+                          earlyBirdEnabled={paymentConfig?.early_bird_enabled}
+                          earlyBirdStartDate={paymentConfig?.early_bird_start_date}
+                          earlyBirdEndDate={paymentConfig?.early_bird_end_date}
                           onSelectPlan={(plan) => {
                             setFormData((prev) => ({ ...prev, registrationCategory: plan.name }));
-                            toast.success(`Selected ${plan.name} (₹${Number(plan.price).toLocaleString("en-IN")})`);
+                            toast.success(`Selected ${plan.name} (₹${Number(plan.early_bird_price && checkEarlyBirdStatus(paymentConfig?.early_bird_enabled, paymentConfig?.early_bird_start_date, paymentConfig?.early_bird_end_date).isActive ? plan.early_bird_price : plan.price).toLocaleString("en-IN")})`);
                           }}
                           selectedPlanId={formData.registrationCategory}
                         />

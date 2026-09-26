@@ -94,13 +94,13 @@ export default function EventsPage() {
     };
   }, []);
 
-  const liveEventsCount = eventList.filter((e) => e.status === "live" || (e as any).is_live).length;
+  const liveEventsCount = eventList.filter((e) => (e.status as any) === "live" || (e as any).is_live).length;
   const upcomingEventsCount = eventList.filter((e) => !isEventPast(e)).length;
   const pastEventsCount = eventList.filter((e) => isEventPast(e)).length;
   const allEventsCount = eventList.length;
 
   const filteredEvents = eventList.filter((e) => {
-    if (statusFilter === "live") return e.status === "live" || (e as any).is_live;
+    if ((statusFilter as any) === "live") return (e.status as any) === "live" || (e as any).is_live;
     if (statusFilter === "upcoming") return !isEventPast(e);
     if (statusFilter === "past") return isEventPast(e);
     return true;
