@@ -29,6 +29,9 @@ import {
   Lightbulb,
   GraduationCap,
   Trophy,
+  Radio,
+  AlertCircle,
+  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
@@ -42,6 +45,7 @@ import {
 } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { RegisterModal } from "@/components/site/RegisterModal";
+import { EventCountdownTimer, EventStatus } from "@/components/site/EventCountdownTimer";
 import { socket } from "@/lib/socket";
 
 export default function EventDetailPage() {
@@ -54,6 +58,7 @@ export default function EventDetailPage() {
   const [activeSection, setActiveSection] = useState<string>("overview");
   const [eventPaymentConfig, setEventPaymentConfig] = useState<any>(null);
   const [isPricingAvailable, setIsPricingAvailable] = useState<boolean>(false);
+  const [liveEventStatus, setLiveEventStatus] = useState<EventStatus>("upcoming");
 
   // Video / Highlight Modal State
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -491,11 +496,11 @@ function getValidImageUrl(url?: string): string {
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>500+ Delegates</span>
+                <span>{event.delegates_count || "500+"} Delegates</span>
               </div>
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-amber-400 shrink-0" />
-                <span>30+ Speakers</span>
+                <span>{event.speakers_count || `${event.speakers || 30}+`} Speakers</span>
               </div>
             </div>
           </div>
@@ -504,9 +509,23 @@ function getValidImageUrl(url?: string): string {
           <div className="lg:col-span-4 rounded-3xl bg-slate-50/70 p-6 sm:p-7 flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-extrabold text-emerald-800">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Registrations Open
-                </span>
+                {liveEventStatus === "ended" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-500" /> Event Concluded
+                  </span>
+                ) : liveEventStatus === "live" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-extrabold text-rose-800 border border-rose-200">
+                    <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" /> Event is Live Now
+                  </span>
+                ) : liveEventStatus === "starts_today" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-800 border border-amber-200">
+                    <Flame className="h-3.5 w-3.5 text-amber-600 animate-bounce" /> Event Starts Today
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-extrabold text-emerald-800">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Registrations Open
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={shareEvent}
@@ -542,29 +561,49 @@ function getValidImageUrl(url?: string): string {
               {/* 3 STAT BADGES */}
               <div className="grid grid-cols-3 gap-2 text-center py-1">
                 <div className="rounded-2xl bg-cyan-100/60 p-2.5">
-                  <div className="text-base font-black text-cyan-900">500+</div>
+                  <div className="text-base font-black text-cyan-900">{event.delegates_count || "500+"}</div>
                   <div className="text-[10px] font-bold text-cyan-700">Delegates</div>
                 </div>
                 <div className="rounded-2xl bg-purple-100/60 p-2.5">
-                  <div className="text-base font-black text-purple-900">30+</div>
+                  <div className="text-base font-black text-purple-900">{event.speakers_count || `${event.speakers || 30}+`}</div>
                   <div className="text-[10px] font-bold text-purple-700">Speakers</div>
                 </div>
                 <div className="rounded-2xl bg-amber-100/60 p-2.5">
-                  <div className="text-base font-black text-amber-900">25+</div>
+                  <div className="text-base font-black text-amber-900">{event.sponsors_count || "25+"}</div>
                   <div className="text-[10px] font-bold text-amber-700">Sponsors</div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => handleOpenRegister("paid")}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer"
-              >
-                <span>Register Now</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              {liveEventStatus === "ended" ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-200 py-3.5 px-6 text-sm font-black text-slate-500 cursor-not-allowed border border-slate-300"
+                >
+                  <span>Registrations Closed</span>
+                  <AlertCircle className="h-4 w-4 text-slate-400" />
+                </button>
+              ) : liveEventStatus === "live" ? (
+                <button
+                  type="button"
+                  onClick={() => handleOpenRegister("paid")}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-red-600 to-pink-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-rose-500/20"
+                >
+                  <Radio className="h-4 w-4 animate-pulse text-white" />
+                  <span>Join Event Live</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenRegister("paid")}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer"
+                >
+                  <span>Register Now</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
 
               <button
                 type="button"
@@ -578,6 +617,17 @@ function getValidImageUrl(url?: string): string {
               </button>
             </div>
           </div>
+        </section>
+
+        {/* ========================================================= */}
+        {/* DYNAMIC LIVE COUNTDOWN TIMER SECTION                       */}
+        {/* ========================================================= */}
+        <section className="my-8">
+          <EventCountdownTimer
+            dateStr={dateText}
+            timeStr={timeText}
+            onStatusChange={setLiveEventStatus}
+          />
         </section>
 
 

@@ -408,6 +408,9 @@ export async function ensureEventsTable() {
         agenda_list LONGTEXT,
         map_url TEXT,
         venue_address TEXT,
+        delegates_count VARCHAR(100) DEFAULT '500+',
+        speakers_count VARCHAR(100) DEFAULT '30+',
+        sponsors_count VARCHAR(100) DEFAULT '25+',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -421,6 +424,9 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN agenda_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN map_url TEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN venue_address TEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN delegates_count VARCHAR(100) DEFAULT '500+';"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN speakers_count VARCHAR(100) DEFAULT '30+';"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_count VARCHAR(100) DEFAULT '25+';"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating events table:", err);

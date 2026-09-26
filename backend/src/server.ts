@@ -3220,6 +3220,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
     agenda_list,
     map_url,
     venue_address,
+    delegates_count,
+    speakers_count,
+    sponsors_count,
   } = req.body;
 
   if (!title || !category || !date || !city || !description) {
@@ -3236,13 +3239,17 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
   const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
   const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
 
+  const effectiveDelegatesCount = delegates_count || "500+";
+  const effectiveSpeakersCount = speakers_count || `${speakers || 30}+`;
+  const effectiveSponsorsCount = sponsors_count || "25+";
+
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
         `INSERT INTO events (
-          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -3267,6 +3274,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           agendaListStr,
           map_url || "",
           venue_address || `${venue}, ${city}`,
+          effectiveDelegatesCount,
+          effectiveSpeakersCount,
+          effectiveSponsorsCount,
         ]
       );
     }
@@ -3295,6 +3305,9 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       agenda_list: agendaListStr,
       map_url,
       venue_address,
+      delegates_count: effectiveDelegatesCount,
+      speakers_count: effectiveSpeakersCount,
+      sponsors_count: effectiveSponsorsCount,
     };
     io.emit("event_created", newEvent);
 
@@ -3330,6 +3343,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     agenda_list,
     map_url,
     venue_address,
+    delegates_count,
+    speakers_count,
+    sponsors_count,
   } = req.body;
 
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
@@ -3338,12 +3354,16 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
   const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
 
+  const effectiveDelegatesCount = delegates_count || "500+";
+  const effectiveSpeakersCount = speakers_count || `${speakers || 30}+`;
+  const effectiveSponsorsCount = sponsors_count || "25+";
+
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
         `UPDATE events SET 
-          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?
          WHERE id = ?`,
         [
           title,
@@ -3367,6 +3387,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
           agendaListStr,
           map_url || "",
           venue_address || `${venue}, ${city}`,
+          effectiveDelegatesCount,
+          effectiveSpeakersCount,
+          effectiveSponsorsCount,
           id,
         ]
       );
@@ -3395,6 +3418,9 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       agenda_list: agendaListStr,
       map_url,
       venue_address,
+      delegates_count: effectiveDelegatesCount,
+      speakers_count: effectiveSpeakersCount,
+      sponsors_count: effectiveSponsorsCount,
     };
     io.emit("event_updated", updatedEvent);
 

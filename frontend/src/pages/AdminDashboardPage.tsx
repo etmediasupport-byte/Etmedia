@@ -730,6 +730,9 @@ export default function AdminDashboardPage() {
     speakers: number;
     status: string;
     is_featured: boolean;
+    delegates_count: string;
+    speakers_count: string;
+    sponsors_count: string;
     locations: { city: string; venue: string; date: string; time: string; address?: string; map_url?: string }[];
     speakers_list: Speaker[];
     sponsors_list: Sponsor[];
@@ -748,6 +751,9 @@ export default function AdminDashboardPage() {
     speakers: 20,
     status: "published",
     is_featured: false,
+    delegates_count: "500+",
+    speakers_count: "30+",
+    sponsors_count: "25+",
     locations: [
       {
         city: "",
@@ -2736,6 +2742,9 @@ export default function AdminDashboardPage() {
       speakers: 20,
       status: "published",
       is_featured: false,
+      delegates_count: "500+",
+      speakers_count: "30+",
+      sponsors_count: "25+",
       locations: [
         {
           city: "",
@@ -2828,6 +2837,9 @@ export default function AdminDashboardPage() {
       speakers: evt.speakers || parsedSpeakers.length || 20,
       status: evt.status || "published",
       is_featured: evt.is_featured === 1 || evt.is_featured === true,
+      delegates_count: evt.delegates_count || "500+",
+      speakers_count: evt.speakers_count || `${evt.speakers || 30}+`,
+      sponsors_count: evt.sponsors_count || "25+",
       locations: parsedLocations,
       speakers_list: parsedSpeakers,
       sponsors_list: parsedSponsors,
@@ -6023,6 +6035,46 @@ export default function AdminDashboardPage() {
                         <option value="published">Published (Live & Visible)</option>
                         <option value="draft">Draft (Admin Only)</option>
                       </select>
+                    </div>
+
+                    {/* DYNAMIC DELEGATES, SPEAKERS, SPONSORS STAT COUNTS */}
+                    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                          Delegates Count (Badge Stat)
+                        </label>
+                        <input
+                          type="text"
+                          value={eventForm.delegates_count}
+                          onChange={(e) => setEventForm({ ...eventForm, delegates_count: e.target.value })}
+                          placeholder="e.g. 500+"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                          Speakers Count (Badge Stat)
+                        </label>
+                        <input
+                          type="text"
+                          value={eventForm.speakers_count}
+                          onChange={(e) => setEventForm({ ...eventForm, speakers_count: e.target.value })}
+                          placeholder="e.g. 30+"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                          Sponsors Count (Badge Stat)
+                        </label>
+                        <input
+                          type="text"
+                          value={eventForm.sponsors_count}
+                          onChange={(e) => setEventForm({ ...eventForm, sponsors_count: e.target.value })}
+                          placeholder="e.g. 25+"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                        />
+                      </div>
                     </div>
 
                     {/* Banner Image & Live Preview Box */}

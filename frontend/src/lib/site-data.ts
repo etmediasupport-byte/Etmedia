@@ -178,6 +178,9 @@ export type EventItem = {
   status: "upcoming" | "past" | "published" | "draft";
   month?: string;
   is_featured?: number | boolean;
+  delegates_count?: string;
+  speakers_count?: string;
+  sponsors_count?: string;
   locations?: string | any[];
   speakers_list?: string | Speaker[];
   sponsors_list?: string | Sponsor[];
