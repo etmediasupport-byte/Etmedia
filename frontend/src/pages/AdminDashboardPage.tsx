@@ -4543,16 +4543,54 @@ export default function AdminDashboardPage() {
                 });
                 const uniqueList = Array.from(uniquePaymentsMap.values());
                 const filteredList = uniqueList.filter((item) => {
-                  const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
-                  const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
+                  const queryMatch = (() => {
+                    if (!searchQuery || !searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase().trim();
+
+                    if ((item.event_title || "").toLowerCase().includes(q)) return true;
+                    if ((item.event_slug || "").toLowerCase().includes(q)) return true;
+                    if ((item.event_id || "").toLowerCase().includes(q)) return true;
+                    if ((item.id || "").toLowerCase().includes(q)) return true;
+                    if ((item.event_city || "").toLowerCase().includes(q)) return true;
+                    if ((item.currency || "").toLowerCase().includes(q)) return true;
+
+                    let coupons: any[] = [];
+                    if (typeof item.coupons === "string") {
+                      try { coupons = JSON.parse(item.coupons); } catch (e) {}
+                    } else if (Array.isArray(item.coupons)) {
+                      coupons = item.coupons;
+                    }
+                    if (coupons.some((c: any) => (c.code || "").toLowerCase().includes(q))) return true;
+
+                    let plans: any[] = [];
+                    if (typeof item.pricing_plans === "string") {
+                      try { plans = JSON.parse(item.pricing_plans); } catch (e) {}
+                    } else if (Array.isArray(item.pricing_plans)) {
+                      plans = item.pricing_plans;
+                    }
+                    if (plans.some((p: any) => (p.name || "").toLowerCase().includes(q))) return true;
+
+                    return false;
+                  })();
+
+                  let statusMatch = true;
+                  if (paymentFilterStatus === "Enabled") {
+                    statusMatch = (item.payment_status || "Enabled") === "Enabled";
+                  } else if (paymentFilterStatus === "Disabled") {
+                    statusMatch = (item.payment_status || "Enabled") === "Disabled";
+                  } else if (paymentFilterStatus === "EarlyBird") {
+                    statusMatch = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date).isActive;
+                  }
+
                   const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
-                  return titleMatch && statusMatch && cityMatch;
+
+                  return queryMatch && statusMatch && cityMatch;
                 });
 
                 return (
                   <div className={paymentViewMode === "row" ? "grid gap-6 grid-cols-1 w-full" : "grid gap-6 md:grid-cols-2"}>
                     {filteredList.map((item) => {
-                      const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date);
+                      const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date).isActive;
                       const gstPct = Number(item.gst_percentage) || 18;
 
                       const available = Number(item.available_seats) || 100;
@@ -4805,8 +4843,30 @@ export default function AdminDashboardPage() {
                     })}
 
                     {filteredList.length === 0 && (
-                      <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
-                        No event payment configurations found. Click "Add Payment Configuration" to create one!
+                      <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50/50 p-12 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 text-slate-500 mb-3">
+                          <Search className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">No matching event payment configurations found</h3>
+                        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                          {searchQuery || paymentFilterStatus !== "all" || paymentFilterCity !== "all"
+                            ? `No results matched your search "${searchQuery}" or selected filters.`
+                            : 'Click "Add New Payment Configuration" above to create one!'}
+                        </p>
+                        {(searchQuery || paymentFilterStatus !== "all" || paymentFilterCity !== "all") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setPaymentFilterStatus("all");
+                              setPaymentFilterCity("all");
+                            }}
+                            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer shadow-sm"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Reset Search & Filters
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -12910,7 +12970,7 @@ export default function AdminDashboardPage() {
                   ticketPreviewItem.early_bird_enabled,
                   ticketPreviewItem.early_bird_start_date,
                   ticketPreviewItem.early_bird_end_date
-                );
+                ).isActive;
 
                 const goldPlan = parsedPlans.find((p) => p.name.toLowerCase().includes("gold")) || parsedPlans[0];
                 const basePassPrice = isEb && typeof goldPlan?.early_bird_price === "number" && goldPlan.early_bird_price > 0
