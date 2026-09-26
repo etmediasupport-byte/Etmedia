@@ -2538,10 +2538,27 @@ app.get("/api/admin/event-payments", authenticateAdmin, async (_req, res) => {
     const [rows]: any = await pool.query(`
       SELECT p.*, e.title as event_title, e.category as event_category, e.city as event_city, e.date as event_date, e.image as event_image, e.slug as event_slug
       FROM event_payment_settings p
-      LEFT JOIN events e ON p.event_id = e.id
+      LEFT JOIN events e ON (p.event_id = e.id OR p.event_id = e.slug)
+      GROUP BY p.id, p.event_id
       ORDER BY p.updated_at DESC
     `);
-    res.json({ success: true, payments: rows });
+    
+    // Deduplicate by event identification to ensure no event is returned twice
+    const uniqueMap = new Map();
+    (rows || []).forEach((row: any) => {
+      const key = (row.event_slug && row.event_slug.trim())
+        ? row.event_slug.trim().toLowerCase()
+        : (row.event_title && row.event_title.trim())
+        ? row.event_title.trim().toLowerCase()
+        : (row.event_id && row.event_id.trim())
+        ? row.event_id.trim().toLowerCase()
+        : row.id;
+      if (key && !uniqueMap.has(key)) {
+        uniqueMap.set(key, row);
+      }
+    });
+
+    res.json({ success: true, payments: Array.from(uniqueMap.values()) });
   } catch (err) {
     console.error("Admin Fetch Event Payments Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch event payment settings." });

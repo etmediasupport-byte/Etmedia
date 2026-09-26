@@ -90,6 +90,8 @@ import {
   Linkedin,
   Crown,
   Gem,
+  List,
+  Grid,
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
@@ -540,6 +542,7 @@ export default function AdminDashboardPage() {
   const [paymentFilterStatus, setPaymentFilterStatus] = useState<string>("all");
   const [paymentFilterCategory, setPaymentFilterCategory] = useState<string>("all");
   const [paymentFilterCity, setPaymentFilterCity] = useState<string>("all");
+  const [paymentViewMode, setPaymentViewMode] = useState<"row" | "grid">("row");
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [showTicketPreviewModal, setShowTicketPreviewModal] = useState(false);
   const [ticketPreviewItem, setTicketPreviewItem] = useState<EventPaymentConfig | null>(null);
@@ -3690,7 +3693,14 @@ export default function AdminDashboardPage() {
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
     { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
-    { id: "event-payments", label: "Event Payments", icon: CreditCard, count: eventPayments.length },
+    { id: "event-payments", label: "Event Payments", icon: CreditCard, count: (() => {
+      const map = new Map();
+      eventPayments.forEach((p) => {
+        const key = (p.event_slug && p.event_slug.trim()) ? p.event_slug.trim().toLowerCase() : (p.event_title && p.event_title.trim()) ? p.event_title.trim().toLowerCase() : (p.event_id && p.event_id.trim()) ? p.event_id.trim().toLowerCase() : p.id;
+        if (key && !map.has(key)) map.set(key, p);
+      });
+      return map.size;
+    })() },
     { id: "popup", label: "Event Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
     { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
     { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
@@ -4314,73 +4324,92 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* 4 KPI SUMMARY CARDS */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Configured</span>
-                      <div className="rounded-xl bg-cyan-100 p-2 text-cyan-700">
-                        <CreditCard className="h-4 w-4" />
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-slate-900">{eventPayments.length}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">Events</span>
-                    </div>
-                  </div>
+                {(() => {
+                  const uniqueStatsMap = new Map();
+                  eventPayments.forEach((p) => {
+                    const key = (p.event_slug && p.event_slug.trim())
+                      ? p.event_slug.trim().toLowerCase()
+                      : (p.event_title && p.event_title.trim())
+                      ? p.event_title.trim().toLowerCase()
+                      : (p.event_id && p.event_id.trim())
+                      ? p.event_id.trim().toLowerCase()
+                      : p.id;
+                    if (key && !uniqueStatsMap.has(key)) {
+                      uniqueStatsMap.set(key, p);
+                    }
+                  });
+                  const uniquePaymentsList = Array.from(uniqueStatsMap.values());
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payments Active</span>
-                      <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
-                        <CheckCircle2 className="h-4 w-4" />
+                  return (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Configured</span>
+                          <div className="rounded-xl bg-cyan-100 p-2 text-cyan-700">
+                            <CreditCard className="h-4 w-4" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-slate-900">{uniquePaymentsList.length}</span>
+                          <span className="text-[11px] text-slate-500 font-medium">Events</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-slate-900">
-                        {eventPayments.filter((p) => (p.payment_status || "Enabled") === "Enabled").length}
-                      </span>
-                      <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        Live Checkout
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Seats Capacity</span>
-                      <div className="rounded-2xl bg-purple-100 p-2 text-purple-700">
-                        <Users className="h-4 w-4" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payments Active</span>
+                          <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-slate-900">
+                            {uniquePaymentsList.filter((p: any) => (p.payment_status || "Enabled") === "Enabled").length}
+                          </span>
+                          <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            Live Checkout
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-slate-900">
-                        {eventPayments.reduce((acc, item) => acc + (Number(item.total_seats) || 0), 0)}
-                      </span>
-                      <span className="text-[11px] text-slate-500 font-medium">Seats Managed</span>
-                    </div>
-                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Coupons</span>
-                      <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                        <Tag className="h-4 w-4" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Seats Capacity</span>
+                          <div className="rounded-2xl bg-purple-100 p-2 text-purple-700">
+                            <Users className="h-4 w-4" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-slate-900">
+                            {uniquePaymentsList.reduce((acc: number, item: any) => acc + (Number(item.total_seats) || 0), 0)}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-medium">Seats Managed</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Coupons</span>
+                          <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                            <Tag className="h-4 w-4" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-slate-900">
+                            {uniquePaymentsList.reduce((acc: number, item: any) => {
+                              let c = item.coupons;
+                              if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = []; } }
+                              return acc + (Array.isArray(c) ? c.length : 0);
+                            }, 0)}
+                          </span>
+                          <span className="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            Discounts Active
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-slate-900">
-                        {eventPayments.reduce((acc, item) => {
-                          let c = item.coupons;
-                          if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = []; } }
-                          return acc + (Array.isArray(c) ? c.length : 0);
-                        }, 0)}
-                      </span>
-                      <span className="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                        Discounts Active
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
 
@@ -4400,8 +4429,38 @@ export default function AdminDashboardPage() {
                     />
                   </div>
 
-                  {/* Filter Dropdowns */}
+                  {/* Filter Dropdowns & View Mode Switcher */}
                   <div className="flex flex-wrap items-center gap-3 text-xs">
+                    {/* View Layout Mode Switcher */}
+                    <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-2xl border border-slate-300 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentViewMode("row")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          paymentViewMode === "row"
+                            ? "bg-cyan-600 text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                        title="Tabular Row Format (1 Card per Row)"
+                      >
+                        <List className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">1 Row per Card</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentViewMode("grid")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          paymentViewMode === "grid"
+                            ? "bg-cyan-600 text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                        title="2-Column Grid Format"
+                      >
+                        <Grid className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">2 Column Grid</span>
+                      </button>
+                    </div>
+
                     {/* Status Filter */}
                     <select
                       value={paymentFilterStatus}
@@ -4467,274 +4526,292 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
-              {/* EXECUTIVE EVENT PAYMENTS CARDS GRID */}
-              <div className="grid gap-6 md:grid-cols-2">
-                {eventPayments
-                  .filter((item) => {
-                    const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
-                    const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
-                    const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
-                    return titleMatch && statusMatch && cityMatch;
-                  })
-                  .map((item) => {
-                    const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date);
-                    const gstPct = Number(item.gst_percentage) || 18;
+              {/* EXECUTIVE EVENT PAYMENTS CARDS GRID / TABULAR ROW VIEW */}
+              {(() => {
+                const uniquePaymentsMap = new Map();
+                eventPayments.forEach((p) => {
+                  const key = (p.event_slug && p.event_slug.trim())
+                    ? p.event_slug.trim().toLowerCase()
+                    : (p.event_title && p.event_title.trim())
+                    ? p.event_title.trim().toLowerCase()
+                    : (p.event_id && p.event_id.trim())
+                    ? p.event_id.trim().toLowerCase()
+                    : p.id;
+                  if (key && !uniquePaymentsMap.has(key)) {
+                    uniquePaymentsMap.set(key, p);
+                  }
+                });
+                const uniqueList = Array.from(uniquePaymentsMap.values());
+                const filteredList = uniqueList.filter((item) => {
+                  const titleMatch = (item.event_title || item.event_id || "").toLowerCase().includes(searchQuery.toLowerCase());
+                  const statusMatch = paymentFilterStatus === "all" || (item.payment_status || "Enabled") === paymentFilterStatus;
+                  const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
+                  return titleMatch && statusMatch && cityMatch;
+                });
 
-                    const available = Number(item.available_seats) || 100;
-                    const total = Number(item.total_seats) || 100;
-                    const pctSeats = Math.round(((total - available) / total) * 100);
+                return (
+                  <div className={paymentViewMode === "row" ? "grid gap-6 grid-cols-1 w-full" : "grid gap-6 md:grid-cols-2"}>
+                    {filteredList.map((item) => {
+                      const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date);
+                      const gstPct = Number(item.gst_percentage) || 18;
 
-                    let parsedCoupons: any[] = [];
-                    if (typeof item.coupons === "string") {
-                      try { parsedCoupons = JSON.parse(item.coupons); } catch (e) {}
-                    } else if (Array.isArray(item.coupons)) {
-                      parsedCoupons = item.coupons;
-                    }
+                      const available = Number(item.available_seats) || 100;
+                      const total = Number(item.total_seats) || 100;
+                      const pctSeats = Math.round(((total - available) / total) * 100);
 
-                    let parsedPlans: PricingPlanTier[] = [];
-                    if (typeof item.pricing_plans === "string") {
-                      try { parsedPlans = JSON.parse(item.pricing_plans); } catch (e) {}
-                    } else if (Array.isArray(item.pricing_plans)) {
-                      parsedPlans = item.pricing_plans as any;
-                    }
-                    if (!parsedPlans || parsedPlans.length === 0) {
-                      parsedPlans = getDefaultPricingPlans();
-                    }
+                      let parsedCoupons: any[] = [];
+                      if (typeof item.coupons === "string") {
+                        try { parsedCoupons = JSON.parse(item.coupons); } catch (e) {}
+                      } else if (Array.isArray(item.coupons)) {
+                        parsedCoupons = item.coupons;
+                      }
 
-                    const isSelected = selectedPaymentIds.includes(item.id);
-                    const isEnabled = (item.payment_status || "Enabled") === "Enabled";
+                      let parsedPlans: PricingPlanTier[] = [];
+                      if (typeof item.pricing_plans === "string") {
+                        try { parsedPlans = JSON.parse(item.pricing_plans); } catch (e) {}
+                      } else if (Array.isArray(item.pricing_plans)) {
+                        parsedPlans = item.pricing_plans as any;
+                      }
+                      if (!parsedPlans || parsedPlans.length === 0) {
+                        parsedPlans = getDefaultPricingPlans();
+                      }
 
-                    return (
-                      <div
-                        key={item.id}
-                        className={`relative rounded-3xl border bg-white p-6 shadow-md transition-all hover:shadow-xl ${
-                          isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 bg-cyan-50/20" : "border-slate-200"
-                        }`}
-                      >
-                        {/* CARD TOP HEADER: SELECT CHECKBOX + TITLE + STATUS TOGGLE */}
-                        <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedPaymentIds((prev) => [...prev, item.id]);
-                                } else {
-                                  setSelectedPaymentIds((prev) => prev.filter((id) => id !== item.id));
-                                }
-                              }}
-                              className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer h-4 w-4 shrink-0"
-                            />
+                      const isSelected = selectedPaymentIds.includes(item.id);
+                      const isEnabled = (item.payment_status || "Enabled") === "Enabled";
 
-                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm">
-                              <img
-                                src={item.event_image || logo}
-                                alt="Event"
-                                className="h-full w-full object-cover"
-                                onError={(e: any) => { e.target.src = logo; }}
+                      return (
+                        <div
+                          key={item.id}
+                          className={`relative rounded-3xl border bg-white p-6 shadow-md transition-all hover:shadow-xl ${
+                            isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 bg-cyan-50/20" : "border-slate-200"
+                          }`}
+                        >
+                          {/* CARD TOP HEADER: SELECT CHECKBOX + TITLE + STATUS TOGGLE */}
+                          <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPaymentIds((prev) => [...prev, item.id]);
+                                  } else {
+                                    setSelectedPaymentIds((prev) => prev.filter((id) => id !== item.id));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer h-4 w-4 shrink-0"
                               />
+
+                              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm">
+                                <img
+                                  src={item.event_image || logo}
+                                  alt="Event"
+                                  className="h-full w-full object-cover"
+                                  onError={(e: any) => { e.target.src = logo; }}
+                                />
+                              </div>
+
+                              <div className="min-w-0">
+                                <h3 className="font-black text-slate-900 text-base line-clamp-1 font-display">
+                                  {item.event_title || item.event_id}
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-500 font-medium">
+                                  <span className="inline-flex items-center gap-1 text-cyan-700 font-bold">
+                                    <MapPin className="h-3 w-3" />
+                                    {item.event_city || "Pan-India"}
+                                  </span>
+                                  <span>•</span>
+                                  <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
+                                    {item.event_slug || item.event_id}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="min-w-0">
-                              <h3 className="font-black text-slate-900 text-base line-clamp-1 font-display">
-                                {item.event_title || item.event_id}
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-500 font-medium">
-                                <span className="inline-flex items-center gap-1 text-cyan-700 font-bold">
-                                  <MapPin className="h-3 w-3" />
-                                  {item.event_city || "Pan-India"}
+                            {/* Live Status Toggle Pill */}
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
+                              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold border transition-all cursor-pointer shadow-sm ${
+                                isEnabled
+                                  ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                  : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
+                              }`}
+                            >
+                              <span className={`h-2 w-2 rounded-full ${isEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                              {isEnabled ? "Live Checkout" : "Disabled"}
+                            </button>
+                          </div>
+
+                          {/* CARD BODY: 2 KEY METRICS GRID */}
+                          <div className="grid gap-4 sm:grid-cols-2 my-5">
+                            {/* 1. Tax & Tier Pricing Policy Box */}
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
+                              <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                                <span>TAX & PRICING POLICY</span>
+                                <span className="text-cyan-700 font-bold">{item.currency || "INR (₹)"}</span>
+                              </div>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-xl font-black text-slate-900 font-display">
+                                  {gstPct}% GST
                                 </span>
-                                <span>•</span>
-                                <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
-                                  {item.event_slug || item.event_id}
+                                <span className="text-xs text-slate-500 font-medium">
+                                  ({item.gst_included ? "Included" : "Excluded"})
                                 </span>
+                              </div>
+                              <div className="text-[11px] text-slate-600 font-medium">
+                                Dynamic Pass Tiers • {isEarlyBirdActive ? "⚡ Early Bird Active" : "Regular Pricing"}
+                              </div>
+                            </div>
+
+                            {/* 2. Seats Capacity Progress Box */}
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
+                              <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
+                                <span className="text-slate-500">Seat Capacity</span>
+                                <span className="text-emerald-700">{available} / {total} Free</span>
+                              </div>
+                              <div className="text-base font-black text-slate-900 font-display flex items-baseline gap-1">
+                                <span>{total - available}</span>
+                                <span className="text-xs font-medium text-slate-500">Seats Booked</span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden mt-1">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
+                                  }`}
+                                  style={{ width: `${Math.min(pctSeats, 100)}%` }}
+                                />
                               </div>
                             </div>
                           </div>
 
-                          {/* Live Status Toggle Pill */}
-                          <button
-                            type="button"
-                            onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
-                            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold border transition-all cursor-pointer shadow-sm ${
-                              isEnabled
-                                ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                                : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
-                            }`}
-                          >
-                            <span className={`h-2 w-2 rounded-full ${isEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                            {isEnabled ? "Live Checkout" : "Disabled"}
-                          </button>
-                        </div>
-
-                        {/* CARD BODY: 2 KEY METRICS GRID */}
-                        <div className="grid gap-4 sm:grid-cols-2 my-5">
-                          {/* 1. Tax & Tier Pricing Policy Box */}
-                          <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
-                            <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                              <span>TAX & PRICING POLICY</span>
-                              <span className="text-cyan-700 font-bold">{item.currency || "INR (₹)"}</span>
-                            </div>
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-xl font-black text-slate-900 font-display">
-                                {gstPct}% GST
+                          {/* SECTION 3: MULTI-TIER REGISTRATION PLANS SUMMARY */}
+                          <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3.5 space-y-2 mb-5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                                <Crown className="h-3.5 w-3.5 text-amber-500" />
+                                <span>Configured Registration Tier Passes ({parsedPlans.length} Plans)</span>
                               </span>
-                              <span className="text-xs text-slate-500 font-medium">
-                                ({item.gst_included ? "Included" : "Excluded"})
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewTierModalConfig(item)}
+                                className="text-[11px] font-bold text-cyan-700 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="h-3 w-3" /> Preview Public View
+                              </button>
                             </div>
-                            <div className="text-[11px] text-slate-600 font-medium">
-                              Dynamic Pass Tiers • {isEarlyBirdActive ? "⚡ Early Bird Active" : "Regular Pricing"}
-                            </div>
-                          </div>
 
-                          {/* 2. Seats Capacity Progress Box */}
-                          <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
-                            <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
-                              <span className="text-slate-500">Seat Capacity</span>
-                              <span className="text-emerald-700">{available} / {total} Free</span>
-                            </div>
-                            <div className="text-base font-black text-slate-900 font-display flex items-baseline gap-1">
-                              <span>{total - available}</span>
-                              <span className="text-xs font-medium text-slate-500">Seats Booked</span>
-                            </div>
-                            <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden mt-1">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
-                                }`}
-                                style={{ width: `${Math.min(pctSeats, 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              {parsedPlans.map((plan, pIdx) => {
+                                const isPopular = plan.is_featured || plan.badge?.toLowerCase().includes("popular") || plan.name.toLowerCase().includes("gold");
+                                const hasEb = isEarlyBirdActive && typeof plan.early_bird_price === "number" && plan.early_bird_price > 0;
+                                return (
+                                  <div
+                                    key={pIdx}
+                                    className={`rounded-xl p-2.5 text-xs font-bold border transition-all ${
+                                      isPopular
+                                        ? "bg-white border-amber-300 shadow-xs text-slate-900 ring-1 ring-amber-400/30"
+                                        : "bg-white/80 border-slate-200 text-slate-800"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-1 mb-1">
+                                      <span className="truncate font-extrabold">{plan.name}</span>
+                                      {isPopular && (
+                                        <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full uppercase">
+                                          Popular
+                                        </span>
+                                      )}
+                                    </div>
 
-                        {/* SECTION 3: MULTI-TIER REGISTRATION PLANS SUMMARY */}
-                        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3.5 space-y-2 mb-5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-800 flex items-center gap-1">
-                              <Crown className="h-3.5 w-3.5 text-amber-500" />
-                              <span>Configured Registration Tier Passes ({parsedPlans.length} Plans)</span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTierModalConfig(item)}
-                              className="text-[11px] font-bold text-cyan-700 hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Eye className="h-3 w-3" /> Preview Public View
-                            </button>
-                          </div>
-
-                          <div className="grid gap-2 sm:grid-cols-3">
-                            {parsedPlans.map((plan, pIdx) => {
-                              const isPopular = plan.is_featured || plan.badge?.toLowerCase().includes("popular") || plan.name.toLowerCase().includes("gold");
-                              const hasEb = isEarlyBirdActive && typeof plan.early_bird_price === "number" && plan.early_bird_price > 0;
-                              return (
-                                <div
-                                  key={pIdx}
-                                  className={`rounded-xl p-2.5 text-xs font-bold border transition-all ${
-                                    isPopular
-                                      ? "bg-white border-amber-300 shadow-xs text-slate-900 ring-1 ring-amber-400/30"
-                                      : "bg-white/80 border-slate-200 text-slate-800"
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between gap-1 mb-1">
-                                    <span className="truncate font-extrabold">{plan.name}</span>
-                                    {isPopular && (
-                                      <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full uppercase">
-                                        Popular
-                                      </span>
+                                    {hasEb ? (
+                                      <div className="space-y-0.5">
+                                        <div className="flex items-baseline gap-1.5">
+                                          <span className="text-purple-700 font-black text-sm">
+                                            ₹{Number(plan.early_bird_price).toLocaleString("en-IN")}
+                                          </span>
+                                          <span className="text-[11px] text-slate-400 line-through">
+                                            ₹{Number(plan.price).toLocaleString("en-IN")}
+                                          </span>
+                                        </div>
+                                        <div className="text-[9px] font-extrabold text-purple-600 uppercase tracking-tight">
+                                          Save ₹{(Number(plan.price) - Number(plan.early_bird_price!)).toLocaleString("en-IN")}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-cyan-700 font-black text-sm">
+                                        ₹{Number(plan.price).toLocaleString("en-IN")}
+                                      </div>
                                     )}
                                   </div>
+                                );
+                              })}
+                            </div>
+                          </div>
 
-                                  {hasEb ? (
-                                    <div className="space-y-0.5">
-                                      <div className="flex items-baseline gap-1.5">
-                                        <span className="text-purple-700 font-black text-sm">
-                                          ₹{Number(plan.early_bird_price).toLocaleString("en-IN")}
-                                        </span>
-                                        <span className="text-[11px] text-slate-400 line-through">
-                                          ₹{Number(plan.price).toLocaleString("en-IN")}
-                                        </span>
-                                      </div>
-                                      <div className="text-[9px] font-extrabold text-purple-600 uppercase tracking-tight">
-                                        Save ₹{(Number(plan.price) - Number(plan.early_bird_price!)).toLocaleString("en-IN")}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="text-cyan-700 font-black text-sm">
-                                      ₹{Number(plan.price).toLocaleString("en-IN")}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                          {/* CARD FOOTER: DISCOUNTS & ACTION BUTTONS */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                            {/* Left: Discounts info */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              {isEarlyBirdActive ? (
+                                <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800 border border-purple-200">
+                                  <Sparkles className="h-3 w-3 text-purple-600" />
+                                  Early Bird Active
+                                </span>
+                              ) : item.early_bird_enabled ? (
+                                <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200">
+                                  <Clock className="h-3 w-3 text-slate-500" />
+                                  Early Bird Inactive
+                                </span>
+                              ) : null}
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
+                                <Tag className="h-3 w-3 text-amber-600" />
+                                {parsedCoupons.length} Active Coupon(s)
+                              </span>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewTierModalConfig(item)}
+                                title="Preview Delegate Registration View"
+                                className="flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>Preview View</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleEditPaymentConfig(item)}
+                                className="flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                                <span>Edit Config & Plans</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePaymentConfigRow(item.id)}
+                                title="Delete Config"
+                                className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      );
+                    })}
 
-                        {/* CARD FOOTER: DISCOUNTS & ACTION BUTTONS */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                          {/* Left: Discounts info */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            {isEarlyBirdActive ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800 border border-purple-200">
-                                <Sparkles className="h-3 w-3 text-purple-600" />
-                                Early Bird Active
-                              </span>
-                            ) : item.early_bird_enabled ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200">
-                                <Clock className="h-3 w-3 text-slate-500" />
-                                Early Bird Inactive
-                              </span>
-                            ) : null}
-                            <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200">
-                              <Tag className="h-3 w-3 text-amber-600" />
-                              {parsedCoupons.length} Active Coupon(s)
-                            </span>
-                          </div>
-
-                          {/* Right: Actions */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTierModalConfig(item)}
-                              title="Preview Delegate Registration View"
-                              className="flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>Preview View</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleEditPaymentConfig(item)}
-                              className="flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                              <span>Edit Config & Plans</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePaymentConfigRow(item.id)}
-                              title="Delete Config"
-                              className="rounded-xl border border-rose-200 bg-rose-50 p-2 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
+                    {filteredList.length === 0 && (
+                      <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
+                        No event payment configurations found. Click "Add Payment Configuration" to create one!
                       </div>
-                    );
-                  })}
-
-                {eventPayments.length === 0 && (
-                  <div className="col-span-2 rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-400">
-                    No event payment configurations found. Click "Add Payment Configuration" to create one!
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
           )}
 
