@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   Clock,
@@ -46,6 +46,7 @@ import { socket } from "@/lib/socket";
 
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [regModalOpen, setRegModalOpen] = useState(false);
@@ -134,9 +135,14 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleOpenRegister = (mode: "paid" | "free") => {
-    setRegMode(mode);
-    setRegModalOpen(true);
+  const handleOpenRegister = (mode: "paid" | "free", passName?: string) => {
+    const targetSlug = slug || "hr-recall-2k26";
+    if (mode === "free") {
+      navigate(`/events/${targetSlug}/register-free`);
+    } else {
+      const passParam = passName ? `?pass=${encodeURIComponent(passName)}` : "";
+      navigate(`/events/${targetSlug}/register${passParam}`);
+    }
   };
 
   const shareEvent = () => {
@@ -854,7 +860,9 @@ function getValidImageUrl(url?: string): string {
             earlyBirdStartDate={eventPaymentConfig?.early_bird_start_date}
             earlyBirdEndDate={eventPaymentConfig?.early_bird_end_date}
             theme="light"
-            onSelectPlan={() => handleOpenRegister(isPricingAvailable ? "paid" : "free")}
+            onSelectPlan={(selectedPlan) =>
+              handleOpenRegister(isPricingAvailable ? "paid" : "free", selectedPlan?.name)
+            }
           />
 
           {/* OUR SPONSORS & PARTNERS AUTO-SCROLLING ROW */}

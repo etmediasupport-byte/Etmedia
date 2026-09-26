@@ -152,7 +152,11 @@ export default function EventRegistrationWizardPage() {
               parsed = getDefaultPricingPlans();
             }
             setPricingPlans(parsed);
-            setSelectedPlan(parsed.find((p) => p.is_featured) || parsed[0] || null);
+            const reqPass1 = searchParams.get("pass") || searchParams.get("plan");
+            const matchedPlan1 = reqPass1
+              ? parsed.find((p) => p.name.toLowerCase().includes(reqPass1.toLowerCase()))
+              : null;
+            setSelectedPlan(matchedPlan1 || parsed.find((p) => p.is_featured) || parsed[0] || null);
             setLoadingEvent(false);
             return;
           }
@@ -184,7 +188,11 @@ export default function EventRegistrationWizardPage() {
 
       const fallbackPlans = getDefaultPricingPlans();
       setPricingPlans(fallbackPlans);
-      setSelectedPlan(fallbackPlans.find((p) => p.is_featured) || fallbackPlans[0] || null);
+      const reqPass2 = searchParams.get("pass") || searchParams.get("plan");
+      const matchedPlan2 = reqPass2
+        ? fallbackPlans.find((p) => p.name.toLowerCase().includes(reqPass2.toLowerCase()))
+        : null;
+      setSelectedPlan(matchedPlan2 || fallbackPlans.find((p) => p.is_featured) || fallbackPlans[0] || null);
       setLoadingEvent(false);
     };
 
