@@ -591,48 +591,58 @@ export default function EventRegistrationWizardPage() {
 
       {/* ================= STEP WIZARD PROGRESS BAR ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-4 sm:p-6">
-          <div className="grid grid-cols-5 gap-2 sm:gap-4 relative">
-            {stepsList.map((step) => {
-              const isCompleted = currentStep > step.number;
-              const isActive = currentStep === step.number;
-              return (
-                <div
-                  key={step.number}
-                  className={`flex flex-col items-center text-center transition-all ${
-                    isActive ? "opacity-100" : isCompleted ? "opacity-90" : "opacity-40"
-                  }`}
-                >
-                  <div
-                    className={`h-10 w-10 sm:h-12 sm:w-12 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center transition-all duration-300 border ${
-                      isCompleted
-                        ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                        : isActive
-                        ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 border-cyan-500 text-white shadow-lg shadow-cyan-500/30 ring-4 ring-cyan-500/10 scale-105"
-                        : "bg-slate-100 border-slate-200 text-slate-500"
-                    }`}
-                  >
-                    {isCompleted ? <Check className="w-5 h-5 stroke-[3]" /> : step.number}
-                  </div>
-                  <span className={`text-[11px] sm:text-xs font-extrabold mt-2 line-clamp-1 ${isActive ? "text-cyan-700" : "text-slate-700"}`}>
-                    {step.title}
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-400 hidden sm:block">
-                    {step.subtitle}
-                  </span>
-                </div>
-              );
-            })}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-4 sm:p-6 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="px-3.5 py-1 rounded-full text-xs font-black bg-cyan-100 text-cyan-800 border border-cyan-300 shadow-sm">
+                Step {currentStep} of 5
+              </span>
+              <h3 className="text-sm sm:text-base font-black text-slate-900 font-display">
+                {stepsList.find((s) => s.number === currentStep)?.title}
+              </h3>
+            </div>
+            <div className="text-xs font-extrabold text-slate-500">
+              {Math.round((currentStep / 5) * 100)}% Completed
+            </div>
           </div>
 
           {/* Linear Progress Indicator Line */}
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: "20%" }}
               animate={{ width: `${(currentStep / 5) * 100}%` }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
               className="h-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-full"
             />
+          </div>
+
+          {/* Completed & Active Unlocked Steps Only (Future steps hidden in advance) */}
+          <div className="flex items-center gap-2 pt-1 overflow-x-auto pb-1 scrollbar-none">
+            {stepsList
+              .filter((step) => step.number <= currentStep)
+              .map((step) => {
+                const isCompleted = currentStep > step.number;
+                const isActive = currentStep === step.number;
+                return (
+                  <div
+                    key={step.number}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-extrabold transition-all shrink-0 ${
+                      isActive
+                        ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 text-white border-cyan-500 shadow-md shadow-cyan-500/20"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    }`}
+                  >
+                    <div
+                      className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                        isActive ? "bg-white text-cyan-700" : "bg-emerald-500 text-white"
+                      }`}
+                    >
+                      {isCompleted ? <Check className="w-3 h-3 stroke-[3]" /> : step.number}
+                    </div>
+                    <span>{step.title}</span>
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>
