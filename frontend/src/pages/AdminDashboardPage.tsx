@@ -12764,8 +12764,10 @@ export default function AdminDashboardPage() {
                             value={plan.name}
                             onChange={(e) => {
                               const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                              updated[pIdx].name = e.target.value;
-                              setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              if (updated[pIdx]) {
+                                updated[pIdx].name = e.target.value;
+                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              }
                             }}
                             placeholder="e.g. Gold Pass"
                             className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-900"
@@ -12782,8 +12784,10 @@ export default function AdminDashboardPage() {
                             value={plan.price}
                             onChange={(e) => {
                               const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                              updated[pIdx].price = Number(e.target.value);
-                              setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              if (updated[pIdx]) {
+                                updated[pIdx].price = Number(e.target.value);
+                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                              }
                             }}
                             className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-black text-cyan-800"
                           />
@@ -12798,8 +12802,10 @@ export default function AdminDashboardPage() {
                               value={plan.badge || ""}
                               onChange={(e) => {
                                 const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                                updated[pIdx].badge = e.target.value;
-                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                if (updated[pIdx]) {
+                                  updated[pIdx].badge = e.target.value;
+                                  setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                }
                               }}
                               placeholder="e.g. Most Popular"
                               className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-800 font-semibold"
@@ -12812,8 +12818,10 @@ export default function AdminDashboardPage() {
                               checked={Boolean(plan.is_featured)}
                               onChange={(e) => {
                                 const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                                updated[pIdx].is_featured = e.target.checked;
-                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                if (updated[pIdx]) {
+                                  updated[pIdx].is_featured = e.target.checked;
+                                  setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                }
                               }}
                               className="rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                             />
@@ -12829,8 +12837,10 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => {
                                 const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                                updated[pIdx].features = [...(updated[pIdx].features || []), "New feature item"];
-                                setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                if (updated[pIdx]) {
+                                  updated[pIdx].features = [...(updated[pIdx].features || []), "New feature item"];
+                                  setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                }
                               }}
                               className="text-[11px] font-bold text-cyan-700 hover:underline"
                             >
@@ -12846,10 +12856,12 @@ export default function AdminDashboardPage() {
                                   value={feat}
                                   onChange={(e) => {
                                     const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                                    const feats = [...updated[pIdx].features];
-                                    feats[fIdx] = e.target.value;
-                                    updated[pIdx].features = feats;
-                                    setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                    if (updated[pIdx]) {
+                                      const feats = [...(updated[pIdx].features || [])];
+                                      feats[fIdx] = e.target.value;
+                                      updated[pIdx].features = feats;
+                                      setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                    }
                                   }}
                                   className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-800 font-medium"
                                 />
@@ -12857,8 +12869,10 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   onClick={() => {
                                     const updated = [...(paymentForm.pricing_plans as PricingPlanTier[])];
-                                    updated[pIdx].features = updated[pIdx].features.filter((_, i) => i !== fIdx);
-                                    setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                    if (updated[pIdx]) {
+                                      updated[pIdx].features = (updated[pIdx].features || []).filter((_, i) => i !== fIdx);
+                                      setPaymentForm({ ...paymentForm, pricing_plans: updated });
+                                    }
                                   }}
                                   className="text-rose-500 hover:text-rose-700 text-xs font-bold px-1"
                                 >

@@ -250,11 +250,11 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
   // Touch Swipe Handlers for Mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
+    if (e.targetTouches[0]) touchStartX.current = e.targetTouches[0].clientX;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
+    if (e.targetTouches[0]) touchEndX.current = e.targetTouches[0].clientX;
   };
 
   const handleTouchEnd = () => {
