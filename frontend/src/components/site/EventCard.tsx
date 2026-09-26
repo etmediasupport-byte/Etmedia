@@ -2,15 +2,26 @@ import { Link } from "react-router-dom";
 import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap } from "lucide-react";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+import { images } from "@/lib/site-data";
 
 function getValidImageUrl(url?: string): string {
   if (!url || typeof url !== "string" || !url.trim()) {
-    return "/assets/event-cfo-BjslOJNi.jpg";
+    return images.eventCfo;
   }
   const trimmed = url.trim();
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
     return trimmed;
   }
+
+  if (trimmed.includes("event-cfo")) return images.eventCfo;
+  if (trimmed.includes("event-hr")) return images.eventHr;
+  if (trimmed.includes("hero-summit")) return images.heroSummit;
+  if (trimmed.includes("hero-leadership")) return images.heroLeadership;
+  if (trimmed.includes("hero-awards")) return images.heroAwards;
+  if (trimmed.includes("hero-networking")) return images.heroNetworking;
+  if (trimmed.includes("about-office")) return images.aboutOffice;
+  if (trimmed.includes("magazine-cover")) return images.magazineCover;
+
   if (!trimmed.startsWith("/")) {
     return `/${trimmed}`;
   }
@@ -46,7 +57,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
     }
   };
 
-  const imageSrc = getValidImageUrl(event.image || event.about_image || event.photo);
+  const imageSrc = getValidImageUrl(event.image || event.event_image || event.about_image || event.photo);
 
   return (
     <MouseTiltCard className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none h-full flex flex-col justify-between border border-slate-200/80 dark:border-slate-800/90 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/70 dark:from-slate-900/95 dark:via-slate-900 dark:to-slate-950/90 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
@@ -62,7 +73,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
             loading="lazy"
             onError={(e: any) => {
               e.target.onerror = null;
-              e.target.src = "/assets/event-cfo-BjslOJNi.jpg";
+              e.target.src = images.eventCfo;
             }}
             className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-108"
           />

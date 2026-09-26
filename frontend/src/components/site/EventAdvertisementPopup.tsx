@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award } from "lucide-react";
 import { io } from "socket.io-client";
+import { images } from "@/lib/site-data";
 
 interface PopupSettings {
   id?: number;
@@ -41,6 +42,7 @@ interface EventItem {
   city?: string;
   venue?: string;
   image?: string;
+  event_image?: string;
   category?: string;
   registration_url?: string;
   registration_type?: string;
@@ -50,12 +52,23 @@ interface EventItem {
 
 function getValidImageUrl(url?: string): string {
   if (!url || typeof url !== "string" || !url.trim()) {
-    return "/assets/hero-summit-ClCGVqfO.jpg";
+    return images.heroSummit || images.eventCfo;
   }
   const trimmed = url.trim();
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
     return trimmed;
   }
+  
+  // Resolve static/seeded image asset URLs dynamically
+  if (trimmed.includes("event-cfo")) return images.eventCfo;
+  if (trimmed.includes("event-hr")) return images.eventHr;
+  if (trimmed.includes("hero-summit")) return images.heroSummit;
+  if (trimmed.includes("hero-leadership")) return images.heroLeadership;
+  if (trimmed.includes("hero-awards")) return images.heroAwards;
+  if (trimmed.includes("hero-networking")) return images.heroNetworking;
+  if (trimmed.includes("about-office")) return images.aboutOffice;
+  if (trimmed.includes("magazine-cover")) return images.magazineCover;
+
   if (!trimmed.startsWith("/")) {
     return `/${trimmed}`;
   }
@@ -137,7 +150,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                 city: "Hyderabad",
                 venue: "HICC Novotel, Hitec City",
                 category: "Awards & Recognition",
-                image: "/assets/event-cfo-BjslOJNi.jpg",
+                image: images.eventCfo,
                 registration_fee: "Free Registration",
               },
               {
@@ -148,7 +161,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                 city: "Bengaluru",
                 venue: "JW Marriott Hotel",
                 category: "Leadership Summit",
-                image: "/assets/event-hr-Cswpuq5H.jpg",
+                image: images.eventHr,
                 registration_fee: "Delegate Pass Available",
               },
               {
@@ -159,7 +172,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                 city: "Mumbai",
                 venue: "The St. Regis",
                 category: "Conference",
-                image: "/assets/hero-summit-ClCGVqfO.jpg",
+                image: images.heroSummit,
                 registration_fee: "Early Bird Access",
               },
             ]);
@@ -348,6 +361,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
               <img
                 src={getValidImageUrl(
                   currentEvent.image ||
+                  currentEvent.event_image ||
                   (currentEvent as any).photo ||
                   (currentEvent as any).about_image ||
                   (currentEvent as any).banner ||
@@ -356,7 +370,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                 alt={currentEvent.title || "Event Advertisement"}
                 onError={(e: any) => {
                   e.target.onerror = null;
-                  e.target.src = "/assets/hero-summit-ClCGVqfO.jpg";
+                  e.target.src = images.heroSummit || images.eventCfo;
                 }}
                 className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
               />
