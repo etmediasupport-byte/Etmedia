@@ -3584,6 +3584,34 @@ export default function AdminDashboardPage() {
     );
   };
 
+  const handleToggleAndSavePopupEvent = async (eventId: string) => {
+    const newIds = selectedPopupEventIds.includes(eventId)
+      ? selectedPopupEventIds.filter((id) => id !== eventId)
+      : [...selectedPopupEventIds, eventId];
+    setSelectedPopupEventIds(newIds);
+
+    try {
+      const res = await fetch("/api/popup/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ selected_event_ids: newIds }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(
+          newIds.includes(eventId)
+            ? "✅ Event added to Advertisement Popup!"
+            : "ℹ️ Event removed from Advertisement Popup"
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update popup events:", err);
+    }
+  };
+
   const handleSelectAllPopupEvents = () => {
     const allIds = cmsEvents.map((e) => e.id);
     setSelectedPopupEventIds(allIds);
@@ -4351,6 +4379,72 @@ export default function AdminDashboardPage() {
                       </span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* DIRECT COLUMN-WISE EVENT ADVERTISEMENT POPUP SELECTOR */}
+              <div className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50/90 via-white to-amber-100/30 p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-amber-800 font-extrabold text-xs uppercase tracking-wider">
+                      <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+                      <span>Advertisement Popup Events (Column-Wise Selector)</span>
+                    </div>
+                    <p className="text-xs text-amber-900/80 font-medium mt-0.5">
+                      Select which events should appear in the centered site advertisement popup modal. ({selectedPopupEventIds.length} event(s) active)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("popup")}
+                      className="rounded-xl border border-amber-300 bg-white px-3.5 py-1.5 text-xs font-extrabold text-amber-900 hover:bg-amber-100 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Sliders className="h-3.5 w-3.5" />
+                      <span>Full Popup Settings</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Column-wise Event Grid */}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {cmsEvents.map((evt) => {
+                    const isSelected = selectedPopupEventIds.includes(evt.id);
+                    return (
+                      <div
+                        key={`payments-popup-evt-${evt.id}`}
+                        onClick={() => handleToggleAndSavePopupEvent(evt.id)}
+                        className={`flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-white border-amber-500 shadow-md ring-2 ring-amber-500/20"
+                            : "bg-white/70 border-slate-200 hover:border-amber-300 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleAndSavePopupEvent(evt.id)}
+                            className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer shrink-0"
+                          />
+                          <div className="h-10 w-10 rounded-xl bg-slate-900 overflow-hidden shrink-0 border border-slate-200">
+                            <img src={evt.image || "/assets/hero-summit-ClCGVqfO.jpg"} alt={evt.title} className="h-full w-full object-cover" />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-extrabold text-slate-900 truncate">{evt.title}</h4>
+                            <p className="text-[10px] text-slate-500 font-medium truncate">{evt.city || evt.category || "Conference"}</p>
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
+                          isSelected ? "bg-amber-500 text-slate-950 shadow-xs" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {isSelected ? "Active in Ad" : "Off"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
