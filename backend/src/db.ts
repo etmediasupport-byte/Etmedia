@@ -1120,8 +1120,23 @@ export async function ensureEventPaymentsTable() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       );
     `);
-    try { await pool.query("ALTER TABLE event_payment_settings ADD COLUMN id VARCHAR(100);"); } catch (colErr) {}
-    try { await pool.query("ALTER TABLE event_payment_settings ADD COLUMN pricing_plans LONGTEXT;"); } catch (colErr) {}
+
+    // Column migrations for existing tables
+    const colsToEnsure = [
+      { name: "id", type: "VARCHAR(100)" },
+      { name: "pricing_plans", type: "LONGTEXT" },
+      { name: "early_bird_start_date", type: "VARCHAR(100)" },
+      { name: "early_bird_end_date", type: "VARCHAR(100)" },
+      { name: "payment_status", type: "VARCHAR(50) DEFAULT 'Enabled'" },
+    ];
+
+    for (const col of colsToEnsure) {
+      try {
+        await pool.query(`ALTER TABLE event_payment_settings ADD COLUMN ${col.name} ${col.type};`);
+      } catch (colErr) {
+        // Column already exists, ignore
+      }
+    }
   } catch (err) {
     console.error("[MySQL] Error creating event_payment_settings table:", err);
   }

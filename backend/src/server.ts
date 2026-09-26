@@ -742,15 +742,24 @@ function saveBase64Image(dataStr: string): string {
     const ext = match ? match[1] : "png";
     const base64Data = dataStr.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, "");
 
-    const uploadsDir = path.join(__dirname, "../public/uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    const dir1 = path.join(__dirname, "../public/uploads");
+    const dir2 = path.resolve(process.cwd(), "public", "uploads");
+    const dir3 = path.resolve(process.cwd(), "uploads");
+
+    [dir1, dir2, dir3].forEach((d) => {
+      if (!fs.existsSync(d)) {
+        try { fs.mkdirSync(d, { recursive: true }); } catch (e) {}
+      }
+    });
 
     const uniqueFilename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const buffer = Buffer.from(base64Data, "base64");
-    const filePath = path.join(uploadsDir, uniqueFilename);
-    fs.writeFileSync(filePath, buffer);
+
+    [dir1, dir2, dir3].forEach((d) => {
+      try {
+        fs.writeFileSync(path.join(d, uniqueFilename), buffer);
+      } catch (e) {}
+    });
 
     return `/uploads/${uniqueFilename}`;
   } catch (err) {
