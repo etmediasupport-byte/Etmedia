@@ -300,8 +300,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
     if (event.registration_url && event.registration_url.startsWith("http")) {
       window.open(event.registration_url, "_blank");
     } else {
-      // Open detailed event page in new tab or navigate to event detail
-      window.open(`/events/${event.id}`, "_blank");
+      window.location.href = `/events/${(event as any).slug || event.id}/register`;
     }
   };
 

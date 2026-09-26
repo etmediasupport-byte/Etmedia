@@ -1439,6 +1439,184 @@ app.post("/api/payments/verify-payment", async (req, res) => {
   }
 });
 
+// Alias POST /api/payments/verify to /api/payments/verify-payment
+app.post("/api/payments/verify", async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
+    }
+
+    const generatedSignature = crypto
+      .createHmac("sha256", razorpayKeySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (generatedSignature === razorpay_signature) {
+      console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id}`);
+
+      if (pool && registrationId) {
+        await pool.query(
+          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
+          [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
+        );
+      }
+
+      return res.json({ success: true, message: "Payment verified successfully!", paymentId: razorpay_payment_id });
+    } else {
+      return res.status(400).json({ success: false, message: "Payment signature verification failed." });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message || "Error verifying payment." });
+  }
+});
+
+// --- MULTI-STEP REGISTRATION WIZARD ENDPOINTS ---
+
+// 1. POST /api/registrations/start - Step 1: Save Personal & Executive Details
+app.post("/api/registrations/start", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      workEmail,
+      contactNumber,
+      designation,
+      companyName,
+      city,
+      country = "India",
+      industry,
+      linkedinUrl,
+      category,
+      participationPreference,
+      interestTracks,
+      specialRequirements,
+      eventId = "hr-recall-2k26",
+      eventSlug,
+      eventTitle = "HR RECALL 2K26",
+    } = req.body;
+
+    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName) {
+      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
+    }
+
+    const regId = `ETM-REG-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullName = `${firstName} ${lastName}`.trim();
+    const effectiveEventSlug = eventSlug || eventId;
+    const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
+
+    if (pool) {
+      await pool.query(
+        `INSERT INTO registrations (
+          id, name, first_name, last_name, email, phone, organization, designation,
+          city, country, industry, linkedin_url, registration_category, participation_preference,
+          interest_tracks, event_id, event_title, payment_status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW())
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
+          phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
+          city = VALUES(city), country = VALUES(country), industry = VALUES(industry),
+          linkedin_url = VALUES(linkedin_url), registration_category = VALUES(registration_category),
+          participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks);`,
+        [
+          regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
+          city || "N/A", country, industry || "Technology", linkedinUrl || "", category || "Executive Delegate",
+          participationPreference || "In-Person Delegate", tracksStr, effectiveEventSlug, eventTitle
+        ]
+      );
+    }
+
+    return res.json({
+      success: true,
+      registrationId: regId,
+      message: "Step 1 saved successfully."
+    });
+  } catch (err: any) {
+    console.error("[API] Error in /api/registrations/start:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to save registration step 1." });
+  }
+});
+
+// 2. PUT /api/registrations/:registrationId/pass - Step 2: Update Selected Pass
+app.put("/api/registrations/:registrationId/pass", async (req, res) => {
+  try {
+    const { registrationId } = req.params;
+    const { passName, passPrice } = req.body;
+
+    if (pool && registrationId) {
+      await pool.query(
+        "UPDATE registrations SET pass_name = ?, payment_amount = ? WHERE id = ?",
+        [passName || "Delegate Pass", Number(passPrice) || 0, registrationId]
+      );
+    }
+
+    return res.json({ success: true, message: "Selected pass updated." });
+  } catch (err: any) {
+    console.error("[API] Error in /api/registrations/pass:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to update selected pass." });
+  }
+});
+
+// 3. POST /api/registrations/calculate-payment - Step 3: Coupon & Tax Calculation
+app.post("/api/registrations/calculate-payment", async (req, res) => {
+  try {
+    const { basePrice = 0, couponCode, gstPct = 18 } = req.body;
+    const numBase = Number(basePrice) || 0;
+    const numGstPct = Number(gstPct) || 18;
+
+    let discountAmount = 0;
+    const codeUpper = (couponCode || "").trim().toUpperCase();
+
+    if (codeUpper === "EARLYBIRD10" || codeUpper === "EARLYBIRD") {
+      discountAmount = Math.round(numBase * 0.10);
+    } else if (codeUpper === "EXECUTIVE20" || codeUpper === "VIP20") {
+      discountAmount = Math.round(numBase * 0.20);
+    } else if (codeUpper === "ETMEDIA500") {
+      discountAmount = 500;
+    } else if (codeUpper === "WELCOME1000") {
+      discountAmount = 1000;
+    } else if (codeUpper) {
+      discountAmount = Math.min(500, Math.round(numBase * 0.05));
+    }
+
+    const discountedBase = Math.max(0, numBase - discountAmount);
+    const gstAmount = Math.round((discountedBase * numGstPct) / 100);
+    const finalAmount = discountedBase + gstAmount;
+
+    return res.json({
+      success: true,
+      basePrice: numBase,
+      discountAmount,
+      discountedBase,
+      gstPct: numGstPct,
+      gstAmount,
+      finalAmount,
+      couponApplied: discountAmount > 0 ? codeUpper : null,
+    });
+  } catch (err: any) {
+    console.error("[API] Error in /api/registrations/calculate-payment:", err);
+    return res.status(500).json({ success: false, message: err.message || "Calculation error." });
+  }
+});
+
+// 4. GET /api/registrations/:registrationId - Fetch registration details for success ticket
+app.get("/api/registrations/:registrationId", async (req, res) => {
+  try {
+    const { registrationId } = req.params;
+    if (pool && registrationId) {
+      const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [registrationId]);
+      if (rows && rows.length > 0) {
+        return res.json({ success: true, registration: rows[0] });
+      }
+    }
+    return res.status(404).json({ success: false, message: "Registration record not found." });
+  } catch (err: any) {
+    console.error("[API] Error fetching registration:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {

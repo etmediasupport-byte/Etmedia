@@ -17,6 +17,8 @@ import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import VerifyPassPage from "@/pages/VerifyPassPage";
+import EventRegistrationWizardPage from "@/pages/EventRegistrationWizardPage";
+import RegistrationSuccessPage from "@/pages/RegistrationSuccessPage";
 import { Toaster } from "@/components/ui/sonner";
 
 interface ErrorBoundaryProps {
@@ -122,11 +124,14 @@ export default function App() {
               <Route path="magazine" element={<MagazinePage />} />
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />
+              <Route path="events/:slug/register" element={<EventRegistrationWizardPage />} />
+              <Route path="events/:slug/registration-success" element={<RegistrationSuccessPage />} />
+              <Route path="events/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="partner" element={<PartnerWithUsPage />} />
               <Route path="events/partner" element={<PartnerWithUsPage />} />
               <Route path="membership" element={<DelegateRegistrationPage />} />
               <Route path="delegate-registration" element={<DelegateRegistrationPage />} />
-              <Route path="events/register" element={<DelegateRegistrationPage />} />
+              <Route path="events/register" element={<EventRegistrationWizardPage />} />
               <Route path="careers" element={<CareersPage />} />
               <Route path="gallery" element={<GalleryPage />} />
               <Route path="contact" element={<ContactPage />} />

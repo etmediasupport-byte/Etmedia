@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Lenis from "lenis";
 import { Navbar } from "@/components/site/Navbar";
@@ -16,6 +16,7 @@ import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPop
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const lenisRef = useRef<Lenis | null>(null);
   const [modalState, setModalState] = useState<{ isOpen: boolean; event: EventItem | null; mode?: "paid" | "free" }>({
     isOpen: false,
@@ -24,22 +25,23 @@ export function Layout() {
   });
   const [membershipModalOpen, setMembershipModalOpen] = useState(false);
 
-  // Global event listener to open RegisterModal from any card, button, or link
+  // Global event listener to navigate to full-page register route from any card, button, or link
   useEffect(() => {
     const handleOpenRegisterModal = (e: any) => {
       const detail = e.detail || {};
-      let selectedEvent: EventItem | null = defaultEvents[0] ?? null;
-      let regMode: "paid" | "free" = "paid";
+      let eventSlug = "hr-recall-2k26";
 
-      if (detail.event) {
-        selectedEvent = detail.event;
-        regMode = detail.mode || "paid";
-      } else if (detail.title || detail.id) {
-        selectedEvent = detail;
-        regMode = detail.registrationMode || "paid";
+      if (detail.event?.slug) {
+        eventSlug = detail.event.slug;
+      } else if (detail.event?.id) {
+        eventSlug = detail.event.id;
+      } else if (detail.slug) {
+        eventSlug = detail.slug;
+      } else if (detail.id) {
+        eventSlug = detail.id;
       }
 
-      setModalState({ isOpen: true, event: selectedEvent, mode: regMode });
+      navigate(`/events/${eventSlug}/register`);
     };
 
     const handleOpenMembershipModal = () => {
@@ -53,7 +55,7 @@ export function Layout() {
       window.removeEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
       window.removeEventListener("open-membership-modal", handleOpenMembershipModal as EventListener);
     };
-  }, []);
+  }, [navigate]);
 
   // Lenis Smooth Scrolling Setup
   useEffect(() => {

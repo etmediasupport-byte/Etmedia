@@ -123,6 +123,11 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN payment_method VARCHAR(100) DEFAULT 'Razorpay';"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN coupon_applied VARCHAR(100);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN industry VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN linkedin_url TEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN participation_preference VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN interest_tracks TEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN pass_name VARCHAR(255);"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
 
 
