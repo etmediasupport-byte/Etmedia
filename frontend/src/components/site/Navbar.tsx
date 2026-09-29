@@ -185,7 +185,7 @@ export function Navbar() {
             <img
               src={executivetalksLogo}
               alt="Executive Talks Media"
-              className="h-10 sm:h-12 lg:h-14 xl:h-15 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
+              className="h-13 sm:h-16 lg:h-20 xl:h-22 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
             />
           </Link>
 
