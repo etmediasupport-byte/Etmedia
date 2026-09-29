@@ -14,6 +14,8 @@ import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 
 import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
 
+import { EventSelectionModal } from "@/components/site/EventSelectionModal";
+
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,12 +26,13 @@ export function Layout() {
     mode: "paid",
   });
   const [membershipModalOpen, setMembershipModalOpen] = useState(false);
+  const [eventSelectionModalOpen, setEventSelectionModalOpen] = useState(false);
 
-  // Global event listener to navigate to full-page register route from any card, button, or link
+  // Global event listener to navigate to full-page register route or open event selector modal
   useEffect(() => {
     const handleOpenRegisterModal = (e: any) => {
       const detail = e.detail || {};
-      let eventSlug = "hr-recall-2k26";
+      let eventSlug = "";
 
       if (detail.event?.slug) {
         eventSlug = detail.event.slug;
@@ -41,11 +44,20 @@ export function Layout() {
         eventSlug = detail.id;
       }
 
-      if (detail.mode === "free") {
-        navigate(`/events/${eventSlug}/register-free`);
+      if (eventSlug) {
+        if (detail.mode === "free") {
+          navigate(`/events/${eventSlug}/register-free`);
+        } else {
+          navigate(`/events/${eventSlug}/register`);
+        }
       } else {
-        navigate(`/events/${eventSlug}/register`);
+        // If no specific event is selected, open the executive Event Selection Modal
+        setEventSelectionModalOpen(true);
       }
+    };
+
+    const handleOpenEventSelectionModal = () => {
+      setEventSelectionModalOpen(true);
     };
 
     const handleOpenMembershipModal = () => {
@@ -53,10 +65,12 @@ export function Layout() {
     };
 
     window.addEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+    window.addEventListener("open-select-event-modal", handleOpenEventSelectionModal as EventListener);
     window.addEventListener("open-membership-modal", handleOpenMembershipModal as EventListener);
 
     return () => {
       window.removeEventListener("open-register-modal", handleOpenRegisterModal as EventListener);
+      window.removeEventListener("open-select-event-modal", handleOpenEventSelectionModal as EventListener);
       window.removeEventListener("open-membership-modal", handleOpenMembershipModal as EventListener);
     };
   }, [navigate]);
@@ -133,6 +147,12 @@ export function Layout() {
 
         {/* Global Dynamic Premium Advertisement Popup Modal */}
         <EventAdvertisementPopup />
+
+        {/* Global Executive Event Selection Popup Modal */}
+        <EventSelectionModal
+          isOpen={eventSelectionModalOpen}
+          onClose={() => setEventSelectionModalOpen(false)}
+        />
       </div>
     </div>
   );

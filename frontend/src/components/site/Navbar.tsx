@@ -53,7 +53,7 @@ const megaEventCategories = [
     icon: Users,
     title: "Delegate Registration",
     desc: "Reserve seats for senior executives and leaders",
-    to: "/events/register",
+    isRegister: true,
   },
   {
     icon: Handshake,
@@ -248,24 +248,49 @@ export function Navbar() {
 
                     <div className="grid grid-cols-2 gap-3">
                       {megaEventCategories.map((cat) => (
-                        <Link
-                          key={cat.to}
-                          to={cat.to}
-                          onClick={handleNavClick}
-                          className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
-                              <cat.icon className="h-4 w-4" />
-                            </span>
-                            <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
-                              {cat.title}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-xs text-slate-500 leading-snug">
-                            {cat.desc}
-                          </p>
-                        </Link>
+                        cat.isRegister ? (
+                          <button
+                            key={cat.title}
+                            type="button"
+                            onClick={() => {
+                              setEventsMegaOpen(false);
+                              handleNavClick();
+                              window.dispatchEvent(new CustomEvent("open-select-event-modal"));
+                            }}
+                            className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs text-left cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
+                                <cat.icon className="h-4 w-4" />
+                              </span>
+                              <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
+                                {cat.title}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500 leading-snug">
+                              {cat.desc}
+                            </p>
+                          </button>
+                        ) : (
+                          <Link
+                            key={cat.to || cat.title}
+                            to={cat.to!}
+                            onClick={handleNavClick}
+                            className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
+                                <cat.icon className="h-4 w-4" />
+                              </span>
+                              <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
+                                {cat.title}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500 leading-snug">
+                              {cat.desc}
+                            </p>
+                          </Link>
+                        )
                       ))}
                     </div>
                   </motion.div>

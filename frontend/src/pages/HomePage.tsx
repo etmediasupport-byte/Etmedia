@@ -167,10 +167,14 @@ function HeroCarousel() {
             </p>
 
             <div className="mt-10 flex flex-wrap gap-4 items-center">
-              <MagneticButton strength={20} className="gradient-brand rounded-full px-8 py-4 text-base font-semibold text-white shadow-luxe hover:brightness-110">
-                <Link to="/events/register" className="flex items-center gap-2">
+              <MagneticButton strength={20} className="gradient-brand rounded-full px-8 py-4 text-base font-semibold text-white shadow-luxe hover:brightness-110 cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-select-event-modal"))}
+                  className="flex items-center gap-2 bg-transparent border-none text-white text-base font-semibold cursor-pointer"
+                >
                   Register Now <ArrowRight className="h-4 w-4" />
-                </Link>
+                </button>
               </MagneticButton>
 
               <MagneticButton strength={15} className="glass-dark rounded-full px-8 py-4 text-base font-semibold text-white border border-white/20 hover:bg-white/20">
