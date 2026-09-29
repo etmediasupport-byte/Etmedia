@@ -88,11 +88,11 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
         {/* Content Body */}
         <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
           <div className="flex-1 flex flex-col justify-start">
-            <h3 className="text-sm sm:text-base font-bold font-display text-slate-900 leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] flex items-center">
+            <h3 className="text-sm sm:text-base font-bold font-display text-slate-900 leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] flex items-center text-left">
               {event.title}
             </h3>
 
-            <p className="text-slate-600 mt-1.5 text-xs leading-relaxed font-sans line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem]">
+            <p className="text-slate-600 mt-1.5 text-xs leading-relaxed font-sans line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] text-left">
               {event.description}
             </p>
           </div>
@@ -102,7 +102,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
               <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <span className="truncate">{venueText}</span>
             </span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 whitespace-nowrap">
               Free & Paid Passes
             </span>
           </div>

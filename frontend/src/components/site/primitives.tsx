@@ -86,7 +86,7 @@ export function SectionHeading({
       {kicker ? (
         <span
           className={cn(
-            "inline-flex items-center rounded-full border border-border bg-accent/60 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-accent-foreground uppercase",
+            "inline-flex items-center rounded-full border border-border bg-accent/60 px-3.5 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.14em] text-accent-foreground uppercase",
             kickerClassName,
           )}
         >
@@ -95,7 +95,8 @@ export function SectionHeading({
       ) : null}
       <h2
         className={cn(
-          "mt-2.5 text-3xl leading-tight font-semibold sm:text-4xl lg:text-[2.75rem]",
+          "mt-2 text-2xl sm:text-3xl lg:text-[2.75rem] leading-tight font-bold tracking-tight text-foreground",
+          align === "center" ? "text-center" : "text-left",
           titleClassName,
         )}
       >
@@ -104,7 +105,8 @@ export function SectionHeading({
       {description ? (
         <p
           className={cn(
-            "text-muted-foreground mt-2.5 text-base leading-relaxed sm:text-lg",
+            "text-muted-foreground mt-2 text-sm sm:text-base leading-relaxed",
+            align === "center" ? "text-center" : "text-left",
             descriptionClassName,
           )}
         >

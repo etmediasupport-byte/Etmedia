@@ -219,7 +219,7 @@ export default function AboutPage() {
                     <h3 className="text-base font-bold font-display text-foreground leading-snug group-hover:text-cyan-600 transition-colors">
                       {step.title}
                     </h3>
-                    <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-sans text-justify">
+                    <p className="text-muted-foreground mt-2 text-xs leading-relaxed font-sans text-left">
                       {step.desc}
                     </p>
                   </div>
