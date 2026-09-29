@@ -1987,6 +1987,11 @@ app.post("/api/events/register", async (req, res) => {
 
   try {
     if (pool) {
+      const regStatus = (effectivePaymentStatus === "Paid" || paymentId) ? "Confirmed" : "Pending";
+      const pStatus = paymentId ? "Paid" : effectivePaymentStatus;
+      const paymentSignature = req.body.paymentSignature || null;
+      const paymentMethod = req.body.paymentMethod || "Razorpay";
+
       const [existing]: any = await pool.query(
         "SELECT id FROM registrations WHERE id = ? OR (email = ? AND event_id = ? AND payment_status = 'Pending')",
         [regId, email.trim(), effectiveEventId]
@@ -1999,7 +2004,8 @@ app.post("/api/events/register", async (req, res) => {
           `UPDATE registrations SET
             name = ?, first_name = ?, last_name = ?, phone = ?, organization = ?, designation = ?,
             city = ?, country = ?, registration_category = ?, registering_city = ?, referral_source = ?,
-            payment_status = ?, payment_id = ?, razorpay_order_id = ?, payment_amount = ?, coupon_applied = ?
+            payment_status = ?, payment_id = ?, razorpay_order_id = ?, payment_amount = ?, coupon_applied = ?,
+            payment_method = ?, payment_signature = ?, status = ?
           WHERE id = ?`,
           [
             fullName,
@@ -2013,19 +2019,22 @@ app.post("/api/events/register", async (req, res) => {
             effectiveCategory,
             registeringCity || city || "N/A",
             referralSource || "Direct",
-            effectivePaymentStatus,
+            pStatus,
             paymentId || null,
             razorpayOrderId || null,
             effectiveAmount,
             couponApplied || null,
+            paymentMethod,
+            paymentSignature,
+            regStatus,
             finalRegId,
           ]
         );
       } else {
         await pool.query(
           `INSERT INTO registrations (
-            id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            id, name, first_name, last_name, email, phone, organization, designation, city, country, registration_category, registering_city, referral_source, event_id, event_title, payment_status, payment_id, razorpay_order_id, payment_amount, coupon_applied, payment_method, payment_signature, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             finalRegId,
             fullName,
@@ -2042,11 +2051,14 @@ app.post("/api/events/register", async (req, res) => {
             referralSource || "Direct",
             effectiveEventId,
             effectiveEventTitle,
-            effectivePaymentStatus,
+            pStatus,
             paymentId || null,
             razorpayOrderId || null,
             effectiveAmount,
             couponApplied || null,
+            paymentMethod,
+            paymentSignature,
+            regStatus,
           ]
         );
       }

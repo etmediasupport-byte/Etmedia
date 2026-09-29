@@ -183,7 +183,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
   }
   const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [currentEvent.city || "Mumbai"]));
 
-  // Calculate pricing breakdown tier-wise with dynamic early bird status
+  // Calculate pricing breakdown: Base Pass Price - Coupon Discount + 18% GST
   const getPricing = () => {
     let parsedPlans: PricingPlanTier[] = [];
     if (typeof paymentConfig?.pricing_plans === "string") {
@@ -206,50 +206,31 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
 
     const originalPrice = matchedPlan ? Number(matchedPlan.price) : 8000;
 
-    // Check early bird date-based status automatically
-    const ebStatus = checkEarlyBirdStatus(
-      paymentConfig?.early_bird_enabled ?? true,
-      paymentConfig?.early_bird_start_date || "2026-01-01",
-      paymentConfig?.early_bird_end_date || "2026-12-31"
-    );
-
-    const isEarlyBirdActive = ebStatus.isActive;
-    const ebPrice = matchedPlan?.early_bird_price ?? paymentConfig?.early_bird_price ?? originalPrice;
-
-    // Effective Base Price: Early Bird Price if active, else Original Price
-    const effectiveBasePrice = isEarlyBirdActive && ebPrice < originalPrice ? ebPrice : originalPrice;
-    const earlyBirdDiscount = isEarlyBirdActive && ebPrice < originalPrice ? originalPrice - ebPrice : 0;
-
-    // Coupon discount applied after Early Bird price
+    // Coupon discount applied directly to Base Pass Price
     let couponDiscount = 0;
     if (appliedCoupon) {
       if (appliedCoupon.type === "percentage") {
-        couponDiscount = Math.round((effectiveBasePrice * Number(appliedCoupon.value)) / 100);
+        couponDiscount = Math.round((originalPrice * Number(appliedCoupon.value)) / 100);
       } else {
         couponDiscount = Number(appliedCoupon.value);
       }
     }
 
-    const netBase = Math.max(0, effectiveBasePrice - couponDiscount);
-    const gstPct = Number(paymentConfig?.gst_percentage) ?? 18;
-    const gstAmt = paymentConfig?.gst_included ? 0 : Math.round((netBase * gstPct) / 100);
-    const totalPayable = paymentConfig?.gst_included ? netBase : netBase + gstAmt;
+    const netBase = Math.max(0, originalPrice - couponDiscount);
+    const gstPct = 18; // Always 18% GST
+    const gstAmt = Math.round((netBase * gstPct) / 100);
+    const totalPayable = netBase + gstAmt;
 
     return {
       selectedPlan: matchedPlan,
-      passName: matchedPlan?.name || "Gold Pass",
+      passName: matchedPlan?.name || formData.registrationCategory || "Gold Pass",
       baseFee: originalPrice,
       originalPrice,
-      isEarlyBirdActive,
-      earlyBirdPrice: ebPrice,
-      earlyBirdDiscount,
-      effectiveBasePrice,
       couponDiscount,
       netBase,
       gstPct,
       gstAmt,
       totalPayable,
-      priceType: isEarlyBirdActive && ebPrice < originalPrice ? "EARLY_BIRD" : "REGULAR",
     };
   };
 
@@ -471,14 +452,26 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                 id: pendingRegId || undefined,
                 ...formData,
                 name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+                first_name: formData.firstName.trim(),
+                last_name: formData.lastName.trim(),
                 phone: formData.contactNumber,
+                contactNumber: formData.contactNumber,
                 organization: formData.companyName,
+                companyName: formData.companyName,
+                designation: formData.designation,
+                city: formData.city || formData.registeringCity || "Mumbai",
+                country: formData.country || "India",
+                registrationCategory: formData.registrationCategory,
+                registeringCity: formData.registeringCity,
+                referralSource: formData.referralSource,
                 eventId: currentEvent.id || currentEvent.slug,
                 eventTitle: currentEvent.title,
                 paymentAmount: pricing.totalPayable,
                 paymentStatus: "Paid",
                 paymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id || razorpayOrderId || null,
+                paymentSignature: response.razorpay_signature || null,
+                paymentMethod: "Razorpay",
                 couponApplied: appliedCoupon?.code || null,
               };
 
@@ -1158,25 +1151,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                               <span>Registration Fee Breakdown</span>
                             </h4>
 
-                            <div className="space-y-2 text-xs">
+                            <div className="space-y-2.5 text-xs">
                               {/* Base Category Price */}
                               <div className="flex justify-between text-slate-700">
                                 <span>Base Fee ({formData.registrationCategory}):</span>
                                 <span className="font-mono font-bold text-slate-900">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
                               </div>
 
-                              {/* Early Bird Discount */}
-                              {pricing.earlyBirdDiscount > 0 && (
-                                <div className="flex justify-between text-purple-700">
-                                  <span className="flex items-center gap-1">
-                                    <Sparkles className="h-3 w-3 text-purple-600" />
-                                    Early Bird Promotional Discount:
-                                  </span>
-                                  <span className="font-mono font-bold text-purple-700">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
-                                </div>
-                              )}
-
-                              {/* Coupon Discount */}
+                              {/* Coupon Discount (if applied) */}
                               {pricing.couponDiscount > 0 && (
                                 <div className="flex justify-between text-emerald-700 font-bold">
                                   <span className="flex items-center gap-1">
@@ -1187,11 +1169,22 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                                 </div>
                               )}
 
-                              {/* GST Tax */}
-                              <div className="flex justify-between text-slate-600">
-                                <span>GST ({pricing.gstPct}% Tax):</span>
-                                <span className="font-mono text-cyan-700 font-semibold">
-                                  {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
+                              {/* Subtotal after coupon if coupon applied */}
+                              {pricing.couponDiscount > 0 && (
+                                <div className="flex justify-between text-slate-600 font-medium pt-1 border-t border-dashed border-slate-200">
+                                  <span>Taxable Subtotal:</span>
+                                  <span className="font-mono font-bold text-slate-800">₹{pricing.netBase.toLocaleString("en-IN")}</span>
+                                </div>
+                              )}
+
+                              {/* GST (18% Tax) */}
+                              <div className="flex justify-between text-slate-700 font-medium">
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="h-3 w-3 text-cyan-600" />
+                                  GST (18% Tax):
+                                </span>
+                                <span className="font-mono text-cyan-700 font-bold">
+                                  + ₹{pricing.gstAmt.toLocaleString("en-IN")}
                                 </span>
                               </div>
 
@@ -1201,11 +1194,11 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                               <div className="flex justify-between items-baseline pt-1">
                                 <div>
                                   <span className="text-xs uppercase tracking-wider text-slate-700 block font-bold">Total Amount Payable</span>
-                                  <span className="text-[10px] text-slate-500 font-medium">Includes event pass & networking access</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">Includes 18% GST, event pass & networking access</span>
                                 </div>
                                 <div className="text-right">
                                   <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-700">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
-                                  <span className="block text-[10px] text-emerald-600 font-bold">Razorpay Test Gateway Enabled</span>
+                                  <span className="block text-[10px] text-emerald-600 font-bold">Secure Razorpay Gateway</span>
                                 </div>
                               </div>
                             </div>
