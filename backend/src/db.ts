@@ -128,6 +128,8 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN participation_preference VARCHAR(255);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN interest_tracks TEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN pass_name VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN status VARCHAR(50) DEFAULT 'Pending';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN status VARCHAR(50) DEFAULT 'Pending';"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
 
 
@@ -954,6 +956,17 @@ export async function ensureNewAdminTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // 7. Site Pageviews Table (for real Visitor Analytics)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS site_pageviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        page_path VARCHAR(255),
+        ip_address VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     try { await pool.query("ALTER TABLE testimonials MODIFY COLUMN avatar LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE testimonials ADD COLUMN video_url LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE testimonials ADD COLUMN video_platform VARCHAR(50);"); } catch (e) {}

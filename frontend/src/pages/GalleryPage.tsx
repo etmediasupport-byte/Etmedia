@@ -166,7 +166,7 @@ export default function GalleryPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background pb-24 text-foreground selection:bg-cyan-500/30 font-sans">
+    <div className="relative min-h-screen bg-background pb-4 sm:pb-6 text-foreground selection:bg-cyan-500/30 font-sans">
       <GlowBackdrop />
 
       {/* Hero Section */}
@@ -177,7 +177,7 @@ export default function GalleryPage() {
         image={images.heroSummit}
       />
 
-      <div className="container-x relative py-8 sm:py-12 space-y-8">
+      <div className="container-x relative pt-6 sm:pt-8 pb-2 space-y-8">
         
         {/* ==================================================== */}
         {/* FILTER BAR: Categories • Event Dropdown • Type Toggle */}

@@ -785,9 +785,10 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       <input
                         type="tel"
                         required
+                        maxLength={15}
                         value={formData.contactNumber}
                         onChange={(e) => {
-                          const cleanVal = e.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+                          const cleanVal = sanitizePhoneInput(e.target.value);
                           setFormData({ ...formData, contactNumber: cleanVal });
                           if (phoneTouched) setPhoneError(validatePhoneNumber(cleanVal));
                         }}
@@ -795,7 +796,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                           setPhoneTouched(true);
                           setPhoneError(validatePhoneNumber(formData.contactNumber));
                         }}
-                        placeholder="+91 98765 43210"
+                        placeholder="e.g. 98765 43210"
                         className={`w-full rounded-xl border px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all font-medium ${
                           phoneTouched && phoneError
                             ? "border-rose-500 bg-rose-50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
@@ -961,20 +962,48 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     </div>
                   </div>
                 </div>
+              </form>
 
-                {/* Section 3: Bottom Row with reCAPTCHA & Submit Button Side-by-Side */}
-                <div className="pt-2 grid gap-3 lg:grid-cols-12 items-center">
-                  {/* Google reCAPTCHA Verification */}
-                  <div className="lg:col-span-7">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:px-4 sm:py-2.5 transition-all hover:border-slate-300">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
+              {/* STICKY BOTTOM ACTION BAR (ALWAYS VISIBLE & ACCESSIBLE) */}
+              <div className="flex-none border-t border-slate-200 bg-slate-50/95 backdrop-blur-sm p-3.5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
+                {/* Google reCAPTCHA Verification */}
+                <div className="w-full sm:w-auto">
+                  <div className="rounded-xl border border-slate-200 bg-white p-2.5 sm:px-3.5 sm:py-2 transition-all hover:border-slate-300 shadow-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (verifiedCaptcha) {
+                              setVerifiedCaptcha(false);
+                            } else {
+                              setCaptchaVerifying(true);
+                              setTimeout(() => {
+                                setCaptchaVerifying(false);
+                                setVerifiedCaptcha(true);
+                                toast.success("reCAPTCHA Verification Successful!");
+                              }, 400);
+                            }
+                          }}
+                          className={`relative flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer ${
+                            verifiedCaptcha
+                              ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
+                              : captchaVerifying
+                              ? "border-cyan-600 bg-cyan-50 text-cyan-600"
+                              : "border-slate-300 bg-white text-transparent hover:border-cyan-500"
+                          }`}
+                        >
+                          {captchaVerifying ? (
+                            <Loader2 className="h-3 w-3 animate-spin text-cyan-600" />
+                          ) : verifiedCaptcha ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                          ) : null}
+                        </button>
+
+                        <div>
+                          <span
                             onClick={() => {
-                              if (verifiedCaptcha) {
-                                setVerifiedCaptcha(false);
-                              } else {
+                              if (!verifiedCaptcha && !captchaVerifying) {
                                 setCaptchaVerifying(true);
                                 setTimeout(() => {
                                   setCaptchaVerifying(false);
@@ -983,288 +1012,282 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                                 }, 400);
                               }
                             }}
-                            className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer ${
-                              verifiedCaptcha
-                                ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                                : captchaVerifying
-                                ? "border-cyan-600 bg-cyan-50 text-cyan-600"
-                                : "border-slate-300 bg-white text-transparent hover:border-cyan-500"
-                            }`}
+                            className="text-xs font-semibold text-slate-800 block select-none cursor-pointer hover:text-cyan-600 transition-colors"
                           >
-                            {captchaVerifying ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-600" />
-                            ) : verifiedCaptcha ? (
-                              <CheckCircle2 className="h-4 w-4 text-white" />
-                            ) : null}
-                          </button>
-
-                          <div>
-                            <span
-                              onClick={() => {
-                                if (!verifiedCaptcha && !captchaVerifying) {
-                                  setCaptchaVerifying(true);
-                                  setTimeout(() => {
-                                    setCaptchaVerifying(false);
-                                    setVerifiedCaptcha(true);
-                                    toast.success("reCAPTCHA Verification Successful!");
-                                  }, 400);
-                                }
-                              }}
-                              className="text-xs font-semibold text-slate-800 block select-none cursor-pointer hover:text-cyan-600 transition-colors"
-                            >
-                              I'm not a robot
-                            </span>
-                            <span className="text-[9px] text-slate-500 font-medium">
-                              {verifiedCaptcha ? "Verification Complete" : "Click box to verify"}
-                            </span>
-                          </div>
+                            I'm not a robot
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-medium">
+                            {verifiedCaptcha ? "Verification Complete" : "Click box to verify"}
+                          </span>
                         </div>
+                      </div>
 
-                        {/* Google reCAPTCHA Emblem Badge */}
-                        <div className="flex flex-col items-end shrink-0 select-none">
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600">
-                            <ShieldCheck className="h-3.5 w-3.5 text-cyan-600" />
-                            <span>reCAPTCHA</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[8px] text-slate-400 mt-0.5">
-                            <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Privacy</a>
-                            <span>·</span>
-                            <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Terms</a>
-                          </div>
+                      {/* Google reCAPTCHA Emblem Badge */}
+                      <div className="flex flex-col items-end shrink-0 select-none">
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-600">
+                          <ShieldCheck className="h-3 w-3 text-cyan-600" />
+                          <span>reCAPTCHA</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[8px] text-slate-400">
+                          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Privacy</a>
+                          <span>·</span>
+                          <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="hover:underline hover:text-slate-600">Terms</a>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Submit Button */}
-                  <div className="lg:col-span-5">
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3.5 px-5 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer font-btn disabled:opacity-60"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin text-white" />
-                          <span>Submitting Registration...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Award className="h-4 w-4 text-white" />
-                          <span>
-                            {activeMode === "free" ? "Submit Free Interest Registration →" : "Proceed to Order & Payment →"}
-                          </span>
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
-              </form>
+
+                {/* Submit Button */}
+                <div className="w-full sm:w-auto sm:min-w-[280px]">
+                  <button
+                    type="submit"
+                    form="registrationModalForm"
+                    disabled={submitting}
+                    className="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl py-3 px-6 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer font-btn disabled:opacity-60"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin text-white" />
+                        <span>Submitting Registration...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Award className="h-4 w-4 text-white" />
+                        <span>
+                          {activeMode === "free" ? "Submit Free Interest Registration →" : "Proceed to Order & Payment →"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </>
             )}
 
             {/* STEP 2: ORDER SUMMARY & PAYMENT DETAILS (WIDE 2-COLUMN RESPONSIVE LAYOUT) */}
             {modalStep === "payment" && (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0 bg-white">
-                {/* Top Step Header */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
-                    <CreditCard className="h-4 w-4" />
-                    <span>Step 2 of 2: Pricing & Payment Summary</span>
+              <>
+                <div
+                  className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 custom-scrollbar min-h-0 bg-white"
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "#0891b2 #f1f5f9" }}
+                >
+                  {/* Top Step Header */}
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Step 2 of 2: Pricing & Payment Summary</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModalStep("form")}
+                      className="text-xs font-bold text-cyan-600 hover:text-cyan-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      ← Back to Edit Details
+                    </button>
                   </div>
+
+                  {/* Side-by-Side Grid Layout: Left Details (col-span-5) & Right Pricing Breakdown (col-span-7) */}
+                  <div className="grid gap-5 lg:grid-cols-12 items-start">
+                    
+                    {/* LEFT COLUMN: DELEGATE & EVENT RECAP CARD */}
+                    <div className="lg:col-span-5 space-y-4">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3.5 text-xs text-slate-800">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Delegate Name</span>
+                          <strong className="text-slate-900 text-sm">{formData.firstName} {formData.lastName}</strong>
+                          <span className="block text-slate-700 mt-0.5">{formData.designation}</span>
+                          <span className="block text-slate-600">{formData.companyName}</span>
+                          <span className="block text-cyan-700 font-mono text-[11px] mt-1">{formData.email}</span>
+                          <span className="block text-slate-600 text-[11px]">Phone: {formData.contactNumber}</span>
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-3">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Event & Category</span>
+                          <strong className="text-cyan-800 text-sm block mt-0.5 leading-snug">{currentEvent.title}</strong>
+                          <span className="block text-purple-700 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
+                          <span className="block text-slate-600 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
+                        </div>
+                      </div>
+
+                      {/* Security & Verification Card */}
+                      <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 text-xs space-y-2">
+                        <div className="flex items-center gap-2 text-cyan-800 font-bold">
+                          <ShieldCheck className="h-4 w-4 text-cyan-600 shrink-0" />
+                          <span>Instant Ticket & Verification</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-800 font-mono font-semibold">{formData.email}</span> and <span className="text-cyan-800 font-mono font-semibold">registration@executivetalksmedia.in</span>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: PRICING BREAKDOWN, PROMO COUPON & PAY BUTTON */}
+                    <div className="lg:col-span-7 space-y-4">
+                      {(() => {
+                        const pricing = getPricing();
+                        return (
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4 shadow-sm">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
+                              <Tag className="h-4 w-4 text-cyan-600" />
+                              <span>Registration Fee Breakdown</span>
+                            </h4>
+
+                            <div className="space-y-2 text-xs">
+                              {/* Base Category Price */}
+                              <div className="flex justify-between text-slate-700">
+                                <span>Base Fee ({formData.registrationCategory}):</span>
+                                <span className="font-mono font-bold text-slate-900">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
+                              </div>
+
+                              {/* Early Bird Discount */}
+                              {pricing.earlyBirdDiscount > 0 && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span className="flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3 text-purple-600" />
+                                    Early Bird Promotional Discount:
+                                  </span>
+                                  <span className="font-mono font-bold text-purple-700">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
+                                </div>
+                              )}
+
+                              {/* Coupon Discount */}
+                              {pricing.couponDiscount > 0 && (
+                                <div className="flex justify-between text-emerald-700 font-bold">
+                                  <span className="flex items-center gap-1">
+                                    <Tag className="h-3 w-3 text-emerald-600" />
+                                    Coupon Discount ({appliedCoupon?.code}):
+                                  </span>
+                                  <span className="font-mono">- ₹{pricing.couponDiscount.toLocaleString("en-IN")}</span>
+                                </div>
+                              )}
+
+                              {/* GST Tax */}
+                              <div className="flex justify-between text-slate-600">
+                                <span>GST ({pricing.gstPct}% Tax):</span>
+                                <span className="font-mono text-cyan-700 font-semibold">
+                                  {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
+                                </span>
+                              </div>
+
+                              <div className="h-px bg-slate-200 my-2" />
+
+                              {/* Total Payable */}
+                              <div className="flex justify-between items-baseline pt-1">
+                                <div>
+                                  <span className="text-xs uppercase tracking-wider text-slate-700 block font-bold">Total Amount Payable</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">Includes event pass & networking access</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-700">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
+                                  <span className="block text-[10px] text-emerald-600 font-bold">Razorpay Test Gateway Enabled</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* PROMO COUPON CODE SECTION */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+                              <label className="block text-[11px] font-bold text-slate-700">Have a Promo / Discount Coupon?</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={couponInput}
+                                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                  placeholder="e.g. EARLY50 or CXO2026"
+                                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleApplyCoupon}
+                                  className="rounded-xl border border-cyan-600 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-all cursor-pointer"
+                                >
+                                  Apply Coupon
+                                </button>
+                              </div>
+
+                              {/* Active Coupons Quick Fill Badges */}
+                              {(() => {
+                                let sampleCoupons: any[] = [];
+                                if (typeof paymentConfig?.coupons === "string") {
+                                  try { sampleCoupons = JSON.parse(paymentConfig.coupons); } catch(e) {}
+                                } else if (Array.isArray(paymentConfig?.coupons)) {
+                                  sampleCoupons = paymentConfig.coupons;
+                                }
+                                if (sampleCoupons.length === 0) {
+                                  sampleCoupons = [
+                                    { code: "EARLY50", type: "percentage", value: 20 },
+                                    { code: "CXO2026", type: "flat", value: 1000 },
+                                  ];
+                                }
+                                return (
+                                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                    <span className="text-[10px] text-slate-500 font-medium">Available Promo Codes:</span>
+                                    {sampleCoupons.map((cp: any, idx: number) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                          setCouponInput(cp.code);
+                                          setAppliedCoupon(cp);
+                                          toast.success(`Applied promo code ${cp.code}!`);
+                                        }}
+                                        className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-800 hover:bg-amber-100 transition-all cursor-pointer"
+                                      >
+                                        {cp.code} ({cp.type === "percentage" ? `${cp.value}% Off` : `₹${cp.value} Off`})
+                                      </button>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* STICKY BOTTOM ACTION BAR FOR PAYMENT */}
+                <div className="flex-none border-t border-slate-200 bg-slate-50/95 backdrop-blur-sm p-3.5 sm:px-6 flex items-center justify-between gap-3 z-10">
                   <button
                     type="button"
                     onClick={() => setModalStep("form")}
-                    className="text-xs font-bold text-cyan-600 hover:text-cyan-700 flex items-center gap-1 cursor-pointer"
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                   >
                     ← Back to Edit Details
                   </button>
+
+                  {(() => {
+                    const pricing = getPricing();
+                    return (
+                      <button
+                        type="button"
+                        onClick={handleFinalCheckoutAndRegister}
+                        disabled={submitting}
+                        className="rounded-xl py-3 px-6 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin text-white" />
+                            <span>Processing Registration...</span>
+                          </>
+                        ) : pricing.totalPayable > 0 ? (
+                          <>
+                            <ShieldCheck className="h-4.5 w-4.5 text-white" />
+                            <span>Proceed to Pay ₹{pricing.totalPayable.toLocaleString("en-IN")} via Razorpay</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
+                            <span>Complete Free Registration</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
-
-                {/* Side-by-Side Grid Layout: Left Details (col-span-5) & Right Pricing Breakdown (col-span-7) */}
-                <div className="grid gap-5 lg:grid-cols-12 items-start">
-                  
-                  {/* LEFT COLUMN: DELEGATE & EVENT RECAP CARD */}
-                  <div className="lg:col-span-5 space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3.5 text-xs text-slate-800">
-                      <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Delegate Name</span>
-                        <strong className="text-slate-900 text-sm">{formData.firstName} {formData.lastName}</strong>
-                        <span className="block text-slate-700 mt-0.5">{formData.designation}</span>
-                        <span className="block text-slate-600">{formData.companyName}</span>
-                        <span className="block text-cyan-700 font-mono text-[11px] mt-1">{formData.email}</span>
-                        <span className="block text-slate-600 text-[11px]">Phone: {formData.contactNumber}</span>
-                      </div>
-
-                      <div className="border-t border-slate-200 pt-3">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Event & Category</span>
-                        <strong className="text-cyan-800 text-sm block mt-0.5 leading-snug">{currentEvent.title}</strong>
-                        <span className="block text-purple-700 font-semibold mt-1">Category: {formData.registrationCategory} ({formData.registeringCity})</span>
-                        <span className="block text-slate-600 text-[11px] mt-0.5">Location: {formData.city}, {formData.country}</span>
-                      </div>
-                    </div>
-
-                    {/* Security & Verification Card */}
-                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 text-xs space-y-2">
-                      <div className="flex items-center gap-2 text-cyan-800 font-bold">
-                        <ShieldCheck className="h-4 w-4 text-cyan-600 shrink-0" />
-                        <span>Instant Ticket & Verification</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-800 font-mono font-semibold">{formData.email}</span> and <span className="text-cyan-800 font-mono font-semibold">registration@executivetalksmedia.in</span>.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* RIGHT COLUMN: PRICING BREAKDOWN, PROMO COUPON & PAY BUTTON */}
-                  <div className="lg:col-span-7 space-y-4">
-                    {(() => {
-                      const pricing = getPricing();
-                      return (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-4 shadow-sm">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-cyan-600" />
-                            <span>Registration Fee Breakdown</span>
-                          </h4>
-
-                          <div className="space-y-2 text-xs">
-                            {/* Base Category Price */}
-                            <div className="flex justify-between text-slate-700">
-                              <span>Base Fee ({formData.registrationCategory}):</span>
-                              <span className="font-mono font-bold text-slate-900">₹{pricing.baseFee.toLocaleString("en-IN")}</span>
-                            </div>
-
-                            {/* Early Bird Discount */}
-                            {pricing.earlyBirdDiscount > 0 && (
-                              <div className="flex justify-between text-purple-700">
-                                <span className="flex items-center gap-1">
-                                  <Sparkles className="h-3 w-3 text-purple-600" />
-                                  Early Bird Promotional Discount:
-                                </span>
-                                <span className="font-mono font-bold text-purple-700">- ₹{pricing.earlyBirdDiscount.toLocaleString("en-IN")}</span>
-                              </div>
-                            )}
-
-                            {/* Coupon Discount */}
-                            {pricing.couponDiscount > 0 && (
-                              <div className="flex justify-between text-emerald-700 font-bold">
-                                <span className="flex items-center gap-1">
-                                  <Tag className="h-3 w-3 text-emerald-600" />
-                                  Coupon Discount ({appliedCoupon?.code}):
-                                </span>
-                                <span className="font-mono">- ₹{pricing.couponDiscount.toLocaleString("en-IN")}</span>
-                              </div>
-                            )}
-
-                            {/* GST Tax */}
-                            <div className="flex justify-between text-slate-600">
-                              <span>GST ({pricing.gstPct}% Tax):</span>
-                              <span className="font-mono text-cyan-700 font-semibold">
-                                {paymentConfig?.gst_included ? "Included in Base Fee" : `+ ₹${pricing.gstAmt.toLocaleString("en-IN")}`}
-                              </span>
-                            </div>
-
-                            <div className="h-px bg-slate-200 my-2" />
-
-                            {/* Total Payable */}
-                            <div className="flex justify-between items-baseline pt-1">
-                              <div>
-                                <span className="text-xs uppercase tracking-wider text-slate-700 block font-bold">Total Amount Payable</span>
-                                <span className="text-[10px] text-slate-500 font-medium">Includes event pass & networking access</span>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-2xl sm:text-3xl font-black font-mono text-cyan-700">₹{pricing.totalPayable.toLocaleString("en-IN")}</span>
-                                <span className="block text-[10px] text-emerald-600 font-bold">Razorpay Test Gateway Enabled</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* PROMO COUPON CODE SECTION */}
-                          <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
-                            <label className="block text-[11px] font-bold text-slate-700">Have a Promo / Discount Coupon?</label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={couponInput}
-                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                                placeholder="e.g. EARLY50 or CXO2026"
-                                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                              />
-                              <button
-                                type="button"
-                                onClick={handleApplyCoupon}
-                                className="rounded-xl border border-cyan-600 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100 transition-all cursor-pointer"
-                              >
-                                Apply Coupon
-                              </button>
-                            </div>
-
-                            {/* Active Coupons Quick Fill Badges */}
-                            {(() => {
-                              let sampleCoupons: any[] = [];
-                              if (typeof paymentConfig?.coupons === "string") {
-                                try { sampleCoupons = JSON.parse(paymentConfig.coupons); } catch(e) {}
-                              } else if (Array.isArray(paymentConfig?.coupons)) {
-                                sampleCoupons = paymentConfig.coupons;
-                              }
-                              if (sampleCoupons.length === 0) {
-                                sampleCoupons = [
-                                  { code: "EARLY50", type: "percentage", value: 20 },
-                                  { code: "CXO2026", type: "flat", value: 1000 },
-                                ];
-                              }
-                              return (
-                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                  <span className="text-[10px] text-slate-500 font-medium">Available Promo Codes:</span>
-                                  {sampleCoupons.map((cp: any, idx: number) => (
-                                    <button
-                                      key={idx}
-                                      type="button"
-                                      onClick={() => {
-                                        setCouponInput(cp.code);
-                                        setAppliedCoupon(cp);
-                                        toast.success(`Applied promo code ${cp.code}!`);
-                                      }}
-                                      className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-800 hover:bg-amber-100 transition-all cursor-pointer"
-                                    >
-                                      {cp.code} ({cp.type === "percentage" ? `${cp.value}% Off` : `₹${cp.value} Off`})
-                                    </button>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                          </div>
-
-                          {/* FINAL PAY BUTTON */}
-                          <button
-                            type="button"
-                            onClick={handleFinalCheckoutAndRegister}
-                            disabled={submitting}
-                            className="w-full rounded-xl py-3.5 px-6 text-sm font-extrabold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-lg shadow-cyan-600/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
-                          >
-                            {submitting ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin text-white" />
-                                <span>Processing Registration...</span>
-                              </>
-                            ) : pricing.totalPayable > 0 ? (
-                              <>
-                                <ShieldCheck className="h-4.5 w-4.5 text-white" />
-                                <span>Proceed to Pay ₹{pricing.totalPayable.toLocaleString("en-IN")} via Razorpay</span>
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
-                                <span>Complete Free Registration</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                </div>
-              </div>
+              </>
             )}
           </div>
         </div>

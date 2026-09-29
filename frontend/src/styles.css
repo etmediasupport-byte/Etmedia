@@ -347,21 +347,27 @@
   filter: blur(60px);
 }
 
-/* --- CUSTOM SCROLLBAR --- */
+/* --- CUSTOM SCROLLBAR (CROSS-BROWSER SMOOTH SCROLLING) --- */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #0891b2 #f1f5f9;
+  -webkit-overflow-scrolling: touch;
+}
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: #f1f5f9;
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 174, 239, 0.4);
+  background: #0891b2;
   border-radius: 9999px;
+  border: 1px solid #e2e8f0;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 174, 239, 0.8);
+  background: #0e7490;
 }
 
 @keyframes navbar-shimmer {

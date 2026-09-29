@@ -35,7 +35,7 @@ export function validateEmail(email: string, fieldName = "Email address"): { isV
 }
 
 /**
- * Validates a mobile / phone number.
+ * Validates a mobile / phone number (strictly requires a 10-digit subscriber number).
  */
 export function validatePhone(phone: string, fieldName = "Contact / Mobile number"): { isValid: boolean; error: string; cleanDigits: string } {
   const trimmed = (phone || "").trim();
@@ -46,28 +46,36 @@ export function validatePhone(phone: string, fieldName = "Contact / Mobile numbe
   // Extract pure digits
   const cleanDigits = trimmed.replace(/\D/g, "");
 
-  // Must have at least 10 digits and at most 15 digits
-  if (cleanDigits.length < 10) {
+  // Determine subscriber 10-digit number (handling +91 country prefix or leading 0)
+  let subscriberNumber = cleanDigits;
+  if (cleanDigits.length === 12 && cleanDigits.startsWith("91")) {
+    subscriberNumber = cleanDigits.slice(2);
+  } else if (cleanDigits.length === 11 && cleanDigits.startsWith("0")) {
+    subscriberNumber = cleanDigits.slice(1);
+  }
+
+  // Must be exactly 10 digits
+  if (subscriberNumber.length < 10) {
     return {
       isValid: false,
-      error: `Please enter a valid 10-digit ${fieldName.toLowerCase()} (e.g. +91 98765 43210).`,
+      error: `Please enter a valid 10-digit ${fieldName.toLowerCase()} (e.g. 98765 43210).`,
       cleanDigits,
     };
   }
-  if (cleanDigits.length > 15) {
+  if (subscriberNumber.length > 10) {
     return {
       isValid: false,
-      error: `${fieldName} cannot exceed 15 digits.`,
+      error: `${fieldName} must be exactly 10 digits.`,
       cleanDigits,
     };
   }
 
-  // Check for repetitive bogus sequences (e.g. 1111111111, 0000000000, 585858585858)
-  const isAllSameDigit = /^(\d)\1+$/.test(cleanDigits);
+  // Check for repetitive bogus sequences (e.g. 1111111111, 0000000000, 9999999999)
+  const isAllSameDigit = /^(\d)\1{9}$/.test(subscriberNumber);
   if (isAllSameDigit) {
     return {
       isValid: false,
-      error: `Please enter a valid real ${fieldName.toLowerCase()}, not repeating numbers.`,
+      error: `Please enter a valid real 10-digit ${fieldName.toLowerCase()}.`,
       cleanDigits,
     };
   }
@@ -77,20 +85,43 @@ export function validatePhone(phone: string, fieldName = "Contact / Mobile numbe
 
 /**
  * Live keystroke sanitizer for phone inputs:
- * Disallows alphabets, slashes, and illegal symbols. Allows only digits, +, -, (, ), and spaces.
+ * Disallows alphabets, slashes, and illegal symbols.
+ * Strictly limits subscriber number to 10 digits (or max 12 digits when using +91 country code).
  */
-export function sanitizePhoneInput(val: string, maxChars = 18): string {
+export function sanitizePhoneInput(val: string): string {
+  if (!val) return "";
   // Strip out any characters other than digits, +, -, (, ), space
   let sanitized = val.replace(/[^\d\+\-\s\(\)]/g, "");
+
   // Ensure only one leading +
-  if (sanitized.indexOf("+") > 0) {
-    sanitized = sanitized.replace(/\+/g, (match, offset) => (offset === 0 ? "+" : ""));
+  if (sanitized.includes("+")) {
+    const hasLeadingPlus = sanitized.startsWith("+");
+    sanitized = (hasLeadingPlus ? "+" : "") + sanitized.replace(/\+/g, "");
   }
-  // Limit max length
-  if (sanitized.length > maxChars) {
-    sanitized = sanitized.slice(0, maxChars);
+
+  const hasPlus = sanitized.startsWith("+");
+  const hasLeadingZero = sanitized.startsWith("0");
+
+  // Max allowed digits:
+  // With country code (+91): 12 digits max (2 code + 10 number)
+  // With leading 0: 11 digits max (1 zero + 10 number)
+  // Standard pure digits: exactly 10 digits max
+  const maxAllowedDigits = hasPlus ? 12 : hasLeadingZero ? 11 : 10;
+
+  let digitCount = 0;
+  let truncated = "";
+  for (const char of sanitized) {
+    if (/\d/.test(char)) {
+      if (digitCount < maxAllowedDigits) {
+        truncated += char;
+        digitCount++;
+      }
+    } else {
+      truncated += char;
+    }
   }
-  return sanitized;
+
+  return truncated;
 }
 
 /**

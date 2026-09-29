@@ -421,7 +421,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
                 {/* FORM CONTENT BODY */}
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0 bg-white">
-                  <div className="flex-1 overflow-y-auto p-5 sm:p-8 md:p-10 space-y-6 bg-white">
+                  <div className="flex-1 overflow-y-auto p-5 sm:p-8 md:p-10 space-y-6 bg-white custom-scrollbar overscroll-contain touch-pan-y">
                     {/* STEP 1: EXECUTIVE PROFILE */}
                     {currentStep === 1 && (
                       <motion.div
@@ -486,7 +486,8 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                               <input
                                 type="tel"
                                 required
-                                placeholder="+91 98765 43210"
+                                maxLength={15}
+                                placeholder="e.g. 98765 43210"
                                 value={formData.mobileNumber}
                                 onChange={(e) => handleInputChange("mobileNumber", sanitizePhoneInput(e.target.value))}
                                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"

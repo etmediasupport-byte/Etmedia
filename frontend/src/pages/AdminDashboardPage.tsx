@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/UPDATED LOGO.jpeg";
@@ -295,9 +295,9 @@ export default function AdminDashboardPage() {
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
   const [eventFilter, setEventFilter] = useState<"all" | "live" | "upcoming" | "past">("all");
 
-  // Helper function to check whether an event is in the past based on its scheduled date
-  const isEventPast = (evt: any): boolean => {
-    let dateStr = evt.date;
+  // Helper function to extract and parse event date timestamp reliably
+  const parseEventTimestamp = (evt: any): number => {
+    let dateStr = evt.date || "";
     try {
       let locs = typeof evt.locations === "string" ? JSON.parse(evt.locations) : evt.locations;
       if (Array.isArray(locs) && locs[0]?.date) {
@@ -305,28 +305,67 @@ export default function AdminDashboardPage() {
       }
     } catch (e) {}
 
-    if (!dateStr) return false;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const parsedDate = new Date(dateStr);
-    if (!isNaN(parsedDate.getTime())) {
-      return parsedDate < today;
+    if (!dateStr || typeof dateStr !== "string") {
+      return evt.created_at ? new Date(evt.created_at).getTime() : 0;
     }
 
-    const yearMatch = dateStr.match(/\b(20\d\d)\b/);
+    const cleanStr = dateStr.trim();
+    const parsed = Date.parse(cleanStr);
+    if (!isNaN(parsed)) return parsed;
+
+    const dmyMatch = cleanStr.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+    if (dmyMatch) {
+      const p = Date.parse(`${dmyMatch[2]} ${dmyMatch[1]}, ${dmyMatch[3]}`);
+      if (!isNaN(p)) return p;
+    }
+
+    const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
+    if (rangeMatch) {
+      const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
+      if (!isNaN(p)) return p;
+    }
+
+    const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
     if (yearMatch) {
       const year = parseInt(yearMatch[1], 10);
-      const currentYear = new Date().getFullYear();
-      if (year < currentYear) return true;
-      if (year > currentYear) return false;
+      return new Date(year, 0, 1).getTime();
     }
 
-    return false;
+    return evt.created_at ? new Date(evt.created_at).getTime() : 0;
+  };
+
+  const getEventStatus = (evt: any): "live" | "upcoming" | "past" => {
+    if (evt.status === "live" || evt.is_live === 1 || evt.is_live === true) {
+      return "live";
+    }
+    if (evt.status === "past" || evt.status === "completed") {
+      return "past";
+    }
+
+    const eventTime = parseEventTimestamp(evt);
+    if (!eventTime) return "upcoming";
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+
+    if (eventTime >= todayStart && eventTime <= todayEnd) {
+      return "live";
+    }
+    if (eventTime < todayStart) {
+      return "past";
+    }
+    return "upcoming";
+  };
+
+  const isEventPast = (evt: any): boolean => {
+    return getEventStatus(evt) === "past";
   };
   const [partnerSubmissions, setPartnerSubmissions] = useState<any[]>([]);
   const [weeklyVisitors, setWeeklyVisitors] = useState<number>(0);
+  const [avgDailyVisitors, setAvgDailyVisitors] = useState<number>(0);
+  const [totalPageviews, setTotalPageviews] = useState<number>(0);
+  const [trafficData, setTrafficData] = useState<{ day: string; date: string; count: number }[]>([]);
   const [partnerSubTab, setPartnerSubTab] = useState<"brands" | "leads">("brands");
   const [editingPartner, setEditingPartner] = useState<Collaborator | null>(null);
   const [newPartnerForm, setNewPartnerForm] = useState({
@@ -1009,12 +1048,19 @@ export default function AdminDashboardPage() {
         console.warn("Could not fetch event payment settings", e);
       }
 
-      // 17. Fetch Visitor Analytics
+      // 17. Fetch Visitor Analytics (100% Real DB Analytics)
       try {
-        const visRes = await fetch("/api/admin/analytics/visitors");
+        const visRes = await fetch("/api/admin/analytics/visitors", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const visData = await visRes.json();
-        if (visData.success && typeof visData.weeklyVisitors === "number") {
-          setWeeklyVisitors(visData.weeklyVisitors);
+        if (visData.success) {
+          setWeeklyVisitors(visData.weeklyVisitors || 0);
+          setAvgDailyVisitors(visData.avgDailyVisitors || 0);
+          setTotalPageviews(visData.totalPageviews || 0);
+          if (Array.isArray(visData.dailyTraffic)) {
+            setTrafficData(visData.dailyTraffic);
+          }
         }
       } catch (e) {
         console.warn("Could not fetch visitor analytics", e);
@@ -1124,9 +1170,10 @@ export default function AdminDashboardPage() {
     };
 
     const onNewSubscriber = (data: any) => {
-      toast.success(`📧 New Newsletter Subscriber: ${data.subscriber?.email || "New user"}`);
-      if (data.subscriber) {
-        setNewsletterSubscribers((prev) => [data.subscriber, ...prev]);
+      const sub = data?.subscriber || data;
+      toast.success(`📧 New Newsletter Subscriber: ${sub?.email || "New user"}`);
+      if (sub && sub.email) {
+        setNewsletterSubscribers((prev) => [sub, ...prev.filter((s) => s.id !== sub.id && s.email !== sub.email)]);
       }
     };
 
@@ -1498,7 +1545,9 @@ export default function AdminDashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("etmedia_admin_token");
+    localStorage.removeItem("et_admin_token");
     localStorage.removeItem("etmedia_admin_user");
+    localStorage.removeItem("et_admin_user");
     toast.success("Logged out successfully.");
     navigate("/admin/login");
   };
@@ -1868,7 +1917,15 @@ export default function AdminDashboardPage() {
     const newStatus = currentStatus === "Confirmed" ? "Pending" : "Confirmed";
 
     setRegistrations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: newStatus,
+              payment_status: newStatus === "Confirmed" ? "Approved (Free Pass)" : "Pending",
+            }
+          : r
+      )
     );
 
     try {
@@ -1884,9 +1941,11 @@ export default function AdminDashboardPage() {
       if (data.success) {
         toast.success(`Delegate ${reg.name} status updated to ${newStatus}`);
       } else {
+        fetchDashboardData();
         toast.error(data.message || "Failed to update status.");
       }
     } catch (err) {
+      fetchDashboardData();
       toast.error("Network error updating status.");
     }
   };
@@ -3784,6 +3843,89 @@ export default function AdminDashboardPage() {
 
   const eventRegistrationsList = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
 
+  // Dynamic 7-day traffic points calculated directly from MySQL pageview logs
+  const dynamicTrafficPoints = useMemo(() => {
+    const defaultDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    let data = trafficData;
+    if (!data || data.length === 0) {
+      data = defaultDays.map((d) => ({ day: d, date: "", count: 0 }));
+    }
+
+    const counts = data.map((d) => d.count);
+    const maxCount = Math.max(...counts, 5);
+
+    const startX = 35;
+    const endX = 465;
+    const usableW = endX - startX;
+    const stepX = usableW / Math.max(data.length - 1, 1);
+
+    const topY = 30;
+    const bottomY = 140;
+    const usableH = bottomY - topY;
+
+    const points = data.map((item, idx) => {
+      const x = Math.round(startX + idx * stepX);
+      const normalizedY = maxCount > 0 ? item.count / maxCount : 0;
+      const y = Math.round(bottomY - normalizedY * usableH);
+      return {
+        x,
+        y,
+        val: item.count.toLocaleString(),
+        day: item.day,
+        date: item.date,
+        count: item.count,
+      };
+    });
+
+    const pathD = points.length > 0 ? `M ${points.map((p) => `${p.x},${p.y}`).join(" L ")}` : "";
+    const polygonPoints =
+      points.length > 0
+        ? `${points[0].x},160 ${points.map((p) => `${p.x},${p.y}`).join(" ")} ${points[points.length - 1].x},160`
+        : "";
+
+    return { points, pathD, polygonPoints, maxCount };
+  }, [trafficData]);
+
+  // Dynamic breakdown of registrations by event / category computed from MySQL registrations
+  const registrationCategoryBreakdown = useMemo(() => {
+    const list = registrations || [];
+    if (list.length === 0) return [];
+
+    const counts: Record<string, number> = {};
+    list.forEach((reg) => {
+      let title = reg.event_title?.trim();
+      if (!title && reg.event_id) {
+        const found = cmsEvents.find((e) => e.id === reg.event_id);
+        title = found ? (found.title || found.name) : reg.event_id;
+      }
+      if (!title) {
+        title = reg.registration_category || "Summit Delegate Pass";
+      }
+      counts[title] = (counts[title] || 0) + 1;
+    });
+
+    const total = list.length;
+    const palette = [
+      "bg-cyan-600",
+      "bg-purple-600",
+      "bg-indigo-600",
+      "bg-emerald-600",
+      "bg-amber-600",
+      "bg-rose-600",
+      "bg-blue-600",
+      "bg-teal-600",
+    ];
+
+    return Object.entries(counts)
+      .map(([label, count], idx) => ({
+        label,
+        count,
+        pct: total > 0 ? Math.round((count / total) * 100) : 0,
+        color: palette[idx % palette.length],
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [registrations, cmsEvents]);
+
   const filteredRegistrations = eventRegistrationsList.filter(
     (r) =>
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -4082,7 +4224,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {cmsEvents.filter((e) => e.status !== "past").length}
+                        {cmsEvents.filter((e) => getEventStatus(e) !== "past").length}
                       </div>
                       <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
                         Active Calendar
@@ -4188,13 +4330,13 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {weeklyVisitors ? weeklyVisitors.toLocaleString() : (partnerSubmissions.length + eventRegistrationsList.length + cmsEvents.length * 12 + 420).toLocaleString()}
+                        {(weeklyVisitors || 0).toLocaleString()}
                       </div>
                       <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-bold text-teal-700 border border-teal-200">
-                        +18.4% Up
+                        Live Analytics
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Unique visitors this week</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Pageviews logged this week</p>
                   </div>
                 </div>
               </div>
@@ -4212,7 +4354,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-slate-500 font-medium">Daily portal visitors & peak engagement over the last 7 days</p>
                     </div>
                     <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3 py-1 text-xs font-mono font-extrabold text-cyan-800">
-                      Avg: {Math.round((weeklyVisitors || (partnerSubmissions.length + eventRegistrationsList.length + cmsEvents.length * 12 + 420)) / 7).toLocaleString()} / Day
+                      Avg: {(avgDailyVisitors || Math.round((weeklyVisitors || 0) / 7)).toLocaleString()} / Day
                     </span>
                   </div>
 
@@ -4232,31 +4374,27 @@ export default function AdminDashboardPage() {
                       <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />
 
                       {/* Area Fill */}
-                      <polygon
-                        points="20,140 90,110 160,80 230,55 300,75 370,35 440,20 440,160 20,160"
-                        fill="url(#visitorGradient)"
-                      />
+                      {dynamicTrafficPoints.polygonPoints && (
+                        <polygon
+                          points={dynamicTrafficPoints.polygonPoints}
+                          fill="url(#visitorGradient)"
+                        />
+                      )}
 
                       {/* Line Path */}
-                      <path
-                        d="M 20,140 L 90,110 L 160,80 L 230,55 L 300,75 L 370,35 L 440,20"
-                        fill="none"
-                        stroke="#0891b2"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      {dynamicTrafficPoints.pathD && (
+                        <path
+                          d={dynamicTrafficPoints.pathD}
+                          fill="none"
+                          stroke="#0891b2"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      )}
 
                       {/* Data Dots */}
-                      {[
-                        { x: 20, y: 140, val: "1,820", day: "Mon" },
-                        { x: 90, y: 110, val: "2,450", day: "Tue" },
-                        { x: 160, y: 80, val: "3,120", day: "Wed" },
-                        { x: 230, y: 55, val: "3,890", day: "Thu" },
-                        { x: 300, y: 75, val: "3,450", day: "Fri" },
-                        { x: 370, y: 35, val: "4,320", day: "Sat" },
-                        { x: 440, y: 20, val: "5,800", day: "Sun" },
-                      ].map((pt, idx) => (
+                      {dynamicTrafficPoints.points.map((pt, idx) => (
                         <g key={idx} className="group/dot cursor-pointer">
                           <circle cx={pt.x} cy={pt.y} r="5" fill="#0891b2" stroke="#ffffff" strokeWidth="2.5" />
                           <circle cx={pt.x} cy={pt.y} r="9" fill="#0891b2" opacity="0.2" className="group-hover/dot:scale-150 transition-transform" />
@@ -4272,9 +4410,8 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* CHART 2: REGISTRATIONS & MAGAZINE VIEWS (DISTRIBUTION CHARTS) */}
+                {/* CHART 2: REGISTRATIONS DISTRIBUTION (REAL MYSQL DATA) */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-                  {/* Registrations Distribution Bar Chart */}
                   <div>
                     <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                       <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
@@ -4282,34 +4419,35 @@ export default function AdminDashboardPage() {
                         <span>Registrations Chart (By Summit Category)</span>
                       </h3>
                       <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                        Total: {stats.totalRegistrations || registrations.length}
+                        Total: {registrations.length}
                       </span>
                     </div>
 
-                    <div className="space-y-3 text-xs font-medium">
-                      {[
-                        { label: "CFO Leadership Summit", count: 48, pct: 85, color: "bg-cyan-600" },
-                        { label: "HR Tech & Executive Forum", count: 36, pct: 65, color: "bg-purple-600" },
-                        { label: "Enterprise AI Conclave", count: 29, pct: 52, color: "bg-indigo-600" },
-                        { label: "ESG & Brand Leadership", count: 18, pct: 32, color: "bg-emerald-600" },
-                      ].map((item, idx) => (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex justify-between text-slate-700">
-                            <span className="font-bold">{item.label}</span>
-                            <span className="font-mono font-bold text-slate-900">{item.count} Registrations</span>
+                    {registrationCategoryBreakdown.length > 0 ? (
+                      <div className="space-y-3.5 text-xs font-medium">
+                        {registrationCategoryBreakdown.map((item, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex justify-between text-slate-700">
+                              <span className="font-bold text-slate-900 truncate max-w-[220px] sm:max-w-xs">{item.label}</span>
+                              <span className="font-mono font-bold text-slate-900 shrink-0">
+                                {item.count} {item.count === 1 ? "Registration" : "Registrations"} ({item.pct}%)
+                              </span>
+                            </div>
+                            <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${item.color} transition-all duration-500`}
+                                style={{ width: `${item.pct}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${item.color} transition-all duration-500`}
-                              style={{ width: `${item.pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-slate-400 text-xs font-medium">
+                        No delegate registrations recorded in MySQL database yet.
+                      </div>
+                    )}
                   </div>
-
-
                 </div>
               </div>
 

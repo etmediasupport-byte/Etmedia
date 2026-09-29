@@ -245,109 +245,63 @@ export function MultiStepFormWizard({
 
   if (isSuccess) {
     return (
-      <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-cyan-500/30">
-        <GlowBackdrop />
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="Executive Talks Media" className="h-9 w-auto rounded-lg shadow-sm" />
-              <span className="text-xs font-black tracking-widest text-cyan-400 uppercase hidden sm:inline-block">
-                EXECUTIVE TALKS MEDIA
-              </span>
-            </div>
-            <button
-              onClick={() => navigate(cancelPath)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-              <span>Close</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Success Card Container */}
-        <main className="mx-auto flex flex-1 w-full max-w-2xl items-center justify-center p-4 sm:p-6">
-          <div className="w-full rounded-3xl border border-cyan-500/30 bg-slate-900/90 backdrop-blur-2xl p-8 sm:p-12 shadow-2xl shadow-cyan-950/40 text-center space-y-6">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-500/10 text-cyan-400 ring-8 ring-cyan-500/5">
-              <CheckCircle2 className="h-10 w-10 text-cyan-400" />
+      <div className="min-h-screen bg-slate-100/70 pt-28 pb-16">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-center p-4 sm:p-6">
+          <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 shadow-xl text-center space-y-6">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 ring-8 ring-emerald-500/5">
+              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
             </div>
             <div className="space-y-2">
-              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-extrabold text-cyan-300 tracking-wider uppercase">
+              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-black text-cyan-700 tracking-wider uppercase">
                 {badgeText}
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-white">{successTitle}</h1>
-              <p className="text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
+              <h1 className="text-2xl sm:text-3xl font-black font-display text-slate-900">{successTitle}</h1>
+              <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed font-medium">
                 {successMessage || successSubtitle}
               </p>
             </div>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
+                type="button"
                 onClick={() => navigate(cancelPath)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-8 py-3.5 text-sm font-bold text-slate-950 hover:bg-cyan-400 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-cyan-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
               >
                 <span>Return to Homepage</span>
               </button>
             </div>
           </div>
-        </main>
-
-        <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} Executive Talks Media. All Rights Reserved.
-        </footer>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-cyan-500/30">
-      <GlowBackdrop />
-
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Executive Talks Media" className="h-9 w-auto rounded-lg shadow-sm" />
-            <span className="text-xs font-black tracking-widest text-cyan-400 uppercase hidden sm:inline-block">
-              {badgeText}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(cancelPath)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-            <span>Cancel</span>
-          </button>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-slate-100/70 pt-28 pb-16">
       {/* Main Wizard Form Body */}
-      <main className="mx-auto flex-1 w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 backdrop-blur-2xl p-6 sm:p-10 lg:p-12 shadow-2xl space-y-8">
+      <main className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-sm space-y-8">
           {/* Header Title Section */}
-          <div className="space-y-2 border-b border-slate-800/80 pb-6">
+          <div className="space-y-2 border-b border-slate-100 pb-6">
             <div className="flex items-center justify-between">
-              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-bold text-cyan-400 tracking-wider uppercase">
+              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-black text-cyan-700 tracking-wider uppercase">
                 {badgeText}
               </span>
 
-              {/* Progress Step Counter (NO STEP NAMES/TITLES DISPLAYED) */}
+              {/* Progress Step Counter */}
               <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                 Step {currentStep} of {totalSteps}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{title}</h1>
-            <p className="text-xs sm:text-sm text-slate-400">{subtitle}</p>
+            <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-slate-900">{title}</h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">{subtitle}</p>
 
             {/* Sleek Progress Bar */}
             <div className="pt-2">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500 ease-out"
+                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -356,7 +310,7 @@ export function MultiStepFormWizard({
 
           {/* Form Submit Error Banner */}
           {errors["_submit"] && (
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-medium text-rose-300">
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-50 p-4 text-xs font-bold text-rose-700">
               ⚠️ {errors["_submit"]}
             </div>
           )}
@@ -374,12 +328,12 @@ export function MultiStepFormWizard({
 
                 return (
                   <div key={field.name} className={isFullWidth ? "sm:col-span-2" : "sm:col-span-1"}>
-                    <label className="block text-xs font-bold text-slate-200 mb-1.5 tracking-wide flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 tracking-wide flex items-center justify-between">
                       <span>
-                        {field.label} {field.required && <span className="text-cyan-400">*</span>}
+                        {field.label} {field.required && <span className="text-rose-500">*</span>}
                       </span>
                       {isValid && (
-                        <span className="text-[10px] font-extrabold text-emerald-400">✓ Valid</span>
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                       )}
                     </label>
 
@@ -388,17 +342,17 @@ export function MultiStepFormWizard({
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
                         onBlur={() => handleFieldBlur(field)}
-                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                        className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 focus:ring-rose-500/30"
+                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
-                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       >
                         <option value="">-- Select {field.label} --</option>
                         {field.options?.map((opt) => (
-                          <option key={opt} value={opt} className="bg-slate-900 text-white">
+                          <option key={opt} value={opt} className="bg-white text-slate-900">
                             {opt}
                           </option>
                         ))}
@@ -410,12 +364,12 @@ export function MultiStepFormWizard({
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
                         onBlur={() => handleFieldBlur(field)}
-                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                        className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 focus:ring-rose-500/30"
+                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
-                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
                     ) : field.type === "file" ? (
@@ -424,16 +378,16 @@ export function MultiStepFormWizard({
                           type="file"
                           accept=".pdf,.doc,.docx"
                           onChange={(e) => handleFileChange(field, e)}
-                          className="w-full text-xs text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20 cursor-pointer"
+                          className="w-full text-xs text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-cyan-500/10 file:text-cyan-700 hover:file:bg-cyan-500/20 cursor-pointer"
                         />
                         {uploadingField === field.name && (
-                          <div className="flex items-center gap-2 text-xs text-cyan-400">
+                          <div className="flex items-center gap-2 text-xs text-cyan-600 font-bold">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             <span>Uploading document...</span>
                           </div>
                         )}
                         {fieldValue && (
-                          <p className="text-xs text-emerald-400 font-mono break-all">
+                          <p className="text-xs text-emerald-600 font-bold break-all">
                             ✓ Document Attached: {fieldValue}
                           </p>
                         )}
@@ -441,16 +395,17 @@ export function MultiStepFormWizard({
                     ) : field.type === "tel" ? (
                       <input
                         type="tel"
-                        placeholder={field.placeholder || "+91 98765 43210"}
+                        maxLength={15}
+                        placeholder={field.placeholder || "e.g. 98765 43210"}
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, sanitizePhoneInput(e.target.value))}
                         onBlur={() => handleFieldBlur(field)}
-                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                        className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 focus:ring-rose-500/30"
+                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
-                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
                     ) : field.type === "number" ? (
@@ -460,12 +415,12 @@ export function MultiStepFormWizard({
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, sanitizeNumericInput(e.target.value))}
                         onBlur={() => handleFieldBlur(field)}
-                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                        className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 focus:ring-rose-500/30"
+                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
-                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
                     ) : (
@@ -475,57 +430,63 @@ export function MultiStepFormWizard({
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
                         onBlur={() => handleFieldBlur(field)}
-                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                        className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 focus:ring-rose-500/30"
+                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
-                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
                     )}
 
                     {field.helpText && <p className="mt-1 text-[11px] text-slate-500">{field.helpText}</p>}
-                    {fieldError && <p className="mt-1 text-[11px] font-semibold text-rose-400">⚠️ {fieldError}</p>}
+                    {fieldError && <p className="mt-1 text-[11px] font-bold text-rose-500">⚠️ {fieldError}</p>}
                   </div>
                 );
               })}
             </div>
 
             {/* Wizard Navigation Controls */}
-            <div className="mt-10 flex items-center justify-between border-t border-slate-800/80 pt-6">
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6">
               {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-5 py-3 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-6 py-3.5 text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span>Back</span>
+                  <span>Back to Step {currentStep - 1}</span>
                 </button>
               ) : (
-                <div />
+                <button
+                  type="button"
+                  onClick={() => navigate(cancelPath)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-6 py-3.5 text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  <span>Cancel</span>
+                </button>
               )}
 
               {currentStep < totalSteps ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-7 py-3 text-xs font-bold text-slate-950 hover:bg-cyan-400 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-cyan-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
                 >
-                  <span>Continue</span>
+                  <span>Continue to Step {currentStep + 1}</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-8 py-3 text-xs font-black text-slate-950 hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-cyan-500/20 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Submitting...</span>
+                      <span>Submitting Application...</span>
                     </>
                   ) : (
                     <>
@@ -539,10 +500,6 @@ export function MultiStepFormWizard({
           </form>
         </div>
       </main>
-
-      <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} Executive Talks Media. All Rights Reserved.
-      </footer>
     </div>
   );
 }

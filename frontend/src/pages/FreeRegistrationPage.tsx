@@ -533,10 +533,11 @@ export default function FreeRegistrationPage() {
                   type="tel"
                   name="contactNumber"
                   required
+                  maxLength={15}
                   value={formData.contactNumber}
                   onChange={handlePhoneChange}
                   onBlur={() => handleFieldBlur("contactNumber")}
-                  placeholder="+91 98765 43210"
+                  placeholder="e.g. 98765 43210"
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.contactNumber && fieldErrors.contactNumber
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"

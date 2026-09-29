@@ -22,6 +22,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { validatePhone, sanitizePhoneInput } from "@/lib/validation";
 
 export default function DelegateRegistrationPage() {
   const navigate = useNavigate();
@@ -58,12 +59,8 @@ export default function DelegateRegistrationPage() {
   const [mobileError, setMobileError] = useState("");
 
   const validateMobile = (phone: string) => {
-    const cleaned = phone.trim();
-    const digits = cleaned.replace(/\D/g, "");
-    if (!cleaned) return "Mobile number is required.";
-    if (digits.length < 10) return "Please enter a valid 10-digit mobile number (e.g. +91 98765 43210).";
-    if (digits.length > 15) return "Mobile number cannot exceed 15 digits.";
-    return "";
+    const res = validatePhone(phone, "Mobile Number");
+    return res.isValid ? "" : res.error;
   };
 
   const industryOptions = [
@@ -151,7 +148,7 @@ export default function DelegateRegistrationPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 pb-24 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 pb-6 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
       <GlowBackdrop />
 
       <PageHero
@@ -161,7 +158,7 @@ export default function DelegateRegistrationPage() {
         image={images.heroLeadership}
       />
 
-      <section className="container-x relative py-8 sm:py-12 max-w-4xl">
+      <section className="container-x relative pt-6 sm:pt-8 pb-4 max-w-4xl">
         <Reveal>
           <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-8 sm:p-12 shadow-2xl text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8">
             <div className="space-y-3">

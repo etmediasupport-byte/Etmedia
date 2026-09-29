@@ -29,49 +29,24 @@ export const RegistrationPlansGrid: React.FC<RegistrationPlansGridProps> = ({
 
   if (!hasPlans) {
     return (
-      <div className="w-full space-y-4">
-        <div className="flex items-center gap-3 pb-2">
-          <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 via-blue-600 to-purple-600" />
-          <div>
-            <h3 className={`text-2xl sm:text-3xl font-black font-display tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-              Registration Plans
-            </h3>
-            <p className="text-xs text-slate-500 font-medium font-sans">Official Delegate Passes & Event Pricing</p>
-          </div>
-        </div>
-
-        <div className={`relative overflow-hidden rounded-3xl border ${isDark ? "border-slate-800 bg-slate-900/90 text-white" : "border-slate-200/90 bg-white text-slate-900"} p-8 sm:p-12 text-center shadow-xl`}>
-          {/* Background Ambient Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 max-w-lg mx-auto space-y-5">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 text-white shadow-lg shadow-cyan-500/25">
-              <Clock className="h-8 w-8 animate-pulse" />
+      <div className="w-full space-y-2">
+        <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xs">
+              <Sparkles className="h-5 w-5" />
             </div>
-
-            <div className="space-y-2">
-              <span className="inline-block rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 text-xs font-black px-3.5 py-1 uppercase tracking-wider">
-                Registration Opens Soon
-              </span>
-              <h4 className="text-xl sm:text-2xl font-black font-display leading-tight">
-                Pricing Not Published Yet
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                Official Delegate Pass (Complimentary Pre-Registration)
               </h4>
-            </div>
-
-            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-              Registration pricing will be available soon. Please check back later or contact the Executive Talks Media team.
-            </p>
-
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="/contact"
-                className="inline-flex items-center gap-2 rounded-xl gradient-brand px-6 py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:scale-105 transition-all cursor-pointer"
-              >
-                <Mail className="h-4 w-4" />
-                <span>Contact Us</span>
-              </a>
+              <p className="text-[11px] sm:text-xs text-slate-600 font-medium mt-0.5">
+                Paid ticket tiers for this summit are opening soon. Complete your registration details below to reserve your priority executive seat!
+              </p>
             </div>
           </div>
+          <span className="inline-flex items-center gap-1 self-start sm:self-auto rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 uppercase tracking-wider shrink-0 border border-emerald-200">
+            ✓ Priority Pass Active
+          </span>
         </div>
       </div>
     );

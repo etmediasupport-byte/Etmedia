@@ -515,7 +515,7 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 3. GET STARTED / HIRING PROCESS SECTION    */}
       {/* ========================================== */}
-      <section className="py-10 sm:py-14 relative border-t border-slate-800/80">
+      <section className="pt-8 sm:pt-10 pb-6 sm:pb-8 relative border-t border-slate-800/80">
         <div className="container-x">
           {/* Header */}
           <div className="text-left mb-12">
@@ -827,9 +827,10 @@ export default function CareersPage() {
                       <input
                         type="tel"
                         required
-                        placeholder="+91 98765 43210"
+                        maxLength={15}
+                        placeholder="e.g. 98765 43210"
                         value={applicantForm.phone}
-                        onChange={(e) => setApplicantForm({ ...applicantForm, phone: e.target.value })}
+                        onChange={(e) => setApplicantForm({ ...applicantForm, phone: sanitizePhoneInput(e.target.value) })}
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
                       />
                     </div>

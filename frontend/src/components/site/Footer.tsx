@@ -78,20 +78,41 @@ export function Footer() {
     };
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     const emailVal = validateEmail(email, "Newsletter Email");
     if (!emailVal.isValid) {
       toast.error(emailVal.error);
       return;
     }
-    setSubscribed(true);
-    toast.success("Thank you for subscribing to Executive Talks Business Intelligence!");
-    setEmail("");
+    
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), source: "Website Footer" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubscribed(true);
+        toast.success(data.message || "Thank you for subscribing to Executive Talks Business Intelligence!");
+        setEmail("");
+      } else {
+        toast.error(data.message || "Failed to subscribe. Please try again.");
+      }
+    } catch (err) {
+      console.error("Newsletter subscription error:", err);
+      toast.error("Network error. Please try again later.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <footer className="gradient-ink relative mt-8 sm:mt-12 overflow-hidden text-slate-300 selection:bg-cyan-500/30 selection:text-white">
+    <footer className="gradient-ink relative mt-0 overflow-hidden text-slate-300 selection:bg-cyan-500/30 selection:text-white">
       {/* Background Glowing Ambient Orbs */}
       <div className="bg-cyan-500/10 float-orb absolute -top-24 left-1/4 h-96 w-96 rounded-full blur-3xl" />
       <div className="bg-purple-500/10 float-orb absolute -bottom-24 right-1/4 h-96 w-96 rounded-full blur-3xl" />
@@ -99,12 +120,12 @@ export function Footer() {
       {/* Top Border Glow Line */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
 
-      <div className="container-x relative pt-8 sm:pt-10 pb-8 sm:pb-10 space-y-8 sm:space-y-10">
+      <div className="container-x relative pt-6 sm:pt-8 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
         
         {/* ==================================================== */}
         {/* MAIN COLUMNS GRID (Brand, Quick Links, Events, Mag, Careers, Subscribe) */}
         {/* ==================================================== */}
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 pt-4">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 pt-0">
           
           {/* COLUMN 1: BRAND LOGO & OVERVIEW (4 cols) */}
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">

@@ -89,6 +89,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+    document.documentElement.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.body.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname, search]);
+
+  return null;
+}
+
 function PageTracker() {
   const location = useLocation();
 
@@ -109,9 +125,18 @@ export default function App() {
       <HelmetProvider>
         <BrowserRouter>
           <Toaster position="top-right" richColors />
+          <ScrollToTop />
           <PageTracker />
           <Routes>
             <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin/dashboard"
               element={
@@ -120,7 +145,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/verify-pass/:regId" element={<VerifyPassPage />} />
             <Route path="/verify/:regId" element={<VerifyPassPage />} />
 

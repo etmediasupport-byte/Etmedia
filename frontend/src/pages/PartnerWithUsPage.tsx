@@ -401,7 +401,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 3. OUR COLLABORATORS ANIMATED CAROUSEL    */}
       {/* ========================================== */}
-      <section className="py-12 sm:py-16 bg-slate-900/50 border-y border-slate-800/80 overflow-hidden relative">
+      <section className="pt-10 sm:pt-12 pb-8 sm:pb-10 bg-slate-900/50 border-y border-slate-800/80 overflow-hidden relative">
         <div className="container-x mb-10 text-center">
           <span className="text-xs font-black uppercase tracking-widest text-purple-400 font-display">
             Trusted By Benchmark Leaders

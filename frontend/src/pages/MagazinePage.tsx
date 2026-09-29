@@ -157,7 +157,7 @@ export default function MagazinePage() {
     }
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = validateEmail(newsletterEmail, "Newsletter Email");
     if (!val.isValid) {
@@ -169,11 +169,25 @@ export default function MagazinePage() {
       return;
     }
     setSubscribing(true);
-    setTimeout(() => {
-      toast.success("Thank you for subscribing to Executive Talks Magazine!");
-      setNewsletterEmail("");
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newsletterEmail.trim(), source: "Executive Magazine Page" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Thank you for subscribing to Executive Talks Magazine!");
+        setNewsletterEmail("");
+      } else {
+        toast.error(data.message || "Failed to subscribe. Please try again.");
+      }
+    } catch (err) {
+      console.error("Magazine newsletter subscription error:", err);
+      toast.error("Network error. Please try again later.");
+    } finally {
       setSubscribing(false);
-    }, 800);
+    }
   };
 
   return (
@@ -335,7 +349,7 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 3. STAY UPDATED NEWSLETTER BANNER AT BOTTOM */}
       {/* ========================================== */}
-      <section className="py-10 sm:py-14 relative bg-white">
+      <section className="pt-8 sm:pt-10 pb-6 sm:pb-8 relative bg-white">
         <div className="container-x">
           <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-r from-slate-950 via-[#111827] to-slate-950 text-white p-8 sm:p-12 shadow-2xl relative overflow-hidden">
             {/* Ambient Lighting Orbs */}

@@ -170,7 +170,7 @@ export default function ContactPage() {
     "https://www.google.com/maps/search/?api=1&query=Manjeera+Trinity+Corporate+JNTU+Hitech+Road+KPHB+Hyderabad";
 
   return (
-    <div className="relative min-h-screen bg-background pb-24 text-foreground selection:bg-cyan-500/30">
+    <div className="relative min-h-screen bg-background pb-2 text-foreground selection:bg-cyan-500/30">
       <GlowBackdrop />
 
       {/* Hero Section */}
@@ -182,7 +182,7 @@ export default function ContactPage() {
       />
 
       {/* Main Container */}
-      <div className="container-x relative py-8 sm:py-12 space-y-8">
+      <div className="container-x relative pt-6 sm:pt-8 pb-0 space-y-8">
         
         {/* ==================================================== */}
         {/* 1. CONTACT CARDS GRID (5 Dedicated Cards)             */}
@@ -535,6 +535,7 @@ export default function ContactPage() {
                         <input
                           type="tel"
                           required
+                          maxLength={15}
                           value={formData.phone}
                           onChange={(e) => {
                             const cleanVal = sanitizePhoneInput(e.target.value);
@@ -549,7 +550,7 @@ export default function ContactPage() {
                             const res = validatePhone(formData.phone, "Phone Number");
                             setFieldErrors((prev) => ({ ...prev, phone: res.isValid ? "" : res.error }));
                           }}
-                          placeholder="+91 98765 43210"
+                          placeholder="e.g. 98765 43210"
                           className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
                             touched.phone && fieldErrors.phone
                               ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
