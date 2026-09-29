@@ -425,3 +425,59 @@
   animation-play-state: paused;
 }
 
+/* =========================================================================
+   PRINT / PDF EXPORT OPTIMIZATIONS
+   ========================================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  /* Force hide all website chrome, footers, headers, popups, and toast widgets */
+  nav,
+  footer,
+  header,
+  .no-print,
+  [data-sonner-toaster],
+  [data-sonner-toast],
+  .toaster,
+  #preloader,
+  button,
+  .print-hidden,
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  body, html, #root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
+

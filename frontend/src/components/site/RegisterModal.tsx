@@ -10,7 +10,7 @@ import {
   validateName,
   validateRequiredText,
 } from "@/lib/validation";
-import logoUrl from "@/assets/logo-final.png";
+import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 
 interface RegisterModalProps {
   isOpen: boolean;
