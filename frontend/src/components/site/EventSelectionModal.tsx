@@ -16,7 +16,7 @@ import {
   Clock,
   Layers,
 } from "lucide-react";
-import { events as defaultEvents, type EventItem, getValidImageUrl } from "@/lib/site-data";
+import { type EventItem, getValidImageUrl } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 
 interface EventSelectionModalProps {
@@ -30,35 +30,33 @@ export function EventSelectionModal({
   isOpen,
   onClose,
   title = "Select an Event to Register",
-  subtitle = "Choose from our curated executive conclaves, summits & conferences to book your pass.",
+  subtitle = "Choose from our active executive conclaves, summits & conferences to book your pass.",
 }: EventSelectionModalProps) {
   const navigate = useNavigate();
-  const [eventsList, setEventsList] = useState<EventItem[]>(defaultEvents);
+  const [eventsList, setEventsList] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
-  // Fetch live events from API
+  // Fetch live events strictly from Database API
   const fetchEvents = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/events");
       if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          // Normalize events
+        if (json.success && Array.isArray(json.data)) {
           const publishedEvents = json.data.filter(
-            (ev: EventItem) => ev.status !== "draft"
+            (ev: EventItem) => ev.status !== "draft" && ev.status !== "archived"
           );
-          if (publishedEvents.length > 0) {
-            setEventsList(publishedEvents);
-          } else {
-            setEventsList(json.data);
-          }
+          setEventsList(publishedEvents.length > 0 ? publishedEvents : json.data);
+        } else {
+          setEventsList([]);
         }
       }
     } catch (err) {
-      console.warn("Failed to fetch live events for selection modal, using default fallback:", err);
+      console.warn("Failed to fetch live events from database:", err);
+      setEventsList([]);
     } finally {
       setLoading(false);
     }
