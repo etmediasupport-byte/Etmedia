@@ -73,36 +73,36 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
           )}
 
           {/* Location & Date Bar Overlay */}
-          <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 right-2.5 sm:right-3 z-10 flex items-center justify-between text-[11px] sm:text-xs text-slate-200 font-medium bg-slate-950/75 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-white/10 gap-1">
-            <span className="flex items-center gap-1.5 truncate">
-              <CalendarDays className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-              <strong className="text-white font-semibold truncate">{dateText}</strong>
+          <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 z-10 flex items-center justify-between text-[10px] sm:text-xs text-slate-200 font-medium bg-slate-950/85 backdrop-blur-md px-2 sm:px-3 py-1.5 rounded-xl border border-white/10 gap-1 overflow-hidden">
+            <span className="flex items-center gap-1 truncate min-w-0 flex-1">
+              <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-cyan-400 shrink-0" />
+              <strong className="text-white font-semibold truncate text-[10px] sm:text-xs">{dateText}</strong>
             </span>
-            <span className="flex items-center gap-1 text-[11px] text-cyan-300 font-semibold truncate shrink-0 ml-1">
-              <MapPin className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-              <span className="truncate max-w-[120px]">{citiesText || primaryLoc.city || "Mumbai"}</span>
+            <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-cyan-300 font-semibold truncate shrink-0 ml-1">
+              <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-cyan-400 shrink-0" />
+              <span className="truncate max-w-[90px] sm:max-w-[130px]">{citiesText || primaryLoc.city || "Mumbai"}</span>
             </span>
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
+        <div className="p-3.5 sm:p-5 flex-1 flex flex-col justify-between space-y-2.5 sm:space-y-4">
           <div className="flex-1 flex flex-col justify-start">
             <h3 className="text-sm sm:text-base font-bold font-display text-slate-900 leading-snug group-hover:text-cyan-600 transition-colors line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] flex items-center text-left">
               {event.title}
             </h3>
 
-            <p className="text-slate-600 mt-1.5 text-xs leading-relaxed font-sans line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] text-left">
+            <p className="text-slate-600 mt-1 text-xs leading-relaxed font-sans line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] text-left">
               {event.description}
             </p>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0 mt-auto gap-2">
-            <span className="flex items-center gap-1.5 font-medium truncate min-w-0 flex-1">
+          <div className="pt-2.5 sm:pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0 mt-auto gap-1.5 overflow-hidden">
+            <span className="flex items-center gap-1 font-medium truncate min-w-0 flex-1">
               <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span className="truncate">{venueText}</span>
+              <span className="truncate text-[11px] sm:text-xs">{venueText}</span>
             </span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 whitespace-nowrap">
+            <span className="text-[9px] sm:text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 whitespace-nowrap">
               Free & Paid Passes
             </span>
           </div>
@@ -110,30 +110,26 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
       </Link>
 
       {/* Card Action Footer: Responsive Buttons Stack on Mobile */}
-      <div className="p-3.5 sm:p-5 pt-0 flex flex-col xs:flex-row items-center gap-2 shrink-0 w-full">
+      <div className="p-3 sm:p-4 pt-0 flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full">
         {/* Button 1: Register Now (Paid Pass) */}
-        <MagneticButton strength={6} className="w-full">
-          <button
-            type="button"
-            onClick={(e) => handleRegisterClick(e, "paid")}
-            className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2 px-2.5 text-xs font-extrabold text-white shadow-md shadow-purple-500/15 hover:shadow-purple-500/30 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
-            <span className="truncate">Register Now</span>
-          </button>
-        </MagneticButton>
+        <button
+          type="button"
+          onClick={(e) => handleRegisterClick(e, "paid")}
+          className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+          <span className="truncate">Register Now</span>
+        </button>
 
         {/* Button 2: Register Free Interest */}
-        <MagneticButton strength={6} className="w-full">
-          <button
-            type="button"
-            onClick={(e) => handleRegisterClick(e, "free")}
-            className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2 px-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/15 hover:shadow-cyan-500/30 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
-            <span className="truncate">Register Free</span>
-          </button>
-        </MagneticButton>
+        <button
+          type="button"
+          onClick={(e) => handleRegisterClick(e, "free")}
+          className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+          <span className="truncate">Register Free</span>
+        </button>
       </div>
     </MouseTiltCard>
   );

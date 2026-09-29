@@ -311,16 +311,16 @@ function UpcomingEvents() {
   }, []);
 
   return (
-    <section className="bg-surface section relative overflow-hidden">
-      <div className="container-x relative z-10">
+    <section className="bg-surface section relative overflow-hidden w-full max-w-full">
+      <div className="container-x relative z-10 w-full max-w-full">
         <SectionHeading
           kicker="Upcoming Events"
           title="Reserve Your Delegate Seat"
           description="Conferences currently open for senior executive registration across India's top business hubs."
         />
-        <div className="mt-6 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full max-w-full">
           {eventList.slice(0, 3).map((evt, i) => (
-            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08} className="h-full">
+            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08} className="h-full w-full max-w-full">
               <EventCard event={evt} />
             </Reveal>
           ))}
