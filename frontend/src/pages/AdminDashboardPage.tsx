@@ -104,6 +104,8 @@ import {
   Gem,
   List,
   Grid,
+  Receipt,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";

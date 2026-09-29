@@ -431,34 +431,66 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm 8mm;
   }
 
   /* Force hide all website chrome, footers, headers, popups, and toast widgets */
   nav,
   footer,
   header,
+  aside,
   .no-print,
+  .print-hidden,
   [data-sonner-toaster],
   [data-sonner-toast],
+  [data-portal],
+  div[role="status"],
+  div[role="region"],
   .toaster,
   #preloader,
+  .floating-actions,
   button,
-  .print-hidden,
-  .fixed,
-  .sticky {
+  .btn,
+  .action-bar {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   body, html, #root {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    min-height: 100% !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .print-document,
+  #printable-pass,
+  #printable-invoice {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: 1px solid #94a3b8 !important;
+    border-radius: 8px !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .print-container {
@@ -471,12 +503,10 @@
     break-inside: avoid !important;
   }
 
-  .print-card {
-    border: 1px solid #cbd5e1 !important;
-    box-shadow: none !important;
-    border-radius: 12px !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+  /* Ensure text does not wrap awkwardly or overlap in print mode */
+  .print-document * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 

@@ -94,10 +94,12 @@ export function Layout() {
   }, [location.pathname, location.search]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-brand-blue/30 selection:text-brand-blue">
-      <Preloader />
-      <ScrollProgressBar />
-      <Navbar />
+    <div className="flex min-h-screen flex-col bg-background text-foreground overflow-x-hidden selection:bg-brand-blue/30 selection:text-brand-blue print:bg-white print:text-black">
+      <div className="print:hidden">
+        <Preloader />
+        <ScrollProgressBar />
+        <Navbar />
+      </div>
       <AnimatePresence mode="wait">
         <motion.main
           key={location.pathname}
@@ -105,31 +107,33 @@ export function Layout() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15, ease: "easeInOut" }}
-          className="flex-1"
+          className="flex-1 print:p-0 print:m-0"
         >
           <Outlet />
         </motion.main>
       </AnimatePresence>
-      <Footer />
-      <FloatingActions />
-      <Toaster position="top-center" richColors />
+      <div className="print:hidden">
+        <Footer />
+        <FloatingActions />
+        <Toaster position="top-center" richColors />
 
-      {/* Global Instant Register Now Modal */}
-      <RegisterModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, event: null, mode: "paid" })}
-        event={modalState.event || (defaultEvents[0] as EventItem) || null}
-        mode={modalState.mode || "paid"}
-      />
+        {/* Global Instant Register Now Modal */}
+        <RegisterModal
+          isOpen={modalState.isOpen}
+          onClose={() => setModalState({ isOpen: false, event: null, mode: "paid" })}
+          event={modalState.event || (defaultEvents[0] as EventItem) || null}
+          mode={modalState.mode || "paid"}
+        />
 
-      {/* Global Step-wise Membership Application Modal */}
-      <MembershipModal
-        isOpen={membershipModalOpen}
-        onClose={() => setMembershipModalOpen(false)}
-      />
+        {/* Global Step-wise Membership Application Modal */}
+        <MembershipModal
+          isOpen={membershipModalOpen}
+          onClose={() => setMembershipModalOpen(false)}
+        />
 
-      {/* Global Dynamic Premium Advertisement Popup Modal */}
-      <EventAdvertisementPopup />
+        {/* Global Dynamic Premium Advertisement Popup Modal */}
+        <EventAdvertisementPopup />
+      </div>
     </div>
   );
 }

@@ -383,10 +383,8 @@ www.executivetalksmedia.in
   // 2. EMAIL TO ADMINS (REALTIME MANAGEMENT ALERT)
   const adminRecipients = Array.from(
     new Set([
-      "registration@executivetalksmedia.in",
-      "srikanth@executivetalksmedia.in",
-      "reachus@executivetalksmedia.in",
       adminEmail,
+      "srikanth@executivetalksmedia.in",
     ].filter(Boolean))
   );
 
@@ -608,10 +606,8 @@ www.executivetalksmedia.in
 
   const adminRecipients = Array.from(
     new Set([
-      "registration@executivetalksmedia.in",
-      "srikanth@executivetalksmedia.in",
-      "reachus@executivetalksmedia.in",
       adminEmail,
+      "srikanth@executivetalksmedia.in",
     ].filter(Boolean))
   );
 
