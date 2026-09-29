@@ -549,10 +549,10 @@ export default function PartnerWithUsPage() {
                   <p className="font-semibold text-slate-200">Executive Talks Media Business Intelligence</p>
                   <p>
                     <a
-                      href="mailto:partner.support@etmedia.in"
+                      href="mailto:partners@executivetalksmedia.in"
                       className="text-cyan-400 hover:underline inline-flex items-center gap-1"
                     >
-                      partner.support@etmedia.in
+                      partners@executivetalksmedia.in
                     </a>
                   </p>
                   <p>

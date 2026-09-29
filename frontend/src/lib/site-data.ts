@@ -20,7 +20,12 @@ export const images = {
 
 export const contact = {
   phones: ["+91 91002 66777", "+91 94930 87788"],
-  emails: ["contact@etmedia.in", "registration@etmedia.in"],
+  emails: [
+    "info@executivetalksmedia.in",
+    "registration@executivetalksmedia.in",
+    "partners@executivetalksmedia.in",
+    "srikanth@executivetalksmedia.in",
+  ],
   address: [
     "Executive Talks Media Business Intelligence",
     "Unit No-1012, 10th Floor",

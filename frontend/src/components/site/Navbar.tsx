@@ -20,7 +20,7 @@ import {
   Phone,
   Crown,
 } from "lucide-react";
-import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
+import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
@@ -183,7 +183,7 @@ export function Navbar() {
             onClick={handleNavClick}
           >
             <img
-              src={logoUpdated}
+              src={executivetalksLogo}
               alt="Executive Talks Media"
               className="h-10 sm:h-12 lg:h-14 xl:h-15 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
             />

@@ -1073,7 +1073,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                         <span>Instant Ticket & Verification</span>
                       </div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
-                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-800 font-mono font-semibold">{formData.email}</span> and <span className="text-cyan-800 font-mono font-semibold">registration@etmedia.in</span>.
+                        Upon payment completion, an official confirmation email with your scannable QR Code pass will be dispatched automatically to <span className="text-cyan-800 font-mono font-semibold">{formData.email}</span> and <span className="text-cyan-800 font-mono font-semibold">registration@executivetalksmedia.in</span>.
                       </p>
                     </div>
                   </div>
@@ -1374,7 +1374,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     </div>
 
                     <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>Support: <a href="mailto:registration@etmedia.in" className="text-cyan-600 hover:underline">registration@etmedia.in</a></span>
+                      <span>Support: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-600 hover:underline">registration@executivetalksmedia.in</a></span>
                       <span className="font-semibold text-slate-700">www.etmedia.in</span>
                     </div>
                   </div>

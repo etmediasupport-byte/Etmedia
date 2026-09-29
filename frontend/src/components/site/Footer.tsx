@@ -21,7 +21,7 @@ import {
   Facebook,
 } from "lucide-react";
 import { toast } from "sonner";
-import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
+import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { contact } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 
@@ -105,7 +105,7 @@ export function Footer() {
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-4">
             <Link to="/" className="inline-flex transition-transform hover:scale-105 bg-transparent">
               <img
-                src={logoUpdated}
+                src={executivetalksLogo}
                 alt="Executive Talks Media Business Intelligence"
                 className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain bg-transparent border-none shadow-none drop-shadow-[0_4px_16px_rgba(0,174,239,0.25)] transition-all duration-300 rounded-md"
                 loading="lazy"
@@ -286,10 +286,18 @@ export function Footer() {
           <div className="flex items-start gap-3">
             <Mail className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
             <div>
-              <span className="text-white font-bold block">Official Email</span>
-              <span className="text-slate-400 leading-snug block mt-0.5 font-mono">
-                {contact.emails.join(" · ")}
-              </span>
+              <span className="text-white font-bold block mb-1">Official Email</span>
+              <div className="flex flex-col gap-0.5 font-mono text-[11px]">
+                {contact.emails.map((em) => (
+                  <a
+                    key={em}
+                    href={`mailto:${em}`}
+                    className="text-slate-400 hover:text-cyan-400 transition-colors block"
+                  >
+                    {em}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
