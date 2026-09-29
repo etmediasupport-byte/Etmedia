@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { EventCard } from "@/components/site/EventCard";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { events as defaultEvents, EventItem, images, getValidImageUrl } from "@/lib/site-data";
-import { RegisterModal } from "@/components/site/RegisterModal";
 import { socket } from "@/lib/socket";
 import {
   Calendar,
@@ -152,8 +151,6 @@ export default function EventsPage() {
   const [eventList, setEventList] = useState<EventItem[]>([]);
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
-  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [registerMode, setRegisterMode] = useState<"paid" | "free">("paid");
 
   // Load real events strictly from Database (Managed in Admin Dashboard)
   useEffect(() => {
@@ -556,13 +553,7 @@ export default function EventsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full max-w-full overflow-hidden items-stretch">
             {filteredEvents.map((event) => (
               <Reveal key={event.id || event.slug} className="h-full w-full max-w-full">
-                <EventCard
-                  event={event}
-                  onRegister={(evt, mode) => {
-                    setSelectedEvent(evt);
-                    setRegisterMode(mode || "paid");
-                  }}
-                />
+                <EventCard event={event} />
               </Reveal>
             ))}
           </div>
@@ -591,14 +582,6 @@ export default function EventsPage() {
           </div>
         )}
       </section>
-
-      {/* Real-time Event Registration Modal */}
-      <RegisterModal
-        isOpen={!!selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-        event={selectedEvent}
-        mode={registerMode}
-      />
     </div>
   );
 }

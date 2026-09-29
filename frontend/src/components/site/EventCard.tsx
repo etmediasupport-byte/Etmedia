@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap } from "lucide-react";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { images, getValidImageUrl } from "@/lib/site-data";
 
 export function EventCard({ event, onRegister }: { event: any; onRegister?: (event: any, mode?: "paid" | "free") => void }) {
+  const navigate = useNavigate();
   let parsedLocations: any[] = [];
   try {
     if (typeof event.locations === "string") {
@@ -29,7 +30,12 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
     if (onRegister) {
       onRegister(event, mode);
     } else {
-      window.dispatchEvent(new CustomEvent("open-register-modal", { detail: { event, mode } }));
+      const targetSlug = event.slug || event.id || "hr-recall-2k26";
+      if (mode === "free") {
+        navigate(`/events/${targetSlug}/register-free`);
+      } else {
+        navigate(`/events/${targetSlug}/register`);
+      }
     }
   };
 
