@@ -710,6 +710,8 @@ export default function AdminDashboardPage() {
   const [regFilterEvent, setRegFilterEvent] = useState<string>("all");
   const [regFilterDate, setRegFilterDate] = useState<string>("all");
   const [regFilterStatus, setRegFilterStatus] = useState<string>("all");
+  const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
+  const [actionLoadingRegId, setActionLoadingRegId] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -1952,6 +1954,29 @@ export default function AdminDashboardPage() {
     } catch (err) {
       fetchDashboardData();
       toast.error("Network error updating status.");
+    }
+  };
+
+  const handleResendRegistrationEmail = async (regId: string, email: string) => {
+    setResendingEmailId(regId);
+    try {
+      const res = await fetch(`/api/admin/registrations/${encodeURIComponent(regId)}/resend-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `✅ Pass & Tax Invoice email sent successfully to ${email}!`);
+      } else {
+        toast.error(data.message || "Failed to resend confirmation email.");
+      }
+    } catch (err) {
+      toast.error("Network error while attempting to resend confirmation email.");
+    } finally {
+      setResendingEmailId(null);
     }
   };
 
@@ -5464,14 +5489,30 @@ export default function AdminDashboardPage() {
                             </div>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => setSelectedRegDetail(reg)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 hover:scale-105 transition-all shadow-xs cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-cyan-700" />
-                            <span>View Details</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              title="Resend Pass & Tax Invoice Email"
+                              disabled={resendingEmailId === reg.id}
+                              onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
+                              className="inline-flex items-center justify-center h-8 w-8 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                            >
+                              {resendingEmailId === reg.id ? (
+                                <RefreshCw className="h-3.5 w-3.5 text-cyan-600 animate-spin" />
+                              ) : (
+                                <Mail className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRegDetail(reg)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 hover:scale-105 transition-all shadow-xs cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-cyan-700" />
+                              <span>View</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -12568,13 +12609,16 @@ export default function AdminDashboardPage() {
 
               <button
                 type="button"
-                onClick={() => {
-                  toast.success(`Confirmation receipt resent to ${selectedRegDetail.email}!`);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+                disabled={resendingEmailId === selectedRegDetail.id}
+                onClick={() => handleResendRegistrationEmail(selectedRegDetail.id, selectedRegDetail.email)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-white px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-50 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
               >
-                <Mail className="h-3.5 w-3.5 text-slate-500" />
-                <span>Resend Email Confirmation</span>
+                {resendingEmailId === selectedRegDetail.id ? (
+                  <RefreshCw className="h-3.5 w-3.5 text-cyan-600 animate-spin" />
+                ) : (
+                  <Mail className="h-3.5 w-3.5 text-cyan-600" />
+                )}
+                <span>{resendingEmailId === selectedRegDetail.id ? "Sending Email..." : "Resend Email & QR Pass"}</span>
               </button>
             </div>
 

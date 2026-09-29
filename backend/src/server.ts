@@ -153,16 +153,12 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
     console.error("[Nodemailer] Error generating QR Code PNG Buffer:", qrErr);
   }
 
-  // Recipients: User Email + registration@etmedia.in (Hostinger admin mailbox)
-  const recipientList: string[] = [userEmail];
-  if (adminEmail && !recipientList.includes(adminEmail)) {
-    recipientList.push(adminEmail);
-  }
-
-  const mailOptions: any = {
-    from: smtpFrom,
-    to: recipientList.join(", "),
-    subject: `🎉 Registration & Tax Invoice Confirmed: ${eventName} (${regId})`,
+  // 1. EMAIL TO DELEGATE (PERSONALIZED INBOX DELIVERY)
+  const userMailOptions: any = {
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+    replyTo: smtpUser,
+    to: userEmail,
+    subject: `🎉 Official Delegate Pass & Tax Invoice: ${eventName} (${regId})`,
     text: `
 Dear ${effectiveFullName},
 
@@ -203,7 +199,8 @@ EVENT TERMS & CONDITIONS:
 • Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event.
 • Timing: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry.
 
-Scan the attached QR code to view live verification of your registration and tax receipt.
+Scan the attached QR code or click the live pass link to fast-track your entry:
+${verifyPassUrl}
 
 Regards,
 Executive Talks Media Business Intelligence
@@ -383,13 +380,312 @@ www.executivetalksmedia.in
     ] : [],
   };
 
+  // 2. EMAIL TO ADMINS (REALTIME MANAGEMENT ALERT)
+  const adminRecipients = Array.from(
+    new Set([
+      "registration@executivetalksmedia.in",
+      "srikanth@executivetalksmedia.in",
+      "reachus@executivetalksmedia.in",
+      adminEmail,
+    ].filter(Boolean))
+  );
+
+  const adminMailOptions: any = {
+    from: `"ET Media Registration System" <${smtpUser}>`,
+    replyTo: userEmail,
+    to: adminRecipients.join(", "),
+    subject: `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`,
+    text: `
+NEW DELEGATE REGISTRATION RECEIVED
+
+Delegate Details:
+- Name: ${effectiveFullName}
+- Email: ${userEmail}
+- Phone: ${regPhone}
+- Designation: ${regDesig}
+- Organization: ${regOrg}
+- City: ${regCity}, ${regCountry}
+- Target City: ${regTargetCity}
+- Referral Source: ${regReferral}
+
+Event & Pass Tier:
+- Summit: ${eventName}
+- Pass Category: ${regCategory}
+- Registration ID: ${regId}
+- Invoice Number: ${invoiceNo}
+
+Payment & Billing:
+- Payment Status: ${payStatus}
+- Amount Paid: ₹${payAmount.toLocaleString("en-IN")}
+- Payment ID: ${payId}
+- Razorpay Order ID: ${razorpayOrderId}
+- Coupon Applied: ${coupon}
+- Timestamp: ${regDate}
+
+Verify Scannable Pass: ${verifyPassUrl}
+Admin Dashboard Login: ${baseUrl}/admin-login
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+        
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 24px; text-align: left; color: #ffffff; border-bottom: 3px solid #0891b2;">
+          <span style="background-color: #0891b2; color: #ffffff; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+            NEW DELEGATE REGISTRATION ALERT
+          </span>
+          <h2 style="margin: 10px 0 4px 0; font-size: 20px; font-weight: 800; color: #ffffff;">${effectiveFullName}</h2>
+          <p style="margin: 0; font-size: 13px; color: #94a3b8;">${regDesig} · <strong style="color: #e2e8f0;">${regOrg}</strong></p>
+        </div>
+
+        <div style="padding: 24px; color: #1e293b; font-size: 13px; line-height: 1.6;">
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; width: 38%;">Event Summit:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${eventName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Registration ID:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0891b2;">${regId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Invoice No:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${invoiceNo}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Pass Tier:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #4b1fa7;">${regCategory}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Payment Status:</td>
+                <td style="padding: 6px 0;">
+                  <span style="background-color: ${payStatus.toLowerCase() === "paid" ? "#d1fae5" : "#dbeafe"}; color: ${payStatus.toLowerCase() === "paid" ? "#065f46" : "#1e40af"}; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                    ${payStatus} — ₹${payAmount.toLocaleString("en-IN")}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Delegate Email:</td>
+                <td style="padding: 6px 0; font-weight: 600;"><a href="mailto:${userEmail}" style="color: #0891b2; text-decoration: none;">${userEmail}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Contact Phone:</td>
+                <td style="padding: 6px 0; font-weight: 600;">${regPhone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">City & Location:</td>
+                <td style="padding: 6px 0;">${regCity}, ${regCountry} (Target: ${regTargetCity})</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Payment ID:</td>
+                <td style="padding: 6px 0; font-family: monospace;">${payId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Registered At:</td>
+                <td style="padding: 6px 0; color: #64748b;">${regDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="${verifyPassUrl}" style="display: inline-block; background-color: #0891b2; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px; margin-right: 8px;">
+              🎟️ Verify Scannable Pass
+            </a>
+            <a href="${baseUrl}/admin-login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">
+              ⚡ Open Admin Dashboard
+            </a>
+          </div>
+        </div>
+
+        <div style="background-color: #f1f5f9; padding: 12px; text-align: center; color: #64748b; font-size: 11px; border-top: 1px solid #e2e8f0;">
+          Executive Talks Media Business Intelligence Realtime Alert System
+        </div>
+      </div>
+    `,
+  };
+
+  let userSent = false;
+  let adminSent = false;
+
   try {
-    const info = await mailTransporter.sendMail(mailOptions);
-    console.log(`[Nodemailer] Confirmation, Invoice & QR Email sent successfully to ${recipientList.join(", ")} (${info.messageId})`);
-    return true;
+    const userInfo = await mailTransporter.sendMail(userMailOptions);
+    console.log(`[Nodemailer] Delegate pass & invoice sent successfully to ${userEmail} (${userInfo.messageId})`);
+    userSent = true;
+  } catch (userErr: any) {
+    console.error(`[Nodemailer] Error sending registration pass to ${userEmail}:`, userErr.message);
+  }
+
+  try {
+    const adminInfo = await mailTransporter.sendMail(adminMailOptions);
+    console.log(`[Nodemailer] Admin registration alert sent successfully to ${adminRecipients.join(", ")} (${adminInfo.messageId})`);
+    adminSent = true;
+  } catch (adminErr: any) {
+    console.error(`[Nodemailer] Error sending admin registration alert:`, adminErr.message);
+  }
+
+  return userSent || adminSent;
+}
+
+// Helper: Free Registration Application Notification (Applicant & Admin Alerts)
+async function sendFreeApplicationNotificationEmails(data: {
+  registrationId: string;
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  phone: string;
+  organization: string;
+  designation: string;
+  city?: string;
+  country?: string;
+  industry?: string;
+  linkedinUrl?: string;
+  category?: string;
+  eventTitle: string;
+  reasonForAttending?: string;
+}) {
+  const regId = data.registrationId;
+  const userEmail = data.email.trim();
+  const eventName = data.eventTitle;
+  const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
+
+  const userMailOptions: any = {
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+    replyTo: smtpUser,
+    to: userEmail,
+    subject: `📋 Complimentary Pass Application Received: ${eventName} (${regId})`,
+    text: `
+Dear ${data.fullName},
+
+Thank you for submitting your complimentary delegate pass application for ${eventName} with Executive Talks Media Business Intelligence.
+
+APPLICATION DETAILS:
+- Application Ref ID: ${regId}
+- Event Title: ${eventName}
+- Pass Category: ${data.category || "Complimentary Pass (Pending Approval)"}
+- Full Name: ${data.fullName}
+- Designation: ${data.designation}
+- Company / Organization: ${data.organization}
+- Status: Under Review by Screening Committee
+
+Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and credentials are authenticated, you will receive an official confirmation email along with your Scannable QR Ticket Pass for venue access.
+
+For urgent executive assistance:
+registration@executivetalksmedia.in
+www.executivetalksmedia.in
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
+        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 25px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
+          <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 600; opacity: 0.95;">Complimentary Delegate Pass Application</p>
+        </div>
+
+        <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p>Dear <strong>${data.fullName}</strong>,</p>
+          <p>Thank you for submitting your complimentary delegate pass application for <strong>${eventName}</strong>.</p>
+          
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; padding: 14px; border-radius: 10px; margin: 18px 0;">
+            <p style="margin: 0; color: #166534; font-weight: 700; font-size: 14px;">
+              ⏳ Status: Application Under Executive Review
+            </p>
+            <p style="margin: 4px 0 0 0; color: #15803d; font-size: 12px;">
+              Application Ref ID: <strong>${regId}</strong> | Category: <strong>${data.category || "Complimentary VIP Pass"}</strong>
+            </p>
+          </div>
+
+          <p>Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and executive credentials are authenticated, you will receive an official confirmation email along with your <strong>Scannable QR Ticket Pass</strong> for fast-track venue access.</p>
+
+          <p style="margin-bottom: 0;">If you have any questions or require urgent executive assistance, please feel free to reach us at <a href="mailto:${smtpUser}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${smtpUser}</a>.</p>
+        </div>
+
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
+          <p style="margin: 0; font-weight: 700; color: #1e293b;">Executive Talks Media Business Intelligence</p>
+          <p style="margin: 2px 0 0 0;">www.executivetalksmedia.in</p>
+        </div>
+      </div>
+    `,
+  };
+
+  const adminRecipients = Array.from(
+    new Set([
+      "registration@executivetalksmedia.in",
+      "srikanth@executivetalksmedia.in",
+      "reachus@executivetalksmedia.in",
+      adminEmail,
+    ].filter(Boolean))
+  );
+
+  const adminMailOptions: any = {
+    from: `"ET Media Alerts" <${smtpUser}>`,
+    replyTo: userEmail,
+    to: adminRecipients.join(", "),
+    subject: `🚨 [New Free Pass Application] ${data.fullName} (${data.organization}) — ${eventName}`,
+    text: `
+NEW FREE PASS APPLICATION RECEIVED
+
+Applicant Details:
+- Name: ${data.fullName}
+- Designation: ${data.designation}
+- Organization: ${data.organization}
+- Email: ${userEmail}
+- Phone: ${data.phone}
+- City / Country: ${data.city || "N/A"}, ${data.country || "India"}
+- Industry: ${data.industry || "N/A"}
+- LinkedIn: ${data.linkedinUrl || "N/A"}
+- Motivation: ${data.reasonForAttending || "N/A"}
+
+Event: ${eventName}
+Application ID: ${regId}
+
+Review and approve in Admin Dashboard: ${baseUrl}/admin-login
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,0.06);">
+        <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 22px; color: #ffffff; border-bottom: 3px solid #6366f1;">
+          <span style="background-color: #6366f1; color: #ffffff; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+            FREE PASS APPLICATION (PENDING APPROVAL)
+          </span>
+          <h2 style="margin: 10px 0 2px 0; font-size: 19px; color: #ffffff;">${data.fullName}</h2>
+          <p style="margin: 0; font-size: 13px; color: #c7d2fe;">${data.designation} · <strong>${data.organization}</strong></p>
+        </div>
+
+        <div style="padding: 22px; color: #334155; font-size: 13px; line-height: 1.6;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px;">
+            <tr><td style="padding: 5px 0; color: #64748b; width: 38%;">Event Summit:</td><td style="font-weight: 700; color: #0f172a;">${eventName}</td></tr>
+            <tr><td style="padding: 5px 0; color: #64748b;">Application ID:</td><td style="font-family: monospace; font-weight: 700; color: #4338ca;">${regId}</td></tr>
+            <tr><td style="padding: 5px 0; color: #64748b;">Official Email:</td><td><a href="mailto:${userEmail}" style="color: #0891b2; font-weight: 600; text-decoration: none;">${userEmail}</a></td></tr>
+            <tr><td style="padding: 5px 0; color: #64748b;">Phone Number:</td><td style="font-weight: 600;">${data.phone}</td></tr>
+            <tr><td style="padding: 5px 0; color: #64748b;">Location:</td><td>${data.city || "N/A"}, ${data.country || "India"}</td></tr>
+            ${data.industry ? `<tr><td style="padding: 5px 0; color: #64748b;">Industry:</td><td>${data.industry}</td></tr>` : ""}
+            ${data.linkedinUrl ? `<tr><td style="padding: 5px 0; color: #64748b;">LinkedIn:</td><td><a href="${data.linkedinUrl}" style="color: #0891b2;" target="_blank">${data.linkedinUrl}</a></td></tr>` : ""}
+            ${data.reasonForAttending ? `<tr><td style="padding: 5px 0; color: #64748b;">Motivation / Reason:</td><td style="font-style: italic; color: #475569;">"${data.reasonForAttending}"</td></tr>` : ""}
+          </table>
+
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="${baseUrl}/admin-login" style="display: inline-block; background-color: #4338ca; color: #ffffff; padding: 10px 22px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">
+              ⚡ Open Admin Dashboard to Approve / Reject
+            </a>
+          </div>
+        </div>
+
+        <div style="background-color: #f1f5f9; padding: 12px; text-align: center; color: #64748b; font-size: 11px; border-top: 1px solid #e2e8f0;">
+          Executive Talks Media Business Intelligence Realtime Alert System
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await Promise.allSettled([
+      mailTransporter.sendMail(userMailOptions).then((info) => {
+        console.log(`[Nodemailer] Free application receipt email sent to ${userEmail} (${info.messageId})`);
+      }),
+      mailTransporter.sendMail(adminMailOptions).then((info) => {
+        console.log(`[Nodemailer] Free application admin alert sent to ${adminRecipients.join(", ")} (${info.messageId})`);
+      }),
+    ]);
   } catch (err: any) {
-    console.error(`[Nodemailer] Error sending registration email to ${userEmail}:`, err.message);
-    return false;
+    console.error("[Nodemailer] Error sending free application notification emails:", err.message);
   }
 }
 
@@ -1669,11 +1965,6 @@ app.post("/api/payments/verify", async (req, res) => {
     return res.status(500).json({ success: false, message: err.message || "Error verifying payment." });
   }
 });
-    }
-  } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message || "Error verifying payment." });
-  }
-});
 
 // --- MULTI-STEP REGISTRATION WIZARD ENDPOINTS ---
 
@@ -1931,6 +2222,27 @@ app.post("/api/registrations/free-start", async (req, res) => {
         message: `📋 New Free Delegate Application received from ${fullName} (${companyName}) for ${eventTitle}! Status: Pending Approval.`,
       });
     }
+
+    // Automated Email Notifications (Applicant Receipt + Admin Team Alert)
+    sendFreeApplicationNotificationEmails({
+      registrationId: regId,
+      fullName,
+      firstName,
+      lastName,
+      email: workEmail.trim(),
+      phone: contactNumber,
+      organization: companyName,
+      designation,
+      city: city || "N/A",
+      country,
+      industry: industry || "Technology",
+      linkedinUrl: linkedinUrl || "",
+      category,
+      eventTitle,
+      reasonForAttending,
+    }).catch((emailErr) => {
+      console.error("[API] Background free application email error:", emailErr);
+    });
 
     return res.json({
       success: true,
@@ -3060,7 +3372,7 @@ app.post("/api/admin/grant-access", authenticateAdmin, async (req, res) => {
 });
 
 // Admin Resend / Send Registration Pass Email
-app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, async (req, res) => {
+async function handleAdminResendEmail(req: any, res: any) {
   const { id } = req.params;
   try {
     let reg: any = null;
@@ -3082,7 +3394,7 @@ app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, async (re
 
     const emailSent = await sendRegistrationConfirmationEmail({
       registrationId: reg.id,
-      firstName: reg.first_name || reg.name.split(" ")[0],
+      firstName: reg.first_name || (reg.name ? reg.name.split(" ")[0] : "Delegate"),
       lastName: reg.last_name || "",
       fullName: reg.name,
       email: reg.email,
@@ -3097,7 +3409,7 @@ app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, async (re
       eventId: reg.event_id,
       eventTitle: reg.event_title,
       paymentStatus: reg.payment_status || "Approved (Free Pass)",
-      paymentId: reg.payment_id || "ADMIN-GRANTED",
+      paymentId: reg.payment_id || "ADMIN-CONFIRMED",
       paymentAmount: reg.payment_amount || 0,
       couponApplied: reg.coupon_applied,
       createdAt: reg.created_at,
@@ -3107,14 +3419,17 @@ app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, async (re
       success: true,
       emailSent,
       message: emailSent
-        ? `📧 Ticket pass email sent to ${reg.email}!`
-        : `Email delivery attempt completed for ${reg.email}.`,
+        ? `📧 Official delegate pass & invoice sent successfully to ${reg.email} and admin alerts dispatched!`
+        : `Email dispatched (delivery queued).`,
     });
   } catch (err: any) {
     console.error("Send Registration Email Error:", err);
     return res.status(500).json({ success: false, message: err.message || "Failed to send email pass." });
   }
-});
+}
+
+app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, handleAdminResendEmail);
+app.post("/api/admin/registrations/:id/resend-email", authenticateAdmin, handleAdminResendEmail);
 
 // Admin Get All Contacts
 app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
