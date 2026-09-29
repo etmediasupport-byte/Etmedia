@@ -120,6 +120,7 @@ export default function EventRegistrationWizardPage() {
 
   // --- STEP 5 FORM STATE: Payment Order & Loading ---
   const [razorpayOrderId, setRazorpayOrderId] = useState("");
+  const [razorpayActiveKey, setRazorpayActiveKey] = useState<string>("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Load Razorpay SDK Script
@@ -484,6 +485,9 @@ export default function EventRegistrationWizardPage() {
       const data = await res.json();
       if (data.success && data.order) {
         setRazorpayOrderId(data.order.id);
+        if (data.key) {
+          setRazorpayActiveKey(data.key);
+        }
         setCurrentStep(5);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
@@ -508,8 +512,10 @@ export default function EventRegistrationWizardPage() {
 
     setIsProcessingPayment(true);
 
+    const activeKey = (razorpayActiveKey || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0").trim();
+
     const options = {
-      key: (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0",
+      key: activeKey,
       amount: Math.round(paymentBreakdown.finalAmount * 100),
       currency: "INR",
       name: "Executive Talks Media",
