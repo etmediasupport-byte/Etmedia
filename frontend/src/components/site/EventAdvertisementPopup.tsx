@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award } from "lucide-react";
 import { io } from "socket.io-client";
@@ -35,6 +36,7 @@ interface PopupSettings {
 
 interface EventItem {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   date?: string;
@@ -88,6 +90,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
   customSettings,
   customEvents,
 }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<PopupSettings | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -295,12 +298,20 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
       }),
     }).catch(() => {});
 
-    handleClosePopup();
+    // Close popup and reset body overflow
+    setIsOpen(false);
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+
+    if (previewMode && onClosePreview) {
+      onClosePreview();
+    }
 
     if (event.registration_url && event.registration_url.startsWith("http")) {
       window.open(event.registration_url, "_blank");
     } else {
-      window.location.href = `/events/${(event as any).slug || event.id}/register`;
+      const targetSlug = event.slug || event.id;
+      navigate(`/events/${encodeURIComponent(targetSlug)}/register`);
     }
   };
 
