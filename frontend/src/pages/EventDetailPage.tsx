@@ -433,191 +433,176 @@ export default function EventDetailPage() {
 
       <div className="container-x py-8 space-y-10">
         {/* ========================================================= */}
-        {/* HERO SECTION: LEFT EVENT CARD BANNER + RIGHT QUICK CARD  */}
+        {/* UNIFIED EXECUTIVE HERO MASTER FRAME (ALL IN ONE FRAME)    */}
         {/* ========================================================= */}
-        <section className="grid gap-6 lg:grid-cols-12 items-stretch">
-          {/* LEFT COLUMN: LARGE BANNER WITH EVENT CARD IMAGE */}
-          <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-slate-950 text-white shadow-2xl min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] flex flex-col justify-between p-5 sm:p-8 lg:p-10 group">
-            {/* Background Event Card Image */}
-            <div className="absolute inset-0 z-0">
-              <img
-                src={heroImageSrc}
-                alt={event.title}
-                onError={(e: any) => {
-                  e.target.onerror = null;
-                  e.target.src = getValidImageUrl("", event.title, event.category);
-                }}
-                className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-700 opacity-70"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/20" />
-            </div>
+        <section className="relative overflow-hidden rounded-[28px] sm:rounded-[36px] bg-slate-950 text-white shadow-2xl border border-slate-800/80">
+          {/* Ambient Mesh Gradient Glows */}
+          <div className="absolute top-0 right-1/4 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
 
-            {/* Top Badge */}
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-4 py-1.5 text-xs font-black text-white uppercase tracking-wider shadow-md">
-                {event.category || "FLAGSHIP EVENT"}
-              </span>
-            </div>
-
-            {/* Middle Title & Description */}
-            <div className="relative z-10 space-y-3 my-auto pt-8 sm:pt-12 pb-6">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white leading-tight">
-                {event.title}
-              </h1>
-              <p className="text-cyan-300 font-bold text-sm sm:text-base lg:text-lg">
-                People. Purpose. Performance.
-              </p>
-              <p className="text-xs sm:text-sm text-slate-200 line-clamp-3 leading-relaxed max-w-2xl font-medium">
-                {event.description}
-              </p>
-            </div>
-
-            {/* Bottom Overlay Info Strip */}
-            <div className="relative z-10 border-t border-white/20 pt-4 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 text-[11px] sm:text-xs font-semibold text-slate-200">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span>{dateText} • Thu, 9:00 AM – 6:00 PM</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
-                <span>{cityText}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>{event.delegates_count || "500+"} Delegates</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-amber-400 shrink-0" />
-                <span>{event.speakers_count || `${event.speakers || 30}+`} Speakers</span>
-              </div>
-            </div>
+          {/* Subtle Background Backdrop Image with Overlay */}
+          <div className="absolute inset-0 z-0 opacity-25 mix-blend-luminosity">
+            <img
+              src={heroImageSrc}
+              alt={event.title}
+              onError={(e: any) => {
+                e.target.onerror = null;
+                e.target.src = getValidImageUrl("", event.title, event.category);
+              }}
+              className="h-full w-full object-cover object-top scale-105 filter blur-xs"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/60" />
           </div>
 
-          {/* RIGHT COLUMN: QUICK REGISTRATION CARD */}
-          <div className="lg:col-span-4 rounded-3xl bg-slate-50/70 p-6 sm:p-7 flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <div className="relative z-10 p-6 sm:p-8 lg:p-10 space-y-7 sm:space-y-8">
+            {/* TOP ROW: CATEGORY BADGE & LIVE STATUS & SHARE */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 px-4 py-1.5 text-xs font-black text-cyan-300 uppercase tracking-wider backdrop-blur-md shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>{event.category || "TECH CONCLAVE"}</span>
+                </span>
+                <span className="hidden sm:inline-block text-xs font-bold text-slate-400">
+                  Executive Talks Media Business Intelligence
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
                 {liveEventStatus === "ended" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-500" /> Event Concluded
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800/90 border border-slate-700 px-3.5 py-1 text-xs font-bold text-slate-300">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" /> Event Concluded
                   </span>
                 ) : liveEventStatus === "live" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-extrabold text-rose-800 border border-rose-200">
-                    <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" /> Event is Live Now
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 px-3.5 py-1 text-xs font-black text-rose-300 animate-pulse">
+                    <Radio className="h-3.5 w-3.5 text-rose-400" /> Live In Session
                   </span>
                 ) : liveEventStatus === "starts_today" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-800 border border-amber-200">
-                    <Flame className="h-3.5 w-3.5 text-amber-600 animate-bounce" /> Event Starts Today
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-3.5 py-1 text-xs font-black text-amber-300">
+                    <Flame className="h-3.5 w-3.5 text-amber-400 animate-bounce" /> Event Starts Today
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/70 px-3 py-1 text-xs font-extrabold text-emerald-800">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Registrations Open
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-1 text-xs font-black text-emerald-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> Registrations Open
                   </span>
                 )}
+
                 <button
                   type="button"
                   onClick={shareEvent}
-                  className="rounded-full bg-white/80 p-2 text-slate-600 hover:bg-white transition-colors cursor-pointer"
+                  className="rounded-full bg-white/10 hover:bg-white/20 p-2 text-slate-200 hover:text-white transition-colors cursor-pointer border border-white/10"
                   title="Share Event"
                 >
                   <Share2 className="h-4 w-4" />
                 </button>
               </div>
+            </div>
 
-              <h3 className="text-xl font-black text-slate-900 font-display leading-snug">
-                {event.title}
-              </h3>
+            {/* MIDDLE ROW: TITLE, TAGLINE, DESCRIPTION + RIGHT SIDE REGISTRATION ACTIONS & METRICS */}
+            <div className="grid gap-6 lg:gap-8 lg:grid-cols-12 items-center">
+              {/* LEFT 8 COLS: TITLE & DESCRIPTION & METADATA PILLS */}
+              <div className="lg:col-span-8 space-y-4">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white leading-tight">
+                  {event.title}
+                </h1>
 
-              <div className="space-y-3 border-y border-slate-200/50 py-4 text-xs font-medium text-slate-700">
-                <div className="flex items-start gap-3">
-                  <CalendarDays className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">{dateText}</span>
-                    <span className="text-slate-500">{timeText}</span>
+                <p className="text-cyan-300 font-bold text-sm sm:text-base lg:text-lg flex items-center gap-2">
+                  <span>People. Purpose. Performance.</span>
+                </p>
+
+                <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-3xl line-clamp-3">
+                  {event.description ||
+                    "The premier leadership summit and excellence awards series organized by ET Media Business Intelligence, bringing together C-level decision makers, innovators, and industry leaders to discuss digital innovation, sustainable leadership, and future growth."}
+                </p>
+
+                {/* METADATA CHIPS */}
+                <div className="pt-2 flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs font-bold text-slate-300">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 backdrop-blur-sm">
+                    <CalendarDays className="h-4 w-4 text-cyan-400 shrink-0" />
+                    <span>{dateText} • {timeText}</span>
                   </div>
-                </div>
 
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">{venueText}</span>
-                    <span className="text-slate-500">{cityText}</span>
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 backdrop-blur-sm">
+                    <MapPin className="h-4 w-4 text-purple-400 shrink-0" />
+                    <span>{venueText ? `${venueText} (${cityText})` : cityText}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 3 STAT BADGES */}
-              <div className="grid grid-cols-3 gap-2 text-center py-1">
-                <div className="rounded-2xl bg-cyan-100/60 p-2.5">
-                  <div className="text-base font-black text-cyan-900">{event.delegates_count || "500+"}</div>
-                  <div className="text-[10px] font-bold text-cyan-700">Delegates</div>
+              {/* RIGHT 4 COLS: EXECUTIVE ACTION CARD WITH 3 STAT BADGES */}
+              <div className="lg:col-span-4 rounded-3xl bg-white/5 border border-white/10 p-5 sm:p-6 backdrop-blur-md space-y-4 sm:space-y-5 shadow-inner">
+                {/* 3 STAT BADGES */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
+                  <div className="rounded-2xl bg-cyan-500/10 border border-cyan-400/20 p-2 sm:p-2.5">
+                    <div className="text-base sm:text-lg font-black text-cyan-300">{event.delegates_count || "500+"}</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold text-cyan-200/70 uppercase">Delegates</div>
+                  </div>
+                  <div className="rounded-2xl bg-purple-500/10 border border-purple-400/20 p-2 sm:p-2.5">
+                    <div className="text-base sm:text-lg font-black text-purple-300">{event.speakers_count || `${event.speakers || 30}+`}</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold text-purple-200/70 uppercase">Speakers</div>
+                  </div>
+                  <div className="rounded-2xl bg-amber-500/10 border border-amber-400/20 p-2 sm:p-2.5">
+                    <div className="text-base sm:text-lg font-black text-amber-300">{event.sponsors_count || "25+"}</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold text-amber-200/70 uppercase">Sponsors</div>
+                  </div>
                 </div>
-                <div className="rounded-2xl bg-purple-100/60 p-2.5">
-                  <div className="text-base font-black text-purple-900">{event.speakers_count || `${event.speakers || 30}+`}</div>
-                  <div className="text-[10px] font-bold text-purple-700">Speakers</div>
-                </div>
-                <div className="rounded-2xl bg-amber-100/60 p-2.5">
-                  <div className="text-base font-black text-amber-900">{event.sponsors_count || "25+"}</div>
-                  <div className="text-[10px] font-bold text-amber-700">Sponsors</div>
+
+                {/* BUTTONS */}
+                <div className="space-y-2.5">
+                  {liveEventStatus === "ended" ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-800 py-3.5 px-6 text-sm font-black text-slate-400 cursor-not-allowed border border-slate-700"
+                    >
+                      <span>Registrations Concluded</span>
+                      <AlertCircle className="h-4 w-4 text-slate-500" />
+                    </button>
+                  ) : liveEventStatus === "live" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("paid")}
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-red-600 to-pink-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-rose-500/25"
+                    >
+                      <Radio className="h-4 w-4 animate-pulse text-white" />
+                      <span>Join Event Live</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("paid")}
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-cyan-500/25 group"
+                    >
+                      <span>Register Now</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.success("Downloading Event Executive Brochure...");
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 py-3 px-6 text-xs font-bold text-slate-200 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 text-cyan-400" />
+                    <span>Download Brochure</span>
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-2">
-              {liveEventStatus === "ended" ? (
-                <button
-                  type="button"
-                  disabled
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-200 py-3.5 px-6 text-sm font-black text-slate-500 cursor-not-allowed border border-slate-300"
-                >
-                  <span>Registrations Closed</span>
-                  <AlertCircle className="h-4 w-4 text-slate-400" />
-                </button>
-              ) : liveEventStatus === "live" ? (
-                <button
-                  type="button"
-                  onClick={() => handleOpenRegister("paid")}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-red-600 to-pink-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-rose-500/20"
-                >
-                  <Radio className="h-4 w-4 animate-pulse text-white" />
-                  <span>Join Event Live</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleOpenRegister("paid")}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 py-3.5 px-6 text-sm font-black text-white hover:opacity-95 transition-all cursor-pointer"
-                >
-                  <span>Register Now</span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  toast.success("Downloading Event Executive Brochure...");
-                }}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-white py-3 px-6 text-xs font-bold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <Download className="h-4 w-4 text-cyan-600" />
-                <span>Download Brochure</span>
-              </button>
+            {/* LOWER DECK: 6 METRIC CARDS INTEGRATED INTO THE EXACT SAME MASTER FRAME */}
+            <div className="border-t border-white/10 pt-6">
+              <EventCountdownTimer
+                dateStr={dateText}
+                timeStr={timeText}
+                locationStr={cityText || venueText || event.city || "Location TBA"}
+                dateDisplayStr={dateText}
+                onStatusChange={setLiveEventStatus}
+              />
             </div>
           </div>
-        </section>
-
-        {/* ========================================================= */}
-        {/* DYNAMIC LIVE COUNTDOWN TIMER SECTION                       */}
-        {/* ========================================================= */}
-        <section className="my-6 sm:my-8 rounded-3xl bg-gradient-to-r from-purple-50/40 via-slate-50/70 to-indigo-50/40 p-4 sm:p-6 border border-purple-100/60 shadow-xs">
-          <EventCountdownTimer
-            dateStr={dateText}
-            timeStr={timeText}
-            locationStr={cityText || venueText || event.city || "Location TBA"}
-            dateDisplayStr={dateText}
-            onStatusChange={setLiveEventStatus}
-          />
         </section>
 
 
