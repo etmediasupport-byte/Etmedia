@@ -47,8 +47,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
   // Sync activeMode with mode prop when modal opens
   useEffect(() => {
     if (isOpen) {
-      setActiveMode(mode || "free");
+      const targetMode = mode || "paid";
+      setActiveMode(targetMode);
       setModalStep("form");
+      if (targetMode === "paid" && (!formData.registrationCategory || formData.registrationCategory === "Delegate")) {
+        setFormData((prev) => ({ ...prev, registrationCategory: "Gold Pass" }));
+      }
     }
   }, [isOpen, mode]);
 
@@ -146,17 +150,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
         registeringCity: initialRegisteringCity,
       }));
 
-      // Fetch payment config for active event
+      // Fetch payment config for active event (Do not override activeMode)
       fetch(`/api/event-payments/event/${currentEvent.id || currentEvent.slug}`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.pricingAvailable && data.payment) {
+          if (data.success && data.payment) {
             setPaymentConfig(data.payment);
           } else {
             setPaymentConfig(null);
-            if (activeMode === "paid") {
-              setActiveMode("free");
-            }
           }
         })
         .catch((err) => {
@@ -183,8 +184,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
   }
   const finalCityOptions = Array.from(new Set(eventCities.length > 0 ? eventCities : [currentEvent.city || "Mumbai"]));
 
-  // Calculate pricing breakdown: Base Pass Price - Coupon Discount + 18% GST
-  const getPricing = () => {
+  // Retrieve current pricing plans array
+  const getPricingPlans = (): PricingPlanTier[] => {
     let parsedPlans: PricingPlanTier[] = [];
     if (typeof paymentConfig?.pricing_plans === "string") {
       try { parsedPlans = JSON.parse(paymentConfig.pricing_plans); } catch (e) {}
@@ -194,6 +195,19 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
     if (!parsedPlans || parsedPlans.length === 0) {
       parsedPlans = getDefaultPricingPlans();
     }
+    return parsedPlans;
+  };
+
+  // Calculate pricing breakdown: Base Pass Price - Coupon Discount + 18% GST
+  const getPricing = () => {
+    const parsedPlans = getPricingPlans();
+
+    // Check early bird status
+    const earlyBirdInfo = checkEarlyBirdStatus(
+      paymentConfig?.early_bird_enabled ?? true,
+      paymentConfig?.early_bird_start_date || "2026-01-01",
+      paymentConfig?.early_bird_end_date || "2026-12-31"
+    );
 
     // Find selected tier pass matching registrationCategory
     const catName = formData.registrationCategory;
@@ -205,18 +219,20 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
       parsedPlans[0];
 
     const originalPrice = matchedPlan ? Number(matchedPlan.price) : 8000;
+    const hasEarlyBird = Boolean(earlyBirdInfo.isActive && matchedPlan?.early_bird_price && matchedPlan.early_bird_price < matchedPlan.price);
+    const effectiveBasePrice = hasEarlyBird ? Number(matchedPlan.early_bird_price) : originalPrice;
 
     // Coupon discount applied directly to Base Pass Price
     let couponDiscount = 0;
     if (appliedCoupon) {
       if (appliedCoupon.type === "percentage") {
-        couponDiscount = Math.round((originalPrice * Number(appliedCoupon.value)) / 100);
+        couponDiscount = Math.round((effectiveBasePrice * Number(appliedCoupon.value)) / 100);
       } else {
         couponDiscount = Number(appliedCoupon.value);
       }
     }
 
-    const netBase = Math.max(0, originalPrice - couponDiscount);
+    const netBase = Math.max(0, effectiveBasePrice - couponDiscount);
     const gstPct = 18; // Always 18% GST
     const gstAmt = Math.round((netBase * gstPct) / 100);
     const totalPayable = netBase + gstAmt;
@@ -224,8 +240,9 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
     return {
       selectedPlan: matchedPlan,
       passName: matchedPlan?.name || formData.registrationCategory || "Gold Pass",
-      baseFee: originalPrice,
+      baseFee: effectiveBasePrice,
       originalPrice,
+      hasEarlyBird,
       couponDiscount,
       netBase,
       gstPct,
@@ -635,7 +652,11 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => { setActiveMode("free"); setModalStep("form"); }}
+                      onClick={() => {
+                        setActiveMode("free");
+                        setFormData((prev) => ({ ...prev, registrationCategory: "Delegate" }));
+                        setModalStep("form");
+                      }}
                       className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                         activeMode === "free"
                           ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20 font-extrabold ring-2 ring-cyan-400/40"
@@ -646,7 +667,14 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setActiveMode("paid"); setModalStep("form"); }}
+                      onClick={() => {
+                        setActiveMode("paid");
+                        setFormData((prev) => ({
+                          ...prev,
+                          registrationCategory: prev.registrationCategory === "Delegate" ? "Gold Pass" : prev.registrationCategory,
+                        }));
+                        setModalStep("form");
+                      }}
                       className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                         activeMode === "paid"
                           ? "bg-purple-600 text-white shadow-md shadow-purple-500/20 font-extrabold ring-2 ring-purple-400/40"
@@ -719,8 +747,45 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                   className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar p-4 sm:p-6 space-y-5 bg-white"
                 >
                 
+                {/* Mode Header Banner / Plans Grid */}
+                {activeMode === "paid" ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3">
+                    <RegistrationPlansGrid
+                      pricingAvailable={true}
+                      plans={getPricingPlans()}
+                      earlyBirdEnabled={paymentConfig?.early_bird_enabled}
+                      earlyBirdStartDate={paymentConfig?.early_bird_start_date}
+                      earlyBirdEndDate={paymentConfig?.early_bird_end_date}
+                      onSelectPlan={(plan) => {
+                        setFormData((prev) => ({ ...prev, registrationCategory: plan.name }));
+                        toast.success(`Selected ${plan.name}`);
+                      }}
+                      selectedPlanId={formData.registrationCategory}
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-900">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-600 text-white shadow-xs">
+                        <Sparkles className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                          Complimentary Delegate Pre-Registration
+                        </h4>
+                        <p className="text-[11px] sm:text-xs text-slate-600 font-medium mt-0.5">
+                          Free registration active. Fill in your official credentials below to reserve your complimentary executive pass.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 self-start sm:self-auto rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 uppercase tracking-wider shrink-0 border border-emerald-200">
+                      ✓ Free Pass Active
+                    </span>
+                  </div>
+                )}
+
                 {/* Section 1: Personal & Executive Details (4 Columns on Desktop) */}
-                <div className="space-y-3">
+                <div className="space-y-3 pt-1">
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1.5">
                     <User className="h-3.5 w-3.5 text-cyan-600" />
                     <span>Personal & Executive Details</span>
@@ -892,37 +957,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                   </div>
                 </div>
 
-                {/* Section 2: Registration Tier Plans Grid (Gold Pass, Premium Pass, Platinum Pass) */}
-                {activeMode === "paid" && (
-                  <div className="pt-2">
-                    {(() => {
-                      let parsedPlans: PricingPlanTier[] = [];
-                      if (typeof paymentConfig?.pricing_plans === "string") {
-                        try { parsedPlans = JSON.parse(paymentConfig.pricing_plans); } catch (e) {}
-                      } else if (Array.isArray(paymentConfig?.pricing_plans)) {
-                        parsedPlans = paymentConfig.pricing_plans;
-                      }
-                      const isAvailable = Boolean(paymentConfig && parsedPlans.length > 0);
-                      return (
-                        <RegistrationPlansGrid
-                          pricingAvailable={isAvailable}
-                          plans={isAvailable ? parsedPlans : []}
-                          earlyBirdEnabled={paymentConfig?.early_bird_enabled}
-                          earlyBirdStartDate={paymentConfig?.early_bird_start_date}
-                          earlyBirdEndDate={paymentConfig?.early_bird_end_date}
-                          onSelectPlan={(plan) => {
-                            setFormData((prev) => ({ ...prev, registrationCategory: plan.name }));
-                            toast.success(`Selected ${plan.name} (₹${Number(plan.early_bird_price && checkEarlyBirdStatus(paymentConfig?.early_bird_enabled, paymentConfig?.early_bird_start_date, paymentConfig?.early_bird_end_date).isActive ? plan.early_bird_price : plan.price).toLocaleString("en-IN")})`);
-                          }}
-                          selectedPlanId={formData.registrationCategory}
-                        />
-                      );
-                    })()}
-                  </div>
-                )}
-
-                {/* Section 3: Category & Preferences (3 Columns) */}
-                <div className="space-y-3 pt-3">
+                {/* Section 2: Category & Preferences (3 Columns) */}
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-1.5">
                     <Tag className="h-3.5 w-3.5 text-purple-600" />
                     <span>Category & Participation Preferences</span>
@@ -931,17 +967,31 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div>
                       <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                        Registration Category
+                        {activeMode === "paid" ? "Selected Pass Tier" : "Registration Category"}
                       </label>
-                      <select
-                        value={formData.registrationCategory}
-                        onChange={(e) => setFormData({ ...formData, registrationCategory: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
-                      >
-                        <option value="Delegate" className="bg-white text-slate-900">Delegate Pass</option>
-                        <option value="Speaker" className="bg-white text-slate-900">Speaker Slot</option>
-                        <option value="Sponsorship" className="bg-white text-slate-900">Sponsorship Opportunity</option>
-                      </select>
+                      {activeMode === "paid" ? (
+                        <select
+                          value={formData.registrationCategory}
+                          onChange={(e) => setFormData({ ...formData, registrationCategory: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
+                        >
+                          {getPricingPlans().map((p) => (
+                            <option key={p.id || p.name} value={p.name} className="bg-white text-slate-900">
+                              {p.name} (₹{Number(p.price).toLocaleString("en-IN")})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select
+                          value={formData.registrationCategory}
+                          onChange={(e) => setFormData({ ...formData, registrationCategory: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-600 transition-all cursor-pointer"
+                        >
+                          <option value="Delegate" className="bg-white text-slate-900">Delegate Pass (Complimentary)</option>
+                          <option value="Speaker" className="bg-white text-slate-900">Speaker Slot (Interest)</option>
+                          <option value="Sponsorship" className="bg-white text-slate-900">Sponsorship Opportunity (Interest)</option>
+                        </select>
+                      )}
                     </div>
 
                     <div>
@@ -1073,7 +1123,9 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
                       <>
                         <Award className="h-4 w-4 text-white" />
                         <span>
-                          {activeMode === "free" ? "Complete Free Registration →" : "Proceed to Order & Payment →"}
+                          {activeMode === "free"
+                            ? "Complete Free Registration →"
+                            : `Proceed to Order & Payment (₹${getPricing().totalPayable.toLocaleString("en-IN")}) →`}
                         </span>
                       </>
                     )}

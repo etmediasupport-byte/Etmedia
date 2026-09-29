@@ -153,6 +153,7 @@ export default function EventsPage() {
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const [registerMode, setRegisterMode] = useState<"paid" | "free">("paid");
 
   // Load events from DB and merge with default summits
   useEffect(() => {
@@ -563,6 +564,7 @@ export default function EventsPage() {
                   event={event}
                   onRegister={(evt, mode) => {
                     setSelectedEvent(evt);
+                    setRegisterMode(mode || "paid");
                   }}
                 />
               </Reveal>
@@ -599,6 +601,7 @@ export default function EventsPage() {
         isOpen={!!selectedEvent}
         onClose={() => setSelectedEvent(null)}
         event={selectedEvent}
+        mode={registerMode}
       />
     </div>
   );
