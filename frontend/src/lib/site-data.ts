@@ -18,6 +18,52 @@ export const images = {
   magazineCover,
 };
 
+export function getValidImageUrl(url?: string, title?: string, category?: string): string {
+  if (url && typeof url === "string" && url.trim()) {
+    const trimmed = url.trim();
+    if (
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("data:") ||
+      trimmed.startsWith("blob:")
+    ) {
+      return trimmed;
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower.includes("hr-recall") || lower.includes("recaller") || lower.includes("event-hr")) return images.eventHr;
+    if (lower.includes("cfo") || lower.includes("event-cfo") || lower.includes("finance")) return images.eventCfo;
+    if (lower.includes("hero-summit") || lower.includes("summit") || lower.includes("tech") || lower.includes("creator")) return images.heroSummit;
+    if (lower.includes("hero-leadership") || lower.includes("leadership") || lower.includes("global")) return images.heroLeadership;
+    if (lower.includes("hero-awards") || lower.includes("award") || lower.includes("excellence")) return images.heroAwards;
+    if (lower.includes("hero-networking") || lower.includes("network")) return images.heroNetworking;
+    if (lower.includes("about-office")) return images.aboutOffice;
+    if (lower.includes("magazine-cover")) return images.magazineCover;
+
+    if (trimmed.startsWith("/")) {
+      return trimmed;
+    }
+  }
+
+  const titleAndCat = `${title || ""} ${category || ""}`.toLowerCase();
+  if (titleAndCat.includes("hr") || titleAndCat.includes("recaller") || titleAndCat.includes("talent") || titleAndCat.includes("people")) {
+    return images.eventHr;
+  }
+  if (titleAndCat.includes("cfo") || titleAndCat.includes("finance") || titleAndCat.includes("treasury") || titleAndCat.includes("capital")) {
+    return images.eventCfo;
+  }
+  if (titleAndCat.includes("award") || titleAndCat.includes("excellence") || titleAndCat.includes("recognition")) {
+    return images.heroAwards;
+  }
+  if (titleAndCat.includes("tech") || titleAndCat.includes("ai") || titleAndCat.includes("creator") || titleAndCat.includes("enterprise")) {
+    return images.heroSummit;
+  }
+  if (titleAndCat.includes("gcc") || titleAndCat.includes("global") || titleAndCat.includes("leadership")) {
+    return images.heroLeadership;
+  }
+
+  return images.eventHr;
+}
+
 export const contact = {
   phones: ["+91 91002 66777", "+91 94930 87788"],
   emails: [

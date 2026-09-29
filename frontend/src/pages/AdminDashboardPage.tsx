@@ -23,6 +23,8 @@ import {
   Sponsor,
   GalleryItem,
   AgendaItem,
+  images,
+  getValidImageUrl,
 } from "@/lib/site-data";
 import {
   LayoutDashboard,
@@ -795,7 +797,7 @@ export default function AdminDashboardPage() {
     description: "",
     full_description: "",
     about_content: "",
-    image: "/assets/event-cfo-BjslOJNi.jpg",
+    image: images.eventHr,
     about_image: "",
     speakers: 20,
     status: "published",
@@ -2873,7 +2875,7 @@ export default function AdminDashboardPage() {
       description: "",
       full_description: "",
       about_content: "",
-      image: "/assets/event-cfo-BjslOJNi.jpg",
+      image: images.eventHr,
       about_image: "",
       speakers: 20,
       status: "published",
@@ -2968,7 +2970,7 @@ export default function AdminDashboardPage() {
       description: evt.description || "",
       full_description: evt.full_description || evt.description || "",
       about_content: evt.about_content || evt.full_description || evt.description || "",
-      image: evt.image || "/assets/event-cfo-BjslOJNi.jpg",
+      image: getValidImageUrl(evt.image, evt.title, evt.category),
       about_image: evt.about_image || "",
       speakers: evt.speakers || parsedSpeakers.length || 20,
       status: evt.status || "published",
@@ -3054,7 +3056,7 @@ export default function AdminDashboardPage() {
       description: eventForm.description.trim(),
       full_description: (eventForm.full_description || eventForm.description).trim(),
       about_content: (eventForm.about_content || eventForm.full_description || eventForm.description).trim(),
-      image: eventForm.image.trim() || "/assets/event-cfo-BjslOJNi.jpg",
+      image: eventForm.image.trim() || images.eventHr,
       about_image: (eventForm.about_image || "").trim(),
       city: primaryLoc.city.trim(),
       venue: primaryLoc.venue.trim(),
@@ -5575,7 +5577,15 @@ export default function AdminDashboardPage() {
                             className="mt-1 h-4 w-4 rounded text-cyan-600 focus:ring-cyan-500 cursor-pointer"
                           />
                           <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-950 border border-slate-200">
-                            <img src={evt.image || "/assets/event-cfo-BjslOJNi.jpg"} alt={evt.title} className="h-full w-full object-cover" />
+                            <img
+                              src={getValidImageUrl(evt.image, evt.title, evt.category)}
+                              alt={evt.title}
+                              onError={(e: any) => {
+                                e.target.onerror = null;
+                                e.target.src = images.eventHr;
+                              }}
+                              className="h-full w-full object-cover"
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
                             <span className="text-[10px] font-extrabold text-cyan-700 uppercase tracking-wider block">
@@ -5974,8 +5984,12 @@ export default function AdminDashboardPage() {
                             {/* Image Banner & Badges */}
                             <div className="relative h-40 sm:h-48 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                               <img
-                                src={evt.image}
+                                src={getValidImageUrl(evt.image, evt.title, evt.category)}
                                 alt={evt.title}
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src = images.eventHr;
+                                }}
                                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-black/10" />

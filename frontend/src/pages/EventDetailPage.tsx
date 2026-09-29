@@ -42,6 +42,8 @@ import {
   Sponsor,
   GalleryItem,
   AgendaItem,
+  images,
+  getValidImageUrl,
 } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { RegisterModal } from "@/components/site/RegisterModal";
@@ -412,21 +414,7 @@ export default function EventDetailPage() {
     ];
   }
 
-function getValidImageUrl(url?: string): string {
-  if (!url || typeof url !== "string" || !url.trim()) {
-    return "/assets/event-cfo-BjslOJNi.jpg";
-  }
-  const trimmed = url.trim();
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
-    return trimmed;
-  }
-  if (!trimmed.startsWith("/")) {
-    return `/${trimmed}`;
-  }
-  return trimmed;
-}
-
-  const heroImageSrc = getValidImageUrl(event?.image || event?.about_image);
+  const heroImageSrc = getValidImageUrl(event?.image || event?.about_image, event?.title, event?.category);
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 pb-6 sm:pb-8 font-sans pt-24 sm:pt-28 lg:pt-32">
@@ -457,7 +445,7 @@ function getValidImageUrl(url?: string): string {
                 alt={event.title}
                 onError={(e: any) => {
                   e.target.onerror = null;
-                  e.target.src = "/assets/event-cfo-BjslOJNi.jpg";
+                  e.target.src = getValidImageUrl("", event.title, event.category);
                 }}
                 className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-700 opacity-70"
               />
@@ -682,8 +670,12 @@ function getValidImageUrl(url?: string): string {
               {/* Featured Event Image Banner */}
               <div className="relative overflow-hidden rounded-2xl bg-slate-100 h-56 sm:h-64 group">
                 <img
-                  src={event.about_image || event.image || "/assets/event-cfo-BjslOJNi.jpg"}
+                  src={getValidImageUrl(event.about_image || event.image, event.title, event.category)}
                   alt={event.title || "Event Highlight"}
+                  onError={(e: any) => {
+                    e.target.onerror = null;
+                    e.target.src = getValidImageUrl("", event.title, event.category);
+                  }}
                   className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 z-10">

@@ -430,6 +430,12 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN speakers_count VARCHAR(100) DEFAULT '30+';"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_count VARCHAR(100) DEFAULT '25+';"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
+    try {
+      await pool.query("UPDATE events SET image = '/assets/event-hr.jpg' WHERE (slug LIKE '%hr%' OR title LIKE '%hr%' OR title LIKE '%recall%') AND (image IS NULL OR image = '' OR image LIKE '%BjslOJNi%' OR image LIKE '%Cswpuq5H%')");
+      await pool.query("UPDATE events SET image = '/assets/event-cfo.jpg' WHERE (slug LIKE '%cfo%' OR title LIKE '%cfo%' OR category LIKE '%finance%') AND (image IS NULL OR image = '' OR image LIKE '%BjslOJNi%')");
+      await pool.query("UPDATE events SET image = '/assets/hero-summit.jpg' WHERE (slug LIKE '%tech%' OR slug LIKE '%creator%' OR title LIKE '%creator%') AND (image IS NULL OR image = '' OR image LIKE '%ClCGVqfO%')");
+      await pool.query("UPDATE events SET status = 'published' WHERE status IS NULL OR status = ''");
+    } catch (e) {}
   } catch (err) {
     console.error("[MySQL] Error auto-creating events table:", err);
   }

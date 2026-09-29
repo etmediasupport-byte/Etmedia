@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, type EventItem, getDefaultPricingPlans, checkEarlyBirdStatus, type PricingPlanTier } from "@/lib/site-data";
@@ -19,9 +19,10 @@ interface RegisterModalProps {
   mode?: "paid" | "free";
 }
 
-export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: RegisterModalProps) {
+export function RegisterModal({ isOpen, onClose, event, mode = "free" }: RegisterModalProps) {
   const [modalStep, setModalStep] = useState<"form" | "payment">("form");
-  const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
+  const [activeMode, setActiveMode] = useState<"paid" | "free">("free");
+  const formScrollRef = useRef<HTMLFormElement | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -46,7 +47,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
   // Sync activeMode with mode prop when modal opens
   useEffect(() => {
     if (isOpen) {
-      setActiveMode(mode || "paid");
+      setActiveMode(mode || "free");
       setModalStep("form");
     }
   }, [isOpen, mode]);
@@ -87,15 +88,17 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || successModalOpen) {
+      const origOverflow = document.body.style.overflow;
+      const origHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
+      document.documentElement.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+      };
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  }, [isOpen, successModalOpen]);
 
   const [pendingRegId, setPendingRegId] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -592,15 +595,30 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
     "Other",
   ];
 
+  if (!isOpen && !successModalOpen) return null;
+
   return (
     <>
       {/* 1. REGISTRATION FORM & PAYMENT MODAL */}
       {!successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-[96vw] xl:max-w-[1500px] max-h-[94vh] sm:max-h-[90vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
-            
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden overscroll-none">
+          {/* Backdrop Blur Overlay */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            onClick={onClose}
+          />
+
+          <div
+            className="relative w-full max-w-[96vw] xl:max-w-[1400px] h-[92vh] sm:h-[88vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 overflow-hidden z-10 my-auto animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              if (formScrollRef.current) {
+                formScrollRef.current.scrollTop += e.deltaY;
+              }
+            }}
+          >
             {/* STICKY MODAL HEADER */}
-            <div className="flex-none border-b border-slate-200 p-4 sm:p-5 bg-slate-50/90 relative z-10">
+            <div className="flex-none shrink-0 border-b border-slate-200 p-4 sm:p-5 bg-slate-50/90 relative z-10">
               {/* Close Button */}
               <button
                 type="button"
@@ -618,31 +636,31 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     <span>Executive Platform Registration</span>
                   </div>
                   <h3 className="mt-0.5 text-2xl sm:text-3xl font-black font-display tracking-tight text-slate-900">
-                    {activeMode === "free" ? "Register Free Interest" : "Delegate Pass Registration"}
+                    {activeMode === "free" ? "Free Delegate Registration" : "Delegate Pass Registration"}
                   </h3>
                   {/* Mode Selector Tabs */}
                   <div className="mt-2 flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => { setActiveMode("paid"); setModalStep("form"); }}
-                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        activeMode === "paid"
-                          ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                      onClick={() => { setActiveMode("free"); setModalStep("form"); }}
+                      className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        activeMode === "free"
+                          ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20 font-extrabold ring-2 ring-cyan-400/40"
                           : "bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900"
                       }`}
                     >
-                      💳 Paid Pass (With Payment)
+                      ✨ Free Registration (Complimentary)
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setActiveMode("free"); setModalStep("form"); }}
-                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        activeMode === "free"
-                          ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20 font-extrabold"
+                      onClick={() => { setActiveMode("paid"); setModalStep("form"); }}
+                      className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        activeMode === "paid"
+                          ? "bg-purple-600 text-white shadow-md shadow-purple-500/20 font-extrabold ring-2 ring-purple-400/40"
                           : "bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900"
                       }`}
                     >
-                      ✨ Free Interest (No Payment)
+                      💳 Paid VIP Pass (With Payment)
                     </button>
                   </div>
                 </div>
@@ -702,8 +720,10 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
               <>
                 <form
                   id="registrationModalForm"
+                  ref={formScrollRef}
                   onSubmit={handleProceedToPayment}
-                  className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar min-h-0 bg-white"
+                  style={{ maxHeight: "calc(92vh - 165px)", overflowY: "auto", scrollBehavior: "smooth" }}
+                  className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar p-4 sm:p-6 space-y-5 bg-white"
                 >
                 
                 {/* Section 1: Personal & Executive Details (4 Columns on Desktop) */}
@@ -1060,7 +1080,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                       <>
                         <Award className="h-4 w-4 text-white" />
                         <span>
-                          {activeMode === "free" ? "Submit Free Interest Registration →" : "Proceed to Order & Payment →"}
+                          {activeMode === "free" ? "Complete Free Registration →" : "Proceed to Order & Payment →"}
                         </span>
                       </>
                     )}
@@ -1300,9 +1320,20 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
       {/* 2. SUCCESS MODAL (AFTER SUBMISSION) */}
       {successModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-3 sm:p-6 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl backdrop-blur-2xl overflow-hidden my-auto text-slate-900 animate-in zoom-in-95 duration-200">
-            
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden overscroll-none animate-in fade-in duration-200">
+          {/* Backdrop Blur Overlay */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
+            onClick={() => {
+              setSuccessModalOpen(false);
+              onClose();
+            }}
+          />
+
+          <div
+            className="relative w-full max-w-5xl h-[90vh] sm:h-[86vh] flex flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl backdrop-blur-2xl overflow-hidden my-auto text-slate-900 z-10 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* CLOSE 'X' BUTTON */}
             <button
               type="button"
@@ -1317,7 +1348,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
             </button>
 
             {/* BRAND HEADER BANNER */}
-            <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-cyan-700 p-5 sm:p-6 text-white relative overflow-hidden flex-none">
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-cyan-700 p-5 sm:p-6 text-white relative overflow-hidden flex-none shrink-0">
               <div className="flex flex-wrap items-center justify-between gap-4 pr-12 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="bg-transparent shrink-0">
@@ -1337,7 +1368,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
             </div>
 
             {/* MODAL SCROLLABLE BODY */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 scrollbar-thin bg-white">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar p-5 sm:p-8 space-y-6 bg-white">
               
               {/* TOP SALUTATION BANNER */}
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

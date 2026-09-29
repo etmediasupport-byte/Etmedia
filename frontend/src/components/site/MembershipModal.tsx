@@ -144,6 +144,20 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Lock background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const origOverflow = document.body.style.overflow;
+      const origHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+      };
+    }
+  }, [isOpen]);
+
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -274,7 +288,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] overflow-y-auto p-3 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] overflow-hidden overscroll-none p-3 sm:p-6 md:p-8 lg:p-10 flex items-center justify-center">
           {/* Backdrop Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}

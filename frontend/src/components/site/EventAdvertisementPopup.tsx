@@ -304,6 +304,19 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      const origOverflow = document.body.style.overflow;
+      const origHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+      };
+    }
+  }, [isOpen]);
+
   const firstEvent = events[0];
   if (!isOpen || !settings || !firstEvent) return null;
 
@@ -312,7 +325,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-hidden overscroll-none">
           {/* Background Overlay */}
           <motion.div
             initial={{ opacity: 0 }}

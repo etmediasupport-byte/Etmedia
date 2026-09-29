@@ -1315,18 +1315,18 @@ app.get("/api/events", async (req, res) => {
     const { status, featured } = req.query;
     if (pool) {
       await ensureEventsTable();
-      let query = "SELECT * FROM events WHERE status != 'draft'";
+      let query = "SELECT * FROM events WHERE (status != 'archived' OR status IS NULL)";
       const params: any[] = [];
 
       if (featured === "true" || featured === "1") {
         query += " AND is_featured = 1";
       }
-      if (status) {
+      if (status && status !== "all") {
         query += " AND status = ?";
         params.push(status);
       }
 
-      query += " ORDER BY created_at DESC";
+      query += " ORDER BY is_featured DESC, date ASC, created_at DESC";
       const [rows]: any = await pool.query(query, params);
       return res.json({ success: true, data: rows });
     }
@@ -1334,49 +1334,94 @@ app.get("/api/events", async (req, res) => {
     // Static fallback
     const fallbackData = [
       {
+        id: "hr-recall-2k26",
+        slug: "hr-recall-2k26",
+        title: "HR RECALL 2K26",
+        category: "HR & Talent",
+        date: "2026-12-11",
+        city: "Hyderabad, India",
+        venue: "Centenary Convention Centre",
+        time: "08:30 AM — 03:00 PM IST",
+        speakers: 24,
+        status: "published",
+        is_featured: 1,
+        image: "/assets/event-hr.jpg",
+        description: "India's landmark HR leadership conference — where 2,000+ HR professionals, CHROs and business decision-makers unite.",
+      },
+      {
         id: "cfo-leadership-summit",
         slug: "cfo-leadership-summit-2026",
         title: "India CFO & Finance Leadership Summit 2026",
         category: "Conference & Leadership",
-        date: "",
-        city: "",
-        venue: "",
-        time: "",
+        date: "2026-11-18",
+        city: "Bengaluru",
+        venue: "The Leela Palace, UB City",
+        time: "09:30 AM — 06:00 PM IST",
         speakers: 28,
         status: "published",
         is_featured: 1,
-        image: "/assets/event-cfo-BjslOJNi.jpg",
+        image: "/assets/event-cfo.jpg",
         description: "Reinventing capital allocation, enterprise risk, treasury compliance & AI-driven financial strategies.",
       },
       {
-        id: "hr-excellence-awards",
-        slug: "hr-excellence-awards-2026",
-        title: "National HR Excellence & Workplace Awards",
+        id: "creator-event-2026",
+        slug: "creator-event-2026",
+        title: "Creator Event & Media Summit",
         category: "Awards & Recognition",
-        date: "November 18, 2026",
-        city: "Bengaluru",
-        venue: "JW Marriott Hotel, UB City",
-        time: "05:00 PM — 10:00 PM",
-        speakers: 16,
+        date: "2026-09-20",
+        city: "Hyderabad, Vizag",
+        venue: "Novotel HICC & Beach Convention Center",
+        time: "10:00 AM — 06:00 PM IST",
+        speakers: 20,
         status: "published",
-        is_featured: 1,
-        image: "/assets/event-hr-Cswpuq5H.jpg",
-        description: "Honouring chief human resource officers and organisations building elite work cultures.",
+        is_featured: 0,
+        image: "/assets/hero-summit.jpg",
+        description: "The premier gathering where content creators, digital marketers, and brand executives build scalable business models.",
+      },
+      {
+        id: "hr-leadership-summit-2026",
+        slug: "hr-leadership-summit-excellence-awards-2026",
+        title: "HR Leadership Summit & Excellence Awards 2026",
+        category: "HR & Talent",
+        date: "2026-10-15",
+        city: "Hyderabad",
+        venue: "HICC Novotel, Hitec City",
+        time: "12:00 PM — 04:00 PM IST",
+        speakers: 18,
+        status: "published",
+        is_featured: 0,
+        image: "/assets/event-hr.jpg",
+        description: "National HR Leadership Summit & Excellence Awards honoring visionary Chief Human Resources Officers.",
       },
       {
         id: "tech-enterprise-summit",
         slug: "tech-enterprise-summit-2026",
         title: "Enterprise Technology & AI Leadership Conclave",
-        category: "Summit & Tech",
-        date: "December 05, 2026",
+        category: "Tech Conclave",
+        date: "2026-12-05",
         city: "Hyderabad",
         venue: "HICC Novotel, Hitec City",
-        time: "09:30 AM — 05:30 PM",
+        time: "09:30 AM — 05:30 PM IST",
         speakers: 34,
         status: "published",
         is_featured: 1,
-        image: "/assets/hero-summit-ClCGVqfO.jpg",
+        image: "/assets/hero-summit.jpg",
         description: "Connecting CIOs, CTOs, and tech leaders deploying generative AI, cloud infrastructure & cybersecurity.",
+      },
+      {
+        id: "gcc-global-capability-summit",
+        slug: "gcc-global-capability-summit",
+        title: "Global Leadership Summit Perth & India GCC Conclave",
+        category: "Conference & Leadership",
+        date: "2027-01-14",
+        city: "Pune",
+        venue: "Ritz-Carlton, Yerwada",
+        time: "09:00 AM — 05:00 PM IST",
+        speakers: 24,
+        status: "published",
+        is_featured: 1,
+        image: "/assets/hero-leadership.jpg",
+        description: "Accelerating Global Capability Center scale, engineering talent acquisition & cross-border operating models.",
       },
     ];
 
