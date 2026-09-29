@@ -33,7 +33,7 @@ const smtpPort = Number(process.env.SMTP_PORT) || 465;
 const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
 const smtpPass = (process.env.SMTP_PASS || "ETalks@202602").trim();
 const smtpFrom = process.env.SMTP_FROM || `"Executive Talks Media Business Intelligence" <${smtpUser}>`;
-const adminEmail = (process.env.ADMIN_EMAIL || "srikanth@executivetalksmedia.in").trim();
+const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in, srikanth@executivetalksmedia.in").trim();
 const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
 const mailTransporter = nodemailer.createTransport({
@@ -383,8 +383,9 @@ www.executivetalksmedia.in
   // 2. EMAIL TO ADMINS (REALTIME MANAGEMENT ALERT)
   const adminRecipients = Array.from(
     new Set([
-      adminEmail,
+      "registration@executivetalksmedia.in",
       "srikanth@executivetalksmedia.in",
+      adminEmail,
     ].filter(Boolean))
   );
 
@@ -606,8 +607,9 @@ www.executivetalksmedia.in
 
   const adminRecipients = Array.from(
     new Set([
-      adminEmail,
+      "registration@executivetalksmedia.in",
       "srikanth@executivetalksmedia.in",
+      adminEmail,
     ].filter(Boolean))
   );
 
