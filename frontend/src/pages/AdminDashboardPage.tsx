@@ -707,6 +707,9 @@ export default function AdminDashboardPage() {
   const [popupEventSearch, setPopupEventSearch] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [regFilterEvent, setRegFilterEvent] = useState<string>("all");
+  const [regFilterDate, setRegFilterDate] = useState<string>("all");
+  const [regFilterStatus, setRegFilterStatus] = useState<string>("all");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -3928,13 +3931,60 @@ export default function AdminDashboardPage() {
       .sort((a, b) => b.count - a.count);
   }, [registrations, cmsEvents]);
 
-  const filteredRegistrations = eventRegistrationsList.filter(
-    (r) =>
-      r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.event_id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRegistrations = useMemo(() => {
+    return eventRegistrationsList.filter((r) => {
+      // 1. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = (r.name || "").toLowerCase().includes(q) || `${r.first_name || ""} ${r.last_name || ""}`.toLowerCase().includes(q);
+        const matchesEmail = (r.email || "").toLowerCase().includes(q);
+        const matchesPhone = (r.phone || "").toLowerCase().includes(q);
+        const matchesOrg = (r.organization || "").toLowerCase().includes(q);
+        const matchesDesig = (r.designation || "").toLowerCase().includes(q);
+        const matchesCity = (r.city || r.registering_city || "").toLowerCase().includes(q);
+        const matchesEvent = (r.event_title || r.event_id || "").toLowerCase().includes(q);
+        const matchesId = (r.id || "").toLowerCase().includes(q);
+        const matchesPayId = (r.payment_id || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesEmail && !matchesPhone && !matchesOrg && !matchesDesig && !matchesCity && !matchesEvent && !matchesId && !matchesPayId) {
+          return false;
+        }
+      }
+
+      // 2. Event Filter
+      if (regFilterEvent !== "all") {
+        const eventMatch =
+          (r.event_id && r.event_id === regFilterEvent) ||
+          (r.event_title && r.event_title.toLowerCase().includes(regFilterEvent.toLowerCase())) ||
+          (r.event_id && r.event_id.toLowerCase().includes(regFilterEvent.toLowerCase()));
+        if (!eventMatch) return false;
+      }
+
+      // 3. Status Filter
+      if (regFilterStatus !== "all") {
+        const pStatus = (r.payment_status || "").toString().toLowerCase();
+        if (regFilterStatus === "paid" && !pStatus.includes("paid") && !r.payment_id) return false;
+        if (regFilterStatus === "pending" && !pStatus.includes("pending")) return false;
+        if (regFilterStatus === "free" && !pStatus.includes("free") && !pStatus.includes("approved")) return false;
+        if (regFilterStatus === "rejected" && !pStatus.includes("rejected")) return false;
+      }
+
+      // 4. Date Filter
+      if (regFilterDate !== "all" && r.created_at) {
+        const regTime = new Date(r.created_at).getTime();
+        const now = Date.now();
+        if (regFilterDate === "today") {
+          const startOfToday = new Date().setHours(0, 0, 0, 0);
+          if (regTime < startOfToday) return false;
+        } else if (regFilterDate === "7days") {
+          if (regTime < now - 7 * 86400000) return false;
+        } else if (regFilterDate === "30days") {
+          if (regTime < now - 30 * 86400000) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate]);
 
   const filteredCmsDelegates = cmsDelegates.filter(
     (d) =>
@@ -5144,222 +5194,311 @@ export default function AdminDashboardPage() {
 
           {/* TAB 1: EVENT REGISTRATIONS */}
           {activeTab === "event-registrations" && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search summit event delegates by name, email, organization, or event..."
-                    className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                  />
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+              {/* FILTER & SEARCH CONTROL TOOLBAR */}
+              <div className="space-y-4 pb-5 border-b border-slate-200">
+                {/* Top Row: Search & Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* 1. Global Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search name, email, company, phone, ID..."
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-8 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 2. Event Filter */}
+                  <div>
+                    <select
+                      value={regFilterEvent}
+                      onChange={(e) => setRegFilterEvent(e.target.value)}
+                      aria-label="Filter by event"
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="all">🎪 All Events & Summits</option>
+                      {(() => {
+                        const eventTitles = Array.from(
+                          new Set(
+                            [
+                              ...cmsEvents.map((e) => e.title || e.name || e.id),
+                              ...eventRegistrationsList.map((r) => r.event_title || r.event_id),
+                            ].filter(Boolean)
+                          )
+                        );
+                        return eventTitles.map((title) => (
+                          <option key={title} value={title}>
+                            {title}
+                          </option>
+                        ));
+                      })()}
+                    </select>
+                  </div>
+
+                  {/* 3. Date Filter */}
+                  <div>
+                    <select
+                      value={regFilterDate}
+                      onChange={(e) => setRegFilterDate(e.target.value)}
+                      aria-label="Filter by date range"
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="all">📅 All Registration Dates</option>
+                      <option value="today">Today's Registrations</option>
+                      <option value="7days">Past 7 Days</option>
+                      <option value="30days">Past 30 Days</option>
+                    </select>
+                  </div>
+
+                  {/* 4. Payment Status Filter */}
+                  <div>
+                    <select
+                      value={regFilterStatus}
+                      onChange={(e) => setRegFilterStatus(e.target.value)}
+                      aria-label="Filter by payment status"
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="all">💳 All Payment Statuses</option>
+                      <option value="paid">✅ Paid (Confirmed)</option>
+                      <option value="pending">⏳ Pending Approval</option>
+                      <option value="free">🎁 Approved (Free Pass)</option>
+                      <option value="rejected">❌ Rejected</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-slate-500 font-medium mr-2">
-                    Showing <strong className="text-slate-900">{filteredRegistrations.length}</strong> entries
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const defaultEvt = cmsEvents[0] || {};
-                      setGrantAccessForm((prev) => ({
-                        ...prev,
-                        eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
-                        eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
-                      }));
-                      setShowGrantAccessModal(true);
-                    }}
-                    className="flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20 hover:scale-105"
-                  >
-                    <Ticket className="h-3.5 w-3.5" />
-                    <span>+ Grant Free Event Pass</span>
-                  </button>
-                  <button
-                    onClick={() => exportToExcel("event-registrations")}
-                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
-                  >
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>Export Excel</span>
-                  </button>
-                  <button
-                    onClick={() => exportToPDF("event-registrations")}
-                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Download PDF</span>
-                  </button>
+                {/* Bottom Row: Metrics, Active Filters & Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 border border-slate-200">
+                      <span>Showing</span>
+                      <strong className="text-cyan-800 font-mono text-sm">{filteredRegistrations.length}</strong>
+                      <span>of {eventRegistrationsList.length} delegates</span>
+                    </span>
+
+                    {(searchQuery || regFilterEvent !== "all" || regFilterDate !== "all" || regFilterStatus !== "all") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setRegFilterEvent("all");
+                          setRegFilterDate("all");
+                          setRegFilterStatus("all");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        <span>Reset All Filters</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const defaultEvt = cmsEvents[0] || {};
+                        setGrantAccessForm((prev) => ({
+                          ...prev,
+                          eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
+                          eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
+                        }));
+                        setShowGrantAccessModal(true);
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20"
+                    >
+                      <Ticket className="h-3.5 w-3.5" />
+                      <span>+ Grant Free Event Pass</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => exportToExcel("event-registrations")}
+                      className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Export Excel</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => exportToPDF("event-registrations")}
+                      className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>Download PDF</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 overflow-x-auto">
-                <table className="w-full min-w-[950px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                      <th className="py-3 px-4">Name</th>
-                      <th className="py-3 px-4">Company</th>
-                      <th className="py-3 px-4">Email</th>
-                      <th className="py-3 px-4">Phone</th>
-                      <th className="py-3 px-4">Event</th>
-                      <th className="py-3 px-4">City</th>
-                      <th className="py-3 px-4">Registration Type</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+              {/* RESPONSIVE FULL-WIDTH TABLE (NO BOTTOM SCROLL) */}
+              <div className="w-full overflow-hidden rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs divide-y divide-slate-200">
+                  <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-extrabold text-[11px]">
+                    <tr>
+                      <th className="py-3.5 px-4 w-[28%]">Delegate & Contact</th>
+                      <th className="py-3.5 px-4 w-[22%]">Organization & City</th>
+                      <th className="py-3.5 px-4 w-[24%]">Event & Tier</th>
+                      <th className="py-3.5 px-4 w-[14%]">Payment & Date</th>
+                      <th className="py-3.5 px-4 w-[12%] text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {filteredRegistrations.map((reg) => (
-                      <tr key={reg.id} className="hover:bg-slate-50 transition-colors">
-                        {/* Name */}
-                        <td className="py-4 px-4 font-bold text-slate-900">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs">
+                      <tr key={reg.id} className="hover:bg-slate-50/80 transition-colors">
+                        {/* 1. Delegate & Contact */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-800 font-bold text-xs shadow-xs">
                               {reg.name.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <span className="block font-bold text-slate-900">{reg.name}</span>
-                              <span className="text-[11px] text-slate-500 font-normal">{reg.designation || "Executive"}</span>
+                            <div className="min-w-0 space-y-0.5">
+                              <span className="block font-black text-slate-900 truncate">{reg.name}</span>
+                              <span className="block text-[11px] text-slate-500 truncate">{reg.designation || "Executive Delegate"}</span>
+                              <a
+                                href={`mailto:${reg.email}`}
+                                className="inline-flex items-center gap-1 text-[11px] text-cyan-700 font-medium hover:underline truncate"
+                              >
+                                <Mail className="h-2.5 w-2.5 text-cyan-600 shrink-0" />
+                                <span className="truncate">{reg.email}</span>
+                              </a>
                             </div>
                           </div>
                         </td>
 
-                        {/* Company */}
-                        <td className="py-4 px-4 text-slate-800 font-medium">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-800 border border-slate-200 text-xs font-semibold">
-                            <Building className="h-3 w-3 text-purple-600" />
-                            {reg.organization || "N/A"}
+                        {/* 2. Organization & City */}
+                        <td className="py-3.5 px-4 align-top space-y-1">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-800 border border-slate-200 text-xs font-bold max-w-full truncate">
+                            <Building className="h-3 w-3 text-purple-600 shrink-0" />
+                            <span className="truncate">{reg.organization || "Corporate Enterprise"}</span>
+                          </span>
+                          <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                            <span>{reg.city || reg.registering_city || "Pan-India"}</span>
                           </span>
                         </td>
 
-                        {/* Email */}
-                        <td className="py-4 px-4 text-slate-700">
-                          <a href={`mailto:${reg.email}`} className="inline-flex items-center gap-1 text-cyan-700 font-medium hover:underline">
-                            <Mail className="h-3 w-3 text-cyan-600" />
-                            {reg.email}
-                          </a>
-                        </td>
-
-                        {/* Phone */}
-                        <td className="py-4 px-4 text-slate-700 font-mono text-[11px]">
-                          <span className="inline-flex items-center gap-1 text-slate-600">
-                            <Phone className="h-3 w-3 text-slate-400" />
-                            {reg.phone}
+                        {/* 3. Event & Tier */}
+                        <td className="py-3.5 px-4 align-top space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-900 font-bold max-w-full truncate">
+                            <Calendar className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
+                            <span className="truncate">{reg.event_title || reg.event_id}</span>
+                          </div>
+                          <span className="inline-block rounded-md bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-purple-800 font-bold text-[10px] uppercase tracking-wider">
+                            {reg.registration_category || "Delegate Pass"}
                           </span>
                         </td>
 
-                        {/* Event */}
-                        <td className="py-4 px-4">
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-cyan-50 border border-cyan-200 px-2.5 py-1 text-xs text-cyan-800 font-bold max-w-[180px] truncate">
-                            <Calendar className="h-3 w-3 text-cyan-600" />
-                            {reg.event_title || reg.event_id}
-                          </span>
-                        </td>
-
-                        {/* City */}
-                        <td className="py-4 px-4 text-slate-700">
-                          <span className="inline-flex items-center gap-1 text-xs text-slate-700 font-medium">
-                            <MapPin className="h-3 w-3 text-slate-400" />
-                            {reg.city || reg.registering_city || "Mumbai"}
-                          </span>
-                        </td>
-
-                        {/* Registration Type */}
-                        <td className="py-4 px-4">
-                          <span className="inline-block rounded-md bg-purple-50 border border-purple-200 px-2.5 py-1 text-purple-800 font-bold text-[11px]">
-                            {reg.registration_category || "Executive Delegate"}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-4 px-4">
+                        {/* 4. Payment & Date */}
+                        <td className="py-3.5 px-4 align-top space-y-1">
                           {(() => {
                             const pStatus = (reg.payment_status || "").toString();
                             if (pStatus === "Pending Approval") {
                               return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-1 text-[11px] font-black animate-pulse">
-                                  ⏳ Pending Approval
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 px-2 py-0.5 text-[10px] font-black animate-pulse">
+                                  ⏳ Pending
                                 </span>
                               );
                             }
-                            if (pStatus === "Approved (Free Pass)") {
+                            if (pStatus === "Approved (Free Pass)" || pStatus === "Free") {
                               return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 px-2.5 py-1 text-[11px] font-black">
-                                  ✅ Approved (Free Pass)
+                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 border border-blue-300 text-blue-900 px-2 py-0.5 text-[10px] font-black">
+                                  🎁 Free Pass
                                 </span>
                               );
                             }
                             if (pStatus === "Rejected") {
                               return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 px-2.5 py-1 text-[11px] font-black">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 px-2 py-0.5 text-[10px] font-black">
                                   ❌ Rejected
                                 </span>
                               );
                             }
-                            const regStatus = getRegistrationStatus(reg);
                             return (
-                              <button
-                                type="button"
-                                onClick={() => handleToggleRegistrationStatus(reg.id)}
-                                title="Click to toggle status"
-                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all cursor-pointer ${
-                                  regStatus === "Confirmed"
-                                    ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                                    : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-                                }`}
-                              >
-                                <span className={`h-1.5 w-1.5 rounded-full ${
-                                  regStatus === "Confirmed" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
-                                }`} />
-                                {regStatus}
-                              </button>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 px-2 py-0.5 text-[10px] font-black">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                💳 Paid
+                              </span>
                             );
                           })()}
+                          <div className="font-mono font-bold text-xs text-slate-800">
+                            ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
+                          </div>
                         </td>
 
-                        {/* Actions / View Details + Approve / Reject */}
-                        <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {reg.payment_status === "Pending Approval" && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
-                                  title="Approve Free Pass and Send Ticket Pass"
-                                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-black text-white hover:bg-emerald-700 shadow-sm cursor-pointer transition-all hover:scale-105"
-                                >
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>Approve & Send Ticket</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRejectFreeRegistration(reg.id, reg.name)}
-                                  title="Reject Application"
-                                  className="inline-flex items-center gap-1 rounded-xl border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer transition-all"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                  <span>Reject</span>
-                                </button>
-                              </>
-                            )}
+                        {/* 5. Actions */}
+                        <td className="py-3.5 px-4 align-top text-right space-y-1.5">
+                          {reg.payment_status === "Pending Approval" && (
+                            <div className="flex items-center justify-end gap-1 mb-1">
+                              <button
+                                type="button"
+                                onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
+                                title="Approve Free Pass and Send Ticket Pass"
+                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-black text-white hover:bg-emerald-700 shadow-sm cursor-pointer"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRejectFreeRegistration(reg.id, reg.name)}
+                                title="Reject Application"
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
 
-                            <button
-                              onClick={() => setSelectedRegDetail(reg)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 transition-all hover:bg-cyan-100 hover:scale-105 shadow-xs cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                              <span>View Details</span>
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRegDetail(reg)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-black text-cyan-800 hover:bg-cyan-100 hover:scale-105 transition-all shadow-xs cursor-pointer"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-cyan-700" />
+                            <span>View Details</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
 
                     {filteredRegistrations.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="py-16 text-center text-slate-400">
-                          No event registrations found for "{searchQuery}".
+                        <td colSpan={5} className="py-16 text-center space-y-3">
+                          <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <Search className="h-6 w-6" />
+                          </div>
+                          <p className="text-sm font-bold text-slate-600">No event registrations found</p>
+                          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                            No delegates matched the selected event, date, payment status, or search query "{searchQuery}".
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setRegFilterEvent("all");
+                              setRegFilterDate("all");
+                              setRegFilterStatus("all");
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer shadow-sm"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            <span>Reset All Filters</span>
+                          </button>
                         </td>
                       </tr>
                     )}
@@ -12361,7 +12500,7 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       {selectedRegDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-3xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto custom-scrollbar">
             <button
               type="button"
               onClick={() => setSelectedRegDetail(null)}
@@ -12370,111 +12509,200 @@ export default function AdminDashboardPage() {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
-              <ShieldCheck className="h-4 w-4 text-cyan-600" />
-              <span>Executive Delegate & Payment Details</span>
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 pr-8">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+                  <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                  <span>Executive Delegate Registration Dossier</span>
+                </div>
+                <h3 className="mt-1 text-2xl font-black text-slate-900 font-display">
+                  {selectedRegDetail.name || `${selectedRegDetail.first_name || ""} ${selectedRegDetail.last_name || ""}`}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  Registration ID: <span className="text-cyan-800 font-bold bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">{selectedRegDetail.id}</span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300">
+                  {selectedRegDetail.registration_category || "Executive Pass"}
+                </span>
+                <span className={`rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider ${
+                  selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
+                    ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                    : selectedRegDetail.payment_status === "Free" || selectedRegDetail.payment_status === "Approved (Free Pass)"
+                    ? "bg-blue-100 text-blue-900 border border-blue-300"
+                    : selectedRegDetail.payment_status === "Rejected"
+                    ? "bg-rose-100 text-rose-900 border border-rose-300"
+                    : "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
+                }`}>
+                  {selectedRegDetail.payment_status || "Paid"}
+                </span>
+              </div>
             </div>
 
-            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
-              {selectedRegDetail.name || `${selectedRegDetail.first_name || ''} ${selectedRegDetail.last_name || ''}`}
-            </h3>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
-              Registration ID: <span className="text-cyan-700 font-bold">{selectedRegDetail.id}</span>
-            </p>
+            {/* Quick Link Actions */}
+            <div className="flex flex-wrap gap-2 pt-4">
+              <a
+                href={`/verify-pass/${encodeURIComponent(selectedRegDetail.id)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors shadow-xs"
+              >
+                <Ticket className="h-3.5 w-3.5 text-cyan-600" />
+                <span>Open Live Pass (QR)</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
 
-            <div className="mt-6 space-y-4 text-xs">
-              {/* Delegate Personal Details Card */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
-                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
-                  Delegate Profile
+              <a
+                href={`/events/${encodeURIComponent(selectedRegDetail.event_id || "hr-recall-2k26")}/registration-success?regId=${encodeURIComponent(selectedRegDetail.id)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-colors shadow-xs"
+              >
+                <Receipt className="h-3.5 w-3.5 text-purple-600" />
+                <span>View Tax Invoice</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success(`Confirmation receipt resent to ${selectedRegDetail.email}!`);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+              >
+                <Mail className="h-3.5 w-3.5 text-slate-500" />
+                <span>Resend Email Confirmation</span>
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4 text-xs">
+              {/* 1. Delegate Profile Card */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1.5 flex items-center gap-2">
+                  <User className="h-4 w-4 text-cyan-600" />
+                  <span>1. Executive Profile & Contact Credentials</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Email Address:</span>
-                    <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedRegDetail.email}</a>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Full Name</span>
+                    <strong className="text-slate-900 text-sm block">{selectedRegDetail.name}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Contact Number:</span>
-                    <strong className="text-slate-900 font-mono">{selectedRegDetail.phone || "N/A"}</strong>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Designation</span>
+                    <strong className="text-slate-800 block">{selectedRegDetail.designation || "Executive Delegate"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Designation:</span>
-                    <strong className="text-slate-900">{selectedRegDetail.designation || "Executive Delegate"}</strong>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Company / Organization</span>
+                    <strong className="text-slate-800 block">{selectedRegDetail.organization || "Corporate Enterprise"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Company / Organization:</span>
-                    <strong className="text-slate-900">{selectedRegDetail.organization || "N/A"}</strong>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Official Work Email</span>
+                    <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline font-mono block truncate">
+                      {selectedRegDetail.email}
+                    </a>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Event Summit:</span>
-                    <strong className="text-cyan-800 font-bold">{selectedRegDetail.event_title || selectedRegDetail.event_id}</strong>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Contact Phone</span>
+                    <a href={`tel:${selectedRegDetail.phone}`} className="text-slate-900 font-mono font-bold hover:underline block">
+                      {selectedRegDetail.phone || "N/A"}
+                    </a>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">City / Location:</span>
-                    <strong className="text-slate-900">{selectedRegDetail.city || selectedRegDetail.registering_city || "Pan-India"}</strong>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">City & Country</span>
+                    <span className="text-slate-800 font-semibold block">{selectedRegDetail.city || "Hyderabad"}, {selectedRegDetail.country || "India"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Registering City</span>
+                    <span className="text-slate-700 block">{selectedRegDetail.registering_city || selectedRegDetail.city || "Pan-India"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Referral Source</span>
+                    <span className="text-slate-700 block">{selectedRegDetail.referral_source || "Online Checkout"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Registration Date</span>
+                    <span className="text-slate-600 font-mono block">{new Date(selectedRegDetail.created_at).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
-              {/* RAZORPAY PAYMENT TRANSACTION DETAILS CARD */}
-              <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50/70 via-slate-50 to-cyan-50/40 p-4 space-y-3 shadow-inner">
+              {/* 2. Event Details Card */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1.5 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-purple-600" />
+                  <span>2. Event & Summit Assignment</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Event Title</span>
+                    <strong className="text-slate-900 text-sm block">{selectedRegDetail.event_title || selectedRegDetail.event_id}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Pass Plan Tier</span>
+                    <span className="inline-block mt-0.5 rounded-md bg-purple-100 border border-purple-300 px-2.5 py-0.5 text-purple-900 font-bold text-xs">
+                      {selectedRegDetail.registration_category || "Delegate Pass"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Razorpay Payment & Tax Invoice Details */}
+              <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50/70 via-slate-50 to-purple-50/40 p-5 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between border-b border-cyan-200/80 pb-2">
                   <span className="text-[11px] font-black uppercase text-cyan-900 tracking-wider flex items-center gap-1.5">
-                    <CreditCard className="h-4 w-4 text-cyan-600" /> Razorpay Payment Details
+                    <CreditCard className="h-4 w-4 text-cyan-600" /> 3. Payment & GST Breakdown
                   </span>
-                  <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-                    selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                      : selectedRegDetail.payment_status === "Free"
-                      ? "bg-blue-100 text-blue-800 border border-blue-300"
-                      : "bg-amber-100 text-amber-800 border border-amber-300"
-                  }`}>
-                    {selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
-                      ? "💳 Paid via Razorpay"
-                      : selectedRegDetail.payment_status === "Free"
-                      ? "🎁 Free Pass"
-                      : "⏳ Payment Pending"}
+                  <span className="font-mono text-xs font-extrabold text-cyan-800">
+                    SAC Code: 998397 (18% GST)
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Razorpay Payment ID:</span>
-                    <strong className="font-mono text-cyan-800 text-xs block truncate">
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Payment ID</span>
+                    <strong className="font-mono text-cyan-900 text-xs block truncate" title={selectedRegDetail.payment_id}>
                       {selectedRegDetail.payment_id || "N/A"}
                     </strong>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Razorpay Order ID:</span>
-                    <strong className="font-mono text-slate-800 text-xs block truncate">
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Razorpay Order ID</span>
+                    <strong className="font-mono text-slate-800 text-xs block truncate" title={selectedRegDetail.razorpay_order_id}>
                       {selectedRegDetail.razorpay_order_id || "N/A"}
                     </strong>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Amount Paid:</span>
-                    <strong className="text-emerald-700 font-mono text-sm block font-black">
-                      ₹{(Number(selectedRegDetail.payment_amount) || 0).toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Coupon Applied:</span>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Coupon Applied</span>
                     <strong className="text-purple-700 font-mono text-xs block">
                       {selectedRegDetail.coupon_applied ? `${selectedRegDetail.coupon_applied}` : "None"}
                     </strong>
                   </div>
+
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-black uppercase">Total Amount Paid</span>
+                    <strong className="text-emerald-700 font-mono text-base block font-black">
+                      ₹{(Number(selectedRegDetail.payment_amount) || 0).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
                 </div>
 
-                <div className="pt-2 border-t border-cyan-200/60 text-[10px] text-slate-500 font-mono flex justify-between">
-                  <span>Payment Gateway: Razorpay Test Mode</span>
-                  <span>{new Date(selectedRegDetail.created_at).toLocaleString()}</span>
-                </div>
+                {/* Tax Breakdown math */}
+                {Number(selectedRegDetail.payment_amount) > 0 && (
+                  <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono">
+                    <span>Taxable Base: ₹{Math.round(Number(selectedRegDetail.payment_amount) / 1.18).toLocaleString("en-IN")}</span>
+                    <span>CGST (9%): ₹{Math.round((Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)) / 2).toLocaleString("en-IN")}</span>
+                    <span>SGST (9%): ₹{Math.round((Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)) / 2).toLocaleString("en-IN")}</span>
+                    <span className="font-bold text-slate-900">Total GST (18%): ₹{(Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)).toLocaleString("en-IN")}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedRegDetail(null)}
