@@ -74,6 +74,7 @@ export default function EventDetailPage() {
   // Video / Highlight Modal State
   const [showVideoModal, setShowVideoModal] = useState(false);
 
+  // Hook 1: Fetch event data
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -118,7 +119,7 @@ export default function EventDetailPage() {
     };
   }, [slug]);
 
-  // Fetch payment config for pricing tiers
+  // Hook 2: Fetch payment config for pricing tiers
   useEffect(() => {
     if (event?.id || event?.slug) {
       fetch(`/api/event-payments/event/${event.id || event.slug}`)
@@ -143,98 +144,24 @@ export default function EventDetailPage() {
     }
   }, [event?.id, event?.slug]);
 
-  const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
-  const handleOpenRegister = (mode: "paid" | "free", passName?: string) => {
-    const targetSlug = slug || "hr-recall-2k26";
-    if (mode === "free") {
-      navigate(`/events/${targetSlug}/register-free`);
-    } else {
-      const passParam = passName ? `?pass=${encodeURIComponent(passName)}` : "";
-      navigate(`/events/${targetSlug}/register${passParam}`);
-    }
-  };
-
-  const shareEvent = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: event?.title || "Executive Talks Media Event",
-        text: event?.description || "",
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Event link copied to clipboard!");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-3 border-cyan-600 border-t-transparent animate-spin" />
-          <p className="text-xs font-bold tracking-wider uppercase text-cyan-700 font-display">
-            Loading Event Details...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center text-slate-900">
-        <h2 className="text-3xl font-extrabold font-display">Event Not Found</h2>
-        <p className="mt-2 text-slate-500 max-w-md">The requested executive event detail page could not be located.</p>
-        <Link to="/events" className="mt-6 gradient-brand px-7 py-3 rounded-full text-white font-bold shadow-lg">
-          Back to All Events
-        </Link>
-      </div>
-    );
-  }
-
-  // Parse Locations
-  let parsedLocations: any[] = [];
-  try {
-    if (typeof event.locations === "string") {
-      parsedLocations = JSON.parse(event.locations);
-    } else if (Array.isArray(event.locations)) {
-      parsedLocations = event.locations;
-    }
-  } catch (e) {}
-
-  parsedLocations = (parsedLocations || []).filter(
-    (loc: any) => loc && (loc.city || loc.venue || loc.date || loc.time)
-  );
-
-  if (parsedLocations.length === 0 && (event.city || event.venue || event.date || event.time)) {
-    parsedLocations = [
-      {
-        city: event.city || "",
-        venue: event.venue || "",
-        date: event.date || "",
-        time: event.time || "",
-      },
-    ];
-  }
-
-  const primaryLoc = parsedLocations[0] || {};
-  const dateText = primaryLoc.date || event.date || "14 October 2026";
-  const timeText = primaryLoc.time || event.time || "10:00 AM – 4:00 PM";
-  const venueText = primaryLoc.venue || event.venue || "The Procurement Leadership";
-  const cityText = primaryLoc.city || event.city || "Dubai";
-
-  // Dynamic live countdown calculation
+  // Hook 3: Live Countdown Calculation (Must be at top before any early returns!)
   useEffect(() => {
+    let parsedLocs: any[] = [];
+    try {
+      if (typeof event?.locations === "string") {
+        parsedLocs = JSON.parse(event.locations);
+      } else if (Array.isArray(event?.locations)) {
+        parsedLocs = event.locations;
+      }
+    } catch (e) {}
+
+    const primaryL = (parsedLocs || [])[0] || {};
+    const dText = primaryL.date || event?.date || "14 October 2026";
+    const tText = primaryL.time || event?.time || "10:00 AM – 4:00 PM";
+
     const calculateTimeLeft = () => {
       const now = new Date();
-      const { startDate, endDate } = parseEventDateTime(dateText, timeText);
+      const { startDate, endDate } = parseEventDateTime(dText, tText);
 
       let currentStatus: EventStatus = "upcoming";
 
@@ -270,9 +197,39 @@ export default function EventDetailPage() {
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [dateText, timeText]);
+  }, [event?.date, event?.time, event?.locations]);
 
-  // Title formatting helper
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleOpenRegister = (mode: "paid" | "free", passName?: string) => {
+    const targetSlug = slug || "hr-recall-2k26";
+    if (mode === "free") {
+      navigate(`/events/${targetSlug}/register-free`);
+    } else {
+      const passParam = passName ? `?pass=${encodeURIComponent(passName)}` : "";
+      navigate(`/events/${targetSlug}/register${passParam}`);
+    }
+  };
+
+  const shareEvent = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: event?.title || "Executive Talks Media Event",
+        text: event?.description || "",
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Event link copied to clipboard!");
+    }
+  };
+
   const splitEventTitle = (fullTitle: string) => {
     if (!fullTitle) return { whitePart: "Executive Summit", goldPart: "2026" };
 
@@ -299,7 +256,63 @@ export default function EventDetailPage() {
     };
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full border-3 border-cyan-600 border-t-transparent animate-spin" />
+          <p className="text-xs font-bold tracking-wider uppercase text-cyan-700 font-display">
+            Loading Event Details...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center text-slate-900">
+        <h2 className="text-3xl font-extrabold font-display">Event Not Found</h2>
+        <p className="mt-2 text-slate-500 max-w-md">The requested executive event detail page could not be located.</p>
+        <Link to="/events" className="mt-6 gradient-brand px-7 py-3 rounded-full text-white font-bold shadow-lg">
+          Back to All Events
+        </Link>
+      </div>
+    );
+  }
+
   const titleParts = splitEventTitle(event.title);
+
+  // Parse Locations
+  let parsedLocations: any[] = [];
+  try {
+    if (typeof event.locations === "string") {
+      parsedLocations = JSON.parse(event.locations);
+    } else if (Array.isArray(event.locations)) {
+      parsedLocations = event.locations;
+    }
+  } catch (e) {}
+
+  parsedLocations = (parsedLocations || []).filter(
+    (loc: any) => loc && (loc.city || loc.venue || loc.date || loc.time)
+  );
+
+  if (parsedLocations.length === 0 && (event.city || event.venue || event.date || event.time)) {
+    parsedLocations = [
+      {
+        city: event.city || "",
+        venue: event.venue || "",
+        date: event.date || "",
+        time: event.time || "",
+      },
+    ];
+  }
+
+  const primaryLoc = parsedLocations[0] || {};
+  const dateText = primaryLoc.date || event.date || "14 October 2026";
+  const timeText = primaryLoc.time || event.time || "10:00 AM – 4:00 PM";
+  const venueText = primaryLoc.venue || event.venue || "The Procurement Leadership";
+  const cityText = primaryLoc.city || event.city || "Dubai";
 
   // Parse Speakers or Fallback to Curated Featured Speakers
   let speakersList: any[] = [];
