@@ -127,7 +127,7 @@ function getEventCities(evt: any): string[] {
 }
 
 const CATEGORY_TABS = [
-  { id: "all", label: "All Domains", icon: Sparkles },
+  { id: "all", label: "All Sectors", icon: Sparkles },
   { id: "hr", label: "HR & Talent", icon: Users },
   { id: "cfo", label: "Finance & CFO", icon: Briefcase },
   { id: "tech", label: "Tech & AI", icon: Cpu },
@@ -317,52 +317,52 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 pb-16 pt-28 sm:pt-32 font-sans selection:bg-cyan-500 selection:text-slate-950">
+    <div className="relative min-h-screen bg-white text-slate-900 pb-16 pt-24 sm:pt-28 lg:pt-32 font-sans selection:bg-cyan-500 selection:text-white">
       <GlowBackdrop />
 
-      <section className="container-x relative z-10 space-y-8">
+      <section className="container-x px-3.5 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8 max-w-7xl mx-auto w-full overflow-hidden">
         {/* ========================================================================= */}
         {/* HERO TITLE & LIVE PULSE INTELLIGENCE STRIP                                */}
         {/* ========================================================================= */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-slate-800/80">
-          <div className="space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 via-indigo-500/10 to-purple-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold uppercase tracking-widest backdrop-blur-md shadow-xs">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-6 border-b border-slate-200">
+          <div className="space-y-2.5 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-[11px] font-extrabold uppercase tracking-wider shadow-2xs">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
               <span>National Executive Summits & Awards</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-display tracking-tight text-slate-900 leading-tight">
               Leadership Events &{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Industry Awards
               </span>
             </h1>
 
-            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-              Connect with India's top 2,500+ CXOs, CHROs, CFOs, tech pioneers, and policymakers at high-impact conclaves.
+            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-2xl">
+              Connect with India's top 2,500+ CXOs, CHROs, CFOs, tech pioneers, and policymakers at premier executive platforms.
             </p>
           </div>
 
           {/* Real-time stats strip */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {activeUsers !== null && activeUsers > 0 && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold backdrop-blur-md shadow-lg shadow-emerald-500/5">
-                <span className="relative flex h-2.5 w-2.5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span>{activeUsers} Live Visitors</span>
               </div>
             )}
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-300 text-xs font-bold shadow-md">
-              <Layers className="h-4 w-4 text-cyan-400" />
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold shadow-2xs">
+              <Layers className="h-3.5 w-3.5 text-cyan-600" />
               <span>{allCount} Flagship Conclaves</span>
             </div>
 
             {liveRegistrations > 0 && (
-              <div className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-                <TrendingUp className="h-4 w-4 text-indigo-400" />
+              <div className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold shadow-2xs">
+                <TrendingUp className="h-3.5 w-3.5 text-indigo-600" />
                 <span>{liveRegistrations}+ Verified Registrations</span>
               </div>
             )}
@@ -370,32 +370,32 @@ export default function EventsPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* LUXURY FILTER & DISCOVERY CONTROL PANEL                                   */}
+        {/* EXECUTIVE FILTER & DISCOVERY CONTROL PANEL (CLEAN WHITE/LIGHT STYLING)     */}
         {/* ========================================================================= */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 backdrop-blur-xl p-4 sm:p-6 shadow-2xl space-y-5">
+        <div className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-slate-50/70 backdrop-blur-md p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-5 w-full max-w-full overflow-hidden">
           {/* Row 1: Status Segmented Tabs Controller */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-cyan-400 shrink-0" />
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-200/80">
+            <div className="flex items-center gap-2 text-slate-700">
+              <SlidersHorizontal className="h-4 w-4 text-cyan-600 shrink-0" />
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
                 Filter By Schedule Status
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-950/80 border border-slate-800/90">
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-2xs w-full sm:w-auto">
               {/* All Events Tab */}
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   statusFilter === "all"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 ring-1 ring-cyan-400/50"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>All Conclaves</span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${statusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}`}>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${statusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                   {allCount}
                 </span>
               </button>
@@ -404,15 +404,15 @@ export default function EventsPage() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("upcoming")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   statusFilter === "upcoming"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 ring-1 ring-cyan-400/50"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <Calendar className="h-3.5 w-3.5" />
                 <span>Upcoming</span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${statusFilter === "upcoming" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}`}>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${statusFilter === "upcoming" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                   {upcomingCount}
                 </span>
               </button>
@@ -421,12 +421,12 @@ export default function EventsPage() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("live")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   statusFilter === "live"
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400"
+                    ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400"
                     : liveCount > 0
-                    ? "text-emerald-400 hover:bg-emerald-500/10"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 {liveCount > 0 ? (
@@ -437,48 +437,45 @@ export default function EventsPage() {
                 ) : (
                   <Radio className="h-3.5 w-3.5" />
                 )}
-                <span>Live In Session</span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${statusFilter === "live" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}`}>
-                  {liveCount}
-                </span>
+                <span>Live ({liveCount})</span>
               </button>
 
               {/* Past Archives Tab */}
               <button
                 type="button"
                 onClick={() => setStatusFilter("past")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   statusFilter === "past"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 ring-1 ring-cyan-400/50"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Past Archives</span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${statusFilter === "past" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}`}>
+                <span>Past</span>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${statusFilter === "past" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                   {pastCount}
                 </span>
               </button>
             </div>
           </div>
 
-          {/* Row 2: Smart Search Input & City Dropdown */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          {/* Row 2: Search Input & City Selector */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 w-full">
             {/* Search Box */}
-            <div className="md:col-span-8 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 pointer-events-none" />
+            <div className="md:col-span-8 relative w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search summits by title, keyword, keynote, venue, or topics..."
-                className="w-full h-11 pl-11 pr-10 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-hidden transition-all"
+                className="w-full h-10 sm:h-11 pl-10 pr-9 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 outline-hidden transition-all shadow-2xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center cursor-pointer transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -486,28 +483,28 @@ export default function EventsPage() {
             </div>
 
             {/* City Selector */}
-            <div className="md:col-span-4 relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 pointer-events-none" />
+            <div className="md:col-span-4 relative w-full">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-600 pointer-events-none" />
               <select
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-                className="w-full h-11 pl-11 pr-8 rounded-2xl bg-slate-950/90 border border-slate-800 text-xs sm:text-sm text-white font-medium focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-hidden transition-all appearance-none cursor-pointer"
+                className="w-full h-10 sm:h-11 pl-10 pr-8 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 font-semibold focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 outline-hidden transition-all appearance-none cursor-pointer shadow-2xs"
               >
-                <option value="all" className="bg-slate-900 text-white">📍 All Cities & Locations</option>
+                <option value="all">📍 All Cities & Locations</option>
                 {uniqueCities.map((c) => (
-                  <option key={c} value={c} className="bg-slate-900 text-white">
+                  <option key={c} value={c}>
                     📍 {c}
                   </option>
                 ))}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 text-xs font-bold">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs font-bold">
                 ▼
               </div>
             </div>
           </div>
 
           {/* Row 3: Category Chips Carousel */}
-          <div className="pt-2 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar w-full">
             {CATEGORY_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = categoryFilter === tab.id;
@@ -516,13 +513,13 @@ export default function EventsPage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setCategoryFilter(tab.id)}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isActive
-                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-md shadow-cyan-500/10"
-                      : "bg-slate-950/60 text-slate-400 hover:text-slate-200 border border-slate-800/80 hover:bg-slate-800/50"
+                      ? "bg-cyan-600 text-white shadow-sm"
+                      : "bg-white text-slate-700 hover:text-cyan-700 hover:bg-slate-50 border border-slate-200 shadow-2xs"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-cyan-400" : "text-slate-500"}`} />
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-cyan-600"}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -530,36 +527,38 @@ export default function EventsPage() {
           </div>
 
           {/* Active Filter Summary Bar */}
-          <div className="flex items-center justify-between pt-2 text-xs font-medium text-slate-400 border-t border-slate-800/60">
-            <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-              Showing <strong className="text-white font-bold">{filteredEvents.length}</strong> of{" "}
-              <strong className="text-slate-300">{allCount}</strong> Premier Summits
-              {statusFilter !== "all" && (
-                <span className="capitalize text-cyan-300 ml-1">({statusFilter})</span>
-              )}
+          <div className="flex items-center justify-between pt-2 text-xs font-medium text-slate-500 border-t border-slate-200 gap-2">
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-600 shrink-0" />
+              <span className="truncate">
+                Showing <strong className="text-slate-900 font-bold">{filteredEvents.length}</strong> of{" "}
+                <strong className="text-slate-700">{allCount}</strong> Premier Summits
+                {statusFilter !== "all" && (
+                  <span className="capitalize text-cyan-700 ml-1 font-semibold">({statusFilter})</span>
+                )}
+              </span>
             </span>
 
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-bold hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-cyan-700 hover:text-cyan-800 font-bold hover:underline cursor-pointer shrink-0"
               >
                 <X className="h-3 w-3" />
-                <span>Reset All Filters</span>
+                <span>Reset Filters</span>
               </button>
             )}
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* EVENT CARDS GRID                                                          */}
+        {/* EVENT CARDS GRID (100% RESPONSIVE)                                        */}
         {/* ========================================================================= */}
         {filteredEvents.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full max-w-full overflow-hidden items-stretch">
             {filteredEvents.map((event) => (
-              <Reveal key={event.id || event.slug} className="h-full">
+              <Reveal key={event.id || event.slug} className="h-full w-full max-w-full">
                 <EventCard
                   event={event}
                   onRegister={(evt, mode) => {
@@ -571,24 +570,24 @@ export default function EventsPage() {
           </div>
         ) : (
           /* Empty State Card */
-          <div className="py-16 text-center">
-            <div className="max-w-md mx-auto rounded-3xl border border-slate-800 bg-slate-900/90 p-8 sm:p-10 shadow-2xl space-y-5">
-              <div className="h-14 w-14 mx-auto rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
-                <Calendar className="h-7 w-7" />
+          <div className="py-12 sm:py-16 text-center">
+            <div className="max-w-md mx-auto rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-10 shadow-xs space-y-4">
+              <div className="h-12 w-12 mx-auto rounded-2xl bg-cyan-100 text-cyan-700 flex items-center justify-center">
+                <Calendar className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold text-white font-display">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 font-display">
                 No Conclaves Matched Your Filters
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 We couldn't find any summits matching your current search or category criteria. Try broadening your filters or resetting search keywords.
               </p>
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white text-xs font-extrabold shadow-lg shadow-cyan-500/20 hover:brightness-110 cursor-pointer transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 text-white text-xs font-bold shadow-md hover:brightness-110 cursor-pointer transition-all"
               >
                 <span>View All {allCount} Summits</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
