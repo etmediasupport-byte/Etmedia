@@ -510,11 +510,11 @@ export default function EventDetailPage() {
   const heroImageSrc = getValidImageUrl(event?.image || event?.about_image, event?.title, event?.category);
 
   return (
-    <div className="relative min-h-screen bg-white text-slate-900 pb-6 sm:pb-8 font-sans pt-20 sm:pt-22 lg:pt-24">
+    <div className="relative min-h-screen bg-white text-slate-900 pb-6 sm:pb-8 font-sans pt-24 sm:pt-28 lg:pt-32">
       {/* ========================================================= */}
       {/* BREADCRUMBS & NAVIGATION                                  */}
       {/* ========================================================= */}
-      <div className="bg-slate-50 border-b border-slate-200 py-2">
+      <div className="bg-slate-50 border-b border-slate-200 py-2.5">
         <div className="container-x flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
           <Link to="/" className="hover:text-cyan-600 transition-colors">Home</Link>
           <ChevronRight className="h-3 w-3 text-slate-400" />
