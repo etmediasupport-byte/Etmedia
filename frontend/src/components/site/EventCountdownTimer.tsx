@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Clock, Sparkles, Flame, Radio, CheckCircle } from "lucide-react";
+import { Clock, Sparkles, Flame, Radio, CheckCircle, MapPin, CalendarDays } from "lucide-react";
 
 export type EventStatus = "upcoming" | "starts_today" | "live" | "ended";
 
 interface EventCountdownTimerProps {
   dateStr?: string;
   timeStr?: string;
+  locationStr?: string;
+  dateDisplayStr?: string;
   onStatusChange?: (status: EventStatus) => void;
   className?: string;
   compact?: boolean;
@@ -19,20 +21,40 @@ export function parseEventDateTime(dateStr?: string, timeStr?: string): { startD
 
   if (dateStr && dateStr.trim()) {
     const trimmed = dateStr.trim();
-    const isoMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+    // 1. ISO format: YYYY-MM-DD
+    const isoMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    // 2. DD-MM-YYYY or DD/MM/YYYY
+    const dmyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+
     if (isoMatch && isoMatch[1] && isoMatch[2] && isoMatch[3]) {
       year = parseInt(isoMatch[1], 10);
       month = parseInt(isoMatch[2], 10) - 1;
       day = parseInt(isoMatch[3], 10);
+    } else if (dmyMatch && dmyMatch[1] && dmyMatch[2] && dmyMatch[3]) {
+      day = parseInt(dmyMatch[1], 10);
+      month = parseInt(dmyMatch[2], 10) - 1;
+      year = parseInt(dmyMatch[3], 10);
     } else {
-      const parsed = new Date(trimmed);
+      // 3. String like "April 19-20, 2027" or "19-20 April 2027" or "14th October 2026"
+      let cleaned = trimmed.replace(/(\d+)(st|nd|rd|th)/gi, "$1");
+      cleaned = cleaned.replace(/(\d{1,2})\s*[-–—to]+\s*\d{1,2}/i, "$1");
+
+      const parsed = new Date(cleaned);
       if (!isNaN(parsed.getTime())) {
         year = parsed.getFullYear();
         month = parsed.getMonth();
         day = parsed.getDate();
       } else {
-        const yMatch = trimmed.match(/\b(20\d\d)\b/);
-        if (yMatch && yMatch[1]) year = parseInt(yMatch[1], 10);
+        const directParsed = new Date(trimmed);
+        if (!isNaN(directParsed.getTime())) {
+          year = directParsed.getFullYear();
+          month = directParsed.getMonth();
+          day = directParsed.getDate();
+        } else {
+          const yMatch = trimmed.match(/\b(20\d\d)\b/);
+          if (yMatch && yMatch[1]) year = parseInt(yMatch[1], 10);
+        }
       }
     }
   }
@@ -82,6 +104,8 @@ export function parseEventDateTime(dateStr?: string, timeStr?: string): { startD
 export function EventCountdownTimer({
   dateStr,
   timeStr,
+  locationStr,
+  dateDisplayStr,
   onStatusChange,
   className = "",
 }: EventCountdownTimerProps) {
@@ -126,6 +150,8 @@ export function EventCountdownTimer({
         const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
         setTimeLeft({ days, hours, minutes, seconds });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     };
 
@@ -135,112 +161,106 @@ export function EventCountdownTimer({
     return () => clearInterval(interval);
   }, [dateStr, timeStr]);
 
-  const pad = (num: number) => String(num).padStart(2, "0");
-
-  if (status === "ended") {
-    return (
-      <div className={`rounded-3xl border border-slate-200 bg-slate-100/90 p-5 text-center shadow-xs ${className}`}>
-        <div className="inline-flex items-center gap-2 rounded-full bg-slate-200 px-4 py-1 text-xs font-bold text-slate-700">
-          <CheckCircle className="h-4 w-4 text-slate-500" />
-          <span>This Event Has Ended</span>
-        </div>
-        <p className="mt-2 text-xs font-medium text-slate-500">
-          Registrations & live proceedings for this event have concluded.
-        </p>
-      </div>
-    );
-  }
-
-  if (status === "live") {
-    return (
-      <div className={`rounded-3xl border border-rose-300 bg-gradient-to-r from-rose-500 via-red-600 to-pink-600 p-5 text-white shadow-xl shadow-rose-500/20 text-center animate-in fade-in duration-300 ${className}`}>
-        <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white border border-white/30">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-          </span>
-          <Radio className="h-4 w-4 animate-pulse" />
-          <span>Event is Live Now</span>
-        </div>
-        <p className="mt-3 text-xs sm:text-sm font-bold opacity-95">
-          🔴 The conference is currently in session! Click Join Event to participate live.
-        </p>
-      </div>
-    );
-  }
+  const displayLocation = locationStr?.trim() || "Location TBA";
+  const displayDate = dateDisplayStr?.trim() || dateStr?.trim() || "Date TBA";
 
   return (
-    <div
-      className={`rounded-3xl border border-cyan-200/80 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950 p-5 sm:p-6 text-white shadow-xl shadow-cyan-950/20 relative overflow-hidden ${className}`}
-    >
-      {/* Decorative Glow elements */}
-      <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl pointer-events-none" />
-      <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-purple-500/10 blur-2xl pointer-events-none" />
-
-      {/* Header Badge */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-2">
-          {status === "starts_today" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 px-3.5 py-1 text-xs font-black text-amber-300 uppercase tracking-wider">
-              <Flame className="h-3.5 w-3.5 text-amber-400 animate-bounce" />
-              <span>Event Starts Today</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 px-3.5 py-1 text-xs font-black text-cyan-300 uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Upcoming Executive Event</span>
-            </span>
-          )}
+    <div className={`w-full ${className}`}>
+      {/* Live / Starts Today status banner if active */}
+      {status === "live" && (
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-rose-50 border border-rose-200 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-rose-600 animate-pulse">
+          <Radio className="h-4 w-4" />
+          <span>Conference is Live Now</span>
         </div>
+      )}
 
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-300 font-bold tracking-wider uppercase">
-          <Clock className="h-3.5 w-3.5 text-cyan-400" />
-          <span>EVENT STARTS IN</span>
+      {status === "starts_today" && (
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-amber-700">
+          <Flame className="h-4 w-4 text-amber-500 animate-bounce" />
+          <span>Event Starts Today</span>
         </div>
-      </div>
+      )}
 
-      {/* 4 TIMER BOXES */}
-      <div className="grid grid-cols-4 gap-2.5 sm:gap-4 mt-5 text-center">
-        {/* DAYS */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2.5 sm:p-3 shadow-inner hover:border-cyan-400/40 transition-colors">
-          <div className="text-xl sm:text-3xl font-black font-mono text-cyan-300 tracking-tight">
-            {pad(timeLeft.days)}
-          </div>
-          <div className="text-[9px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
+      {status === "ended" && (
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 border border-slate-200 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-600">
+          <CheckCircle className="h-4 w-4 text-slate-500" />
+          <span>Event Concluded</span>
+        </div>
+      )}
+
+      {/* 6 Clean Cards Layout Matching Exact Screenshot Design */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 items-stretch">
+        {/* DAYS CARD */}
+        <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[110px]">
+          <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display tracking-tight leading-none">
+            {timeLeft.days}
+          </span>
+          <span className="text-[10px] sm:text-xs font-extrabold uppercase text-[#7c3aed] tracking-wider mt-2">
             DAYS
-          </div>
+          </span>
         </div>
 
-        {/* HOURS */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2.5 sm:p-3 shadow-inner hover:border-cyan-400/40 transition-colors">
-          <div className="text-xl sm:text-3xl font-black font-mono text-white tracking-tight">
-            {pad(timeLeft.hours)}
-          </div>
-          <div className="text-[9px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
+        {/* HOURS CARD */}
+        <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[110px]">
+          <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display tracking-tight leading-none">
+            {String(timeLeft.hours).padStart(2, "0")}
+          </span>
+          <span className="text-[10px] sm:text-xs font-extrabold uppercase text-[#7c3aed] tracking-wider mt-2">
             HOURS
-          </div>
+          </span>
         </div>
 
-        {/* MINUTES */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2.5 sm:p-3 shadow-inner hover:border-purple-400/40 transition-colors">
-          <div className="text-xl sm:text-3xl font-black font-mono text-purple-300 tracking-tight">
-            {pad(timeLeft.minutes)}
-          </div>
-          <div className="text-[9px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
+        {/* MINS CARD */}
+        <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[110px]">
+          <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display tracking-tight leading-none">
+            {String(timeLeft.minutes).padStart(2, "0")}
+          </span>
+          <span className="text-[10px] sm:text-xs font-extrabold uppercase text-[#7c3aed] tracking-wider mt-2">
             MINS
+          </span>
+        </div>
+
+        {/* SECS CARD */}
+        <div className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[110px]">
+          <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display tracking-tight leading-none">
+            {String(timeLeft.seconds).padStart(2, "0")}
+          </span>
+          <span className="text-[10px] sm:text-xs font-extrabold uppercase text-[#7c3aed] tracking-wider mt-2">
+            SECS
+          </span>
+        </div>
+
+        {/* EVENT LOCATION CARD */}
+        <div className="col-span-2 sm:col-span-2 lg:col-span-1 rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex items-center gap-3.5 min-h-[100px] sm:min-h-[110px]">
+          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-[#f3e8ff] flex items-center justify-center text-[#7c3aed] shrink-0">
+            <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-[#7c3aed]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] sm:text-xs font-bold text-[#7c3aed]">
+              Event Location
+            </div>
+            <div className="text-sm sm:text-base font-extrabold text-slate-900 font-display truncate mt-0.5" title={displayLocation}>
+              {displayLocation}
+            </div>
           </div>
         </div>
 
-        {/* SECONDS */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-2.5 sm:p-3 shadow-inner hover:border-emerald-400/40 transition-colors">
-          <div className="text-xl sm:text-3xl font-black font-mono text-emerald-400 tracking-tight animate-pulse">
-            {pad(timeLeft.seconds)}
+        {/* EVENT DATE CARD */}
+        <div className="col-span-2 sm:col-span-2 lg:col-span-1 rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 shadow-xs border border-purple-100/90 hover:border-purple-300 hover:shadow-md transition-all flex items-center gap-3.5 min-h-[100px] sm:min-h-[110px]">
+          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-[#f3e8ff] flex items-center justify-center text-[#7c3aed] shrink-0">
+            <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-[#7c3aed]" />
           </div>
-          <div className="text-[9px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
-            SECS
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] sm:text-xs font-bold text-[#7c3aed]">
+              Event Date
+            </div>
+            <div className="text-sm sm:text-base font-extrabold text-slate-900 font-display truncate mt-0.5" title={displayDate}>
+              {displayDate}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

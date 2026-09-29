@@ -610,10 +610,12 @@ export default function EventDetailPage() {
         {/* ========================================================= */}
         {/* DYNAMIC LIVE COUNTDOWN TIMER SECTION                       */}
         {/* ========================================================= */}
-        <section className="my-8">
+        <section className="my-6 sm:my-8 rounded-3xl bg-gradient-to-r from-purple-50/40 via-slate-50/70 to-indigo-50/40 p-4 sm:p-6 border border-purple-100/60 shadow-xs">
           <EventCountdownTimer
             dateStr={dateText}
             timeStr={timeText}
+            locationStr={cityText || venueText || event.city || "Location TBA"}
+            dateDisplayStr={dateText}
             onStatusChange={setLiveEventStatus}
           />
         </section>
