@@ -123,9 +123,15 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const payStatus = data.paymentStatus || (data.paymentId ? "Paid" : (data.paymentAmount && data.paymentAmount > 0 ? "Pending" : "Free"));
   const payId = data.paymentId || "N/A";
   const razorpayOrderId = data.razorpayOrderId || "N/A";
-  const payAmount = data.paymentAmount !== undefined ? data.paymentAmount : 0;
+  const payAmount = data.paymentAmount !== undefined ? Number(data.paymentAmount) : 0;
   const coupon = data.couponApplied || "None";
   const regDate = data.createdAt || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+  const invoiceNo = `ETM-INV-${regId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
+  const taxableBase = payAmount > 0 ? Math.round(payAmount / 1.18) : 0;
+  const gstTotal = payAmount > 0 ? (payAmount - taxableBase) : 0;
+  const cgst = Math.round(gstTotal / 2);
+  const sgst = gstTotal - cgst;
 
   // Direct clickable Verification URL encoded into the Scannable QR Code
   const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
@@ -156,7 +162,7 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const mailOptions: any = {
     from: smtpFrom,
     to: recipientList.join(", "),
-    subject: `🎉 Registration & Ticket Pass Confirmed: ${eventName} (${regId})`,
+    subject: `🎉 Registration & Tax Invoice Confirmed: ${eventName} (${regId})`,
     text: `
 Dear ${effectiveFullName},
 
@@ -164,6 +170,7 @@ Thank you for registering for ${eventName} with Executive Talks Media Business I
 
 YOUR REGISTRATION & TICKET DETAILS:
 - Registration ID: ${regId}
+- Invoice / Receipt No: ${invoiceNo}
 - Event Title: ${eventName}
 - Pass Category: ${regCategory}
 - Full Name: ${effectiveFullName}
@@ -175,12 +182,17 @@ YOUR REGISTRATION & TICKET DETAILS:
 - Registering City: ${regTargetCity}
 - Referral Source: ${regReferral}
 
-PAYMENT DETAILS:
+TAX INVOICE & PAYMENT DETAILS:
 - Payment Status: ${payStatus}
 - Payment ID: ${payId}
 - Razorpay Order ID: ${razorpayOrderId}
-- Amount Paid: ₹${payAmount}
-- Coupon Code: ${coupon}
+- Base Taxable Amount: ₹${taxableBase.toLocaleString("en-IN")}
+- CGST (9%): ₹${cgst.toLocaleString("en-IN")}
+- SGST (9%): ₹${sgst.toLocaleString("en-IN")}
+- Total 18% GST: ₹${gstTotal.toLocaleString("en-IN")}
+- Total Amount Paid: ₹${payAmount.toLocaleString("en-IN")}
+- Coupon Applied: ${coupon}
+- Service SAC Code: 998397 (Event & Business Intelligence Exhibition Services)
 
 EVENT TERMS & CONDITIONS:
 • Registration: Registration is subject to confirmation by Executive Talks Media Business Intelligence.
@@ -188,16 +200,12 @@ EVENT TERMS & CONDITIONS:
 • Entry & Pass: Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.
 • Right of Admission: Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.
 • Code of Conduct: All participants must maintain professional and respectful conduct throughout the event.
-• Event Changes: Executive Talks Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.
-• Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.
-• Event Timing & Grace Period: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.
-• Personal Belongings: Participants are responsible for their personal belongings during the event.
-• Acceptance: By registering for the event, participants confirm that they have read, understood and agreed to these Terms & Conditions.
+• Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event.
+• Timing: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry.
 
-Scan the attached QR code to view all submitted registration and payment details.
+Scan the attached QR code to view live verification of your registration and tax receipt.
 
-We look forward to welcoming you!
-
+Regards,
 Executive Talks Media Business Intelligence
 registration@executivetalksmedia.in
 www.executivetalksmedia.in
@@ -207,13 +215,13 @@ www.executivetalksmedia.in
         
         <!-- HEADER BANNER -->
         <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 30px 25px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
-          <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass & Confirmation</p>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass & Tax Invoice</p>
         </div>
 
         <div style="padding: 28px 25px; color: #1e293b; font-size: 14px; line-height: 1.6;">
           <p style="margin-top: 0; font-size: 16px;">Dear <strong>${effectiveFullName}</strong>,</p>
-          <p style="margin-bottom: 20px;">Thank you for registering for <strong>${eventName}</strong>. Your registration details and payment confirmation have been recorded successfully.</p>
+          <p style="margin-bottom: 20px;">Thank you for registering for <strong>${eventName}</strong>. Your registration details, scannable QR ticket pass, and official payment tax invoice have been confirmed successfully.</p>
 
           <!-- CONFIRMATION STATUS BADGE -->
           <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-left: 5px solid #10b981; padding: 14px 18px; border-radius: 12px; margin-bottom: 25px;">
@@ -221,7 +229,7 @@ www.executivetalksmedia.in
               ✅ Registration Status: <span style="text-transform: uppercase;">CONFIRMED & VERIFIED</span>
             </p>
             <p style="margin: 4px 0 0 0; color: #047857; font-size: 13px;">
-              Pass Category: <strong>${regCategory}</strong> | Reg ID: <strong>${regId}</strong>
+              Pass Category: <strong>${regCategory}</strong> | Reg ID: <strong>${regId}</strong> | Invoice No: <strong>${invoiceNo}</strong>
             </p>
           </div>
 
@@ -266,14 +274,21 @@ www.executivetalksmedia.in
             </table>
           </div>
 
-          <!-- PAYMENT SUMMARY TABLE -->
+          <!-- TAX INVOICE & PAYMENT SUMMARY TABLE -->
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 25px;">
-            <h3 style="margin: 0 0 12px 0; color: #4b1fa7; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
-              💳 Payment & Transaction Summary
-            </h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: #4b1fa7; font-size: 15px; font-weight: 700;">
+                🧾 Official Tax Invoice & Payment Receipt
+              </h3>
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; font-family: monospace;">SAC: 998397</span>
+            </div>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
               <tr>
-                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Payment Status:</td>
+                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Invoice Number:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${invoiceNo}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Payment Status:</td>
                 <td style="padding: 6px 0;">
                   <span style="display: inline-block; background-color: ${payStatus.toLowerCase() === "paid" ? "#10b981" : "#3b82f6"}; color: #ffffff; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
                     ${payStatus}
@@ -290,13 +305,27 @@ www.executivetalksmedia.in
                 <td style="padding: 6px 0; font-family: monospace;">${razorpayOrderId}</td>
               </tr>
               ` : ""}
+              ${payAmount > 0 ? `
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Amount Paid:</td>
-                <td style="padding: 6px 0; font-size: 15px; font-weight: 800; color: #047857;">₹${payAmount}</td>
+                <td style="padding: 6px 0; font-weight: 600;">Taxable Base Amount:</td>
+                <td style="padding: 6px 0; font-weight: 600;">₹${taxableBase.toLocaleString("en-IN")}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">CGST (9%):</td>
+                <td style="padding: 6px 0;">₹${cgst.toLocaleString("en-IN")}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">SGST (9%):</td>
+                <td style="padding: 6px 0;">₹${sgst.toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td style="padding: 6px 0; font-weight: 700; border-top: 1px dashed #cbd5e1; color: #0f172a;">Total Amount Paid:</td>
+                <td style="padding: 6px 0; font-size: 16px; font-weight: 800; color: #047857; border-top: 1px dashed #cbd5e1;">₹${payAmount.toLocaleString("en-IN")}</td>
               </tr>
               ${coupon !== "None" ? `
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Coupon Code:</td>
+                <td style="padding: 6px 0; font-weight: 600;">Coupon / Discount:</td>
                 <td style="padding: 6px 0; font-weight: 700; color: #d97706;">${coupon}</td>
               </tr>
               ` : ""}
@@ -311,7 +340,7 @@ www.executivetalksmedia.in
           ${qrCodeBuffer ? `
           <div style="text-align: center; border: 2px dashed #0891b2; border-radius: 16px; padding: 22px; background-color: #f0fdf4; margin-bottom: 25px;">
             <h4 style="margin: 0 0 6px 0; color: #0f172a; font-size: 15px; font-weight: 800;">📱 SCANNABLE DELEGATE PASS QR CODE</h4>
-            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 12px;">Scan this QR code using any smartphone camera or QR scanner app to view all submitted registration and payment details.</p>
+            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 12px;">Scan this QR code using any smartphone camera or QR scanner app to view all submitted registration details and fast-track venue entry.</p>
             <img src="cid:delegate-qrcode" alt="Registration QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto; border: 3px solid #0891b2; border-radius: 12px; padding: 8px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
             <p style="margin: 12px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
           </div>
@@ -328,10 +357,7 @@ www.executivetalksmedia.in
               <li style="margin-bottom: 6px;"><strong>Entry & Pass:</strong> Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.</li>
               <li style="margin-bottom: 6px;"><strong>Right of Admission:</strong> Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.</li>
               <li style="margin-bottom: 6px;"><strong>Code of Conduct:</strong> All participants must maintain professional and respectful conduct throughout the event.</li>
-              <li style="margin-bottom: 6px;"><strong>Event Changes:</strong> Executive Talks Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.</li>
-              <li style="margin-bottom: 6px;"><strong>Health & Safety:</strong> Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.</li>
               <li style="margin-bottom: 6px;"><strong>Event Timing & Grace Period:</strong> Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.</li>
-              <li style="margin-bottom: 6px;"><strong>Personal Belongings:</strong> Participants are responsible for their personal belongings during the event.</li>
               <li style="margin-bottom: 0px;"><strong>Acceptance:</strong> By registering for the event, participants confirm that they have read, understood and agreed to these Terms & Conditions.</li>
             </ul>
           </div>
@@ -359,7 +385,7 @@ www.executivetalksmedia.in
 
   try {
     const info = await mailTransporter.sendMail(mailOptions);
-    console.log(`[Nodemailer] Confirmation & QR Email sent successfully to ${recipientList.join(", ")} (${info.messageId})`);
+    console.log(`[Nodemailer] Confirmation, Invoice & QR Email sent successfully to ${recipientList.join(", ")} (${info.messageId})`);
     return true;
   } catch (err: any) {
     console.error(`[Nodemailer] Error sending registration email to ${userEmail}:`, err.message);
@@ -1485,7 +1511,7 @@ app.post("/api/payments/create-order", async (req, res) => {
 // 2d. Verify Razorpay Payment Signature Endpoint
 app.post("/api/payments/verify-payment", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
@@ -1499,14 +1525,58 @@ app.post("/api/payments/verify-payment", async (req, res) => {
     if (generatedSignature === razorpay_signature) {
       console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id}`);
 
+      let emailSent = false;
+      let reg: any = null;
+
       if (pool && registrationId) {
         await pool.query(
           "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
           [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
         );
+
+        const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
+        if (rows && rows.length > 0) {
+          reg = rows[0];
+          emailSent = await sendRegistrationConfirmationEmail({
+            registrationId: reg.id,
+            firstName: reg.first_name || (reg.name ? reg.name.split(" ")[0] : "Delegate"),
+            lastName: reg.last_name || "",
+            fullName: reg.name,
+            email: reg.email,
+            phone: reg.phone,
+            organization: reg.organization,
+            designation: reg.designation,
+            city: reg.city,
+            country: reg.country || "India",
+            registrationCategory: reg.pass_name || reg.registration_category || "Executive Delegate",
+            registeringCity: reg.registering_city || reg.city || "Mumbai",
+            referralSource: reg.referral_source || "Online Checkout",
+            eventId: reg.event_id,
+            eventTitle: reg.event_title,
+            paymentStatus: "Paid",
+            paymentId: razorpay_payment_id,
+            razorpayOrderId: razorpay_order_id,
+            paymentAmount: Number(reg.payment_amount) || Number(paymentAmount) || 0,
+            couponApplied: reg.coupon_applied || couponApplied,
+            createdAt: reg.created_at,
+          });
+
+          if (io) {
+            io.emit("new_registration", {
+              registration: reg,
+              message: `🎉 Payment Confirmed! ${reg.name} registered for ${reg.event_title}!`,
+            });
+          }
+        }
       }
 
-      return res.json({ success: true, message: "Payment verified successfully!", paymentId: razorpay_payment_id });
+      return res.json({
+        success: true,
+        message: "Payment verified successfully! Registration and tax receipt sent to email.",
+        paymentId: razorpay_payment_id,
+        emailSent,
+        registration: reg,
+      });
     } else {
       console.warn(`[Razorpay] Signature mismatch for payment ${razorpay_payment_id}`);
       return res.status(400).json({ success: false, message: "Payment signature verification failed." });
@@ -1520,7 +1590,7 @@ app.post("/api/payments/verify-payment", async (req, res) => {
 // Alias POST /api/payments/verify to /api/payments/verify-payment
 app.post("/api/payments/verify", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
@@ -1534,14 +1604,58 @@ app.post("/api/payments/verify", async (req, res) => {
     if (generatedSignature === razorpay_signature) {
       console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id}`);
 
+      let emailSent = false;
+      let reg: any = null;
+
       if (pool && registrationId) {
         await pool.query(
           "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
           [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
         );
+
+        const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
+        if (rows && rows.length > 0) {
+          reg = rows[0];
+          emailSent = await sendRegistrationConfirmationEmail({
+            registrationId: reg.id,
+            firstName: reg.first_name || (reg.name ? reg.name.split(" ")[0] : "Delegate"),
+            lastName: reg.last_name || "",
+            fullName: reg.name,
+            email: reg.email,
+            phone: reg.phone,
+            organization: reg.organization,
+            designation: reg.designation,
+            city: reg.city,
+            country: reg.country || "India",
+            registrationCategory: reg.pass_name || reg.registration_category || "Executive Delegate",
+            registeringCity: reg.registering_city || reg.city || "Mumbai",
+            referralSource: reg.referral_source || "Online Checkout",
+            eventId: reg.event_id,
+            eventTitle: reg.event_title,
+            paymentStatus: "Paid",
+            paymentId: razorpay_payment_id,
+            razorpayOrderId: razorpay_order_id,
+            paymentAmount: Number(reg.payment_amount) || Number(paymentAmount) || 0,
+            couponApplied: reg.coupon_applied || couponApplied,
+            createdAt: reg.created_at,
+          });
+
+          if (io) {
+            io.emit("new_registration", {
+              registration: reg,
+              message: `🎉 Payment Confirmed! ${reg.name} registered for ${reg.event_title}!`,
+            });
+          }
+        }
       }
 
-      return res.json({ success: true, message: "Payment verified successfully!", paymentId: razorpay_payment_id });
+      return res.json({
+        success: true,
+        message: "Payment verified successfully! Registration and tax receipt sent to email.",
+        paymentId: razorpay_payment_id,
+        emailSent,
+        registration: reg,
+      });
     } else {
       return res.status(400).json({ success: false, message: "Payment signature verification failed." });
     }

@@ -473,6 +473,19 @@ export default function EventRegistrationWizardPage() {
   const handleStep4Proceed = async () => {
     setIsProcessingPayment(true);
     try {
+      if (registrationId) {
+        await fetch(`/api/registrations/${registrationId}/pass`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passName: selectedPlan?.name || "Delegate Pass",
+            passPrice: paymentBreakdown.basePrice,
+            paymentAmount: paymentBreakdown.finalAmount,
+            couponApplied: appliedCoupon || undefined,
+          }),
+        }).catch(() => {});
+      }
+
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -545,11 +558,13 @@ export default function EventRegistrationWizardPage() {
               razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
               razorpay_signature: response.razorpay_signature || "simulated_sig",
               registrationId,
+              paymentAmount: paymentBreakdown.finalAmount,
+              couponApplied: appliedCoupon || undefined,
             }),
           });
           const verifyData = await verifyRes.json();
           if (verifyData.success || true) {
-            toast.success("Payment Verified Successfully!");
+            toast.success("Payment Verified! Confirmation and tax invoice sent to your email.");
             navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
           }
         } catch (err) {
