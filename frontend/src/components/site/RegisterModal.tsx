@@ -699,7 +699,12 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
             {/* STEP 1: FORM INPUTS VIEW */}
             {modalStep === "form" && (
-              <form onSubmit={handleProceedToPayment} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar min-h-0 bg-white">
+              <>
+                <form
+                  id="registrationModalForm"
+                  onSubmit={handleProceedToPayment}
+                  className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 custom-scrollbar min-h-0 bg-white"
+                >
                 
                 {/* Section 1: Personal & Executive Details (4 Columns on Desktop) */}
                 <div className="space-y-3">
