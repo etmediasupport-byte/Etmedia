@@ -3979,11 +3979,23 @@ export default function AdminDashboardPage() {
 
       // 2. Event Filter
       if (regFilterEvent !== "all") {
-        const eventMatch =
-          (r.event_id && r.event_id === regFilterEvent) ||
-          (r.event_title && r.event_title.toLowerCase().includes(regFilterEvent.toLowerCase())) ||
-          (r.event_id && r.event_id.toLowerCase().includes(regFilterEvent.toLowerCase()));
-        if (!eventMatch) return false;
+        const selectedEvt = cmsEvents.find(
+          (e) => (e.title || e.name) === regFilterEvent || e.slug === regFilterEvent || e.id === regFilterEvent
+        );
+        const filterTitle = (selectedEvt ? (selectedEvt.title || selectedEvt.name) : regFilterEvent).toLowerCase().trim();
+        const filterSlug = (selectedEvt ? (selectedEvt.slug || selectedEvt.id) : regFilterEvent).toLowerCase().trim();
+
+        const regTitle = (r.event_title || "").toLowerCase().trim();
+        const regId = (r.event_id || "").toLowerCase().trim();
+
+        const matches =
+          regTitle === filterTitle ||
+          regId === filterSlug ||
+          (filterTitle && regTitle.includes(filterTitle)) ||
+          (filterTitle && filterTitle.includes(regTitle)) ||
+          (filterSlug && regId.includes(filterSlug));
+
+        if (!matches) return false;
       }
 
       // 3. Status Filter
@@ -5256,21 +5268,14 @@ export default function AdminDashboardPage() {
                       className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
                     >
                       <option value="all">🎪 All Events & Summits</option>
-                      {(() => {
-                        const eventTitles = Array.from(
-                          new Set(
-                            [
-                              ...cmsEvents.map((e) => e.title || e.name || e.id),
-                              ...eventRegistrationsList.map((r) => r.event_title || r.event_id),
-                            ].filter(Boolean)
-                          )
-                        );
-                        return eventTitles.map((title) => (
-                          <option key={title} value={title}>
-                            {title}
+                      {cmsEvents.map((evt) => {
+                        const eventTitle = evt.title || evt.name || evt.slug || evt.id;
+                        return (
+                          <option key={evt.id || evt.slug} value={eventTitle}>
+                            {eventTitle}
                           </option>
-                        ));
-                      })()}
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -9596,18 +9601,18 @@ export default function AdminDashboardPage() {
                         value={newGalleryForm.event_slug}
                         onChange={(e) => {
                           const slug = e.target.value;
-                          let title = "All Events";
-                          if (slug === "cfo-leadership-summit") title = "India CFO Leadership Summit 2026";
-                          else if (slug === "hr-excellence-awards") title = "HR Excellence & Leadership Conclave";
-                          else if (slug === "enterprise-tech-conclave") title = "National Enterprise Tech & AI Summit";
+                          const evt = cmsEvents.find((x) => x.slug === slug || x.id === slug);
+                          const title = evt ? (evt.title || evt.name) : (slug === "all" ? "All Events" : slug);
                           setNewGalleryForm({ ...newGalleryForm, event_slug: slug, event_title: title });
                         }}
                         className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
                       >
                         <option value="all">All Events</option>
-                        <option value="cfo-leadership-summit">India CFO Leadership Summit 2026</option>
-                        <option value="hr-excellence-awards">HR Excellence & Leadership Conclave</option>
-                        <option value="enterprise-tech-conclave">National Enterprise Tech & AI Summit</option>
+                        {cmsEvents.map((evt) => (
+                          <option key={evt.id || evt.slug} value={evt.slug || evt.id}>
+                            {evt.title || evt.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -10054,13 +10059,9 @@ export default function AdminDashboardPage() {
                           }}
                           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-cyan-600 focus:outline-none"
                         >
-                          <option value="cfo-leadership-summit">India CFO Leadership Summit</option>
-                          <option value="hr-excellence-awards">HR Excellence & Leadership</option>
-                          <option value="enterprise-tech-conclave">National Enterprise Tech & AI</option>
-                          <option value="gcc-global-capability-summit">GCC Capability Expansion Summit</option>
                           {cmsEvents.map((evt) => (
-                            <option key={evt.id} value={evt.slug}>
-                              {evt.title}
+                            <option key={evt.id || evt.slug} value={evt.slug || evt.id}>
+                              {evt.title || evt.name}
                             </option>
                           ))}
                         </select>
