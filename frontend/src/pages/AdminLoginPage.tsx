@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { validateEmail } from "@/lib/validation";
+
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -27,12 +29,15 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please enter email and password.");
+    const emailVal = validateEmail(email, "Admin Email");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
+      return;
+    }
+    if (!password.trim()) {
+      toast.error("Please enter your admin password.");
       return;
     }
 
@@ -41,7 +46,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       const data = await res.json();

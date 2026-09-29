@@ -87,7 +87,7 @@ export default function RegistrationSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-10">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-28 sm:pt-32">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -183,7 +183,7 @@ export default function RegistrationSuccessPage() {
                 <div className="h-32 w-32 bg-slate-100 rounded-xl p-2 flex items-center justify-center border border-slate-200">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                      `https://www.etmedia.in/verify-pass/${encodeURIComponent(regDetails?.id || regId)}`
+                      `https://www.executivetalksmedia.in/verify-pass/${encodeURIComponent(regDetails?.id || regId)}`
                     )}`}
                     alt="Scannable QR Pass"
                     className="w-full h-full object-contain"

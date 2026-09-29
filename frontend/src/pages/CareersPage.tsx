@@ -33,6 +33,14 @@ import {
 import { GlowBackdrop } from "@/components/site/primitives";
 import { PageHero } from "@/components/site/PageHero";
 import { socket } from "@/lib/socket";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateRequiredText,
+  validateUrl,
+} from "@/lib/validation";
 import { JobItem, getDefaultJobs, images } from "@/lib/site-data";
 
 const departmentsList = [
@@ -163,9 +171,41 @@ export default function CareersPage() {
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!applicantForm.name.trim() || !applicantForm.email.trim() || !applicantForm.phone.trim() || !applicantForm.experience.trim() || !applicantForm.resume_url.trim()) {
-      setFormError("Please complete all required fields and upload your resume PDF.");
+    const fnVal = validateName(applicantForm.name, "Full Name");
+    if (!fnVal.isValid) {
+      setFormError(fnVal.error);
       return;
+    }
+
+    const emailVal = validateEmail(applicantForm.email, "Email Address");
+    if (!emailVal.isValid) {
+      setFormError(emailVal.error);
+      return;
+    }
+
+    const phoneVal = validatePhone(applicantForm.phone, "Phone Number");
+    if (!phoneVal.isValid) {
+      setFormError(phoneVal.error);
+      return;
+    }
+
+    const expVal = validateRequiredText(applicantForm.experience, "Years of Experience", 1);
+    if (!expVal.isValid) {
+      setFormError(expVal.error);
+      return;
+    }
+
+    if (!applicantForm.resume_url.trim()) {
+      setFormError("Please upload your resume PDF document before submitting.");
+      return;
+    }
+
+    if (applicantForm.portfolio_url && applicantForm.portfolio_url.trim()) {
+      const urlVal = validateUrl(applicantForm.portfolio_url, "Portfolio URL");
+      if (!urlVal.isValid) {
+        setFormError(urlVal.error);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -179,6 +219,7 @@ export default function CareersPage() {
           job_id: applyJob?.id || "GENERAL",
           job_title: applyJob?.title || "General Application",
           ...applicantForm,
+          phone: phoneVal.cleanDigits || applicantForm.phone,
         }),
       });
 
@@ -238,7 +279,7 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 1. OPEN POSITIONS SECTION (WHITE MODE)     */}
       {/* ========================================== */}
-      <section id="open-positions" className="relative w-full bg-white text-slate-900 py-16 sm:py-20 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
+      <section id="open-positions" className="relative w-full bg-white text-slate-900 py-10 sm:py-14 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
         <div className="w-full max-w-[1400px] mx-auto">
           
           {/* Header Title Box */}
@@ -392,10 +433,10 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* ========================================== */}
-      {/* 2. WHY JOIN ET MEDIA / MAKE AN IMPACT      */}
-      {/* ========================================== */}
-      <section className="py-16 sm:py-20 relative">
+      {/* ================================================== */}
+      {/* 2. WHY JOIN EXECUTIVE TALKS MEDIA / MAKE AN IMPACT */}
+      {/* ================================================== */}
+      <section className="py-10 sm:py-14 relative">
         <div className="container-x">
           <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-[#0D0A26] via-[#120D3D] to-[#0A1628] p-8 sm:p-12 overflow-hidden relative shadow-2xl">
             {/* Background Orbs */}
@@ -474,7 +515,7 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 3. GET STARTED / HIRING PROCESS SECTION    */}
       {/* ========================================== */}
-      <section className="py-16 sm:py-20 relative border-t border-slate-800/80">
+      <section className="py-10 sm:py-14 relative border-t border-slate-800/80">
         <div className="container-x">
           {/* Header */}
           <div className="text-left mb-12">

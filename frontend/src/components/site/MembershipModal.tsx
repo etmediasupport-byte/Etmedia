@@ -20,6 +20,13 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateRequiredText,
+} from "@/lib/validation";
 
 interface MembershipModalProps {
   isOpen: boolean;
@@ -153,28 +160,34 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
   // Step 1 Validation
   const validateStep1 = () => {
-    if (!formData.fullName.trim()) {
-      toast.error("Please enter your Full Name.");
+    const fnVal = validateName(formData.fullName, "Full Name");
+    if (!fnVal.isValid) {
+      toast.error(fnVal.error);
       return false;
     }
-    if (!formData.officialEmail.trim() || !formData.officialEmail.includes("@")) {
-      toast.error("Please enter a valid Official Work Email.");
+    const emailVal = validateEmail(formData.officialEmail, "Official Work Email");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
       return false;
     }
-    if (!formData.mobileNumber.trim() || formData.mobileNumber.length < 10) {
-      toast.error("Please enter a valid Mobile Number (10+ digits).");
+    const phoneVal = validatePhone(formData.mobileNumber, "Mobile Number");
+    if (!phoneVal.isValid) {
+      toast.error(phoneVal.error);
       return false;
     }
-    if (!formData.designation.trim()) {
-      toast.error("Please enter your Designation / Title.");
+    const desigVal = validateRequiredText(formData.designation, "Designation / Title");
+    if (!desigVal.isValid) {
+      toast.error(desigVal.error);
       return false;
     }
-    if (!formData.organization.trim()) {
-      toast.error("Please enter your Organization / Company Name.");
+    const orgVal = validateRequiredText(formData.organization, "Organization / Company Name");
+    if (!orgVal.isValid) {
+      toast.error(orgVal.error);
       return false;
     }
-    if (!formData.cityLocation.trim()) {
-      toast.error("Please enter your City / Location.");
+    const cityVal = validateRequiredText(formData.cityLocation, "City / Location");
+    if (!cityVal.isValid) {
+      toast.error(cityVal.error);
       return false;
     }
     return true;
@@ -475,7 +488,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                                 required
                                 placeholder="+91 98765 43210"
                                 value={formData.mobileNumber}
-                                onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
+                                onChange={(e) => handleInputChange("mobileNumber", sanitizePhoneInput(e.target.value))}
                                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
                               />
                             </div>

@@ -429,7 +429,7 @@ function getValidImageUrl(url?: string): string {
   const heroImageSrc = getValidImageUrl(event?.image || event?.about_image);
 
   return (
-    <div className="relative min-h-screen bg-white text-slate-900 pb-32 font-sans pt-20 sm:pt-24">
+    <div className="relative min-h-screen bg-white text-slate-900 pb-32 font-sans pt-24 sm:pt-28 lg:pt-32">
       {/* ========================================================= */}
       {/* BREADCRUMBS & NAVIGATION                                  */}
       {/* ========================================================= */}

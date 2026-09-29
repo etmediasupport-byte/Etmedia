@@ -29,6 +29,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, getDefaultPricingPlans, checkEarlyBirdStatus, images, type PricingPlanTier } from "@/lib/site-data";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateRequiredText,
+  validateUrl,
+} from "@/lib/validation";
 
 declare global {
   interface Window {
@@ -221,7 +229,7 @@ export default function EventRegistrationWizardPage() {
     if (appliedCoupon) {
       if (appliedCoupon === "EARLYBIRD10") discount = Math.round(basePrice * 0.10);
       else if (appliedCoupon === "EXECUTIVE20") discount = Math.round(basePrice * 0.20);
-      else if (appliedCoupon === "ETMEDIA500") discount = 500;
+      else if (appliedCoupon === "EXECUTIVETALKS500" || appliedCoupon === "ETMEDIA500") discount = 500;
       else if (appliedCoupon === "WELCOME1000") discount = 1000;
       else discount = Math.min(500, Math.round(basePrice * 0.05));
     }
@@ -240,9 +248,64 @@ export default function EventRegistrationWizardPage() {
     });
   }, [selectedPlan, appliedCoupon, isEarlyBirdActive, eventData]);
 
-  // Field handler
+  // Validation errors state for Step 1
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
+  // Live input handler with error cleanup
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  // Phone input handler with live keystroke sanitizer
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const clean = sanitizePhoneInput(e.target.value);
+    setFormData((prev) => ({ ...prev, contactNumber: clean }));
+    if (touchedFields["contactNumber"]) {
+      const v = validatePhone(clean);
+      setFieldErrors((prev) => ({ ...prev, contactNumber: v.isValid ? "" : v.error }));
+    }
+  };
+
+  // Field Blur handler
+  const handleFieldBlur = (fieldName: string) => {
+    setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
+    let error = "";
+    if (fieldName === "firstName") {
+      const v = validateName(formData.firstName, "First Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "lastName") {
+      const v = validateName(formData.lastName, "Last Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "workEmail") {
+      const v = validateEmail(formData.workEmail, "Work Email");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "contactNumber") {
+      const v = validatePhone(formData.contactNumber, "Contact / Mobile Number");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "designation") {
+      const v = validateRequiredText(formData.designation, "Designation");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "companyName") {
+      const v = validateRequiredText(formData.companyName, "Company Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "city") {
+      const v = validateRequiredText(formData.city, "City");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "linkedinUrl" && formData.linkedinUrl.trim()) {
+      const v = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
+      if (!v.isValid) error = v.error;
+    }
+
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
   };
 
   // Toggle interest track
@@ -264,25 +327,48 @@ export default function EventRegistrationWizardPage() {
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error("Please enter your First Name and Last Name.");
-      return;
+    const errors: Record<string, string> = {};
+
+    const fnVal = validateName(formData.firstName, "First Name");
+    if (!fnVal.isValid) errors.firstName = fnVal.error;
+
+    const lnVal = validateName(formData.lastName, "Last Name");
+    if (!lnVal.isValid) errors.lastName = lnVal.error;
+
+    const emailVal = validateEmail(formData.workEmail, "Work Email");
+    if (!emailVal.isValid) errors.workEmail = emailVal.error;
+
+    const phoneVal = validatePhone(formData.contactNumber, "Contact / Mobile Number");
+    if (!phoneVal.isValid) errors.contactNumber = phoneVal.error;
+
+    const desigVal = validateRequiredText(formData.designation, "Designation");
+    if (!desigVal.isValid) errors.designation = desigVal.error;
+
+    const compVal = validateRequiredText(formData.companyName, "Company / Organization Name");
+    if (!compVal.isValid) errors.companyName = compVal.error;
+
+    const cityVal = validateRequiredText(formData.city, "City");
+    if (!cityVal.isValid) errors.city = cityVal.error;
+
+    if (formData.linkedinUrl.trim()) {
+      const linkVal = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
+      if (!linkVal.isValid) errors.linkedinUrl = linkVal.error;
     }
-    if (!formData.workEmail.trim() || !formData.workEmail.includes("@")) {
-      toast.error("Please enter a valid Work Email address.");
-      return;
-    }
-    const cleanPhone = formData.contactNumber.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      toast.error("Please enter a valid 10-digit Mobile / Contact Number.");
-      return;
-    }
-    if (!formData.designation.trim()) {
-      toast.error("Please enter your Executive Designation.");
-      return;
-    }
-    if (!formData.companyName.trim()) {
-      toast.error("Please enter your Company / Organization Name.");
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setTouchedFields({
+        firstName: true,
+        lastName: true,
+        workEmail: true,
+        contactNumber: true,
+        designation: true,
+        companyName: true,
+        city: true,
+        linkedinUrl: true,
+      });
+      const firstErrMsg = Object.values(errors)[0];
+      toast.error(firstErrMsg || "Please correct the highlighted fields before proceeding.");
       return;
     }
 
@@ -293,6 +379,7 @@ export default function EventRegistrationWizardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          contactNumber: phoneVal.cleanDigits || formData.contactNumber,
           eventId: eventData?.id || slug,
           eventSlug: eventData?.slug || slug,
           eventTitle: eventData?.title || "Executive Summit 2026",
@@ -427,7 +514,7 @@ export default function EventRegistrationWizardPage() {
       currency: "INR",
       name: "Executive Talks Media",
       description: `${eventData?.title || "Executive Summit"} - ${selectedPlan?.name || "Delegate Pass"}`,
-      image: "https://www.etmedia.in/assets/logo-final-Cj5jCGEj.png",
+      image: "https://www.executivetalksmedia.in/assets/executivetalks-logo.jpeg",
       order_id: razorpayOrderId.startsWith("order_demo_") ? undefined : razorpayOrderId,
       prefill: {
         name: `${formData.firstName} ${formData.lastName}`,
@@ -548,8 +635,8 @@ export default function EventRegistrationWizardPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
       {/* ================= HERO HEADER BANNER ================= */}
-      <div className="relative bg-slate-950 text-white pt-10 pb-16 overflow-hidden border-b border-slate-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/70 via-slate-950 to-purple-950/70 z-0" />
+      <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/80 via-slate-950 to-purple-950/80 z-0" />
         {eventData?.image && (
           <img
             src={eventData.image}
@@ -559,15 +646,15 @@ export default function EventRegistrationWizardPage() {
         )}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
                   {eventData?.category || "Leadership Summit"}
                 </span>
-                <span className="text-xs font-bold text-slate-400">Executive Platform Registration</span>
+                <span className="text-xs font-bold text-slate-400">Executive Delegate Pass Portal</span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black font-display tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black font-display tracking-tight text-white">
                 {eventData?.title || "HR RECALL 2K26 Leadership Conclave"}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-300 pt-1">
@@ -588,34 +675,162 @@ export default function EventRegistrationWizardPage() {
 
             <Link
               to={`/events/${eventData?.slug || slug || ""}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-xs font-extrabold text-slate-300 hover:text-white border border-slate-700/80 backdrop-blur-md transition-all self-start md:self-auto cursor-pointer shadow-lg"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-xs font-extrabold text-slate-300 hover:text-white border border-slate-700/80 backdrop-blur-md transition-all self-start md:self-auto cursor-pointer shadow-lg shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Event Details</span>
+              <span>Back to Event Overview</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ================= MAIN STEP CONTENT CONTAINER ================= */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        <AnimatePresence mode="wait">
-          {/* ================= STEP 1: PERSONAL & EXECUTIVE DETAILS ================= */}
-          {currentStep === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.25 }}
-              className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8"
-            >
-              <div>
-                <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
-                  <User className="w-4 h-4" />
-                  <span>STEP 1 OF 5</span>
+      {/* ================= MAIN CONTENT CONTAINER ================= */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        
+        {/* Step Progress Navigation Bar */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mb-8">
+          <div className="grid grid-cols-5 gap-2 sm:gap-4">
+            {stepsList.map((step) => {
+              const isCompleted = currentStep > step.number;
+              const isActive = currentStep === step.number;
+              return (
+                <div key={step.number} className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+                  <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-all ${
+                    isCompleted
+                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                      : isActive
+                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/30"
+                      : "bg-slate-100 text-slate-400"
+                  }`}>
+                    {isCompleted ? <Check className="w-4 h-4" /> : step.number}
+                  </div>
+                  <div className="hidden sm:block min-w-0">
+                    <div className={`text-xs font-black truncate ${isActive ? "text-slate-900" : isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
+                      {step.title}
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">{step.subtitle}</div>
+                  </div>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Responsive Grid Layout */}
+        <div className={`grid gap-8 items-start ${currentStep === 2 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"}`}>
+          
+          {/* LEFT COLUMN: Event Overview & Order Summary (Shown on Steps 1, 3, 4, 5) */}
+          {currentStep !== 2 && (
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-5">
+                {eventData?.image && (
+                  <div className="relative h-44 w-full rounded-2xl overflow-hidden shadow-sm">
+                    <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover" />
+                    <div className="absolute top-3 left-3">
+                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-950/80 text-cyan-400 border border-cyan-500/40 backdrop-blur-md">
+                        {eventData.category || "Leadership Summit"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="text-base sm:text-lg font-black font-display text-slate-900 leading-tight">
+                    {eventData?.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{eventData?.description}</p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 font-semibold">
+                  {eventData?.date && (
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-4 h-4 text-cyan-600 shrink-0" />
+                      <span>{eventData.date}</span>
+                    </div>
+                  )}
+                  {(eventData?.venue || eventData?.city) && (
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="w-4 h-4 text-cyan-600 shrink-0" />
+                      <span>{eventData.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData.city}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2.5">
+                    <Globe className="w-4 h-4 text-cyan-600 shrink-0" />
+                    <span>Executive Talks Media Official Conclave</span>
+                  </div>
+                </div>
+
+                {/* Selected Pass Summary */}
+                {selectedPlan && (
+                  <div className="rounded-2xl bg-cyan-50 border border-cyan-200 p-4 space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700">Selected Pass Tier</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-black text-slate-900">{selectedPlan.name}</span>
+                      <span className="text-sm font-black text-cyan-700">₹{paymentBreakdown.finalAmount.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Inclusions */}
+                <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                    Every Pass Includes:
+                  </span>
+                  <ul className="space-y-2 text-xs text-slate-600 font-medium">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>Full Access to All Keynotes & Panel Tracks</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>5-Star Networking Luncheon & High Tea</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>Digital Verified Delegate Pass & Certificate</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>C-Suite Mastermind & Connect Lounge</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Security */}
+                <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>256-Bit SSL Encrypted & Verified Portal</span>
+                </div>
+
+                {/* Support Contact */}
+                <div className="rounded-2xl bg-slate-50 p-3.5 text-[11px] text-slate-600 space-y-1">
+                  <div className="font-bold text-slate-800">Need Assistance?</div>
+                  <div>Call: <a href="tel:+919100266777" className="text-cyan-700 font-bold hover:underline">+91 91002 66777</a></div>
+                  <div>Email: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-700 font-bold hover:underline">registration@executivetalksmedia.in</a></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RIGHT COLUMN: The Active Step Form */}
+          <div className={currentStep === 2 ? "col-span-1" : "lg:col-span-8"}>
+            <AnimatePresence mode="wait">
+              {/* ================= STEP 1: PERSONAL & EXECUTIVE DETAILS ================= */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
+                      <User className="w-4 h-4" />
+                      <span>STEP 1 OF 5</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                   Personal & Executive Details
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
@@ -627,8 +842,11 @@ export default function EventRegistrationWizardPage() {
                 {/* Executive Contact Info Grid */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      First Name <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>First Name <span className="text-rose-500">*</span></span>
+                      {touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2 && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                      )}
                     </label>
                     <input
                       type="text"
@@ -636,14 +854,29 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.firstName}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("firstName")}
                       placeholder="e.g. Rajesh"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.firstName && fieldErrors.firstName
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.firstName && fieldErrors.firstName && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.firstName}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Last Name <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Last Name <span className="text-rose-500">*</span></span>
+                      {touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2 && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                      )}
                     </label>
                     <input
                       type="text"
@@ -651,14 +884,29 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.lastName}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("lastName")}
                       placeholder="e.g. Sharma"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.lastName && fieldErrors.lastName
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.lastName && fieldErrors.lastName && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.lastName}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Work Email <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Work Email <span className="text-rose-500">*</span></span>
+                      {touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid email</span>
+                      )}
                     </label>
                     <input
                       type="email"
@@ -666,29 +914,59 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.workEmail}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("workEmail")}
                       placeholder="rajesh@company.com"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.workEmail && fieldErrors.workEmail
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.workEmail && fieldErrors.workEmail && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.workEmail}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Contact / Mobile Number <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Contact / Mobile Number <span className="text-rose-500">*</span></span>
+                      {touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid phone</span>
+                      )}
                     </label>
                     <input
                       type="tel"
                       name="contactNumber"
                       required
                       value={formData.contactNumber}
-                      onChange={handleInputChange}
+                      onChange={handlePhoneChange}
+                      onBlur={() => handleFieldBlur("contactNumber")}
                       placeholder="+91 98765 43210"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.contactNumber && fieldErrors.contactNumber
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.contactNumber && fieldErrors.contactNumber && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.contactNumber}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Designation <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Designation <span className="text-rose-500">*</span></span>
+                      {touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2 && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                      )}
                     </label>
                     <input
                       type="text"
@@ -696,14 +974,29 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.designation}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("designation")}
                       placeholder="e.g. Chief Human Resources Officer"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.designation && fieldErrors.designation
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.designation && fieldErrors.designation && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.designation}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Company / Organization Name <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Company / Organization Name <span className="text-rose-500">*</span></span>
+                      {touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2 && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                      )}
                     </label>
                     <input
                       type="text"
@@ -711,14 +1004,29 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.companyName}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("companyName")}
                       placeholder="e.g. Reliance Industries / Tech Corp"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.companyName && fieldErrors.companyName
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.companyName && fieldErrors.companyName && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.companyName}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      City <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>City <span className="text-rose-500">*</span></span>
+                      {touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2 && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                      )}
                     </label>
                     <input
                       type="text"
@@ -726,9 +1034,21 @@ export default function EventRegistrationWizardPage() {
                       required
                       value={formData.city}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("city")}
                       placeholder="e.g. Hyderabad / Mumbai"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.city && fieldErrors.city
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.city && fieldErrors.city && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.city}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -769,17 +1089,32 @@ export default function EventRegistrationWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      LinkedIn Profile <span className="text-slate-400 font-normal">(Optional)</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>LinkedIn Profile <span className="text-slate-400 font-normal">(Optional)</span></span>
+                      {touchedFields.linkedinUrl && !fieldErrors.linkedinUrl && formData.linkedinUrl && (
+                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid URL</span>
+                      )}
                     </label>
                     <input
                       type="url"
                       name="linkedinUrl"
                       value={formData.linkedinUrl}
                       onChange={handleInputChange}
+                      onBlur={() => handleFieldBlur("linkedinUrl")}
                       placeholder="https://linkedin.com/in/profile"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                      className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                        touchedFields.linkedinUrl && fieldErrors.linkedinUrl
+                          ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                          : touchedFields.linkedinUrl && !fieldErrors.linkedinUrl && formData.linkedinUrl
+                          ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                          : "border-slate-200 bg-slate-50/70 focus:border-cyan-500 focus:ring-cyan-500/10"
+                      }`}
                     />
+                    {touchedFields.linkedinUrl && fieldErrors.linkedinUrl && (
+                      <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                        ⚠️ {fieldErrors.linkedinUrl}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1131,7 +1466,7 @@ export default function EventRegistrationWizardPage() {
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Try promo codes: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">EARLYBIRD10</code>, <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">EXECUTIVE20</code>, <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">ETMEDIA500</code>
+                  Try promo codes: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">EARLYBIRD10</code>, <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">EXECUTIVE20</code>, <code className="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">EXECUTIVETALKS500</code>
                 </p>
               </div>
 
@@ -1396,6 +1731,8 @@ export default function EventRegistrationWizardPage() {
             </motion.div>
           )}
         </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );

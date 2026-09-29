@@ -20,6 +20,8 @@ import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor"
 import { Magazine3DViewer } from "@/components/site/Magazine3DViewer";
 import { ThreeDMagazineHero } from "@/components/site/3DMagazineHero";
 
+import { validateEmail } from "@/lib/validation";
+
 const filterCategories = [
   "All Editions",
   "2026",
@@ -157,8 +159,9 @@ export default function MagazinePage() {
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsletterEmail.trim() || !newsletterEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
+    const val = validateEmail(newsletterEmail, "Newsletter Email");
+    if (!val.isValid) {
+      toast.error(val.error);
       return;
     }
     if (!newsletterAgree) {
@@ -189,7 +192,7 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 2. EXPLORE OUR EDITIONS (WHITE MODE GRID)  */}
       {/* ========================================== */}
-      <section id="all-magazines" className="py-16 sm:py-24 relative bg-slate-50/70 border-b border-slate-200">
+      <section id="all-magazines" className="py-12 sm:py-16 relative bg-slate-50/70 border-b border-slate-200">
         <div className="container-x">
           
           {/* Section Header */}
@@ -332,7 +335,7 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 3. STAY UPDATED NEWSLETTER BANNER AT BOTTOM */}
       {/* ========================================== */}
-      <section className="py-16 sm:py-20 relative bg-white">
+      <section className="py-10 sm:py-14 relative bg-white">
         <div className="container-x">
           <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-r from-slate-950 via-[#111827] to-slate-950 text-white p-8 sm:p-12 shadow-2xl relative overflow-hidden">
             {/* Ambient Lighting Orbs */}

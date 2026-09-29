@@ -5,6 +5,13 @@ import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { contact, images } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 import {
+  validateEmail,
+  validatePhone,
+  validateName,
+  validateRequiredText,
+  sanitizePhoneInput,
+} from "@/lib/validation";
+import {
   Mail,
   MapPin,
   Phone,
@@ -34,17 +41,9 @@ export default function ContactPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [phoneTouched, setPhoneTouched] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const validatePhone = (p: string) => {
-    const cleaned = p.trim();
-    const digits = cleaned.replace(/\D/g, "");
-    if (!cleaned) return "Phone number is required.";
-    if (digits.length < 10) return "Please enter a valid 10-digit phone number (e.g. +91 98765 43210).";
-    if (digits.length > 15) return "Phone number cannot exceed 15 digits.";
-    return "";
-  };
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [realtimeNotification, setRealtimeNotification] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState({
@@ -52,8 +51,8 @@ export default function ContactPage() {
     instagram: contact.instagram,
     youtube: contact.youtube,
     whatsapp: contact.whatsapp,
-    twitter: "https://x.com/etmedia",
-    facebook: "https://facebook.com/etmedia",
+    twitter: "https://x.com/executivetalksmedia",
+    facebook: "https://facebook.com/executivetalksmedia",
   });
 
   useEffect(() => {
@@ -115,11 +114,24 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const pErr = validatePhone(formData.phone);
-    if (pErr) {
-      setPhoneTouched(true);
-      setPhoneError(pErr);
-      toast.error(pErr);
+    const errors: Record<string, string> = {};
+    const nameVal = validateName(formData.name, "Full Name");
+    if (!nameVal.isValid) errors.name = nameVal.error;
+
+    const emailVal = validateEmail(formData.email, "Email Address");
+    if (!emailVal.isValid) errors.email = emailVal.error;
+
+    const phoneVal = validatePhone(formData.phone, "Phone Number");
+    if (!phoneVal.isValid) errors.phone = phoneVal.error;
+
+    const msgVal = validateRequiredText(formData.message, "Message", 10, 2000);
+    if (!msgVal.isValid) errors.message = msgVal.error;
+
+    setFieldErrors(errors);
+    setTouched({ name: true, email: true, phone: true, message: true });
+
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors)[0]);
       return;
     }
 
@@ -130,11 +142,11 @@ export default function ContactPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
           enquiryType: formData.subject,
-          message: formData.message,
+          message: formData.message.trim(),
         }),
       });
 
@@ -170,7 +182,7 @@ export default function ContactPage() {
       />
 
       {/* Main Container */}
-      <div className="container-x relative mt-6 space-y-8">
+      <div className="container-x relative py-8 sm:py-12 space-y-8">
         
         {/* ==================================================== */}
         {/* 1. CONTACT CARDS GRID (5 Dedicated Cards)             */}
@@ -447,10 +459,31 @@ export default function ContactPage() {
                         type="text"
                         required
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, name: val });
+                          if (touched.name) {
+                            const res = validateName(val, "Full Name");
+                            setFieldErrors((prev) => ({ ...prev, name: res.isValid ? "" : res.error }));
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, name: true }));
+                          const res = validateName(formData.name, "Full Name");
+                          setFieldErrors((prev) => ({ ...prev, name: res.isValid ? "" : res.error }));
+                        }}
                         placeholder="e.g. Rajesh Sharma"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                        className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                          touched.name && fieldErrors.name
+                            ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                            : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                        }`}
                       />
+                      {touched.name && fieldErrors.name && (
+                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                          <span>⚠️</span> {fieldErrors.name}
+                        </p>
+                      )}
                     </div>
 
                     {/* Email & Phone */}
@@ -463,18 +496,39 @@ export default function ContactPage() {
                           type="email"
                           required
                           value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData({ ...formData, email: val });
+                            if (touched.email) {
+                              const res = validateEmail(val, "Email Address");
+                              setFieldErrors((prev) => ({ ...prev, email: res.isValid ? "" : res.error }));
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, email: true }));
+                            const res = validateEmail(formData.email, "Email Address");
+                            setFieldErrors((prev) => ({ ...prev, email: res.isValid ? "" : res.error }));
+                          }}
                           placeholder="rajesh@company.com"
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                          className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                            touched.email && fieldErrors.email
+                              ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                              : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                          }`}
                         />
+                        {touched.email && fieldErrors.email && (
+                          <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                            <span>⚠️</span> {fieldErrors.email}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
                           <span>Phone Number *</span>
-                          {phoneTouched && !phoneError && formData.phone && (
+                          {touched.phone && !fieldErrors.phone && formData.phone && (
                             <span className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
-                              ✓ Valid phone number
+                              ✓ Valid phone
                             </span>
                           )}
                         </label>
@@ -483,26 +537,30 @@ export default function ContactPage() {
                           required
                           value={formData.phone}
                           onChange={(e) => {
-                            const cleanVal = e.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+                            const cleanVal = sanitizePhoneInput(e.target.value);
                             setFormData({ ...formData, phone: cleanVal });
-                            if (phoneTouched) setPhoneError(validatePhone(cleanVal));
+                            if (touched.phone) {
+                              const res = validatePhone(cleanVal, "Phone Number");
+                              setFieldErrors((prev) => ({ ...prev, phone: res.isValid ? "" : res.error }));
+                            }
                           }}
                           onBlur={() => {
-                            setPhoneTouched(true);
-                            setPhoneError(validatePhone(formData.phone));
+                            setTouched((prev) => ({ ...prev, phone: true }));
+                            const res = validatePhone(formData.phone, "Phone Number");
+                            setFieldErrors((prev) => ({ ...prev, phone: res.isValid ? "" : res.error }));
                           }}
                           placeholder="+91 98765 43210"
                           className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
-                            phoneTouched && phoneError
-                              ? "border-rose-500 bg-rose-50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
-                              : phoneTouched && !phoneError && formData.phone
+                            touched.phone && fieldErrors.phone
+                              ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                              : touched.phone && !fieldErrors.phone && formData.phone
                               ? "border-emerald-500 bg-slate-50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                               : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
                           }`}
                         />
-                        {phoneTouched && phoneError && (
+                        {touched.phone && fieldErrors.phone && (
                           <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1 animate-in fade-in">
-                            <span>⚠️</span> {phoneError}
+                            <span>⚠️</span> {fieldErrors.phone}
                           </p>
                         )}
                       </div>
@@ -535,10 +593,31 @@ export default function ContactPage() {
                         rows={4}
                         required
                         value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, message: val });
+                          if (touched.message) {
+                            const res = validateRequiredText(val, "Message", 10, 2000);
+                            setFieldErrors((prev) => ({ ...prev, message: res.isValid ? "" : res.error }));
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, message: true }));
+                          const res = validateRequiredText(formData.message, "Message", 10, 2000);
+                          setFieldErrors((prev) => ({ ...prev, message: res.isValid ? "" : res.error }));
+                        }}
                         placeholder="Tell us about your requirements, company, and how we can assist..."
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                        className={`w-full rounded-2xl border px-4 py-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                          touched.message && fieldErrors.message
+                            ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                            : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                        }`}
                       />
+                      {touched.message && fieldErrors.message && (
+                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                          <span>⚠️</span> {fieldErrors.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Submit Button */}

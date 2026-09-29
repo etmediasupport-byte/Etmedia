@@ -350,7 +350,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       {/* 2. TOP GLASSMORPER TOOLBAR (Blur 24px, Gold Border)       */}
       {/* ========================================================= */}
       <div className="relative z-30 flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#08111F]/80 px-4 py-3 sm:px-6 shadow-2xl backdrop-blur-[24px] shrink-0">
-        {/* ET Media Branding & Title */}
+        {/* Executive Talks Media Branding & Title */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 rounded-xl bg-gradient-to-br from-[#7A0019] to-[#08111F] border border-[#D4AF37]/50 text-[#D4AF37] shrink-0 shadow-md">
             <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />

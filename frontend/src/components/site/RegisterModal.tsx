@@ -3,6 +3,13 @@ import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles
 import { toast } from "sonner";
 import { events as defaultEvents, type EventItem, getDefaultPricingPlans, checkEarlyBirdStatus, type PricingPlanTier } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateRequiredText,
+} from "@/lib/validation";
 import logoUrl from "@/assets/logo-final.png";
 
 interface RegisterModalProps {
@@ -93,20 +100,17 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
   const [pendingRegId, setPendingRegId] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const validatePhoneNumber = (phone: string) => {
-    const cleaned = phone.trim();
-    const digits = cleaned.replace(/\D/g, "");
-    if (!cleaned) {
-      return "Contact number is required.";
-    }
-    if (digits.length < 10) {
-      return "Please enter a valid 10-digit contact number (e.g. +91 98765 43210).";
-    }
-    if (digits.length > 15) {
-      return "Contact number cannot exceed 15 digits.";
-    }
-    return "";
+    const res = validatePhone(phone, "Contact Number");
+    return res.isValid ? "" : res.error;
+  };
+
+  const validateEmailAddress = (email: string) => {
+    const res = validateEmail(email, "Work Email");
+    return res.isValid ? "" : res.error;
   };
 
   // Auto-select event details & fetch payment configuration when active event changes
@@ -274,31 +278,43 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error("Please enter your First Name and Last Name.");
+    const fnVal = validateName(formData.firstName, "First Name");
+    if (!fnVal.isValid) {
+      toast.error(fnVal.error);
       return;
     }
 
-    if (!formData.email.trim()) {
-      toast.error("Please enter a valid work email.");
+    const lnVal = validateName(formData.lastName, "Last Name");
+    if (!lnVal.isValid) {
+      toast.error(lnVal.error);
       return;
     }
 
-    const phoneErr = validatePhoneNumber(formData.contactNumber);
-    if (phoneErr) {
+    const emailVal = validateEmail(formData.email, "Work Email");
+    if (!emailVal.isValid) {
+      setEmailTouched(true);
+      setEmailError(emailVal.error);
+      toast.error(emailVal.error);
+      return;
+    }
+
+    const phoneVal = validatePhone(formData.contactNumber, "Contact Number");
+    if (!phoneVal.isValid) {
       setPhoneTouched(true);
-      setPhoneError(phoneErr);
-      toast.error(phoneErr);
+      setPhoneError(phoneVal.error);
+      toast.error(phoneVal.error);
       return;
     }
 
-    if (!formData.companyName.trim()) {
-      toast.error("Please enter your company name.");
+    const desigVal = validateRequiredText(formData.designation, "Designation");
+    if (!desigVal.isValid) {
+      toast.error(desigVal.error);
       return;
     }
 
-    if (!formData.designation.trim()) {
-      toast.error("Please enter your designation.");
+    const compVal = validateRequiredText(formData.companyName, "Company Name");
+    if (!compVal.isValid) {
+      toast.error(compVal.error);
       return;
     }
 
@@ -723,17 +739,38 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
-                        Work Email *
+                      <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Work Email *</span>
+                        {emailTouched && !emailError && formData.email && (
+                          <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid email</span>
+                        )}
                       </label>
                       <input
                         type="email"
                         required
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (emailTouched) setEmailError(validateEmailAddress(e.target.value));
+                        }}
+                        onBlur={() => {
+                          setEmailTouched(true);
+                          setEmailError(validateEmailAddress(formData.email));
+                        }}
                         placeholder="rajesh@company.com"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                        className={`w-full rounded-xl border px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all font-medium ${
+                          emailTouched && emailError
+                            ? "border-rose-500 bg-rose-50 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                            : emailTouched && !emailError && formData.email
+                            ? "border-emerald-500 bg-slate-50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                            : "border-slate-200 bg-slate-50 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                        }`}
                       />
+                      {emailTouched && emailError && (
+                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1 animate-in fade-in">
+                          <span>⚠️</span> {emailError}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -1375,7 +1412,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "paid" }: Registe
 
                     <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
                       <span>Support: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-600 hover:underline">registration@executivetalksmedia.in</a></span>
-                      <span className="font-semibold text-slate-700">www.etmedia.in</span>
+                      <span className="font-semibold text-slate-700">www.executivetalksmedia.in</span>
                     </div>
                   </div>
                 </div>

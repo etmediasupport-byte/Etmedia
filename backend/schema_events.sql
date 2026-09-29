@@ -1,4 +1,4 @@
--- ET Media Hub Events Table Schema & Sample Data for Hostinger phpMyAdmin
+-- Executive Talks Media Hub Events Table Schema & Sample Data for Hostinger phpMyAdmin
 -- Database: u409108324_ETMedia
 
 CREATE TABLE IF NOT EXISTS `events` (

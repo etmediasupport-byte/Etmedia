@@ -83,7 +83,7 @@ export default function VerifyPassPage() {
   const timestamp = passData?.created_at ? new Date(passData.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "N/A";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pt-28 sm:pt-32 pb-16 px-4 sm:px-6 lg:px-8 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       <div className="max-w-3xl mx-auto space-y-6">
         
         {/* Navigation Top Bar */}
@@ -282,7 +282,7 @@ export default function VerifyPassPage() {
               {/* FOOTER VERIFICATION NOTICE */}
               <div className="border-t border-slate-800 pt-6 text-center space-y-2 text-xs text-slate-400">
                 <p className="font-semibold text-slate-300">Executive Talks Media Business Intelligence Executive Committee</p>
-                <p>Support Contact: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-400 hover:underline">registration@executivetalksmedia.in</a> | Website: <a href="https://www.etmedia.in" className="text-cyan-400 hover:underline">www.etmedia.in</a></p>
+                <p>Support Contact: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-400 hover:underline">registration@executivetalksmedia.in</a> | Website: <a href="https://www.executivetalksmedia.in" className="text-cyan-400 hover:underline">www.executivetalksmedia.in</a></p>
               </div>
 
             </div>

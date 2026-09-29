@@ -46,7 +46,7 @@ export default function FreeRegistrationPendingPage() {
   const matchedEvent = defaultEvents.find((e) => (e.slug || "").toLowerCase() === (slug || "").toLowerCase()) || defaultEvents[0]!;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-28 sm:pt-32">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}

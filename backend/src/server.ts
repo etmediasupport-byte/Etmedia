@@ -32,7 +32,7 @@ const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
 const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
 const smtpPass = (process.env.SMTP_PASS || "ETalks@202602").trim();
-const smtpFrom = process.env.SMTP_FROM || `"ET Media Business Intelligence" <${smtpUser}>`;
+const smtpFrom = process.env.SMTP_FROM || `"Executive Talks Media Business Intelligence" <${smtpUser}>`;
 const adminEmail = (process.env.ADMIN_EMAIL || "srikanth@executivetalksmedia.in").trim();
 const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
@@ -48,6 +48,33 @@ const mailTransporter = nodemailer.createTransport({
     rejectUnauthorized: false, // Prevents SSL certificate validation issues on web hosts
   },
 });
+
+// --- CENTRALIZED BACKEND VALIDATION HELPERS ---
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+function isValidEmail(email: any): boolean {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim();
+  if (!EMAIL_REGEX.test(trimmed)) return false;
+  const domain = trimmed.split("@")[1];
+  if (!domain || !domain.includes(".") || domain.endsWith(".")) return false;
+  return true;
+}
+
+function isValidPhone(phone: any): boolean {
+  if (!phone || typeof phone !== "string") return false;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10 || digits.length > 15) return false;
+  if (/^(\d)\1+$/.test(digits)) return false;
+  return true;
+}
+
+function isValidName(name: any): boolean {
+  if (!name || typeof name !== "string") return false;
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 100) return false;
+  return /[a-zA-Z]/.test(trimmed);
+}
 
 interface RegistrationEmailPayload {
   registrationId?: string;
@@ -77,7 +104,7 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const regId = data.registrationId || `REG-${Date.now()}`;
   const effectiveFirstName = data.firstName || "Delegate";
   const effectiveFullName = data.fullName || `${effectiveFirstName} ${data.lastName || ""}`.trim();
-  const eventName = data.eventTitle || "ET Media Executive Summit 2026";
+  const eventName = data.eventTitle || "Executive Talks Media Leadership Summit 2026";
   const userEmail = data.email.trim();
   const regCategory = data.registrationCategory || "Executive Delegate";
   const regPhone = data.phone || "N/A";
@@ -95,7 +122,7 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const regDate = data.createdAt || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
   // Direct clickable Verification URL encoded into the Scannable QR Code
-  const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.etmedia.in").replace(/\/$/, "");
+  const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
   const verifyPassUrl = `${baseUrl}/verify-pass/${encodeURIComponent(regId)}`;
 
   let qrCodeBuffer: Buffer | null = null;
@@ -127,7 +154,7 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
     text: `
 Dear ${effectiveFullName},
 
-Thank you for registering for ${eventName} with ET Media Business Intelligence.
+Thank you for registering for ${eventName} with Executive Talks Media Business Intelligence.
 
 YOUR REGISTRATION & TICKET DETAILS:
 - Registration ID: ${regId}
@@ -150,12 +177,12 @@ PAYMENT DETAILS:
 - Coupon Code: ${coupon}
 
 EVENT TERMS & CONDITIONS:
-• Registration: Registration is subject to confirmation by ET Media Business Intelligence.
+• Registration: Registration is subject to confirmation by Executive Talks Media Business Intelligence.
 • Valid ID Proof: Participants must carry a valid government-issued photo ID for identity verification at the venue.
 • Entry & Pass: Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.
-• Right of Admission: ET Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.
+• Right of Admission: Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.
 • Code of Conduct: All participants must maintain professional and respectful conduct throughout the event.
-• Event Changes: ET Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.
+• Event Changes: Executive Talks Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.
 • Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.
 • Event Timing & Grace Period: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.
 • Personal Belongings: Participants are responsible for their personal belongings during the event.
@@ -165,16 +192,16 @@ Scan the attached QR code to view all submitted registration and payment details
 
 We look forward to welcoming you!
 
-ET Media Business Intelligence
-registration@etmedia.in
-www.etmedia.in
+Executive Talks Media Business Intelligence
+registration@executivetalksmedia.in
+www.executivetalksmedia.in
 `,
     html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
         
         <!-- HEADER BANNER -->
         <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 30px 25px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">ET MEDIA BUSINESS INTELLIGENCE</h1>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
           <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass & Confirmation</p>
         </div>
 
@@ -290,12 +317,12 @@ www.etmedia.in
               📋 Event Terms & Conditions
             </h3>
             <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #475569; line-height: 1.7;">
-              <li style="margin-bottom: 6px;"><strong>Registration:</strong> Registration is subject to confirmation by ET Media Business Intelligence.</li>
+              <li style="margin-bottom: 6px;"><strong>Registration:</strong> Registration is subject to confirmation by Executive Talks Media Business Intelligence.</li>
               <li style="margin-bottom: 6px;"><strong>Valid ID Proof:</strong> Participants must carry a valid government-issued photo ID for identity verification at the venue.</li>
               <li style="margin-bottom: 6px;"><strong>Entry & Pass:</strong> Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.</li>
-              <li style="margin-bottom: 6px;"><strong>Right of Admission:</strong> ET Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.</li>
+              <li style="margin-bottom: 6px;"><strong>Right of Admission:</strong> Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.</li>
               <li style="margin-bottom: 6px;"><strong>Code of Conduct:</strong> All participants must maintain professional and respectful conduct throughout the event.</li>
-              <li style="margin-bottom: 6px;"><strong>Event Changes:</strong> ET Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.</li>
+              <li style="margin-bottom: 6px;"><strong>Event Changes:</strong> Executive Talks Media Business Intelligence reserves the right to change the venue, agenda, speakers, timings or event format if required.</li>
               <li style="margin-bottom: 6px;"><strong>Health & Safety:</strong> Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event and prioritize their health and the safety of other participants.</li>
               <li style="margin-bottom: 6px;"><strong>Event Timing & Grace Period:</strong> Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.</li>
               <li style="margin-bottom: 6px;"><strong>Personal Belongings:</strong> Participants are responsible for their personal belongings during the event.</li>
@@ -308,16 +335,16 @@ www.etmedia.in
 
         <!-- FOOTER -->
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 25px; text-align: center; color: #64748b; font-size: 12px;">
-          <p style="margin: 0; font-weight: 700; color: #1e293b;">ET Media Business Intelligence</p>
+          <p style="margin: 0; font-weight: 700; color: #1e293b;">Executive Talks Media Business Intelligence</p>
           <p style="margin: 4px 0 0 0;">Official Support Email: <a href="mailto:${smtpUser.trim()}" style="color: #0891b2; text-decoration: none; font-weight: 700;">${smtpUser.trim()}</a></p>
-          <p style="margin: 4px 0 0 0;">Website: <a href="https://www.etmedia.in" style="color: #0891b2; text-decoration: none;">www.etmedia.in</a></p>
+          <p style="margin: 4px 0 0 0;">Website: <a href="https://www.executivetalksmedia.in" style="color: #0891b2; text-decoration: none;">www.executivetalksmedia.in</a></p>
         </div>
 
       </div>
     `,
     attachments: qrCodeBuffer ? [
       {
-        filename: `ETMedia-Pass-${regId}.png`,
+        filename: `ExecutiveTalks-Pass-${regId}.png`,
         content: qrCodeBuffer,
         cid: "delegate-qrcode",
       }
@@ -340,12 +367,12 @@ async function sendPartnerConfirmationEmail(data: {
   companyName: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: data.email,
-    subject: `Partnership Interest Received — ET Media Business Intelligence`,
+    subject: `Partnership Interest Received — Executive Talks Media Business Intelligence`,
     text: `Dear ${data.contactPerson},
 
-Thank you for expressing your interest in partnering with ET Media Business Intelligence.
+Thank you for expressing your interest in partnering with Executive Talks Media Business Intelligence.
 Our team will get in touch with you shortly.
 
 We will review your requirements and discuss the available branding, sponsorship and business engagement opportunities.
@@ -353,18 +380,18 @@ We will review your requirements and discuss the available branding, sponsorship
 We look forward to building a successful partnership with your organisation.
 
 Regards,
-ET Media Business Intelligence
-partner.support@etmedia.in
-www.etmedia.in`,
+Executive Talks Media Business Intelligence
+partner.support@executivetalksmedia.in
+www.executivetalksmedia.in`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #00AEEF;">
-          <h2 style="color: #00AEEF; margin: 0; font-size: 20px;">ET MEDIA BUSINESS INTELLIGENCE</h2>
+          <h2 style="color: #00AEEF; margin: 0; font-size: 20px;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h2>
           <p style="color: #4B1FA7; font-weight: bold; margin-top: 5px; font-size: 13px;">Strategic Partnerships & Business Development</p>
         </div>
         <div style="padding: 25px 0; color: #334155; line-height: 1.6; font-size: 15px;">
           <p>Dear <strong>${data.contactPerson}</strong>,</p>
-          <p>Thank you for expressing your interest in partnering with <strong>ET Media Business Intelligence</strong>.</p>
+          <p>Thank you for expressing your interest in partnering with <strong>Executive Talks Media Business Intelligence</strong>.</p>
           <p style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 16px; color: #166534; font-weight: 600; border-radius: 8px;">
             🤝 Our team will get in touch with you shortly.
           </p>
@@ -373,9 +400,9 @@ www.etmedia.in`,
         </div>
         <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; color: #64748b; font-size: 13px;">
           <p style="margin: 0; font-weight: bold; color: #1e293b;">Regards,</p>
-          <p style="margin: 2px 0; font-weight: bold; color: #0f172a;">ET Media Business Intelligence</p>
-          <p style="margin: 4px 0 0 0;"><a href="mailto:partner.support@etmedia.in" style="color: #00AEEF; text-decoration: none;">partner.support@etmedia.in</a></p>
-          <p style="margin: 2px 0 0 0;"><a href="https://www.etmedia.in" style="color: #00AEEF; text-decoration: none;">www.etmedia.in</a></p>
+          <p style="margin: 2px 0; font-weight: bold; color: #0f172a;">Executive Talks Media Business Intelligence</p>
+          <p style="margin: 4px 0 0 0;"><a href="mailto:partner.support@executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">partner.support@executivetalksmedia.in</a></p>
+          <p style="margin: 2px 0 0 0;"><a href="https://www.executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">www.executivetalksmedia.in</a></p>
         </div>
       </div>
     `,
@@ -405,7 +432,7 @@ async function sendPartnerAdminNotificationEmail(data: {
   message?: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
     subject: `🤝 New Partner Proposal Submitted: ${data.company_name} (${data.id})`,
     text: `New Partner Application Received:
@@ -426,7 +453,7 @@ async function sendPartnerAdminNotificationEmail(data: {
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #00AEEF 0%, #4B1FA7 100%); padding: 25px; text-align: center; color: #ffffff;">
           <h2 style="margin: 0; font-size: 20px; font-weight: 800;">🤝 NEW PARTNER PROPOSAL SUBMITTED</h2>
-          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Strategic Partnerships & Alliances Portal</p>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Executive Talks Media Strategic Partnerships & Alliances Portal</p>
         </div>
         <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
           <table style="width: 100%; border-collapse: collapse;">
@@ -443,7 +470,7 @@ async function sendPartnerAdminNotificationEmail(data: {
           </table>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
-          Received via ET Media Partner Portal · Admin Notification to ${adminEmail}
+          Received via Executive Talks Media Partner Portal · Admin Notification to ${adminEmail}
         </div>
       </div>
     `,
@@ -469,7 +496,7 @@ async function sendContactAdminNotificationEmail(data: {
   submittedAt?: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
     subject: `📩 New Contact Enquiry: ${data.name} (${data.enquiryType || "General"})`,
     text: `New Contact Form Enquiry Received:
@@ -486,7 +513,7 @@ async function sendContactAdminNotificationEmail(data: {
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 25px; text-align: center; color: #ffffff;">
           <h2 style="margin: 0; font-size: 20px; font-weight: 800;">📩 NEW CONTACT ENQUIRY RECEIVED</h2>
-          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Executive Advisory Desk</p>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Executive Talks Media Executive Advisory Desk</p>
         </div>
         <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
           <table style="width: 100%; border-collapse: collapse;">
@@ -498,7 +525,7 @@ async function sendContactAdminNotificationEmail(data: {
           </table>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
-          Received via ET Media Contact Form · Admin Notification to ${adminEmail}
+          Received via Executive Talks Media Contact Form · Admin Notification to ${adminEmail}
         </div>
       </div>
     `,
@@ -527,7 +554,7 @@ async function sendJobApplicationAdminNotificationEmail(data: {
   created_at?: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
     subject: `💼 New Candidate Job Application: ${data.name} for ${data.job_title}`,
     text: `New Candidate Job Application Received:
@@ -545,7 +572,7 @@ async function sendJobApplicationAdminNotificationEmail(data: {
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; shadow: 0 4px 20px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #10b981 0%, #0891b2 100%); padding: 25px; text-align: center; color: #ffffff;">
           <h2 style="margin: 0; font-size: 20px; font-weight: 800;">💼 NEW JOB APPLICATION RECEIVED</h2>
-          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media Careers & Talent Acquisition Portal</p>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Executive Talks Media Careers & Talent Acquisition Portal</p>
         </div>
         <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
           <table style="width: 100%; border-collapse: collapse;">
@@ -559,7 +586,7 @@ async function sendJobApplicationAdminNotificationEmail(data: {
           </table>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
-          Received via ET Media Careers Portal · Admin Notification to ${adminEmail}
+          Received via Executive Talks Media Careers Portal · Admin Notification to ${adminEmail}
         </div>
       </div>
     `,
@@ -591,7 +618,7 @@ async function sendMembershipAdminNotificationEmail(data: {
   created_at?: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
     subject: `👑 New Executive Membership Application: ${data.full_name} (${data.company || "C-Suite"})`,
     text: `New Executive Membership Application Received:
@@ -613,7 +640,7 @@ async function sendMembershipAdminNotificationEmail(data: {
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #4b1fa7 0%, #0891b2 100%); padding: 25px; text-align: center; color: #ffffff;">
           <h2 style="margin: 0; font-size: 20px; font-weight: 800;">👑 NEW EXECUTIVE MEMBERSHIP APPLICATION</h2>
-          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">ET Media C-Suite Leadership Advisory Desk</p>
+          <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Executive Talks Media C-Suite Leadership Advisory Desk</p>
         </div>
         <div style="padding: 25px; color: #334155; font-size: 14px; line-height: 1.6;">
           <table style="width: 100%; border-collapse: collapse;">
@@ -631,7 +658,7 @@ async function sendMembershipAdminNotificationEmail(data: {
           </table>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #64748b; font-size: 12px;">
-          Received via ET Media Membership Portal · Admin Notification to ${adminEmail}
+          Received via Executive Talks Media Membership Portal · Admin Notification to ${adminEmail}
         </div>
       </div>
     `,
@@ -653,7 +680,7 @@ async function sendNewsletterAdminNotificationEmail(data: {
   source?: string;
 }) {
   const mailOptions = {
-    from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
     subject: `📰 New Executive Talks Newsletter Subscriber: ${data.email}`,
     text: `New Newsletter Subscriber:
@@ -1145,7 +1172,7 @@ app.get("/api/popup/analytics", authenticateAdmin, async (_req, res) => {
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
-    service: "ET Media Business Intelligence Backend",
+    service: "Executive Talks Media Business Intelligence Backend",
     timestamp: new Date().toISOString(),
     activeSockets: liveActiveUsers,
     database: pool ? "connected" : "disconnected",
@@ -1212,7 +1239,7 @@ app.get("/api/verify-pass/:regId", async (req, res) => {
 // 1b. Dynamic Sitemap XML for SEO
 app.get("/sitemap.xml", async (_req, res) => {
   try {
-    const baseUrl = "https://www.etmedia.in";
+    const baseUrl = "https://www.executivetalksmedia.in";
     let eventSlugs: string[] = [];
 
     if (pool) {
@@ -1270,7 +1297,7 @@ app.get("/sitemap.xml", async (_req, res) => {
 
 // 1c. Robots.txt for Search Crawlers
 app.get("/robots.txt", (_req, res) => {
-  const robots = `User-agent: *\nAllow: /\nDisallow: /api/admin/\nDisallow: /admin/\n\nSitemap: https://www.etmedia.in/sitemap.xml\n`;
+  const robots = `User-agent: *\nAllow: /\nDisallow: /api/admin/\nDisallow: /admin/\n\nSitemap: https://www.executivetalksmedia.in/sitemap.xml\n`;
   res.setHeader("Content-Type", "text/plain");
   return res.send(robots);
 });
@@ -1501,6 +1528,18 @@ app.post("/api/registrations/start", async (req, res) => {
       return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
     }
 
+    if (!isValidEmail(workEmail)) {
+      return res.status(400).json({ success: false, message: "Please provide a valid official work email address." });
+    }
+
+    if (!isValidPhone(contactNumber)) {
+      return res.status(400).json({ success: false, message: "Please provide a valid 10-digit contact mobile number." });
+    }
+
+    if (!isValidName(firstName) || !isValidName(lastName)) {
+      return res.status(400).json({ success: false, message: "Please provide valid First and Last names containing alphabets." });
+    }
+
     const regId = `ETM-REG-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const fullName = `${firstName} ${lastName}`.trim();
     const effectiveEventSlug = eventSlug || eventId;
@@ -1642,6 +1681,18 @@ app.post("/api/registrations/free-start", async (req, res) => {
 
     if (!workEmail || !firstName || !lastName || !contactNumber || !companyName) {
       return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
+    }
+
+    if (!isValidEmail(workEmail)) {
+      return res.status(400).json({ success: false, message: "Please provide a valid official work email address." });
+    }
+
+    if (!isValidPhone(contactNumber)) {
+      return res.status(400).json({ success: false, message: "Please provide a valid 10-digit contact mobile number." });
+    }
+
+    if (!isValidName(firstName) || !isValidName(lastName)) {
+      return res.status(400).json({ success: false, message: "Please provide valid First and Last names containing alphabets." });
     }
 
     const regId = `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1822,10 +1873,17 @@ app.post("/api/events/register", async (req, res) => {
   const effectivePaymentStatus = paymentStatus || (paymentId ? "Paid" : (paymentAmount > 0 ? "Pending" : "Free"));
   const effectiveAmount = Number(paymentAmount) || 0;
 
-  if (!email) {
+  if (!email || !isValidEmail(email)) {
     return res.status(400).json({
       success: false,
-      message: "Email is a required field.",
+      message: "Please provide a valid official email address.",
+    });
+  }
+
+  if (effectivePhone && effectivePhone !== "N/A" && !isValidPhone(effectivePhone)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please provide a valid 10-digit mobile number.",
     });
   }
 
@@ -2149,6 +2207,27 @@ app.post("/api/contact", async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Name, email, and message are required.",
+    });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter a valid email address (e.g. name@company.com).",
+    });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter a valid Full Name.",
+    });
+  }
+
+  if (phone && phone !== "N/A" && !isValidPhone(phone)) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter a valid 10-digit phone number.",
     });
   }
 
@@ -2626,6 +2705,18 @@ app.post("/api/admin/grant-access", authenticateAdmin, async (req, res) => {
 
   if (!email || !name) {
     return res.status(400).json({ success: false, message: "Name and Email are required to grant access." });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid official email address." });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid Full Name." });
+  }
+
+  if (phone && phone !== "N/A" && !isValidPhone(phone)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid 10-digit mobile number." });
   }
 
   const effectiveFirstName = name.trim().split(" ")[0];
@@ -3596,6 +3687,14 @@ app.post("/api/partners/submit", async (req, res) => {
     return res.status(400).json({ success: false, message: "Please fill in all required fields marked with *" });
   }
 
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please provide a valid official corporate email address." });
+  }
+
+  if (!isValidPhone(phone)) {
+    return res.status(400).json({ success: false, message: "Please provide a valid 10-digit contact mobile number." });
+  }
+
   const id = `PRT-SUB-${Date.now().toString().slice(-6)}`;
   const submissionData = {
     id,
@@ -3686,20 +3785,20 @@ app.post("/api/admin/partner-submissions/:id/reply", authenticateAdmin, async (r
 
     // Send email response
     await mailTransporter.sendMail({
-      from: `"ET Media Business Intelligence" <${smtpUser.trim()}>`,
+      from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
       to: recipient_email,
-      subject: `Response to your Partnership Inquiry — ET Media Business Intelligence`,
+      subject: `Response to your Partnership Inquiry — Executive Talks Media Business Intelligence`,
       text: reply_message,
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-          <h3 style="color: #00AEEF; margin-top: 0;">ET Media Strategic Partnerships</h3>
+          <h3 style="color: #00AEEF; margin-top: 0;">Executive Talks Media Strategic Partnerships</h3>
           <p>Dear <strong>${contact_person || "Partner"}</strong>,</p>
           <div style="background-color: #f8fafc; border-left: 4px solid #00AEEF; padding: 15px; border-radius: 6px; font-size: 14px; line-height: 1.6; color: #1e293b;">
             ${reply_message.replace(/\n/g, "<br/>")}
           </div>
           <p style="color: #64748b; font-size: 13px; margin-top: 20px;">
             Best regards,<br/>
-            <strong>ET Media Strategic Partnerships Team</strong><br/>
+            <strong>Executive Talks Media Strategic Partnerships Team</strong><br/>
             <a href="mailto:${supportEmail}" style="color: #00AEEF; text-decoration: none;">${supportEmail}</a>
           </p>
         </div>
@@ -4006,6 +4105,18 @@ app.post("/api/jobs/apply", async (req, res) => {
   const { job_id, job_title, name, email, phone, experience, resume_url, portfolio_url } = req.body;
   if (!job_id || !name || !email || !phone || !experience || !resume_url) {
     return res.status(400).json({ success: false, message: "Please complete all required application fields and upload your resume PDF" });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid candidate full name." });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid email address." });
+  }
+
+  if (!isValidPhone(phone)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid 10-digit contact mobile number." });
   }
 
   const id = `APP-${Date.now().toString().slice(-6)}`;
@@ -4505,8 +4616,8 @@ app.delete("/api/admin/sectors/:id", authenticateAdmin, async (req, res) => {
 // Subscribe to newsletter (Public)
 app.post("/api/newsletter/subscribe", async (req, res) => {
   const { email, source } = req.body;
-  if (!email || !email.includes("@")) {
-    return res.status(400).json({ success: false, message: "Valid email address is required" });
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Valid email address is required (e.g. name@company.com)" });
   }
 
   const id = `SUB-${Date.now().toString().slice(-6)}`;
@@ -4515,12 +4626,12 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
       await ensureNewAdminTables();
       await pool.query(
         "INSERT INTO newsletter_subscribers (id, email, source) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE email=email",
-        [id, email, source || "Website Footer"]
+        [id, email.trim(), source || "Website Footer"]
       );
     }
-    const newSub = { id, email, source: source || "Website Footer", created_at: new Date() };
+    const newSub = { id, email: email.trim(), source: source || "Website Footer", created_at: new Date() };
     io.emit("new_newsletter_subscriber", newSub);
-    sendNewsletterAdminNotificationEmail({ id, email, source: source || "Website Footer" }).catch(() => {});
+    sendNewsletterAdminNotificationEmail({ id, email: email.trim(), source: source || "Website Footer" }).catch(() => {});
     return res.json({ success: true, message: "Subscribed to Executive Talks newsletter!" });
   } catch (err: any) {
     console.error("Newsletter Subscribe Error:", err);
@@ -4550,6 +4661,18 @@ app.post("/api/memberships", async (req, res) => {
 
   if (!full_name || !email) {
     return res.status(400).json({ success: false, message: "Full Name and Official Email are required." });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid official email address." });
+  }
+
+  if (!isValidName(full_name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid Full Name." });
+  }
+
+  if (phone && phone !== "N/A" && !isValidPhone(phone)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid 10-digit mobile number." });
   }
 
   const id = `MBR-${Date.now().toString().slice(-6)}`;
@@ -4764,6 +4887,18 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
     return res.status(400).json({ success: false, message: "Name, email, and password are required" });
   }
 
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid official email address." });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid Admin Name." });
+  }
+
+  if (typeof password !== "string" || password.length < 6) {
+    return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+  }
+
   try {
     if (pool) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -4902,14 +5037,14 @@ app.get("*", (req, res, next) => {
       return res.sendFile(indexPath);
     }
   }
-  return res.send("ET Media Business Intelligence Backend Server Running!");
+  return res.send("Executive Talks Media Business Intelligence Backend Server Running!");
 });
 
 // Initialize DB and start HTTP server
 initDatabase().then(() => {
   server.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🚀 ET Media Business Intelligence Realtime Server Running!`);
+    console.log(`🚀 Executive Talks Media Business Intelligence Realtime Server Running!`);
     console.log(`📡 HTTP API: http://localhost:${PORT}/api/health`);
     console.log(`⚡ WebSocket Server (Socket.IO): ws://localhost:${PORT}`);
     console.log(`🔑 Admin Login API: http://localhost:${PORT}/api/admin/login`);

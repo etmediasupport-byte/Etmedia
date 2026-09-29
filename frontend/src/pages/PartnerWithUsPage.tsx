@@ -300,7 +300,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 1. PARTNER APPLICATION FORM (FULL WIDTH WHITE MODE) */}
       {/* ========================================== */}
-      <section id="partner-form" className="relative w-full bg-slate-900 text-slate-100 border-b border-slate-800 py-12 sm:py-16 px-4 sm:px-8">
+      <section id="partner-form" className="relative w-full bg-slate-900 text-slate-100 border-b border-slate-800 pt-28 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-8">
         <div className="max-w-5xl mx-auto rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-8 sm:p-12 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 text-left">
             <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
@@ -328,7 +328,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 2. PARTNERSHIP BENEFITS CARDS             */}
       {/* ========================================== */}
-      <section id="benefits" className="py-20 md:py-28 relative">
+      <section id="benefits" className="py-12 sm:py-16 relative">
         <div className="container-x">
           <div className="text-left max-w-3xl mb-8">
             <span className="text-xs font-black uppercase tracking-widest text-cyan-400 font-display">
@@ -401,7 +401,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 3. OUR COLLABORATORS ANIMATED CAROUSEL    */}
       {/* ========================================== */}
-      <section className="py-20 bg-slate-900/50 border-y border-slate-800/80 overflow-hidden relative">
+      <section className="py-12 sm:py-16 bg-slate-900/50 border-y border-slate-800/80 overflow-hidden relative">
         <div className="container-x mb-10 text-center">
           <span className="text-xs font-black uppercase tracking-widest text-purple-400 font-display">
             Trusted By Benchmark Leaders
@@ -557,12 +557,12 @@ export default function PartnerWithUsPage() {
                   </p>
                   <p>
                     <a
-                      href="http://www.etmedia.in"
+                      href="https://www.executivetalksmedia.in"
                       target="_blank"
                       rel="noreferrer"
                       className="text-cyan-400 hover:underline inline-flex items-center gap-1"
                     >
-                      www.etmedia.in
+                      www.executivetalksmedia.in
                     </a>
                   </p>
                 </div>

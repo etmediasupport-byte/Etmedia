@@ -4,6 +4,16 @@ import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/UPDATED LOGO.jpeg";
 import { socket } from "@/lib/socket";
 import {
+  validateEmail,
+  validatePhone,
+  validateName,
+  validateRequiredText,
+  validateUrl,
+  validatePositiveNumber,
+  sanitizePhoneInput,
+  sanitizeNumericInput,
+} from "@/lib/validation";
+import {
   events as staticEvents,
   getDefaultSpeakers,
   getDefaultSponsors,
@@ -497,16 +507,16 @@ export default function AdminDashboardPage() {
   // Website Settings State
   const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
     site_name: "Executive Talks Media Hub",
-    support_email: "partner.support@etmedia.in",
+    support_email: "partner.support@executivetalksmedia.in",
     support_phone: "+91 98765 43210",
     whatsapp_number: "+91 98765 43210",
     office_address: "Executive Talks Media Business Intelligence, Cyber City, Hyderabad, India",
     office_hours: "Mon - Fri: 9:00 AM - 6:00 PM IST",
-    facebook_url: "https://facebook.com/etmediahub",
-    twitter_url: "https://twitter.com/etmediahub",
-    linkedin_url: "https://linkedin.com/company/etmediahub",
-    instagram_url: "https://instagram.com/etmediahub",
-    youtube_url: "https://youtube.com/c/etmediahub",
+    facebook_url: "https://facebook.com/executivetalksmedia",
+    twitter_url: "https://twitter.com/executivetalksmedia",
+    linkedin_url: "https://linkedin.com/company/executivetalksmedia",
+    instagram_url: "https://instagram.com/executivetalksmedia",
+    youtube_url: "https://youtube.com/c/executivetalksmedia",
     google_maps_url: "https://maps.google.com",
     maintenance_mode: false,
     hero_stat_1_value: "100+",
@@ -1296,8 +1306,18 @@ export default function AdminDashboardPage() {
   // --- USER MANAGEMENT HANDLERS ---
   const handleCreateAdminUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserForm.name || !newUserForm.email || !newUserForm.password) {
-      toast.error("All fields are required.");
+    const nameVal = validateName(newUserForm.name, "Admin Name");
+    if (!nameVal.isValid) {
+      toast.error(nameVal.error);
+      return;
+    }
+    const emailVal = validateEmail(newUserForm.email, "Admin Email");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
+      return;
+    }
+    if (!newUserForm.password || newUserForm.password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
       return;
     }
     setUserCreating(true);
@@ -1308,7 +1328,12 @@ export default function AdminDashboardPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newUserForm),
+        body: JSON.stringify({
+          name: newUserForm.name.trim(),
+          email: newUserForm.email.trim(),
+          password: newUserForm.password,
+          role: newUserForm.role || "admin",
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -1427,6 +1452,27 @@ export default function AdminDashboardPage() {
   // --- WEBSITE SETTINGS HANDLERS ---
   const handleSaveSiteSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (siteSettings.support_email) {
+      const emailVal = validateEmail(siteSettings.support_email, "Support Email");
+      if (!emailVal.isValid) {
+        toast.error(emailVal.error);
+        return;
+      }
+    }
+    if (siteSettings.support_phone) {
+      const phoneVal = validatePhone(siteSettings.support_phone, "Support Phone");
+      if (!phoneVal.isValid) {
+        toast.error(phoneVal.error);
+        return;
+      }
+    }
+    if (siteSettings.whatsapp_number) {
+      const waVal = validatePhone(siteSettings.whatsapp_number, "WhatsApp Number");
+      if (!waVal.isValid) {
+        toast.error(waVal.error);
+        return;
+      }
+    }
     setSettingsSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -1548,6 +1594,21 @@ export default function AdminDashboardPage() {
       toast.error("Please select an event.");
       return;
     }
+    const feeVal = validatePositiveNumber(paymentForm.registration_fee, "Registration Fee", 0, 1000000);
+    if (!feeVal.isValid) {
+      toast.error(feeVal.error);
+      return;
+    }
+    const gstVal = validatePositiveNumber(paymentForm.gst_percentage, "GST Percentage", 0, 100);
+    if (!gstVal.isValid) {
+      toast.error(gstVal.error);
+      return;
+    }
+    const seatsVal = validatePositiveNumber(paymentForm.total_seats, "Total Seats", 1, 100000);
+    if (!seatsVal.isValid) {
+      toast.error(seatsVal.error);
+      return;
+    }
     setPaymentSaving(true);
     try {
       const url = editingPaymentConfig
@@ -1659,15 +1720,31 @@ export default function AdminDashboardPage() {
 
   const handleGrantFreeAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!grantAccessForm.name || !grantAccessForm.email) {
-      toast.error("Name and Email are required.");
+    const nameVal = validateName(grantAccessForm.name, "Full Name");
+    if (!nameVal.isValid) {
+      toast.error(nameVal.error);
       return;
+    }
+    const emailVal = validateEmail(grantAccessForm.email, "Email Address");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
+      return;
+    }
+    if (grantAccessForm.phone) {
+      const phoneVal = validatePhone(grantAccessForm.phone, "Phone Number");
+      if (!phoneVal.isValid) {
+        toast.error(phoneVal.error);
+        return;
+      }
     }
     setGrantingAccess(true);
     try {
       const selectedEvt = cmsEvents.find((evt) => (evt.id || evt.slug) === grantAccessForm.eventId);
       const payload = {
         ...grantAccessForm,
+        name: grantAccessForm.name.trim(),
+        email: grantAccessForm.email.trim(),
+        phone: grantAccessForm.phone.trim(),
         eventTitle: selectedEvt ? selectedEvt.title : grantAccessForm.eventTitle || "Executive Leadership Summit 2026",
         eventId: selectedEvt ? (selectedEvt.id || selectedEvt.slug) : grantAccessForm.eventId || "cfo-leadership-summit",
       };
@@ -2086,7 +2163,7 @@ export default function AdminDashboardPage() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${title} - ET Media Hub</title>
+          <title>${title} - Executive Talks Media Hub</title>
           <style>
             @page {
               size: A4 landscape;
@@ -2192,7 +2269,7 @@ export default function AdminDashboardPage() {
         <body>
           <div class="header">
             <div>
-              <div class="brand-title">ET MEDIA HUB</div>
+              <div class="brand-title">EXECUTIVE TALKS MEDIA HUB</div>
               <div class="brand-subtitle">Business Intelligence & Executive Events</div>
             </div>
             <div class="report-info">
@@ -2226,8 +2303,8 @@ export default function AdminDashboardPage() {
           </table>
 
           <div class="footer">
-            <div>© ${new Date().getFullYear()} ET Media Business Intelligence. All rights reserved.</div>
-            <div>ET Media Control Center</div>
+            <div>© ${new Date().getFullYear()} Executive Talks Media Business Intelligence. All rights reserved.</div>
+            <div>Executive Talks Media Control Center</div>
           </div>
 
           <script>
@@ -3346,7 +3423,7 @@ export default function AdminDashboardPage() {
     if (selectedContactDetail?.id === con.id) {
       setSelectedContactDetail((prev) => (prev ? { ...prev, status: "replied" } : null));
     }
-    const subject = encodeURIComponent(`RE: ${con.enquiry_type || "Enquiry"} - Response from ET Media BI`);
+    const subject = encodeURIComponent(`RE: ${con.enquiry_type || "Enquiry"} - Response from Executive Talks Media BI`);
     const body = encodeURIComponent(replyText);
     window.open(`mailto:${con.email}?subject=${subject}&body=${body}`, "_blank");
     toast.success(`Reply dispatched for ${con.email}!`);
@@ -3795,10 +3872,10 @@ export default function AdminDashboardPage() {
           <div className="flex items-center justify-between shrink-0 pb-2">
             <div className="flex items-center gap-3">
               <div className="bg-transparent">
-                <img src={logo} alt="ET Media" className="h-7 w-auto object-contain" />
+                <img src={logo} alt="Executive Talks Media" className="h-7 w-auto object-contain" />
               </div>
               <div>
-                <h2 className="text-xs font-extrabold text-slate-900 tracking-wide">ET Media Hub</h2>
+                <h2 className="text-xs font-extrabold text-slate-900 tracking-wide">Executive Talks Media Hub</h2>
                 <p className="text-[10px] text-cyan-700 font-extrabold uppercase tracking-wider">
                   Admin Control Center
                 </p>
@@ -4243,7 +4320,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                     <div>
                       <h3 className="text-base font-bold text-slate-900">Recent Delegate Registrations</h3>
-                      <p className="text-xs text-slate-500">Latest delegates registered on ET Media</p>
+                      <p className="text-xs text-slate-500">Latest delegates registered on Executive Talks Media</p>
                     </div>
                     <button
                       onClick={() => setActiveTab("event-registrations")}
@@ -4327,7 +4404,7 @@ export default function AdminDashboardPage() {
                     <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
                       <p className="font-bold text-cyan-900">MySQL Auto-Sync Active</p>
                       <p className="mt-1 text-[11px] text-slate-600 leading-relaxed">
-                        All delegate registrations, contact messages, and partner requests are persisted directly to Laragon MySQL database <code className="text-slate-900 font-bold">etmedia_db</code>.
+                        All delegate registrations, contact messages, and partner requests are persisted directly to production MySQL database.
                       </p>
                     </div>
                   </div>
@@ -5499,7 +5576,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedContactDetail(con);
-                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to ET Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nET Media Business Intelligence Team\npartner.support@etmedia.in`);
+                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\npartner.support@executivetalksmedia.in`);
                                 }}
                                 className="inline-flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-all cursor-pointer shadow-xs"
                                 title="Reply via Dashboard"
@@ -6877,7 +6954,7 @@ export default function AdminDashboardPage() {
                   required
                   value={speakerForm.organization}
                   onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
-                  placeholder="e.g. ET Media Hub / Enterprise AI Solutions"
+                  placeholder="e.g. Executive Talks Media Hub / Enterprise AI Solutions"
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
                 />
               </div>
@@ -10872,7 +10949,7 @@ export default function AdminDashboardPage() {
                         value={seoForm.title}
                         onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="e.g. ET Media | India's Premier CXO Summit Platform"
+                        placeholder="e.g. Executive Talks Media | India's Premier CXO Summit Platform"
                       />
                       <p className="text-[11px] text-slate-400 font-medium">
                         Recommended: 50–60 characters. Appears as the clickable heading in search results.
@@ -10916,7 +10993,7 @@ export default function AdminDashboardPage() {
                         value={seoForm.keywords}
                         onChange={(e) => setSeoForm({ ...seoForm, keywords: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="CFO Summit, HR Awards, ET Media, Leadership Conference"
+                        placeholder="CFO Summit, HR Awards, Executive Talks Media, Leadership Conference"
                       />
                     </div>
 
@@ -10994,14 +11071,14 @@ export default function AdminDashboardPage() {
                               ET
                             </span>
                             <span className="truncate text-slate-800 text-[11px] font-medium">
-                              https://www.etmedia.in › {seoForm.page_key}
+                              https://www.executivetalksmedia.in › {seoForm.page_key}
                             </span>
                           </div>
                           <div className="text-blue-800 font-semibold text-sm hover:underline cursor-pointer truncate">
-                            {seoForm.title || "ET Media Hub | Leadership Summit"}
+                            {seoForm.title || "Executive Talks Media Hub | Leadership Summit"}
                           </div>
                           <div className="text-slate-600 text-xs line-clamp-2 leading-relaxed font-sans">
-                            {seoForm.description || "Official page of ET Media Hub..."}
+                            {seoForm.description || "Official page of Executive Talks Media Hub..."}
                           </div>
                         </div>
                       </div>
@@ -11032,10 +11109,10 @@ export default function AdminDashboardPage() {
                           )}
                           <div className="p-3 space-y-1">
                             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                              etmedia.in
+                              executivetalksmedia.in
                             </div>
                             <div className="text-xs font-extrabold text-slate-900 truncate">
-                              {seoForm.title || "ET Media Hub"}
+                              {seoForm.title || "Executive Talks Media Hub"}
                             </div>
                             <div className="text-[11px] text-slate-500 line-clamp-1">
                               {seoForm.description}
@@ -11238,7 +11315,7 @@ export default function AdminDashboardPage() {
                           value={newUserForm.email}
                           onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
                           className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="admin@etmedia.in"
+                          placeholder="admin@executivetalksmedia.in"
                         />
                       </div>
 
@@ -11345,9 +11422,9 @@ export default function AdminDashboardPage() {
                         Support Phone Number
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         value={siteSettings.support_phone}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, support_phone: e.target.value })}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, support_phone: sanitizePhoneInput(e.target.value) })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
                       />
                     </div>
@@ -11357,9 +11434,9 @@ export default function AdminDashboardPage() {
                         WhatsApp Helpline Number
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         value={siteSettings.whatsapp_number}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, whatsapp_number: e.target.value })}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, whatsapp_number: sanitizePhoneInput(e.target.value) })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
                       />
                     </div>
@@ -11417,7 +11494,7 @@ export default function AdminDashboardPage() {
                         value={siteSettings.linkedin_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, linkedin_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://linkedin.com/company/etmedia"
+                        placeholder="https://linkedin.com/company/executivetalksmedia"
                       />
                     </div>
 
@@ -11428,7 +11505,7 @@ export default function AdminDashboardPage() {
                         value={siteSettings.twitter_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, twitter_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://x.com/etmedia"
+                        placeholder="https://x.com/executivetalksmedia"
                       />
                     </div>
 
@@ -11439,7 +11516,7 @@ export default function AdminDashboardPage() {
                         value={siteSettings.facebook_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, facebook_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://facebook.com/etmedia"
+                        placeholder="https://facebook.com/executivetalksmedia"
                       />
                     </div>
 
@@ -11450,7 +11527,7 @@ export default function AdminDashboardPage() {
                         value={siteSettings.instagram_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, instagram_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://instagram.com/etmedia"
+                        placeholder="https://instagram.com/executivetalksmedia"
                       />
                     </div>
 
@@ -11461,7 +11538,7 @@ export default function AdminDashboardPage() {
                         value={siteSettings.youtube_url}
                         onChange={(e) => setSiteSettings({ ...siteSettings, youtube_url: e.target.value })}
                         className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                        placeholder="https://youtube.com/@etmedia"
+                        placeholder="https://youtube.com/@executivetalksmedia"
                       />
                     </div>
                   </div>
@@ -11779,7 +11856,7 @@ export default function AdminDashboardPage() {
                   <input
                     type="text"
                     readOnly
-                    value={`RE: ${selectedContactDetail.enquiry_type} - ET Media BI`}
+                    value={`RE: ${selectedContactDetail.enquiry_type} - Executive Talks Media BI`}
                     className="w-full rounded-xl border border-purple-200 bg-white px-3 py-1.5 text-xs text-slate-700 font-semibold"
                   />
                 </div>
@@ -12110,7 +12187,7 @@ export default function AdminDashboardPage() {
 
             <div className="mt-6 flex gap-3">
               <a
-                href={`mailto:${selectedApplicantDetail.email}?subject=Application for ${encodeURIComponent(selectedApplicantDetail.job_title)} - ET Media Hub`}
+                href={`mailto:${selectedApplicantDetail.email}?subject=Application for ${encodeURIComponent(selectedApplicantDetail.job_title)} - Executive Talks Media Hub`}
                 className="flex-1 text-center rounded-xl bg-cyan-600 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition-colors"
               >
                 Contact Candidate
@@ -13282,10 +13359,10 @@ export default function AdminDashboardPage() {
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Phone Number</label>
                   <input
-                    type="text"
+                    type="tel"
                     placeholder="e.g. +91 98765 43210"
                     value={grantAccessForm.phone}
-                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, phone: e.target.value })}
+                    onChange={(e) => setGrantAccessForm({ ...grantAccessForm, phone: sanitizePhoneInput(e.target.value) })}
                     className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"
                   />
                 </div>
@@ -13333,7 +13410,7 @@ export default function AdminDashboardPage() {
                 <label className="block text-slate-700 font-bold mb-1">Admin Notes / Access Reason</label>
                 <input
                   type="text"
-                  placeholder="e.g. Special invitation by ET Media Management"
+                  placeholder="e.g. Special invitation by Executive Talks Media Management"
                   value={grantAccessForm.notes}
                   onChange={(e) => setGrantAccessForm({ ...grantAccessForm, notes: e.target.value })}
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none"

@@ -138,7 +138,7 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background pb-16 pt-20">
+    <div className="relative min-h-screen bg-background pb-16 pt-28 sm:pt-32">
       <GlowBackdrop />
 
       <section className="container-x relative">

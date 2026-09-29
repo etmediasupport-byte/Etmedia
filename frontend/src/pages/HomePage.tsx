@@ -207,7 +207,7 @@ function HeroCarousel() {
   );
 }
 
-// SECTION 2: ET MEDIA EVENT NETWORK
+// SECTION 2: EXECUTIVE TALKS MEDIA EVENT NETWORK
 function EventNetwork() {
   const formats = [
     { icon: Crown, title: "Leadership Summits", desc: "Flagship national conclaves bringing together C-Suite leaders for strategic dialogue.", count: "12+ Summits / Year" },
@@ -251,7 +251,7 @@ function EventNetwork() {
   );
 }
 
-// SECTION 3: ABOUT ET MEDIA SNAPSHOT
+// SECTION 3: ABOUT EXECUTIVE TALKS MEDIA SNAPSHOT
 function AboutSnapshot() {
   return (
     <section className="section relative overflow-hidden bg-background">
@@ -342,8 +342,8 @@ function UpcomingEvents() {
   );
 }
 
-// SECTION 5: WHY ET MEDIA
-function WhyEtMedia() {
+// SECTION 5: WHY EXECUTIVE TALKS MEDIA
+function WhyExecutiveTalksMedia() {
   const pillars = [
     { icon: Building2, title: "Curated Leadership Audiences", desc: "Every delegate is verified. We ensure rooms are populated strictly by decision-making executives." },
     { icon: Compass, title: "Verified C-Suite Speakers", desc: "Hear directly from practitioners, founders, and industry veterans who have built at scale." },
@@ -1132,17 +1132,17 @@ export default function HomePage() {
       {/* 1. Hero Carousel */}
       <HeroSection />
 
-      {/* 2. ET Media Event Network */}
+      {/* 2. Executive Talks Media Event Network */}
       <EventNetwork />
 
-      {/* 3. About ET Media Snapshot */}
+      {/* 3. About Executive Talks Media Snapshot */}
       <AboutSnapshot />
 
       {/* 4. Upcoming Events */}
       <UpcomingEvents />
 
-      {/* 5. Why ET Media */}
-      <WhyEtMedia />
+      {/* 5. Why Executive Talks Media */}
+      <WhyExecutiveTalksMedia />
 
       {/* 6. Industries We Serve */}
       <IndustriesWeServe />

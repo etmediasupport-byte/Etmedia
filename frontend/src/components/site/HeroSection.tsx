@@ -12,7 +12,7 @@ const heroPhrases = [
     gradientText: "Ideas. People.",
     line2: "Opportunities.",
     subtext: "A global platform for business intelligence, thought leadership and meaningful collaborations.",
-    kicker: "E T  M E D I A  —  O U R  E V E N T  N E T W O R K",
+    kicker: "E X E C U T I V E  T A L K S  M E D I A",
   },
   {
     prefix: "Empowering",
@@ -193,7 +193,7 @@ export function HeroSection() {
   const currentPhrase = heroPhrases[phraseIndex] ?? heroPhrases[0]!;
 
   return (
-    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-16 sm:pt-16 lg:pt-18 pb-3 sm:pb-4">
+    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-24 sm:pt-28 lg:pt-30 pb-3 sm:pb-4">
       
       {/* Background Radial Atmosphere Glow behind Globe & Content */}
       <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.25)_0%,rgba(75,31,167,0.18)_45%,transparent_75%)] pointer-events-none blur-3xl" />

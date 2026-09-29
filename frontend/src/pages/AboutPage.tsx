@@ -171,7 +171,7 @@ export default function AboutPage() {
       <section className="bg-surface section relative overflow-hidden">
         <div className="container-x relative z-10">
           <SectionHeading kicker="What Drives Us" title="Mission, Vision & Values" />
-          <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          <div className="mt-8 sm:mt-10 grid gap-6 lg:grid-cols-3">
             {pillars.map((p, i) => (
               <Reveal key={p.title} delay={i * 0.08}>
                 <MouseTiltCard maxTilt={12} className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-8 border border-border/80">
@@ -252,7 +252,7 @@ export default function AboutPage() {
             title="The Team Behind The Platforms"
             description="Founder, leadership team, executive committee and advisors."
           />
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 sm:mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {team.map((m, i) => (
               <Reveal key={m.name} delay={i * 0.08}>
                 <MouseTiltCard maxTilt={10} className="glass-card h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 text-center border border-border">

@@ -128,41 +128,30 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
       </Link>
 
       {/* Card Action Footer: BOTH Register Now (Paid) and Register Free Interest Buttons */}
-      <div className="p-4 sm:p-5 pt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+      <div className="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2.5 shrink-0">
         {/* Button 1: Register Now (Paid Pass) */}
-        <MagneticButton strength={8} className="sm:flex-1">
+        <MagneticButton strength={8} className="w-full">
           <button
             type="button"
             onClick={(e) => handleRegisterClick(e, "paid")}
-            className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-2.5 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
-            <Zap className="h-3.5 w-3.5 text-white" />
-            <span>Register Now</span>
+            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+            <span className="truncate">Register Now</span>
           </button>
         </MagneticButton>
 
         {/* Button 2: Register Free Interest */}
-        <MagneticButton strength={8} className="sm:flex-1">
+        <MagneticButton strength={8} className="w-full">
           <button
             type="button"
             onClick={(e) => handleRegisterClick(e, "free")}
-            className="w-full bg-gradient-to-r from-cyan-500 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full bg-gradient-to-r from-cyan-500 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
-            <Sparkles className="h-3.5 w-3.5 text-white" />
-            <span>Register Free</span>
+            <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+            <span className="truncate">Register Free</span>
           </button>
         </MagneticButton>
-
-        {/* Button 3: Details */}
-        <Link
-          to={`/events/${event.slug || event.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-center flex items-center justify-center gap-1 shrink-0"
-          aria-label="View event details"
-        >
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
     </MouseTiltCard>
   );

@@ -15,7 +15,7 @@ interface GlobeInteractiveProps {
   isDark?: boolean;
 }
 
-export const defaultEtMediaMarkers: InteractiveMarker[] = [
+export const defaultExecutiveTalksMarkers: InteractiveMarker[] = [
   { id: "hyderabad", location: [17.385, 78.486], name: "HYDERABAD (HQ)", users: 15000 },
   { id: "bengaluru", location: [12.971, 77.594], name: "BENGALURU", users: 12000 },
   { id: "mumbai", location: [19.076, 72.877], name: "MUMBAI", users: 10000 },
@@ -31,7 +31,7 @@ export const defaultEtMediaMarkers: InteractiveMarker[] = [
 ];
 
 export function GlobeInteractive({
-  markers = defaultEtMediaMarkers,
+  markers = defaultExecutiveTalksMarkers,
   className = "",
   speed = 0.003,
   isDark = false,
@@ -43,7 +43,7 @@ export function GlobeInteractive({
   const phiOffsetRef = useRef(0);
   const thetaOffsetRef = useRef(0);
   const isPausedRef = useRef(false);
-  const [selectedMarker, setSelectedMarker] = useState<InteractiveMarker | null>(defaultEtMediaMarkers[0] || null);
+  const [selectedMarker, setSelectedMarker] = useState<InteractiveMarker | null>(defaultExecutiveTalksMarkers[0] || null);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     pointerInteracting.current = { x: e.clientX, y: e.clientY };

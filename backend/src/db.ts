@@ -688,7 +688,7 @@ export async function seedDefaultJobs() {
           benefits: JSON.stringify([
             "Competitive salary with performance bonuses",
             "Comprehensive health insurance for self & dependents",
-            "Executive networking passes to all ET Media national summits",
+            "Executive networking passes to all Executive Talks Media national summits",
             "Hybrid work flexibility and fast-track leadership career path",
           ]),
           status: "Open",
@@ -977,7 +977,7 @@ export async function seedNewAdminTables() {
           name: "Vikramaditya Rao",
           designation: "Chief Financial Officer",
           company: "Reliance Retail Digital",
-          quote: "ET Media Business Intelligence brings together the finest CFO minds in India. The quality of strategic discussion and peer networking at the CFO Summit is second to none.",
+          quote: "Executive Talks Media Business Intelligence brings together the finest CFO minds in India. The quality of strategic discussion and peer networking at the CFO Summit is second to none.",
           avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
           rating: 5,
           is_featured: 1,
@@ -987,7 +987,7 @@ export async function seedNewAdminTables() {
           name: "Sunita Krishnamurthy",
           designation: "VP & Head of HR",
           company: "Infosys Enterprise Services",
-          quote: "Winning the HR Excellence Award from ET Media was a huge milestone for our organization. The level of panel insights on workforce transformation was truly inspirational.",
+          quote: "Winning the HR Excellence Award from Executive Talks Media was a huge milestone for our organization. The level of panel insights on workforce transformation was truly inspirational.",
           avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop",
           rating: 5,
           is_featured: 1,
@@ -1017,13 +1017,13 @@ export async function seedNewAdminTables() {
     const [seoCount]: any = await pool.query("SELECT COUNT(*) as count FROM seo_settings");
     if (seoCount[0]?.count === 0) {
       const defaultSeo = [
-        { page_key: "home", title: "ET Media Business Intelligence | India's Premier CXO Leadership Summit", description: "Curated C-suite summits, corporate awards, Executive Talks Magazine, and executive networking for enterprise leaders.", keywords: "CFO summit, HR awards, CXO conference, ET Media" },
-        { page_key: "about", title: "About Us | ET Media Business Intelligence", description: "Learn how ET Media builds India's most credible leadership platforms and enterprise summits.", keywords: "About ET Media, B2B media, leadership platforms" },
-        { page_key: "events", title: "Conferences & Summits Directory | ET Media", description: "Browse upcoming India CFO Summits, HR Excellence Awards, and Enterprise AI Conclaves.", keywords: "Conferences, business summits, delegate passes" },
-        { page_key: "magazine", title: "Executive Talks Magazine | ET Media", description: "Read Executive Talks Magazine featuring C-suite interviews, leadership insights, and digital flipbooks.", keywords: "Executive Talks, business magazine, CXO interviews" },
-        { page_key: "careers", title: "Careers at ET Media | Join Our Team", description: "Explore open career opportunities at ET Media in conference production, sponsorship sales, and event operations.", keywords: "ET Media careers, event jobs, media hiring" },
-        { page_key: "gallery", title: "Summit Media Gallery | ET Media", description: "High-definition photos and video highlights from ET Media national summits and gala awards.", keywords: "Summit gallery, event photos, CXO videos" },
-        { page_key: "contact", title: "Contact Us | ET Media Business Intelligence", description: "Reach out to ET Media for sponsorship, delegate passes, magazine features, or speaker nominations.", keywords: "Contact ET Media, office address, phone number" },
+        { page_key: "home", title: "Executive Talks Media Business Intelligence | India's Premier CXO Leadership Summit", description: "Curated C-suite summits, corporate awards, Executive Talks Magazine, and executive networking for enterprise leaders.", keywords: "CFO summit, HR awards, CXO conference, Executive Talks Media" },
+        { page_key: "about", title: "About Us | Executive Talks Media Business Intelligence", description: "Learn how Executive Talks Media builds India's most credible leadership platforms and enterprise summits.", keywords: "About Executive Talks Media, B2B media, leadership platforms" },
+        { page_key: "events", title: "Conferences & Summits Directory | Executive Talks Media", description: "Browse upcoming India CFO Summits, HR Excellence Awards, and Enterprise AI Conclaves.", keywords: "Conferences, business summits, delegate passes" },
+        { page_key: "magazine", title: "Executive Talks Magazine | Executive Talks Media", description: "Read Executive Talks Magazine featuring C-suite interviews, leadership insights, and digital flipbooks.", keywords: "Executive Talks, business magazine, CXO interviews" },
+        { page_key: "careers", title: "Careers at Executive Talks Media | Join Our Team", description: "Explore open career opportunities at Executive Talks Media in conference production, sponsorship sales, and event operations.", keywords: "Executive Talks Media careers, event jobs, media hiring" },
+        { page_key: "gallery", title: "Summit Media Gallery | Executive Talks Media", description: "High-definition photos and video highlights from Executive Talks Media national summits and gala awards.", keywords: "Summit gallery, event photos, CXO videos" },
+        { page_key: "contact", title: "Contact Us | Executive Talks Media Business Intelligence", description: "Reach out to Executive Talks Media for sponsorship, delegate passes, magazine features, or speaker nominations.", keywords: "Contact Executive Talks Media, office address, phone number" },
       ];
 
       for (const s of defaultSeo) {
@@ -1039,10 +1039,10 @@ export async function seedNewAdminTables() {
     const [settCount]: any = await pool.query("SELECT COUNT(*) as count FROM website_settings");
     if (settCount[0]?.count === 0) {
       const defaultSettings = [
-        { setting_key: "site_title", setting_value: "ET Media Business Intelligence" },
+        { setting_key: "site_title", setting_value: "Executive Talks Media Business Intelligence" },
         { setting_key: "support_phone_1", setting_value: "+91 91002 66777" },
         { setting_key: "support_phone_2", setting_value: "+91 94930 87788" },
-        { setting_key: "support_email_1", setting_value: "contact@etmedia.in" },
+        { setting_key: "support_email_1", setting_value: "contact@executivetalksmedia.in" },
         { setting_key: "support_email_2", setting_value: "registration@executivetalksmedia.in" },
         { setting_key: "whatsapp_link", setting_value: "https://wa.me/919100266777" },
         { setting_key: "office_address", setting_value: "Unit No-1012, 10th Floor, Manjeera Trinity Corporate, JNTU-Hitech Road, KPHB, Hyderabad, Telangana 500072, India" },

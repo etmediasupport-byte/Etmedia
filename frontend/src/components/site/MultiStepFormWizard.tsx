@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlowBackdrop } from "@/components/site/primitives";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, RefreshCw, X } from "lucide-react";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  sanitizeNumericInput,
+  validateName,
+  validateRequiredText,
+  validateUrl,
+} from "@/lib/validation";
 import logo from "@/assets/UPDATED LOGO.jpeg";
 
 export interface WizardField {
@@ -82,6 +91,8 @@ export function MultiStepFormWizard({
     }
   }, [formData, storageKey]);
 
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -91,6 +102,35 @@ export function MultiStepFormWizard({
         return next;
       });
     }
+  };
+
+  const handleFieldBlur = (field: WizardField) => {
+    setTouchedFields((prev) => ({ ...prev, [field.name]: true }));
+    const val = (formData[field.name] || "").trim();
+    let err = "";
+
+    if (field.required && !val) {
+      err = `${field.label} is required.`;
+    } else if (val) {
+      if (field.type === "email") {
+        const v = validateEmail(val, field.label);
+        if (!v.isValid) err = v.error;
+      } else if (field.type === "tel") {
+        const v = validatePhone(val, field.label);
+        if (!v.isValid) err = v.error;
+      } else if (field.type === "url") {
+        const v = validateUrl(val, field.label, field.required);
+        if (!v.isValid) err = v.error;
+      } else if (field.name.toLowerCase().includes("name") && field.type === "text") {
+        const v = validateName(val, field.label);
+        if (!v.isValid) err = v.error;
+      } else if (field.validationRule) {
+        const custom = field.validationRule(val);
+        if (custom) err = custom;
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, [field.name]: err }));
   };
 
   const handleFileChange = async (field: WizardField, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,24 +168,26 @@ export function MultiStepFormWizard({
         return;
       }
 
-      if (val && field.type === "email") {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(val)) {
-          newErrors[field.name] = "Please enter a valid official email address.";
+      if (val) {
+        if (field.type === "email") {
+          const v = validateEmail(val, field.label);
+          if (!v.isValid) newErrors[field.name] = v.error;
+        } else if (field.type === "tel") {
+          const v = validatePhone(val, field.label);
+          if (!v.isValid) newErrors[field.name] = v.error;
+        } else if (field.type === "url") {
+          const v = validateUrl(val, field.label, field.required);
+          if (!v.isValid) newErrors[field.name] = v.error;
+        } else if (field.name.toLowerCase().includes("name") && field.type === "text") {
+          const v = validateName(val, field.label);
+          if (!v.isValid) newErrors[field.name] = v.error;
         }
-      }
 
-      if (val && field.type === "tel") {
-        const digits = val.replace(/\D/g, "");
-        if (digits.length < 10) {
-          newErrors[field.name] = "Please enter a valid 10-digit mobile number.";
-        }
-      }
-
-      if (val && field.validationRule) {
-        const customErr = field.validationRule(val);
-        if (customErr) {
-          newErrors[field.name] = customErr;
+        if (field.validationRule) {
+          const customErr = field.validationRule(val);
+          if (customErr) {
+            newErrors[field.name] = customErr;
+          }
         }
       }
     });
@@ -283,12 +325,12 @@ export function MultiStepFormWizard({
       </header>
 
       {/* Main Wizard Form Body */}
-      <main className="mx-auto flex-1 w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 backdrop-blur-2xl p-6 sm:p-10 shadow-2xl space-y-8">
+      <main className="mx-auto flex-1 w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/70 backdrop-blur-2xl p-6 sm:p-10 lg:p-12 shadow-2xl space-y-8">
           {/* Header Title Section */}
           <div className="space-y-2 border-b border-slate-800/80 pb-6">
             <div className="flex items-center justify-between">
-              <span className="inline-block rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-400 tracking-wider uppercase">
+              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-bold text-cyan-400 tracking-wider uppercase">
                 {badgeText}
               </span>
 
@@ -327,19 +369,30 @@ export function MultiStepFormWizard({
                 const fieldValue = formData[field.name] || "";
                 const fieldError = errors[field.name];
 
+                const isTouched = touchedFields[field.name];
+                const isValid = isTouched && !fieldError && fieldValue.trim().length > 0;
+
                 return (
                   <div key={field.name} className={isFullWidth ? "sm:col-span-2" : "sm:col-span-1"}>
-                    <label className="block text-xs font-bold text-slate-200 mb-1.5 tracking-wide">
-                      {field.label} {field.required && <span className="text-cyan-400">*</span>}
+                    <label className="block text-xs font-bold text-slate-200 mb-1.5 tracking-wide flex items-center justify-between">
+                      <span>
+                        {field.label} {field.required && <span className="text-cyan-400">*</span>}
+                      </span>
+                      {isValid && (
+                        <span className="text-[10px] font-extrabold text-emerald-400">✓ Valid</span>
+                      )}
                     </label>
 
                     {field.type === "select" ? (
                       <select
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
+                        onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
                           fieldError
                             ? "border-rose-500 focus:ring-rose-500/30"
+                            : isValid
+                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
                             : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
                         }`}
                       >
@@ -356,9 +409,12 @@ export function MultiStepFormWizard({
                         placeholder={field.placeholder}
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
+                        onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
                           fieldError
                             ? "border-rose-500 focus:ring-rose-500/30"
+                            : isValid
+                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
                             : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
                         }`}
                       />
@@ -382,22 +438,55 @@ export function MultiStepFormWizard({
                           </p>
                         )}
                       </div>
+                    ) : field.type === "tel" ? (
+                      <input
+                        type="tel"
+                        placeholder={field.placeholder || "+91 98765 43210"}
+                        value={fieldValue}
+                        onChange={(e) => handleInputChange(field.name, sanitizePhoneInput(e.target.value))}
+                        onBlur={() => handleFieldBlur(field)}
+                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                          fieldError
+                            ? "border-rose-500 focus:ring-rose-500/30"
+                            : isValid
+                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
+                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                        }`}
+                      />
+                    ) : field.type === "number" ? (
+                      <input
+                        type="number"
+                        placeholder={field.placeholder}
+                        value={fieldValue}
+                        onChange={(e) => handleInputChange(field.name, sanitizeNumericInput(e.target.value))}
+                        onBlur={() => handleFieldBlur(field)}
+                        className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
+                          fieldError
+                            ? "border-rose-500 focus:ring-rose-500/30"
+                            : isValid
+                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
+                            : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
+                        }`}
+                      />
                     ) : (
                       <input
                         type={field.type}
                         placeholder={field.placeholder}
                         value={fieldValue}
                         onChange={(e) => handleInputChange(field.name, e.target.value)}
+                        onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-xl border bg-slate-950/80 px-4 py-3 text-xs sm:text-sm font-medium text-white transition-all outline-none focus:ring-2 ${
                           fieldError
                             ? "border-rose-500 focus:ring-rose-500/30"
+                            : isValid
+                            ? "border-emerald-500/80 focus:border-emerald-400 focus:ring-emerald-500/20"
                             : "border-slate-800 focus:border-cyan-500 focus:ring-cyan-500/20"
                         }`}
                       />
                     )}
 
                     {field.helpText && <p className="mt-1 text-[11px] text-slate-500">{field.helpText}</p>}
-                    {fieldError && <p className="mt-1 text-[11px] font-semibold text-rose-400">{fieldError}</p>}
+                    {fieldError && <p className="mt-1 text-[11px] font-semibold text-rose-400">⚠️ {fieldError}</p>}
                   </div>
                 );
               })}

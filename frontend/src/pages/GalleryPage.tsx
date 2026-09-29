@@ -177,7 +177,7 @@ export default function GalleryPage() {
         image={images.heroSummit}
       />
 
-      <div className="container-x relative mt-12 space-y-10">
+      <div className="container-x relative py-8 sm:py-12 space-y-8">
         
         {/* ==================================================== */}
         {/* FILTER BAR: Categories • Event Dropdown • Type Toggle */}

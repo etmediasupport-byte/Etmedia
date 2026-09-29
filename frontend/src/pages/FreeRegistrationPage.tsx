@@ -20,6 +20,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents } from "@/lib/site-data";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateRequiredText,
+  validateUrl,
+} from "@/lib/validation";
 
 export default function FreeRegistrationPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -75,8 +83,64 @@ export default function FreeRegistrationPage() {
     fetchEvent();
   }, [slug, searchParams]);
 
+  // Validation errors state
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const clean = sanitizePhoneInput(e.target.value);
+    setFormData((prev) => ({ ...prev, contactNumber: clean }));
+    if (touchedFields["contactNumber"]) {
+      const v = validatePhone(clean);
+      setFieldErrors((prev) => ({ ...prev, contactNumber: v.isValid ? "" : v.error }));
+    }
+  };
+
+  const handleFieldBlur = (fieldName: string) => {
+    setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
+    let error = "";
+    if (fieldName === "firstName") {
+      const v = validateName(formData.firstName, "First Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "lastName") {
+      const v = validateName(formData.lastName, "Last Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "workEmail") {
+      const v = validateEmail(formData.workEmail, "Work Email");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "contactNumber") {
+      const v = validatePhone(formData.contactNumber, "Contact / Mobile Number");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "designation") {
+      const v = validateRequiredText(formData.designation, "Designation");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "companyName") {
+      const v = validateRequiredText(formData.companyName, "Company Name");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "city") {
+      const v = validateRequiredText(formData.city, "City");
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "reasonForAttending") {
+      const v = validateRequiredText(formData.reasonForAttending, "Reason for Attending", 5, 1000);
+      if (!v.isValid) error = v.error;
+    } else if (fieldName === "linkedinUrl" && formData.linkedinUrl.trim()) {
+      const v = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
+      if (!v.isValid) error = v.error;
+    }
+
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
   };
 
   const toggleTrack = (trackName: string) => {
@@ -96,29 +160,52 @@ export default function FreeRegistrationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error("Please enter your First Name and Last Name.");
-      return;
+    const errors: Record<string, string> = {};
+
+    const fnVal = validateName(formData.firstName, "First Name");
+    if (!fnVal.isValid) errors.firstName = fnVal.error;
+
+    const lnVal = validateName(formData.lastName, "Last Name");
+    if (!lnVal.isValid) errors.lastName = lnVal.error;
+
+    const emailVal = validateEmail(formData.workEmail, "Work Email");
+    if (!emailVal.isValid) errors.workEmail = emailVal.error;
+
+    const phoneVal = validatePhone(formData.contactNumber, "Contact / Mobile Number");
+    if (!phoneVal.isValid) errors.contactNumber = phoneVal.error;
+
+    const desigVal = validateRequiredText(formData.designation, "Designation");
+    if (!desigVal.isValid) errors.designation = desigVal.error;
+
+    const compVal = validateRequiredText(formData.companyName, "Company / Organization Name");
+    if (!compVal.isValid) errors.companyName = compVal.error;
+
+    const cityVal = validateRequiredText(formData.city, "City");
+    if (!cityVal.isValid) errors.city = cityVal.error;
+
+    const reasonVal = validateRequiredText(formData.reasonForAttending, "Reason for Attending", 5, 1000);
+    if (!reasonVal.isValid) errors.reasonForAttending = reasonVal.error;
+
+    if (formData.linkedinUrl.trim()) {
+      const linkVal = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
+      if (!linkVal.isValid) errors.linkedinUrl = linkVal.error;
     }
-    if (!formData.workEmail.trim() || !formData.workEmail.includes("@")) {
-      toast.error("Please enter a valid Work Email address.");
-      return;
-    }
-    const cleanPhone = formData.contactNumber.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      toast.error("Please enter a valid 10-digit Mobile / Contact Number.");
-      return;
-    }
-    if (!formData.designation.trim()) {
-      toast.error("Please enter your Designation.");
-      return;
-    }
-    if (!formData.companyName.trim()) {
-      toast.error("Please enter your Company / Organization Name.");
-      return;
-    }
-    if (!formData.reasonForAttending.trim()) {
-      toast.error("Please share a brief motivation for attending as a complimentary delegate.");
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setTouchedFields({
+        firstName: true,
+        lastName: true,
+        workEmail: true,
+        contactNumber: true,
+        designation: true,
+        companyName: true,
+        city: true,
+        reasonForAttending: true,
+        linkedinUrl: true,
+      });
+      const firstErrMsg = Object.values(errors)[0];
+      toast.error(firstErrMsg || "Please correct the highlighted errors before submitting.");
       return;
     }
 
@@ -130,6 +217,7 @@ export default function FreeRegistrationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          contactNumber: phoneVal.cleanDigits || formData.contactNumber,
           eventId: eventData?.id || slug,
           eventSlug: eventData?.slug || slug,
           eventTitle: eventData?.title || "Executive Summit 2026",
@@ -197,7 +285,7 @@ export default function FreeRegistrationPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
       {/* ================= HERO HEADER BANNER ================= */}
-      <div className="relative bg-slate-950 text-white pt-10 pb-16 overflow-hidden border-b border-slate-800">
+      <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/80 via-slate-950 to-cyan-950/80 z-0" />
         {eventData?.image && (
           <img
@@ -208,7 +296,7 @@ export default function FreeRegistrationPage() {
         )}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
@@ -216,7 +304,7 @@ export default function FreeRegistrationPage() {
                 </span>
                 <span className="text-xs font-bold text-slate-400">Subject to Admin Selection & Approval</span>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black font-display tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black font-display tracking-tight text-white">
                 {eventData?.title || "HR RECALL 2K26 Leadership Conclave"}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-300 pt-1">
@@ -237,42 +325,119 @@ export default function FreeRegistrationPage() {
 
             <Link
               to={`/events/${eventData?.slug || slug || ""}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-xs font-extrabold text-slate-300 hover:text-white border border-slate-700/80 backdrop-blur-md transition-all self-start md:self-auto cursor-pointer shadow-lg"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-xs font-extrabold text-slate-300 hover:text-white border border-slate-700/80 backdrop-blur-md transition-all self-start md:self-auto cursor-pointer shadow-lg shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Event Details</span>
+              <span>Back to Event Overview</span>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ================= MAIN FORM CONTAINER ================= */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-8"
-        >
-          <div>
-            <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-xs uppercase tracking-wider">
-              <Clock className="w-4 h-4" />
-              <span>Free Delegate Access • Pending Admin Approval</span>
+      {/* ================= MAIN CONTENT CONTAINER ================= */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT COLUMN: Event Overview & Free Delegate Perks */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-5">
+              {eventData?.image && (
+                <div className="relative h-44 w-full rounded-2xl overflow-hidden shadow-sm">
+                  <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover" />
+                  <div className="absolute top-3 left-3">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-950/80 text-emerald-400 border border-emerald-500/40 backdrop-blur-md">
+                      Complimentary VIP Pass
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-base sm:text-lg font-black font-display text-slate-900 leading-tight">
+                  {eventData?.title}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{eventData?.description}</p>
+              </div>
+
+              <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 font-semibold">
+                {eventData?.date && (
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{eventData.date}</span>
+                  </div>
+                )}
+                {(eventData?.venue || eventData?.city) && (
+                  <div className="flex items-center gap-2.5">
+                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{eventData.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData.city}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Pass Status: Complimentary (Subject to Approval)</span>
+                </div>
+              </div>
+
+              {/* Inclusions */}
+              <div className="pt-4 border-t border-slate-100 space-y-2.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                  Free Delegate Pass Privileges:
+                </span>
+                <ul className="space-y-2 text-xs text-slate-600 font-medium">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>Access to Main Conclave Sessions & Panels</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>Executive Delegate Badge & Conference Kit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>Digital Verified Pass sent via Email</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Support Contact */}
+              <div className="rounded-2xl bg-slate-50 p-3.5 text-[11px] text-slate-600 space-y-1">
+                <div className="font-bold text-slate-800">Support Desk</div>
+                <div>Call: <a href="tel:+919100266777" className="text-emerald-700 font-bold hover:underline">+91 91002 66777</a></div>
+                <div>Email: <a href="mailto:registration@executivetalksmedia.in" className="text-emerald-700 font-bold hover:underline">registration@executivetalksmedia.in</a></div>
+              </div>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
-              Apply for Complimentary Delegate Pass
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Submit your executive profile details below. Free delegate passes are subject to selection committee approval by the Admin.
-            </p>
           </div>
+
+          {/* RIGHT COLUMN: The Free Registration Form */}
+          <div className="lg:col-span-8">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-8"
+            >
+              <div>
+                <div className="flex items-center gap-2 text-emerald-600 font-extrabold text-xs uppercase tracking-wider">
+                  <Clock className="w-4 h-4" />
+                  <span>Free Delegate Access • Pending Admin Approval</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
+                  Apply for Complimentary Delegate Pass
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Submit your executive profile details below. Free delegate passes are subject to selection committee approval by the Admin.
+                </p>
+              </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Details Grid */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  First Name <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>First Name <span className="text-rose-500">*</span></span>
+                  {touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -280,14 +445,29 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.firstName}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("firstName")}
                   placeholder="e.g. Rajesh"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.firstName && fieldErrors.firstName
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.firstName && fieldErrors.firstName && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.firstName}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Last Name <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Last Name <span className="text-rose-500">*</span></span>
+                  {touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -295,14 +475,29 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.lastName}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("lastName")}
                   placeholder="e.g. Sharma"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.lastName && fieldErrors.lastName
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.lastName && fieldErrors.lastName && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.lastName}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Work Email <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Work Email <span className="text-rose-500">*</span></span>
+                  {touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid email</span>
+                  )}
                 </label>
                 <input
                   type="email"
@@ -310,29 +505,59 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.workEmail}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("workEmail")}
                   placeholder="rajesh@company.com"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.workEmail && fieldErrors.workEmail
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.workEmail && fieldErrors.workEmail && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.workEmail}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Contact / Mobile Number <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Contact / Mobile Number <span className="text-rose-500">*</span></span>
+                  {touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid phone</span>
+                  )}
                 </label>
                 <input
                   type="tel"
                   name="contactNumber"
                   required
                   value={formData.contactNumber}
-                  onChange={handleInputChange}
+                  onChange={handlePhoneChange}
+                  onBlur={() => handleFieldBlur("contactNumber")}
                   placeholder="+91 98765 43210"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.contactNumber && fieldErrors.contactNumber
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.contactNumber && fieldErrors.contactNumber && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.contactNumber}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Designation <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Designation <span className="text-rose-500">*</span></span>
+                  {touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -340,14 +565,29 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.designation}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("designation")}
                   placeholder="e.g. Vice President HR"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.designation && fieldErrors.designation
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.designation && fieldErrors.designation && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.designation}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Company / Organization Name <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Company / Organization Name <span className="text-rose-500">*</span></span>
+                  {touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -355,14 +595,29 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.companyName}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("companyName")}
                   placeholder="e.g. Enterprise Solutions Ltd"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.companyName && fieldErrors.companyName
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.companyName && fieldErrors.companyName && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.companyName}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  City <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>City <span className="text-rose-500">*</span></span>
+                  {touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -370,9 +625,21 @@ export default function FreeRegistrationPage() {
                   required
                   value={formData.city}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("city")}
                   placeholder="e.g. Hyderabad / Bengaluru"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.city && fieldErrors.city
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.city && fieldErrors.city && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.city}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -413,17 +680,32 @@ export default function FreeRegistrationPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  LinkedIn Profile <span className="text-slate-400 font-normal">(Optional)</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>LinkedIn Profile <span className="text-slate-400 font-normal">(Optional)</span></span>
+                  {touchedFields.linkedinUrl && !fieldErrors.linkedinUrl && formData.linkedinUrl && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid URL</span>
+                  )}
                 </label>
                 <input
                   type="url"
                   name="linkedinUrl"
                   value={formData.linkedinUrl}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("linkedinUrl")}
                   placeholder="https://linkedin.com/in/profile"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.linkedinUrl && fieldErrors.linkedinUrl
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.linkedinUrl && !fieldErrors.linkedinUrl && formData.linkedinUrl
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.linkedinUrl && fieldErrors.linkedinUrl && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.linkedinUrl}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -509,8 +791,11 @@ export default function FreeRegistrationPage() {
 
               {/* VIP Motivation / Reason for Attending */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Executive Motivation / Reason for Attending <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Executive Motivation / Reason for Attending <span className="text-rose-500">*</span></span>
+                  {touchedFields.reasonForAttending && !fieldErrors.reasonForAttending && formData.reasonForAttending.trim().length >= 5 && (
+                    <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                  )}
                 </label>
                 <textarea
                   name="reasonForAttending"
@@ -518,9 +803,21 @@ export default function FreeRegistrationPage() {
                   rows={3}
                   value={formData.reasonForAttending}
                   onChange={handleInputChange}
+                  onBlur={() => handleFieldBlur("reasonForAttending")}
                   placeholder="Share why you would like to attend as a complimentary delegate (e.g., Key networking goals, enterprise initiatives)..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
+                    touchedFields.reasonForAttending && fieldErrors.reasonForAttending
+                      ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                      : touchedFields.reasonForAttending && !fieldErrors.reasonForAttending && formData.reasonForAttending.trim().length >= 5
+                      ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                      : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                  }`}
                 />
+                {touchedFields.reasonForAttending && fieldErrors.reasonForAttending && (
+                  <p className="mt-1 text-[11px] font-bold text-rose-500 animate-in fade-in">
+                    ⚠️ {fieldErrors.reasonForAttending}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -545,5 +842,8 @@ export default function FreeRegistrationPage() {
         </motion.div>
       </div>
     </div>
+  </div>
+</div>
   );
 }
+

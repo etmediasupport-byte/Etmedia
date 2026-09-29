@@ -1,7 +1,7 @@
 {
   "name": "et-media-hub-backend",
   "version": "1.0.0",
-  "description": "Node.js Express & Socket.IO real-time backend for ET Media Business Intelligence",
+  "description": "Node.js Express & Socket.IO real-time backend for Executive Talks Media Business Intelligence",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {

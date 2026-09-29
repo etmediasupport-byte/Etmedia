@@ -161,7 +161,7 @@ export default function DelegateRegistrationPage() {
         image={images.heroLeadership}
       />
 
-      <section className="container-x relative mt-10 sm:mt-14 max-w-4xl">
+      <section className="container-x relative py-8 sm:py-12 max-w-4xl">
         <Reveal>
           <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-8 sm:p-12 shadow-2xl text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8">
             <div className="space-y-3">

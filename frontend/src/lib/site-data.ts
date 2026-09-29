@@ -338,7 +338,7 @@ export const getDefaultAgenda = (): AgendaItem[] => [
     id: "ag-7",
     time: "04:00 PM — 05:30 PM",
     title: "Excellence Awards & Concluding Remarks",
-    speaker: "ET Media Leadership Team",
+    speaker: "Executive Talks Media Leadership Team",
     description: "Recognition of pioneering enterprises followed by networking high tea.",
   },
 ];
@@ -568,7 +568,7 @@ export const testimonials = [
     company: "Vantage Industries",
     role: "Chief Human Resources Officer",
     quote:
-      "The quality of the room ET Media builds is unmatched — every conversation was with a decision maker.",
+      "The quality of the room Executive Talks Media builds is unmatched — every conversation was with a decision maker.",
     videoId: "ysz5S6PUM-U",
   },
   {
@@ -747,7 +747,7 @@ export const getDefaultJobs = (): JobItem[] => [
     benefits: [
       "Competitive salary with performance bonuses",
       "Comprehensive health insurance for self & dependents",
-      "Executive networking passes to all ET Media national summits",
+      "Executive networking passes to all Executive Talks Media national summits",
       "Hybrid work flexibility and fast-track leadership career path",
     ],
     status: "Open",

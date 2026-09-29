@@ -15,12 +15,12 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   title = "Executive Talks Media Business Intelligence | India's Premier CXO Summit Platform",
   description = "Executive Talks Media Business Intelligence curates premier C-suite conferences, national leadership forums, Executive Talks Magazine, and corporate awards across India.",
   keywords = "Executive Talks Media, CFO Summit, HR Awards, Enterprise AI Conclave, CXO Conferences, Executive Networking, Business Intelligence India",
-  image = "https://www.etmedia.in/assets/hero-summit-ClCGVqfO.jpg",
-  url = "https://www.etmedia.in",
+  image = "https://www.executivetalksmedia.in/assets/hero-summit-ClCGVqfO.jpg",
+  url = "https://www.executivetalksmedia.in",
   type = "website",
   author = "Executive Talks Media Business Intelligence",
 }) => {
-  const fullTitle = title.includes("Executive Talks Media") || title.includes("ET Media") ? title : `${title} | Executive Talks Media Business Intelligence`;
+  const fullTitle = title.includes("Executive Talks Media") ? title : `${title} | Executive Talks Media Business Intelligence`;
 
   return (
     <Helmet>
@@ -41,8 +41,8 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
 
       {/* Twitter Cards */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content="@ETMediaHub" />
-      <meta name="twitter:creator" content="@ETMediaHub" />
+      <meta name="twitter:site" content="@ExecutiveTalksMedia" />
+      <meta name="twitter:creator" content="@ExecutiveTalksMedia" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />

@@ -1,10 +1,10 @@
-# ET Media Hub
+# Executive Talks Media Hub
 
-# ET MEDIA BUSINESS INTELLIGENCE – COMPLETE PREMIUM WEBSITE PROMPT
+# EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE – COMPLETE PREMIUM WEBSITE PROMPT
 
 ## Build a Premium Corporate Business Intelligence Website
 
-Create a world-class premium responsive website for **ET Media Business Intelligence**. The website should have an elegant corporate identity using the uploaded ET Media logo colors.
+Create a world-class premium responsive website for **Executive Talks Media Business Intelligence**. The website should have an elegant corporate identity using the uploaded Executive Talks Media logo colors.
 
 ### Brand Theme
 

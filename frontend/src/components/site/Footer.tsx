@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { contact } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
+import { validateEmail } from "@/lib/validation";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -33,8 +34,8 @@ export function Footer() {
     instagram: contact.instagram,
     youtube: contact.youtube,
     whatsapp: contact.whatsapp,
-    twitter: "https://x.com/etmedia",
-    facebook: "https://facebook.com/etmedia",
+    twitter: "https://x.com/executivetalksmedia",
+    facebook: "https://facebook.com/executivetalksmedia",
   });
 
   useEffect(() => {
@@ -79,14 +80,18 @@ export function Footer() {
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const emailVal = validateEmail(email, "Newsletter Email");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
+      return;
+    }
     setSubscribed(true);
     toast.success("Thank you for subscribing to Executive Talks Business Intelligence!");
     setEmail("");
   };
 
   return (
-    <footer className="gradient-ink relative mt-16 overflow-hidden text-slate-300 selection:bg-cyan-500/30 selection:text-white">
+    <footer className="gradient-ink relative mt-8 sm:mt-12 overflow-hidden text-slate-300 selection:bg-cyan-500/30 selection:text-white">
       {/* Background Glowing Ambient Orbs */}
       <div className="bg-cyan-500/10 float-orb absolute -top-24 left-1/4 h-96 w-96 rounded-full blur-3xl" />
       <div className="bg-purple-500/10 float-orb absolute -bottom-24 right-1/4 h-96 w-96 rounded-full blur-3xl" />
@@ -94,7 +99,7 @@ export function Footer() {
       {/* Top Border Glow Line */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
 
-      <div className="container-x relative pt-12 pb-12 space-y-12">
+      <div className="container-x relative pt-8 sm:pt-10 pb-8 sm:pb-10 space-y-8 sm:space-y-10">
         
         {/* ==================================================== */}
         {/* MAIN COLUMNS GRID (Brand, Quick Links, Events, Mag, Careers, Subscribe) */}
