@@ -155,24 +155,20 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [registerMode, setRegisterMode] = useState<"paid" | "free">("paid");
 
-  // Load events from DB and merge with default summits
+  // Load real events strictly from Database (Managed in Admin Dashboard)
   useEffect(() => {
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          const existingSlugs = new Set(data.data.map((d: any) => (d.slug || d.id || "").toLowerCase()));
-          const extraDefaults = defaultEvents.filter(
-            (def) => !existingSlugs.has((def.slug || def.id || "").toLowerCase())
-          );
-          setEventList([...data.data, ...extraDefaults]);
+        if (data.success && Array.isArray(data.data)) {
+          setEventList(data.data);
         } else {
-          setEventList(defaultEvents);
+          setEventList([]);
         }
       })
       .catch((err) => {
-        console.warn("Using default events data", err);
-        setEventList(defaultEvents);
+        console.warn("Error loading events from API:", err);
+        setEventList([]);
       });
 
     // Socket.IO real-time listeners

@@ -293,17 +293,17 @@ function AboutSnapshot() {
 
 // SECTION 4: UPCOMING EVENTS (Dynamic API CMS)
 function UpcomingEvents() {
-  const [eventList, setEventList] = useState<any[]>(events);
+  const [eventList, setEventList] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        if (data.success && Array.isArray(data.data)) {
           setEventList(data.data);
         }
       })
-      .catch((err) => console.warn("Using static events fallback:", err));
+      .catch((err) => console.warn("Error fetching events for homepage:", err));
   }, []);
 
   return (
