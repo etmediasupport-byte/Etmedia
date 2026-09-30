@@ -118,7 +118,7 @@ function PageTracker() {
 
     // 2. Google Analytics 4 (GA4) Pageview Tracking
     if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("config", "G-K5QRFCW1EW", {
+      (window as any).gtag("config", "G-K5QRFCWJEW", {
         page_path: location.pathname + location.search,
         page_title: document.title,
       });
