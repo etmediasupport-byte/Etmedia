@@ -23,7 +23,16 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
-import { validatePhone, sanitizePhoneInput } from "@/lib/validation";
+import {
+  validatePhone,
+  sanitizePhoneInput,
+  validateName,
+  validateDesignation,
+  validateCompanyName,
+  validateLocation,
+  validateEmail,
+  validateGstNumber,
+} from "@/lib/validation";
 
 export default function DelegateRegistrationPage() {
   const navigate = useNavigate();
@@ -84,20 +93,24 @@ export default function DelegateRegistrationPage() {
     e.preventDefault();
 
     // Required fields verification
-    if (!formData.fullName.trim()) {
-      toast.error("Please enter Delegate Full Name.");
+    const nameVal = validateName(formData.fullName, "Delegate Full Name");
+    if (!nameVal.isValid) {
+      toast.error(nameVal.error);
       return;
     }
-    if (!formData.designation.trim()) {
-      toast.error("Please enter Delegate Designation.");
+    const desigVal = validateDesignation(formData.designation, "Delegate Designation");
+    if (!desigVal.isValid) {
+      toast.error(desigVal.error);
       return;
     }
-    if (!formData.organization.trim()) {
-      toast.error("Please enter Organisation / Company.");
+    const orgVal = validateCompanyName(formData.organization, "Organisation / Company");
+    if (!orgVal.isValid) {
+      toast.error(orgVal.error);
       return;
     }
-    if (!formData.officialEmail.trim()) {
-      toast.error("Please enter Official Work Email.");
+    const emailVal = validateEmail(formData.officialEmail, "Official Work Email");
+    if (!emailVal.isValid) {
+      toast.error(emailVal.error);
       return;
     }
     const mErr = validateMobile(formData.mobileNumber);
@@ -107,21 +120,37 @@ export default function DelegateRegistrationPage() {
       toast.error(mErr);
       return;
     }
-    if (!formData.city.trim()) {
-      toast.error("Please enter Delegate City.");
+    const cityVal = validateLocation(formData.city, "Delegate City");
+    if (!cityVal.isValid) {
+      toast.error(cityVal.error);
       return;
     }
-    if (!formData.companyName.trim()) {
-      toast.error("Please enter Organisation Company Name.");
+    const compVal = validateCompanyName(formData.companyName, "Organisation Company Name");
+    if (!compVal.isValid) {
+      toast.error(compVal.error);
       return;
     }
-    if (!formData.location.trim()) {
-      toast.error("Please enter Organisation Location.");
+    const locVal = validateLocation(formData.location, "Organisation Location");
+    if (!locVal.isValid) {
+      toast.error(locVal.error);
       return;
     }
-    if (!formData.contactPersonName.trim() || !formData.contactPersonEmail.trim()) {
-      toast.error("Please enter Contact Person Name and Email.");
+    const cpNameVal = validateName(formData.contactPersonName, "Contact Person Name");
+    if (!cpNameVal.isValid) {
+      toast.error(cpNameVal.error);
       return;
+    }
+    const cpEmailVal = validateEmail(formData.contactPersonEmail, "Contact Person Email");
+    if (!cpEmailVal.isValid) {
+      toast.error(cpEmailVal.error);
+      return;
+    }
+    if (formData.gstNumber) {
+      const gstVal = validateGstNumber(formData.gstNumber);
+      if (!gstVal.isValid) {
+        toast.error(gstVal.error);
+        return;
+      }
     }
 
     setSubmitting(true);

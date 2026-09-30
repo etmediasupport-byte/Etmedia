@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { GlowBackdrop } from "@/components/site/primitives";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, X, AlertCircle } from "lucide-react";
 import {
   validateEmail,
   validatePhone,
   sanitizePhoneInput,
   sanitizeNumericInput,
   validateName,
+  validateDesignation,
+  validateCompanyName,
+  validateLocation,
+  validateMessage,
   validateRequiredText,
   validateUrl,
+  validateGstNumber,
 } from "@/lib/validation";
-import logo from "@/assets/UPDATED LOGO.jpeg";
 
 export interface WizardField {
   name: string;
@@ -46,6 +49,78 @@ interface MultiStepFormWizardProps {
   ) => Promise<{ success: boolean; url?: string; error?: string }>;
 }
 
+export function validateWizardField(field: WizardField, val: string): string {
+  const trimmed = (val || "").trim();
+
+  if (field.required && !trimmed) {
+    return `${field.label} is required.`;
+  }
+
+  if (!trimmed) {
+    return "";
+  }
+
+  // Custom validation rule takes precedence
+  if (field.validationRule) {
+    const customErr = field.validationRule(trimmed);
+    if (customErr) return customErr;
+  }
+
+  // Smart routing by field name and type
+  const lowerName = field.name.toLowerCase();
+
+  if (field.type === "email") {
+    const v = validateEmail(trimmed, field.label);
+    if (!v.isValid) return v.error;
+  } else if (field.type === "tel") {
+    const v = validatePhone(trimmed, field.label);
+    if (!v.isValid) return v.error;
+  } else if (field.type === "url") {
+    const v = validateUrl(trimmed, field.label, field.required);
+    if (!v.isValid) return v.error;
+  } else if (field.type === "textarea" || lowerName.includes("message") || lowerName.includes("proposal") || lowerName.includes("note")) {
+    const v = validateMessage(trimmed, field.label, field.required, 10);
+    if (!v.isValid) return v.error;
+  } else if (
+    lowerName.includes("designation") ||
+    lowerName.includes("role") ||
+    lowerName.includes("title")
+  ) {
+    const v = validateDesignation(trimmed, field.label, field.required);
+    if (!v.isValid) return v.error;
+  } else if (
+    lowerName.includes("company") ||
+    lowerName.includes("organization") ||
+    lowerName.includes("org")
+  ) {
+    const v = validateCompanyName(trimmed, field.label, field.required);
+    if (!v.isValid) return v.error;
+  } else if (
+    lowerName.includes("location") ||
+    lowerName.includes("city") ||
+    lowerName.includes("address") ||
+    lowerName.includes("headquarter")
+  ) {
+    const v = validateLocation(trimmed, field.label, field.required);
+    if (!v.isValid) return v.error;
+  } else if (
+    lowerName.includes("name") ||
+    lowerName.includes("person") ||
+    lowerName.includes("contact")
+  ) {
+    const v = validateName(trimmed, field.label);
+    if (!v.isValid) return v.error;
+  } else if (lowerName.includes("gst")) {
+    const v = validateGstNumber(trimmed, field.label, field.required);
+    if (!v.isValid) return v.error;
+  } else if (field.type === "text") {
+    const v = validateRequiredText(trimmed, field.label, 2, 200);
+    if (!v.isValid) return v.error;
+  }
+
+  return "";
+}
+
 export function MultiStepFormWizard({
   storageKey,
   badgeText,
@@ -63,7 +138,6 @@ export function MultiStepFormWizard({
   const totalSteps = steps.length;
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<Record<string, string>>(() => {
-    // Attempt restore from localStorage
     try {
       const saved = localStorage.getItem(`etmedia_form_draft_${storageKey}`);
       if (saved) {
@@ -77,6 +151,7 @@ export function MultiStepFormWizard({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -91,8 +166,6 @@ export function MultiStepFormWizard({
     }
   }, [formData, storageKey]);
 
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
-
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -106,30 +179,8 @@ export function MultiStepFormWizard({
 
   const handleFieldBlur = (field: WizardField) => {
     setTouchedFields((prev) => ({ ...prev, [field.name]: true }));
-    const val = (formData[field.name] || "").trim();
-    let err = "";
-
-    if (field.required && !val) {
-      err = `${field.label} is required.`;
-    } else if (val) {
-      if (field.type === "email") {
-        const v = validateEmail(val, field.label);
-        if (!v.isValid) err = v.error;
-      } else if (field.type === "tel") {
-        const v = validatePhone(val, field.label);
-        if (!v.isValid) err = v.error;
-      } else if (field.type === "url") {
-        const v = validateUrl(val, field.label, field.required);
-        if (!v.isValid) err = v.error;
-      } else if (field.name.toLowerCase().includes("name") && field.type === "text") {
-        const v = validateName(val, field.label);
-        if (!v.isValid) err = v.error;
-      } else if (field.validationRule) {
-        const custom = field.validationRule(val);
-        if (custom) err = custom;
-      }
-    }
-
+    const val = formData[field.name] || "";
+    const err = validateWizardField(field, val);
     setErrors((prev) => ({ ...prev, [field.name]: err }));
   };
 
@@ -143,6 +194,7 @@ export function MultiStepFormWizard({
         const res = await customFileUploadHandler(field, file);
         if (res.success && res.url) {
           handleInputChange(field.name, res.url);
+          setErrors((prev) => ({ ...prev, [field.name]: "" }));
         } else {
           setErrors((prev) => ({ ...prev, [field.name]: res.error || "File upload failed" }));
         }
@@ -159,39 +211,18 @@ export function MultiStepFormWizard({
     if (!stepConfig) return true;
 
     const newErrors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = { ...touchedFields };
 
     stepConfig.fields.forEach((field) => {
-      const val = (formData[field.name] || "").trim();
-
-      if (field.required && !val) {
-        newErrors[field.name] = `${field.label} is required.`;
-        return;
-      }
-
-      if (val) {
-        if (field.type === "email") {
-          const v = validateEmail(val, field.label);
-          if (!v.isValid) newErrors[field.name] = v.error;
-        } else if (field.type === "tel") {
-          const v = validatePhone(val, field.label);
-          if (!v.isValid) newErrors[field.name] = v.error;
-        } else if (field.type === "url") {
-          const v = validateUrl(val, field.label, field.required);
-          if (!v.isValid) newErrors[field.name] = v.error;
-        } else if (field.name.toLowerCase().includes("name") && field.type === "text") {
-          const v = validateName(val, field.label);
-          if (!v.isValid) newErrors[field.name] = v.error;
-        }
-
-        if (field.validationRule) {
-          const customErr = field.validationRule(val);
-          if (customErr) {
-            newErrors[field.name] = customErr;
-          }
-        }
+      newTouched[field.name] = true;
+      const val = formData[field.name] || "";
+      const err = validateWizardField(field, val);
+      if (err) {
+        newErrors[field.name] = err;
       }
     });
 
+    setTouchedFields(newTouched);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -220,20 +251,19 @@ export function MultiStepFormWizard({
     try {
       const res = await onComplete(formData);
       if (res.success) {
-        // Clear saved draft on successful submit
         localStorage.removeItem(`etmedia_form_draft_${storageKey}`);
         setIsSuccess(true);
         if (res.message) setSuccessMessage(res.message);
       } else {
         setErrors((prev) => ({
           ...prev,
-          _submit: res.message || "Submission failed. Please try again.",
+          _submit: res.message || "Submission failed. Please check your details and try again.",
         }));
       }
     } catch (err: any) {
       setErrors((prev) => ({
         ...prev,
-        _submit: err.message || "An unexpected error occurred. Please check network connection.",
+        _submit: err.message || "An unexpected error occurred. Please check your internet connection.",
       }));
     } finally {
       setSubmitting(false);
@@ -245,7 +275,7 @@ export function MultiStepFormWizard({
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-slate-100/70 pt-28 pb-16">
+      <div className="min-h-screen bg-slate-50 pt-28 pb-16 flex items-center justify-center font-sans">
         <div className="mx-auto flex w-full max-w-2xl items-center justify-center p-4 sm:p-6">
           <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 shadow-xl text-center space-y-6">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 ring-8 ring-emerald-500/5">
@@ -265,9 +295,9 @@ export function MultiStepFormWizard({
               <button
                 type="button"
                 onClick={() => navigate(cancelPath)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:bg-cyan-500 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:scale-105 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
               >
-                <span>Return to Homepage</span>
+                <span>Return to Page</span>
               </button>
             </div>
           </div>
@@ -277,14 +307,14 @@ export function MultiStepFormWizard({
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 pt-28 pb-16">
+    <div className="min-h-screen bg-slate-50 pt-28 pb-16 font-sans selection:bg-cyan-500 selection:text-white">
       {/* Main Wizard Form Body */}
       <main className="mx-auto w-full max-w-4xl px-4 sm:px-6">
-        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-sm space-y-8">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 lg:p-12 shadow-sm space-y-8">
           {/* Header Title Section */}
           <div className="space-y-2 border-b border-slate-100 pb-6">
             <div className="flex items-center justify-between">
-              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-black text-cyan-700 tracking-wider uppercase">
+              <span className="inline-block rounded-full bg-cyan-500/10 px-3.5 py-1 text-xs font-black text-cyan-700 tracking-wider uppercase font-display">
                 {badgeText}
               </span>
 
@@ -298,7 +328,7 @@ export function MultiStepFormWizard({
             <p className="text-xs sm:text-sm text-slate-500 font-medium">{subtitle}</p>
 
             {/* Sleek Progress Bar */}
-            <div className="pt-2">
+            <div className="pt-3">
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-500 ease-out"
@@ -310,8 +340,9 @@ export function MultiStepFormWizard({
 
           {/* Form Submit Error Banner */}
           {errors["_submit"] && (
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-50 p-4 text-xs font-bold text-rose-700">
-              ⚠️ {errors["_submit"]}
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-50 p-4 text-xs font-bold text-rose-700 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{errors["_submit"]}</span>
             </div>
           )}
 
@@ -333,7 +364,9 @@ export function MultiStepFormWizard({
                         {field.label} {field.required && <span className="text-rose-500">*</span>}
                       </span>
                       {isValid && (
-                        <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
+                        <span className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
+                          ✓ Valid
+                        </span>
                       )}
                     </label>
 
@@ -344,9 +377,9 @@ export function MultiStepFormWizard({
                         onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                            ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            ? "border-emerald-500/80 bg-emerald-50/20 focus:border-emerald-500 focus:ring-emerald-500/10"
                             : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       >
@@ -366,9 +399,9 @@ export function MultiStepFormWizard({
                         onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                            ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            ? "border-emerald-500/80 bg-emerald-50/20 focus:border-emerald-500 focus:ring-emerald-500/10"
                             : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
@@ -402,9 +435,9 @@ export function MultiStepFormWizard({
                         onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                            ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            ? "border-emerald-500/80 bg-emerald-50/20 focus:border-emerald-500 focus:ring-emerald-500/10"
                             : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
@@ -417,9 +450,9 @@ export function MultiStepFormWizard({
                         onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                            ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            ? "border-emerald-500/80 bg-emerald-50/20 focus:border-emerald-500 focus:ring-emerald-500/10"
                             : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
@@ -432,16 +465,21 @@ export function MultiStepFormWizard({
                         onBlur={() => handleFieldBlur(field)}
                         className={`w-full rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:bg-white focus:ring-4 ${
                           fieldError
-                            ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
+                            ? "border-rose-500 bg-rose-50/40 focus:border-rose-500 focus:ring-rose-500/10"
                             : isValid
-                            ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
+                            ? "border-emerald-500/80 bg-emerald-50/20 focus:border-emerald-500 focus:ring-emerald-500/10"
                             : "border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/10"
                         }`}
                       />
                     )}
 
                     {field.helpText && <p className="mt-1 text-[11px] text-slate-500">{field.helpText}</p>}
-                    {fieldError && <p className="mt-1 text-[11px] font-bold text-rose-500">⚠️ {fieldError}</p>}
+                    {fieldError && (
+                      <p className="mt-1.5 text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                        <span>{fieldError}</span>
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -481,7 +519,7 @@ export function MultiStepFormWizard({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 px-8 py-3.5 text-xs font-black uppercase tracking-wider text-white hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-cyan-500/20 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>

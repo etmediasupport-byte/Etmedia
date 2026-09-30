@@ -26,9 +26,13 @@ import {
   validatePhone,
   sanitizePhoneInput,
   validateName,
+  validateDesignation,
+  validateCompanyName,
+  validateLocation,
   validateRequiredText,
   validateUrl,
 } from "@/lib/validation";
+import { EventTermsAndConditionsBox } from "@/components/site/EventTermsAndConditionsBox";
 
 export default function FreeRegistrationPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -38,6 +42,7 @@ export default function FreeRegistrationPage() {
   const [eventData, setEventData] = useState<any>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -125,13 +130,13 @@ export default function FreeRegistrationPage() {
       const v = validatePhone(formData.contactNumber, "Contact / Mobile Number");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "designation") {
-      const v = validateRequiredText(formData.designation, "Designation");
+      const v = validateDesignation(formData.designation, "Designation");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "companyName") {
-      const v = validateRequiredText(formData.companyName, "Company Name");
+      const v = validateCompanyName(formData.companyName, "Company Name");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "city") {
-      const v = validateRequiredText(formData.city, "City");
+      const v = validateLocation(formData.city, "City");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "reasonForAttending") {
       const v = validateRequiredText(formData.reasonForAttending, "Reason for Attending", 5, 1000);
@@ -175,13 +180,13 @@ export default function FreeRegistrationPage() {
     const phoneVal = validatePhone(formData.contactNumber, "Contact / Mobile Number");
     if (!phoneVal.isValid) errors.contactNumber = phoneVal.error;
 
-    const desigVal = validateRequiredText(formData.designation, "Designation");
+    const desigVal = validateDesignation(formData.designation, "Designation");
     if (!desigVal.isValid) errors.designation = desigVal.error;
 
-    const compVal = validateRequiredText(formData.companyName, "Company / Organization Name");
+    const compVal = validateCompanyName(formData.companyName, "Company / Organization Name");
     if (!compVal.isValid) errors.companyName = compVal.error;
 
-    const cityVal = validateRequiredText(formData.city, "City");
+    const cityVal = validateLocation(formData.city, "City");
     if (!cityVal.isValid) errors.city = cityVal.error;
 
     const reasonVal = validateRequiredText(formData.reasonForAttending, "Reason for Attending", 5, 1000);
@@ -207,6 +212,11 @@ export default function FreeRegistrationPage() {
       });
       const firstErrMsg = Object.values(errors)[0];
       toast.error(firstErrMsg || "Please correct the highlighted errors before submitting.");
+      return;
+    }
+
+    if (!termsAccepted) {
+      toast.error("Please agree to the Event Registration Terms & Conditions to proceed.");
       return;
     }
 
@@ -827,6 +837,14 @@ export default function FreeRegistrationPage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Terms & Conditions Section */}
+            <div className="pt-4">
+              <EventTermsAndConditionsBox
+                checked={termsAccepted}
+                onChange={setTermsAccepted}
+              />
             </div>
 
             {/* Submit Button */}

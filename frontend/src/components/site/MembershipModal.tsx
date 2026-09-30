@@ -27,6 +27,7 @@ import {
   validateName,
   validateRequiredText,
 } from "@/lib/validation";
+import { EventTermsAndConditionsBox } from "@/components/site/EventTermsAndConditionsBox";
 
 interface MembershipModalProps {
   isOpen: boolean;
@@ -737,17 +738,11 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                         </div>
 
                         {/* Terms Agreement */}
-                        <div className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
-                          <input
-                            type="checkbox"
-                            id="agreeTerms"
+                        <div className="pt-2">
+                          <EventTermsAndConditionsBox
                             checked={formData.agreeTerms}
-                            onChange={(e) => handleInputChange("agreeTerms", e.target.checked)}
-                            className="mt-0.5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 h-4 w-4 cursor-pointer"
+                            onChange={(val) => handleInputChange("agreeTerms", val)}
                           />
-                          <label htmlFor="agreeTerms" className="text-xs text-slate-700 leading-relaxed cursor-pointer font-medium">
-                            I confirm that the details provided are accurate. I authorize Executive Talks Media Business Intelligence to contact me regarding executive membership privileges and event invitations.
-                          </label>
                         </div>
                       </motion.div>
                     )}

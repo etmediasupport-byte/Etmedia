@@ -52,13 +52,30 @@ const mailTransporter = nodemailer.createTransport({
 // --- CENTRALIZED BACKEND VALIDATION HELPERS ---
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+const BACKEND_SPAM_TOKENS = new Set([
+  "test", "testing", "asdf", "asdfgh", "qwerty", "zxcv", "none", "na", "n/a", "null", "undefined", "dummy", "xyz", "abc", "sample", "fake", "dedddddd"
+]);
+
+function isSpamText(val: any): boolean {
+  if (!val || typeof val !== "string") return false;
+  const clean = val.trim().toLowerCase();
+  if (BACKEND_SPAM_TOKENS.has(clean)) return true;
+  if (/(.)\1{2,}/i.test(clean)) return true;
+  if (/(.{2,3})\1{2,}/i.test(clean)) return true;
+  const words = clean.split(/[\s,.-]+/);
+  for (const w of words) {
+    if (w.length >= 5 && !/[aeiouy]/.test(w)) return true;
+  }
+  return false;
+}
+
 function isValidEmail(email: any): boolean {
   if (!email || typeof email !== "string") return false;
   const trimmed = email.trim();
   if (!EMAIL_REGEX.test(trimmed)) return false;
   const domain = trimmed.split("@")[1];
   if (!domain || !domain.includes(".") || domain.endsWith(".")) return false;
-  return true;
+  return !isSpamText(trimmed.split("@")[0]);
 }
 
 function isValidPhone(phone: any): boolean {
@@ -78,8 +95,33 @@ function isValidPhone(phone: any): boolean {
 function isValidName(name: any): boolean {
   if (!name || typeof name !== "string") return false;
   const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 80) return false;
+  if (!/[a-zA-Z]/.test(trimmed)) return false;
+  return !isSpamText(trimmed);
+}
+
+function isValidDesignation(desig: any): boolean {
+  if (!desig || typeof desig !== "string") return false;
+  const trimmed = desig.trim();
+  if (trimmed.length < 2 || trimmed.length > 80) return false;
+  if (!/[a-zA-Z]/.test(trimmed)) return false;
+  return !isSpamText(trimmed);
+}
+
+function isValidLocation(loc: any): boolean {
+  if (!loc || typeof loc !== "string") return false;
+  const trimmed = loc.trim();
+  if (trimmed.length < 3 || trimmed.length > 120) return false;
+  if (!/[a-zA-Z]/.test(trimmed)) return false;
+  return !isSpamText(trimmed);
+}
+
+function isValidCompanyName(comp: any): boolean {
+  if (!comp || typeof comp !== "string") return false;
+  const trimmed = comp.trim();
   if (trimmed.length < 2 || trimmed.length > 100) return false;
-  return /[a-zA-Z]/.test(trimmed);
+  if (!/[a-zA-Z0-9]/.test(trimmed)) return false;
+  return !isSpamText(trimmed);
 }
 
 interface RegistrationEmailPayload {
@@ -190,14 +232,17 @@ TAX INVOICE & PAYMENT DETAILS:
 - Coupon Applied: ${coupon}
 - Service SAC Code: 998397 (Event & Business Intelligence Exhibition Services)
 
-EVENT TERMS & CONDITIONS:
-• Registration: Registration is subject to confirmation by Executive Talks Media Business Intelligence.
-• Valid ID Proof: Participants must carry a valid government-issued photo ID for identity verification at the venue.
-• Entry & Pass: Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.
-• Right of Admission: Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.
-• Code of Conduct: All participants must maintain professional and respectful conduct throughout the event.
-• Health & Safety: Participants experiencing fever, cold, flu-like symptoms or any other contagious illness are requested to avoid attending the event.
-• Timing: Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry.
+EVENT REGISTRATION – TERMS & CONDITIONS:
+1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
+2. Communication Consent: I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities.
+3. Partner Communication: I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication.
+4. Digital & Promotional Usage: I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
+5. Photography & Video Consent: I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes.
+6. Data Usage: I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.
+7. Third-Party Communication: I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.
+8. Event Updates: I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
+9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
 
 Scan the attached QR code or click the live pass link to fast-track your entry:
 ${verifyPassUrl}
@@ -344,19 +389,48 @@ www.executivetalksmedia.in
           ` : ""}
 
           <!-- TERMS & CONDITIONS SECTION -->
-          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 25px;">
-            <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
-              📋 Event Terms & Conditions
-            </h3>
-            <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #475569; line-height: 1.7;">
-              <li style="margin-bottom: 6px;"><strong>Registration:</strong> Registration is subject to confirmation by Executive Talks Media Business Intelligence.</li>
-              <li style="margin-bottom: 6px;"><strong>Valid ID Proof:</strong> Participants must carry a valid government-issued photo ID for identity verification at the venue.</li>
-              <li style="margin-bottom: 6px;"><strong>Entry & Pass:</strong> Entry is permitted only to registered and confirmed participants. Event passes are strictly non-transferable.</li>
-              <li style="margin-bottom: 6px;"><strong>Right of Admission:</strong> Executive Talks Media Business Intelligence reserves the right to cancel registration or deny entry based on event, security, verification, capacity or other applicable conditions.</li>
-              <li style="margin-bottom: 6px;"><strong>Code of Conduct:</strong> All participants must maintain professional and respectful conduct throughout the event.</li>
-              <li style="margin-bottom: 6px;"><strong>Event Timing & Grace Period:</strong> Registration/Check-in starts at 8:30 AM. A 15-minute grace period will be provided for entry. Participants are requested to arrive on time to complete the check-in process.</li>
-              <li style="margin-bottom: 0px;"><strong>Acceptance:</strong> By registering for the event, participants confirm that they have read, understood and agreed to these Terms & Conditions.</li>
-            </ul>
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; background-color: #f8fafc; margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0891b2; padding-bottom: 10px; margin-bottom: 14px;">
+              <h3 style="margin: 0; color: #0f172a; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                📋 EVENT REGISTRATION – TERMS & CONDITIONS
+              </h3>
+            </div>
+            <p style="margin: 0 0 14px 0; font-size: 12px; color: #64748b; font-style: italic;">
+              By submitting the registration form, you confirmed and agreed to the following terms and conditions:
+            </p>
+            
+            <ol style="margin: 0; padding-left: 20px; font-size: 12px; color: #334155; line-height: 1.75;">
+              <li style="margin-bottom: 10px;">
+                <strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.
+              </li>
+              <li style="margin-bottom: 10px;">
+                <strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
+              </li>
+              <li style="margin-bottom: 10px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 10px 12px; list-style-position: inside;">
+                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+              </li>
+              <li style="margin-bottom: 0px;">
+                <strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
+              </li>
+            </ol>
           </div>
 
           <p style="margin-bottom: 0;">Our executive team will contact you shortly with agenda updates, venue access details, and networking session schedules.</p>
@@ -568,6 +642,18 @@ APPLICATION DETAILS:
 
 Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and credentials are authenticated, you will receive an official confirmation email along with your Scannable QR Ticket Pass for venue access.
 
+EVENT REGISTRATION – TERMS & CONDITIONS:
+1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
+2. Communication Consent: I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities.
+3. Partner Communication: I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication.
+4. Digital & Promotional Usage: I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
+5. Photography & Video Consent: I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes.
+6. Data Usage: I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.
+7. Third-Party Communication: I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.
+8. Event Updates: I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
+9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
+
 For urgent executive assistance:
 registration@executivetalksmedia.in
 www.executivetalksmedia.in
@@ -593,6 +679,27 @@ www.executivetalksmedia.in
           </div>
 
           <p>Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and executive credentials are authenticated, you will receive an official confirmation email along with your <strong>Scannable QR Ticket Pass</strong> for fast-track venue access.</p>
+
+          <!-- TERMS & CONDITIONS SECTION -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; background-color: #f8fafc; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 14px; font-weight: 800; border-bottom: 2px solid #0891b2; padding-bottom: 6px;">
+              📋 EVENT REGISTRATION – TERMS & CONDITIONS
+            </h3>
+            <ol style="margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.7;">
+              <li style="margin-bottom: 6px;"><strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.</li>
+              <li style="margin-bottom: 6px;"><strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.</li>
+              <li style="margin-bottom: 6px;"><strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.</li>
+              <li style="margin-bottom: 6px;"><strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.</li>
+              <li style="margin-bottom: 6px;"><strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.</li>
+              <li style="margin-bottom: 6px;"><strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.</li>
+              <li style="margin-bottom: 6px;"><strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.</li>
+              <li style="margin-bottom: 6px;"><strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.</li>
+              <li style="margin-bottom: 6px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #ef4444; border-radius: 6px; padding: 6px 8px; list-style-position: inside;">
+                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+              </li>
+              <li style="margin-bottom: 0px;"><strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.</li>
+            </ol>
+          </div>
 
           <p style="margin-bottom: 0;">If you have any questions or require urgent executive assistance, please feel free to reach us at <a href="mailto:${smtpUser}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${smtpUser}</a>.</p>
         </div>
@@ -4224,6 +4331,22 @@ app.post("/api/partners/submit", async (req, res) => {
     return res.status(400).json({ success: false, message: "Please fill in all required fields marked with *" });
   }
 
+  if (!isValidCompanyName(company_name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid company or organization name." });
+  }
+
+  if (!isValidLocation(location)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid city or headquarters location." });
+  }
+
+  if (!isValidName(contact_person)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid primary contact person name." });
+  }
+
+  if (!isValidDesignation(designation)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid professional designation (e.g. Vice President, Director)." });
+  }
+
   if (!isValidEmail(email)) {
     return res.status(400).json({ success: false, message: "Please provide a valid official corporate email address." });
   }
@@ -5472,6 +5595,9 @@ Allow: /
 
 Sitemap: ${baseUrl}/sitemap.xml
 `;
+  res.setHeader("Content-Type", "text/plain");
+  return res.status(200).send(robotsContent);
+});
 // Google Search Console Site Ownership Verification File
 app.get(["/google736712b10fdf4584.html", "/api/google736712b10fdf4584.html"], (_req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");

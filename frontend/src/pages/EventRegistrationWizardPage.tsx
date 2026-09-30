@@ -35,9 +35,13 @@ import {
   validatePhone,
   sanitizePhoneInput,
   validateName,
+  validateDesignation,
+  validateCompanyName,
+  validateLocation,
   validateRequiredText,
   validateUrl,
 } from "@/lib/validation";
+import { EventTermsAndConditionsBox } from "@/components/site/EventTermsAndConditionsBox";
 
 declare global {
   interface Window {
@@ -294,13 +298,13 @@ export default function EventRegistrationWizardPage() {
       const v = validatePhone(formData.contactNumber, "Contact / Mobile Number");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "designation") {
-      const v = validateRequiredText(formData.designation, "Designation");
+      const v = validateDesignation(formData.designation, "Designation");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "companyName") {
-      const v = validateRequiredText(formData.companyName, "Company Name");
+      const v = validateCompanyName(formData.companyName, "Company Name");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "city") {
-      const v = validateRequiredText(formData.city, "City");
+      const v = validateLocation(formData.city, "City");
       if (!v.isValid) error = v.error;
     } else if (fieldName === "linkedinUrl" && formData.linkedinUrl.trim()) {
       const v = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
@@ -343,13 +347,13 @@ export default function EventRegistrationWizardPage() {
     const phoneVal = validatePhone(formData.contactNumber, "Contact / Mobile Number");
     if (!phoneVal.isValid) errors.contactNumber = phoneVal.error;
 
-    const desigVal = validateRequiredText(formData.designation, "Designation");
+    const desigVal = validateDesignation(formData.designation, "Designation");
     if (!desigVal.isValid) errors.designation = desigVal.error;
 
-    const compVal = validateRequiredText(formData.companyName, "Company / Organization Name");
+    const compVal = validateCompanyName(formData.companyName, "Company / Organization Name");
     if (!compVal.isValid) errors.companyName = compVal.error;
 
-    const cityVal = validateRequiredText(formData.city, "City");
+    const cityVal = validateLocation(formData.city, "City");
     if (!cityVal.isValid) errors.city = cityVal.error;
 
     if (formData.linkedinUrl.trim()) {
@@ -1529,18 +1533,12 @@ export default function EventRegistrationWizardPage() {
                 </p>
               </div>
 
-              {/* Terms & Conditions Checkbox */}
-              <div className="flex items-start gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="terms"
+              {/* Terms & Conditions Section */}
+              <div className="pt-2">
+                <EventTermsAndConditionsBox
                   checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                  onChange={setTermsAccepted}
                 />
-                <label htmlFor="terms" className="text-xs text-slate-600 font-medium cursor-pointer leading-relaxed">
-                  I agree to Executive Talks Media <span className="font-bold text-slate-900 underline">Terms & Conditions</span>, <span className="font-bold text-slate-900 underline">Privacy Policy</span>, and Delegate Registration Guidelines.
-                </label>
               </div>
 
               {/* Step Navigation */}

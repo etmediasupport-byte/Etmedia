@@ -1,4 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/admin/
+
 User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
 Allow: /
 
 User-agent: Bingbot
@@ -10,5 +19,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+Sitemap: https://www.executivetalksmedia.in/sitemap.xml

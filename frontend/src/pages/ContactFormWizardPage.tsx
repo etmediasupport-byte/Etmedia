@@ -4,7 +4,7 @@ import { SEOHead } from "@/components/site/SEOHead";
 
 const contactSteps: WizardStepConfig[] = [
   {
-    // Step 1
+    // Step 1: Personal & Contact
     fields: [
       {
         name: "name",
@@ -33,7 +33,7 @@ const contactSteps: WizardStepConfig[] = [
     ],
   },
   {
-    // Step 2
+    // Step 2: Professional & Topic
     fields: [
       {
         name: "enquiryType",
@@ -48,20 +48,28 @@ const contactSteps: WizardStepConfig[] = [
           "General Advisory Enquiry",
         ],
         required: true,
-        colSpan: 1,
+        colSpan: 2,
       },
       {
         name: "organization",
-        label: "Organization & Designation",
+        label: "Company / Organization Name",
         type: "text",
-        placeholder: "e.g. Director, Tech Global",
-        required: false,
+        placeholder: "e.g. Tech Global Solutions Ltd",
+        required: true,
+        colSpan: 1,
+      },
+      {
+        name: "designation",
+        label: "Official Designation",
+        type: "text",
+        placeholder: "e.g. Vice President / Marketing Director",
+        required: true,
         colSpan: 1,
       },
     ],
   },
   {
-    // Step 3
+    // Step 3: Message / Inquiry
     fields: [
       {
         name: "message",
