@@ -26,6 +26,9 @@ import {
   sanitizePhoneInput,
   validateName,
   validateRequiredText,
+  validateDesignation,
+  validateCompanyName,
+  validateLocation,
 } from "@/lib/validation";
 import { EventTermsAndConditionsBox } from "@/components/site/EventTermsAndConditionsBox";
 
@@ -147,16 +150,16 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
   // Lock background scrolling when modal is open
   useEffect(() => {
-    if (isOpen) {
-      const origOverflow = document.body.style.overflow;
-      const origHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
-        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
-      };
-    }
+    if (!isOpen) return;
+
+    const origOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+    };
   }, [isOpen]);
 
   const handleInputChange = (field: string, value: any) => {
@@ -190,17 +193,17 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
       toast.error(phoneVal.error);
       return false;
     }
-    const desigVal = validateRequiredText(formData.designation, "Designation / Title");
+    const desigVal = validateDesignation(formData.designation, "Designation / Title");
     if (!desigVal.isValid) {
       toast.error(desigVal.error);
       return false;
     }
-    const orgVal = validateRequiredText(formData.organization, "Organization / Company Name");
+    const orgVal = validateCompanyName(formData.organization, "Organization / Company Name");
     if (!orgVal.isValid) {
       toast.error(orgVal.error);
       return false;
     }
-    const cityVal = validateRequiredText(formData.cityLocation, "City / Location");
+    const cityVal = validateLocation(formData.cityLocation, "City / Location");
     if (!cityVal.isValid) {
       toast.error(cityVal.error);
       return false;

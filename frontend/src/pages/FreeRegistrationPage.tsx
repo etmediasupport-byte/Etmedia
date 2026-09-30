@@ -34,6 +34,30 @@ import {
 } from "@/lib/validation";
 import { EventTermsAndConditionsBox } from "@/components/site/EventTermsAndConditionsBox";
 
+interface RegistrationFieldErrors {
+  firstName?: string;
+  lastName?: string;
+  workEmail?: string;
+  contactNumber?: string;
+  designation?: string;
+  companyName?: string;
+  city?: string;
+  linkedinUrl?: string;
+  reasonForAttending?: string;
+}
+
+interface RegistrationTouchedFields {
+  firstName?: boolean;
+  lastName?: boolean;
+  workEmail?: boolean;
+  contactNumber?: boolean;
+  designation?: boolean;
+  companyName?: boolean;
+  city?: boolean;
+  linkedinUrl?: boolean;
+  reasonForAttending?: boolean;
+}
+
 export default function FreeRegistrationPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -90,62 +114,64 @@ export default function FreeRegistrationPage() {
   }, [slug, searchParams]);
 
   // Validation errors state
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
+  const [touchedFields, setTouchedFields] = useState<RegistrationTouchedFields>({});
+
+  // Helper: validate a single field and return error string
+  const getFieldError = (fieldName: string, value: string): string => {
+    if (fieldName === "firstName") {
+      const v = validateName(value, "First Name");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "lastName") {
+      const v = validateName(value, "Last Name");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "workEmail") {
+      const v = validateEmail(value, "Work Email");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "contactNumber") {
+      const v = validatePhone(value, "Contact / Mobile Number");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "designation") {
+      const v = validateDesignation(value, "Designation");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "companyName") {
+      const v = validateCompanyName(value, "Company Name");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "city") {
+      const v = validateLocation(value, "City");
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "reasonForAttending") {
+      const v = validateRequiredText(value, "Reason for Attending", 5, 1000);
+      return v.isValid ? "" : v.error;
+    } else if (fieldName === "linkedinUrl" && value.trim()) {
+      const v = validateUrl(value, "LinkedIn Profile");
+      return v.isValid ? "" : v.error;
+    }
+    return "";
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => {
-        const next = { ...prev };
-        delete next[name];
-        return next;
-      });
+    if (touchedFields[name as keyof RegistrationTouchedFields]) {
+      const err = getFieldError(name, value);
+      setFieldErrors((prev) => ({ ...prev, [name]: err }));
     }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const clean = sanitizePhoneInput(e.target.value);
     setFormData((prev) => ({ ...prev, contactNumber: clean }));
-    if (touchedFields["contactNumber"]) {
+    if (touchedFields.contactNumber) {
       const v = validatePhone(clean);
       setFieldErrors((prev) => ({ ...prev, contactNumber: v.isValid ? "" : v.error }));
     }
   };
 
-  const handleFieldBlur = (fieldName: string) => {
+  const handleFieldBlur = (fieldName: keyof RegistrationTouchedFields) => {
     setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
-    let error = "";
-    if (fieldName === "firstName") {
-      const v = validateName(formData.firstName, "First Name");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "lastName") {
-      const v = validateName(formData.lastName, "Last Name");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "workEmail") {
-      const v = validateEmail(formData.workEmail, "Work Email");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "contactNumber") {
-      const v = validatePhone(formData.contactNumber, "Contact / Mobile Number");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "designation") {
-      const v = validateDesignation(formData.designation, "Designation");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "companyName") {
-      const v = validateCompanyName(formData.companyName, "Company Name");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "city") {
-      const v = validateLocation(formData.city, "City");
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "reasonForAttending") {
-      const v = validateRequiredText(formData.reasonForAttending, "Reason for Attending", 5, 1000);
-      if (!v.isValid) error = v.error;
-    } else if (fieldName === "linkedinUrl" && formData.linkedinUrl.trim()) {
-      const v = validateUrl(formData.linkedinUrl, "LinkedIn Profile");
-      if (!v.isValid) error = v.error;
-    }
-
+    const val = (formData as Record<string, any>)[fieldName] || "";
+    const error = getFieldError(fieldName, val);
     setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
   };
 
@@ -166,7 +192,7 @@ export default function FreeRegistrationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors: Record<string, string> = {};
+    const errors: RegistrationFieldErrors = {};
 
     const fnVal = validateName(formData.firstName, "First Name");
     if (!fnVal.isValid) errors.firstName = fnVal.error;
@@ -452,7 +478,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>First Name <span className="text-rose-500">*</span></span>
-                  {touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2 && (
+                  {touchedFields.firstName && !fieldErrors.firstName && validateName(formData.firstName).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                   )}
                 </label>
@@ -467,7 +493,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.firstName && fieldErrors.firstName
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.firstName && !fieldErrors.firstName && formData.firstName.trim().length >= 2
+                      : touchedFields.firstName && !fieldErrors.firstName && validateName(formData.firstName).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -482,7 +508,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Last Name <span className="text-rose-500">*</span></span>
-                  {touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2 && (
+                  {touchedFields.lastName && !fieldErrors.lastName && validateName(formData.lastName).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                   )}
                 </label>
@@ -497,7 +523,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.lastName && fieldErrors.lastName
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.lastName && !fieldErrors.lastName && formData.lastName.trim().length >= 2
+                      : touchedFields.lastName && !fieldErrors.lastName && validateName(formData.lastName).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -512,7 +538,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Work Email <span className="text-rose-500">*</span></span>
-                  {touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail && (
+                  {touchedFields.workEmail && !fieldErrors.workEmail && validateEmail(formData.workEmail).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid email</span>
                   )}
                 </label>
@@ -527,7 +553,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.workEmail && fieldErrors.workEmail
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.workEmail && !fieldErrors.workEmail && formData.workEmail
+                      : touchedFields.workEmail && !fieldErrors.workEmail && validateEmail(formData.workEmail).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -542,7 +568,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Contact / Mobile Number <span className="text-rose-500">*</span></span>
-                  {touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber && (
+                  {touchedFields.contactNumber && !fieldErrors.contactNumber && validatePhone(formData.contactNumber).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid phone</span>
                   )}
                 </label>
@@ -558,7 +584,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.contactNumber && fieldErrors.contactNumber
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.contactNumber && !fieldErrors.contactNumber && formData.contactNumber
+                      : touchedFields.contactNumber && !fieldErrors.contactNumber && validatePhone(formData.contactNumber).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -573,7 +599,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Designation <span className="text-rose-500">*</span></span>
-                  {touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2 && (
+                  {touchedFields.designation && !fieldErrors.designation && validateDesignation(formData.designation).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                   )}
                 </label>
@@ -588,7 +614,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.designation && fieldErrors.designation
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.designation && !fieldErrors.designation && formData.designation.trim().length >= 2
+                      : touchedFields.designation && !fieldErrors.designation && validateDesignation(formData.designation).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -603,7 +629,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Company / Organization Name <span className="text-rose-500">*</span></span>
-                  {touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2 && (
+                  {touchedFields.companyName && !fieldErrors.companyName && validateCompanyName(formData.companyName).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                   )}
                 </label>
@@ -618,7 +644,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.companyName && fieldErrors.companyName
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.companyName && !fieldErrors.companyName && formData.companyName.trim().length >= 2
+                      : touchedFields.companyName && !fieldErrors.companyName && validateCompanyName(formData.companyName).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}
@@ -633,7 +659,7 @@ export default function FreeRegistrationPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>City <span className="text-rose-500">*</span></span>
-                  {touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2 && (
+                  {touchedFields.city && !fieldErrors.city && validateLocation(formData.city).isValid && (
                     <span className="text-[10px] font-extrabold text-emerald-600">✓ Valid</span>
                   )}
                 </label>
@@ -648,7 +674,7 @@ export default function FreeRegistrationPage() {
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-4 ${
                     touchedFields.city && fieldErrors.city
                       ? "border-rose-500 bg-rose-50/50 focus:border-rose-500 focus:ring-rose-500/10"
-                      : touchedFields.city && !fieldErrors.city && formData.city.trim().length >= 2
+                      : touchedFields.city && !fieldErrors.city && validateLocation(formData.city).isValid
                       ? "border-emerald-500 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                       : "border-slate-200 bg-slate-50/70 focus:border-emerald-500 focus:ring-emerald-500/10"
                   }`}

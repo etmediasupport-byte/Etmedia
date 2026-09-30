@@ -12,9 +12,10 @@ function isJwtValid(token: string | null): boolean {
   if (!token || typeof token !== "string") return false;
   const parts = token.split(".");
   if (parts.length !== 3) return false;
-
   try {
-    const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const p1 = parts[1];
+    if (!p1) return false;
+    const payloadBase64 = p1.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(
       atob(payloadBase64)
         .split("")

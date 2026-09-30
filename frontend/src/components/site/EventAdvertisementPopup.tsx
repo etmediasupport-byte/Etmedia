@@ -316,16 +316,15 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
-      const origOverflow = document.body.style.overflow;
-      const origHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
-        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
-      };
-    }
+    if (!isOpen) return;
+    const origOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+    };
   }, [isOpen]);
 
   const firstEvent = events[0];

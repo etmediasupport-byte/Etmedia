@@ -92,16 +92,16 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isOpen || successModalOpen) {
-      const origOverflow = document.body.style.overflow;
-      const origHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
-        document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
-      };
-    }
+    if (!isOpen && !successModalOpen) return;
+
+    const origOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow === "hidden" ? "" : origHtmlOverflow;
+    };
   }, [isOpen, successModalOpen]);
 
   const [pendingRegId, setPendingRegId] = useState<string | null>(null);
@@ -219,8 +219,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
       parsedPlans[0];
 
     const originalPrice = matchedPlan ? Number(matchedPlan.price) : 8000;
-    const hasEarlyBird = Boolean(earlyBirdInfo.isActive && matchedPlan?.early_bird_price && matchedPlan.early_bird_price < matchedPlan.price);
-    const effectiveBasePrice = hasEarlyBird ? Number(matchedPlan.early_bird_price) : originalPrice;
+    const hasEarlyBird = Boolean(earlyBirdInfo.isActive && matchedPlan && matchedPlan.early_bird_price && matchedPlan.early_bird_price < matchedPlan.price);
+    const effectiveBasePrice = hasEarlyBird && matchedPlan?.early_bird_price ? Number(matchedPlan.early_bird_price) : originalPrice;
 
     // Coupon discount applied directly to Base Pass Price
     let couponDiscount = 0;
@@ -1397,7 +1397,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
               <div className="flex flex-wrap items-center justify-between gap-4 pr-12 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="bg-transparent shrink-0">
-                    <img src={logoUrl} alt="Executive Talks Media Logo" className="h-9 w-auto object-contain" />
+                    <img src={executivetalksLogo} alt="Executive Talks Media Logo" className="h-9 w-auto object-contain" />
                   </div>
                   <div>
                     <h2 className="text-base sm:text-lg font-black uppercase tracking-wider font-display">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h2>

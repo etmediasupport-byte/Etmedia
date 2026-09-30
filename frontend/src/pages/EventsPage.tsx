@@ -57,14 +57,14 @@ function parseEventTimestamp(evt: any): number {
 
   // Handle formats like "October 15 - 16, 2026" or "15 - 16 October 2026"
   const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
-  if (rangeMatch) {
+  if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[4]) {
     const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
     if (!isNaN(p)) return p;
   }
 
   // Year fallback (e.g. "2026")
   const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
-  if (yearMatch) {
+  if (yearMatch && yearMatch[1]) {
     const year = parseInt(yearMatch[1], 10);
     return new Date(year, 0, 1).getTime();
   }

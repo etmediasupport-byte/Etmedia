@@ -32,6 +32,32 @@ import {
   validateUrl,
 } from "@/lib/validation";
 
+interface CareerFormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  portfolio_url?: string;
+  resume?: string;
+  experience?: string;
+  designation?: string;
+  company?: string;
+  coverNote?: string;
+}
+
+interface CareerFormTouched {
+  name?: boolean;
+  email?: boolean;
+  phone?: boolean;
+  city?: boolean;
+  portfolio_url?: boolean;
+  resume?: boolean;
+  experience?: boolean;
+  designation?: boolean;
+  company?: boolean;
+  coverNote?: boolean;
+}
+
 export default function CareerApplicationWizardPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -61,17 +87,17 @@ export default function CareerApplicationWizardPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<CareerFormTouched>({});
+  const [fieldErrors, setFieldErrors] = useState<CareerFormErrors>({});
 
   // Input change handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
+    if (fieldErrors[name as keyof CareerFormErrors]) {
       setFieldErrors((prev) => {
         const next = { ...prev };
-        delete next[name];
+        delete next[name as keyof CareerFormErrors];
         return next;
       });
     }
@@ -81,14 +107,14 @@ export default function CareerApplicationWizardPage() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const clean = sanitizePhoneInput(e.target.value);
     setFormData((prev) => ({ ...prev, phone: clean }));
-    if (touchedFields["phone"]) {
+    if (touchedFields.phone) {
       const v = validatePhone(clean, "Mobile Number");
       setFieldErrors((prev) => ({ ...prev, phone: v.isValid ? "" : v.error }));
     }
   };
 
   // Blur handler for real-time validation
-  const handleFieldBlur = (fieldName: string) => {
+  const handleFieldBlur = (fieldName: keyof CareerFormTouched) => {
     setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
     let error = "";
 
@@ -164,7 +190,7 @@ export default function CareerApplicationWizardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors: Record<string, string> = {};
+    const errors: CareerFormErrors = {};
 
     const nameVal = validateName(formData.name, "Full Name");
     if (!nameVal.isValid) errors.name = nameVal.error;

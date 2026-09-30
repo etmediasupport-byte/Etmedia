@@ -422,11 +422,11 @@ export default function PartnerWithUsPage() {
                   <ArrowUpRight className="h-4 w-4" />
                 </button>
                 <a
-                  href={`tel:${contact.phones[0].replace(/\s+/g, "")}`}
+                  href={`tel:${(contact.phones[0] ?? "+91 90000 00000").replace(/\s+/g, "")}`}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 px-6 py-3.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-center"
                 >
                   <Phone className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>Call Alliances: {contact.phones[0]}</span>
+                  <span>Call Alliances: {contact.phones[0] ?? "+91 90000 00000"}</span>
                 </a>
               </div>
             </div>
@@ -852,11 +852,11 @@ export default function PartnerWithUsPage() {
                 </button>
 
                 <a
-                  href={`mailto:${contact.emails[2]}`}
+                  href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partnerships@executivetalks.in"}`}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 px-8 py-4 text-sm font-bold text-slate-200 hover:text-white hover:bg-slate-800 transition-all text-center"
                 >
                   <Mail className="h-4 w-4 text-cyan-400" />
-                  <span>Email: {contact.emails[2]}</span>
+                  <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partnerships@executivetalks.in"}</span>
                 </a>
               </div>
 

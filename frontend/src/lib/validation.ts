@@ -49,7 +49,21 @@ const SPAM_TOKENS = new Set([
   "1234",
   "12345",
   "123456",
+  "dedddddd",
+  "dfffsf",
+  "dsdfsfs",
+  "fdgsfgsefe",
 ]);
+
+// Common horizontal keyboard walk patterns (4+ chars)
+const KEYBOARD_WALKS = [
+  "asdf", "sdfg", "dfgh", "fghj", "ghjk", "hjkl", "jkl;",
+  "fdsa", "gfds", "hgfd", "jhgf", "kjhg", "lkjh",
+  "qwer", "wert", "erty", "rtyu", "tyui", "yuio", "uiop",
+  "rewq", "trew", "ytre", "uytr", "iuyt", "oiuy", "poiu",
+  "zxcv", "xcvb", "cvbn", "vbnm",
+  "vcxz", "bvxc", "nbvc", "mbvn",
+];
 
 /**
  * Checks if a string looks like gibberish, spam, or keyboard mash.
@@ -57,21 +71,59 @@ const SPAM_TOKENS = new Set([
 export function isGibberishOrSpam(val: string): boolean {
   if (!val) return false;
   const clean = val.trim().toLowerCase();
+  if (clean.length === 0) return false;
 
-  // Exact spam word match
+  // 1. Exact spam token match
   if (SPAM_TOKENS.has(clean)) return true;
 
-  // Repetitive 3+ same characters (e.g. "Dedddddd", "aaaaaa", "11111")
+  // 2. Keyboard horizontal walk substrings (e.g. "asdf", "sdfg", "qwer", "zxcv")
+  for (const walk of KEYBOARD_WALKS) {
+    if (clean.includes(walk)) return true;
+  }
+
+  // 3. Repetitive 3+ same characters (e.g. "Dedddddd", "aaaaaa", "11111", "dfffsf")
   if (/(.)\1{2,}/i.test(clean)) return true;
 
-  // Repetitive 2-3 char sequences (e.g. "dedede", "hahaha", "ababab", "asdfasdf")
-  if (/(.{2,3})\1{2,}/i.test(clean)) return true;
+  // 4. Repetitive 2-char pattern repeated 2+ times (e.g. "dedede", "sfsfsf", "dsdsds", "hahaha", "ababab")
+  if (/(.{2})\1{2,}/i.test(clean)) return true;
 
-  // Words of 5+ letters with no vowels (e.g. "bcdfgh", "zxcvbn")
-  const words = clean.split(/[\s,.-]+/);
+  // 5. Repetitive 3-char pattern repeated 2+ times (e.g. "abcabcabc", "xyzxyzxyz")
+  if (/(.{3})\1{2,}/i.test(clean)) return true;
+
+  // 6. Split into words and evaluate word-level structure
+  const words = clean.split(/[\s,./&()-]+/).filter(Boolean);
   for (const w of words) {
-    if (w.length >= 5 && !/[aeiouy]/.test(w)) {
-      return true;
+    // A. 5+ letters with no vowels at all (e.g. "bcdfgh", "zxcvbn", "dsdfsfs")
+    if (w.length >= 4 && !/[aeiouy]/.test(w)) {
+      // Allow well-known short acronyms like VP, HR, MD, GM, CFO, CTO, CHRO, PM, QA, TCS, IBM, HCL, L&T, MRF, BHEL
+      const isKnownAcronym = /^(vp|hr|md|gm|cfo|cto|chro|ceo|coo|cmo|cso|cio|cpo|pm|qa|tcs|ibm|hcl|mrf|bhel|ntpc|ongc|sbi|hdfc|icici|dlf|itc)$/i.test(w);
+      if (!isKnownAcronym) {
+        return true;
+      }
+    }
+
+    // B. Impossible 4+ consonant cluster (e.g. "fdgs", "sfgs", "dsdf", "bcdf", "zxvc", "plkj")
+    // Exception for standard English clusters like "ngth", "tchs", "rths", "sch"
+    const consonantClusters = w.match(/[^aeiouy\d\s]{4,}/gi);
+    if (consonantClusters) {
+      const allowedClusters = ["ngth", "tchs", "rths", "sch", "phth", "str", "ndst"];
+      const hasDisallowed = consonantClusters.some((c) => !allowedClusters.includes(c.toLowerCase()));
+      if (hasDisallowed) return true;
+    }
+
+    // C. Very low unique character diversity for words >= 5 chars (e.g. "dfffsf" has only 3 unique chars, "dsdfsfs" has only 3 unique chars)
+    if (w.length >= 5) {
+      const uniqueChars = new Set(w.split("")).size;
+      if (uniqueChars <= 3) return true;
+    }
+
+    // D. Home-row key mash (words >= 6 chars composed ONLY of a,s,d,f,g,h,j,k,l with high irregularity)
+    if (w.length >= 6 && /^[asdfghjkl]+$/.test(w)) {
+      // Normal words on home row are extremely rare (e.g. "flask", "glad"); random 6+ strings like "dsdfsfs", "fdgsfgsefe", "asdfghjk" are spam
+      const homeRowUnique = new Set(w.split("")).size;
+      if (homeRowUnique <= 4 || !/[aeiouy]/.test(w) || /(.)\1/i.test(w)) {
+        return true;
+      }
     }
   }
 
@@ -102,7 +154,7 @@ export function validateEmail(email: string, fieldName = "Email address"): { isV
 }
 
 /**
- * Validates a mobile / phone number (strictly requires a 10-digit subscriber number).
+ * Validates a mobile / phone number (strictly requires a 10-digit subscriber number with realistic digit patterns).
  */
 export function validatePhone(phone: string, fieldName = "Contact / Mobile number"): { isValid: boolean; error: string; cleanDigits: string } {
   const trimmed = (phone || "").trim();
@@ -137,12 +189,62 @@ export function validatePhone(phone: string, fieldName = "Contact / Mobile numbe
     };
   }
 
-  // Check for repetitive bogus sequences (e.g. 1111111111, 0000000000, 9999999999)
-  const isAllSameDigit = /^(\d)\1{9}$/.test(subscriberNumber);
-  if (isAllSameDigit) {
+  // Indian mobile numbers must start with 6, 7, 8, or 9
+  if (!/^[6-9]/.test(subscriberNumber)) {
+    return {
+      isValid: false,
+      error: `Please enter a valid mobile number starting with 6, 7, 8, or 9.`,
+      cleanDigits,
+    };
+  }
+
+  // Check for all same digit (e.g. 1111111111, 9999999999, 0000000000)
+  if (/^(\d)\1{9}$/.test(subscriberNumber)) {
     return {
       isValid: false,
       error: `Please enter a valid real 10-digit ${fieldName.toLowerCase()}.`,
+      cleanDigits,
+    };
+  }
+
+  // Check for 2-digit alternating spam patterns (e.g. 6363636363, 1212121212, 9898989898)
+  if (/^(\d{2})\1{4}$/.test(subscriberNumber)) {
+    return {
+      isValid: false,
+      error: `Please enter a valid real mobile number (repetitive number pattern detected).`,
+      cleanDigits,
+    };
+  }
+
+  // Check for 3-digit repeating patterns (e.g. 1231231231)
+  if (/^(\d{3})\1{2}\d$/.test(subscriberNumber) || /^(\d{5})\1$/.test(subscriberNumber)) {
+    return {
+      isValid: false,
+      error: `Please enter a valid real mobile number.`,
+      cleanDigits,
+    };
+  }
+
+  // Check for sequential ascending or descending sequences
+  const sequentialPatterns = [
+    "0123456789", "1234567890", "2345678901", "3456789012",
+    "9876543210", "8765432109", "7654321098", "6543210987",
+    "1122334455", "5544332211", "9988776655"
+  ];
+  if (sequentialPatterns.includes(subscriberNumber)) {
+    return {
+      isValid: false,
+      error: `Please enter a valid real mobile number (dummy sequence detected).`,
+      cleanDigits,
+    };
+  }
+
+  // Check distinct digits count (real phone numbers have at least 3-4 distinct digits)
+  const uniqueDigits = new Set(subscriberNumber.split("")).size;
+  if (uniqueDigits <= 2) {
+    return {
+      isValid: false,
+      error: `Please enter a valid real mobile number.`,
       cleanDigits,
     };
   }
@@ -238,7 +340,7 @@ export function validateDesignation(designation: string, fieldName = "Designatio
     return { isValid: true, error: "" };
   }
   if (trimmed.length < 2) {
-    return { isValid: false, error: `${fieldName} must be at least 2 characters (e.g. VP, HR).` };
+    return { isValid: false, error: `${fieldName} must be at least 2 characters (e.g. VP, HR, CHRO).` };
   }
   if (trimmed.length > 80) {
     return { isValid: false, error: `${fieldName} cannot exceed 80 characters.` };
@@ -274,7 +376,7 @@ export function validateCompanyName(company: string, fieldName = "Company / Orga
     return { isValid: false, error: `${fieldName} must contain valid letters or numbers.` };
   }
   if (isGibberishOrSpam(trimmed)) {
-    return { isValid: false, error: `Please enter a valid ${fieldName.toLowerCase()} (e.g. Acme Tech Solutions Pvt Ltd).` };
+    return { isValid: false, error: `Please enter a valid real ${fieldName.toLowerCase()} (e.g. Acme Tech Solutions Pvt Ltd).` };
   }
   return { isValid: true, error: "" };
 }
@@ -282,14 +384,14 @@ export function validateCompanyName(company: string, fieldName = "Company / Orga
 /**
  * Validates location / city / headquarters / address fields.
  */
-export function validateLocation(location: string, fieldName = "Location", isRequired = true): { isValid: boolean; error: string } {
+export function validateLocation(location: string, fieldName = "City", isRequired = true): { isValid: boolean; error: string } {
   const trimmed = (location || "").trim();
   if (!trimmed) {
     if (isRequired) return { isValid: false, error: `${fieldName} is required.` };
     return { isValid: true, error: "" };
   }
-  if (trimmed.length < 3) {
-    return { isValid: false, error: `${fieldName} must be at least 3 characters (e.g. Goa, Pune, Hyderabad).` };
+  if (trimmed.length < 2) {
+    return { isValid: false, error: `${fieldName} must be at least 2 characters (e.g. Goa, Pune, Hyderabad).` };
   }
   if (trimmed.length > 120) {
     return { isValid: false, error: `${fieldName} cannot exceed 120 characters.` };
@@ -298,7 +400,7 @@ export function validateLocation(location: string, fieldName = "Location", isReq
     return { isValid: false, error: `${fieldName} must contain valid city / region names.` };
   }
   if (isGibberishOrSpam(trimmed)) {
-    return { isValid: false, error: `Please enter a valid ${fieldName.toLowerCase()} (e.g. Hyderabad, India or Bengaluru, Karnataka).` };
+    return { isValid: false, error: `Please enter a valid real ${fieldName.toLowerCase()} (e.g. Hyderabad, Bengaluru, Mumbai).` };
   }
   return { isValid: true, error: "" };
 }

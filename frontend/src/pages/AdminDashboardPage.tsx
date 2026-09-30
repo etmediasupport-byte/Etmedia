@@ -318,19 +318,19 @@ export default function AdminDashboardPage() {
     if (!isNaN(parsed)) return parsed;
 
     const dmyMatch = cleanStr.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
-    if (dmyMatch) {
+    if (dmyMatch && dmyMatch[1] && dmyMatch[2] && dmyMatch[3]) {
       const p = Date.parse(`${dmyMatch[2]} ${dmyMatch[1]}, ${dmyMatch[3]}`);
       if (!isNaN(p)) return p;
     }
 
     const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
-    if (rangeMatch) {
+    if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[4]) {
       const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
       if (!isNaN(p)) return p;
     }
 
     const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
-    if (yearMatch) {
+    if (yearMatch && yearMatch[1]) {
       const year = parseInt(yearMatch[1], 10);
       return new Date(year, 0, 1).getTime();
     }
@@ -3910,9 +3910,11 @@ export default function AdminDashboardPage() {
     });
 
     const pathD = points.length > 0 ? `M ${points.map((p) => `${p.x},${p.y}`).join(" L ")}` : "";
+    const firstPoint = points[0];
+    const lastPoint = points[points.length - 1];
     const polygonPoints =
-      points.length > 0
-        ? `${points[0].x},160 ${points.map((p) => `${p.x},${p.y}`).join(" ")} ${points[points.length - 1].x},160`
+      points.length > 0 && firstPoint && lastPoint
+        ? `${firstPoint.x},160 ${points.map((p) => `${p.x},${p.y}`).join(" ")} ${lastPoint.x},160`
         : "";
 
     return { points, pathD, polygonPoints, maxCount };

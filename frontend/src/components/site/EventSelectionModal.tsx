@@ -47,7 +47,7 @@ export function EventSelectionModal({
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           const publishedEvents = json.data.filter(
-            (ev: EventItem) => ev.status !== "draft" && ev.status !== "archived"
+            (ev: any) => ev.status !== "draft" && ev.status !== "archived"
           );
           setEventsList(publishedEvents.length > 0 ? publishedEvents : json.data);
         } else {
@@ -94,25 +94,25 @@ export function EventSelectionModal({
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
-    if (isOpen) {
-      const origOverflow = document.body.style.overflow;
-      const origHtmlOverflow = document.documentElement.style.overflow;
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
+    if (!isOpen) return;
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          onClose();
-        }
-      };
-      window.addEventListener("keydown", handleKeyDown);
+    const origOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
-      return () => {
-        document.body.style.overflow = origOverflow;
-        document.documentElement.style.overflow = origHtmlOverflow;
-        window.removeEventListener("keydown", handleKeyDown);
-      };
-    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = origOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   // Extract unique categories for quick filter chips

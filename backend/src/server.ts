@@ -53,18 +53,61 @@ const mailTransporter = nodemailer.createTransport({
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const BACKEND_SPAM_TOKENS = new Set([
-  "test", "testing", "asdf", "asdfgh", "qwerty", "zxcv", "none", "na", "n/a", "null", "undefined", "dummy", "xyz", "abc", "sample", "fake", "dedddddd"
+  "test", "testing", "tester", "asdf", "asdfgh", "asdfghjk", "qwerty", "qwertyuiop", "zxcv", "zxcvbnm",
+  "none", "na", "n/a", "null", "undefined", "dummy", "xyz", "abc", "sample", "random", "fake", "temp",
+  "aaaa", "bbbb", "cccc", "dddd", "xxxx", "yyyy", "zzzz", "1234", "12345", "123456",
+  "dedddddd", "dfffsf", "dsdfsfs", "fdgsfgsefe"
 ]);
+
+const BACKEND_KEYBOARD_WALKS = [
+  "asdf", "sdfg", "dfgh", "fghj", "ghjk", "hjkl",
+  "fdsa", "gfds", "hgfd", "jhgf", "kjhg", "lkjh",
+  "qwer", "wert", "erty", "rtyu", "tyui", "yuio", "uiop",
+  "rewq", "trew", "ytre", "uytr", "iuyt", "oiuy", "poiu",
+  "zxcv", "xcvb", "cvbn", "vbnm",
+  "vcxz", "bvxc", "nbvc", "mbvn",
+];
 
 function isSpamText(val: any): boolean {
   if (!val || typeof val !== "string") return false;
   const clean = val.trim().toLowerCase();
+  if (clean.length === 0) return false;
+
   if (BACKEND_SPAM_TOKENS.has(clean)) return true;
+
+  for (const walk of BACKEND_KEYBOARD_WALKS) {
+    if (clean.includes(walk)) return true;
+  }
+
   if (/(.)\1{2,}/i.test(clean)) return true;
-  if (/(.{2,3})\1{2,}/i.test(clean)) return true;
-  const words = clean.split(/[\s,.-]+/);
+  if (/(.{2})\1{2,}/i.test(clean)) return true;
+  if (/(.{3})\1{2,}/i.test(clean)) return true;
+
+  const words = clean.split(/[\s,./&()-]+/).filter(Boolean);
   for (const w of words) {
-    if (w.length >= 5 && !/[aeiouy]/.test(w)) return true;
+    if (w.length >= 4 && !/[aeiouy]/.test(w)) {
+      const isKnownAcronym = /^(vp|hr|md|gm|cfo|cto|chro|ceo|coo|cmo|cso|cio|cpo|pm|qa|tcs|ibm|hcl|mrf|bhel|ntpc|ongc|sbi|hdfc|icici|dlf|itc)$/i.test(w);
+      if (!isKnownAcronym) return true;
+    }
+
+    const consonantClusters = w.match(/[^aeiouy\d\s]{4,}/gi);
+    if (consonantClusters) {
+      const allowedClusters = ["ngth", "tchs", "rths", "sch", "phth", "str", "ndst"];
+      const hasDisallowed = consonantClusters.some((c) => !allowedClusters.includes(c.toLowerCase()));
+      if (hasDisallowed) return true;
+    }
+
+    if (w.length >= 5) {
+      const uniqueChars = new Set(w.split("")).size;
+      if (uniqueChars <= 3) return true;
+    }
+
+    if (w.length >= 6 && /^[asdfghjkl]+$/.test(w)) {
+      const homeRowUnique = new Set(w.split("")).size;
+      if (homeRowUnique <= 4 || !/[aeiouy]/.test(w) || /(.)\1/i.test(w)) {
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -88,7 +131,21 @@ function isValidPhone(phone: any): boolean {
     subscriber = digits.slice(1);
   }
   if (subscriber.length !== 10) return false;
+  if (!/^[6-9]/.test(subscriber)) return false;
   if (/^(\d)\1{9}$/.test(subscriber)) return false;
+  if (/^(\d{2})\1{4}$/.test(subscriber)) return false;
+  if (/^(\d{3})\1{2}\d$/.test(subscriber) || /^(\d{5})\1$/.test(subscriber)) return false;
+
+  const sequentialPatterns = [
+    "0123456789", "1234567890", "2345678901", "3456789012",
+    "9876543210", "8765432109", "7654321098", "6543210987",
+    "1122334455", "5544332211", "9988776655"
+  ];
+  if (sequentialPatterns.includes(subscriber)) return false;
+
+  const uniqueDigits = new Set(subscriber.split("")).size;
+  if (uniqueDigits <= 2) return false;
+
   return true;
 }
 
@@ -96,7 +153,7 @@ function isValidName(name: any): boolean {
   if (!name || typeof name !== "string") return false;
   const trimmed = name.trim();
   if (trimmed.length < 2 || trimmed.length > 80) return false;
-  if (!/[a-zA-Z]/.test(trimmed)) return false;
+  if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) return false;
   return !isSpamText(trimmed);
 }
 
@@ -105,13 +162,14 @@ function isValidDesignation(desig: any): boolean {
   const trimmed = desig.trim();
   if (trimmed.length < 2 || trimmed.length > 80) return false;
   if (!/[a-zA-Z]/.test(trimmed)) return false;
+  if (!/^[a-zA-Z0-9\s.,/&()-]+$/.test(trimmed)) return false;
   return !isSpamText(trimmed);
 }
 
 function isValidLocation(loc: any): boolean {
   if (!loc || typeof loc !== "string") return false;
   const trimmed = loc.trim();
-  if (trimmed.length < 3 || trimmed.length > 120) return false;
+  if (trimmed.length < 2 || trimmed.length > 120) return false;
   if (!/[a-zA-Z]/.test(trimmed)) return false;
   return !isSpamText(trimmed);
 }
@@ -2096,8 +2154,8 @@ app.post("/api/registrations/start", async (req, res) => {
       eventTitle = "HR RECALL 2K26",
     } = req.body;
 
-    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName) {
-      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
+    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName || !designation || !city) {
+      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal and company details." });
     }
 
     if (!isValidEmail(workEmail)) {
@@ -2110,6 +2168,18 @@ app.post("/api/registrations/start", async (req, res) => {
 
     if (!isValidName(firstName) || !isValidName(lastName)) {
       return res.status(400).json({ success: false, message: "Please provide valid First and Last names containing alphabets." });
+    }
+
+    if (!isValidDesignation(designation)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid job designation (e.g. Chief Human Resources Officer, VP, Director)." });
+    }
+
+    if (!isValidCompanyName(companyName)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid company or organization name." });
+    }
+
+    if (!isValidLocation(city)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid city name (e.g. Hyderabad, Bengaluru, Mumbai)." });
     }
 
     const regId = `ETM-REG-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -2251,8 +2321,8 @@ app.post("/api/registrations/free-start", async (req, res) => {
       eventTitle = "HR RECALL 2K26",
     } = req.body;
 
-    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName) {
-      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal details." });
+    if (!workEmail || !firstName || !lastName || !contactNumber || !companyName || !designation || !city) {
+      return res.status(400).json({ success: false, message: "Please fill in all mandatory personal and organization details." });
     }
 
     if (!isValidEmail(workEmail)) {
@@ -2265,6 +2335,18 @@ app.post("/api/registrations/free-start", async (req, res) => {
 
     if (!isValidName(firstName) || !isValidName(lastName)) {
       return res.status(400).json({ success: false, message: "Please provide valid First and Last names containing alphabets." });
+    }
+
+    if (!isValidDesignation(designation)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid job designation (e.g. Chief Human Resources Officer, VP, Director)." });
+    }
+
+    if (!isValidCompanyName(companyName)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid company or organization name." });
+    }
+
+    if (!isValidLocation(city)) {
+      return res.status(400).json({ success: false, message: "Please enter a valid city name (e.g. Hyderabad, Bengaluru, Mumbai)." });
     }
 
     const regId = `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;

@@ -31,6 +31,22 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+interface ContactFormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  subject?: string;
+  message?: string;
+}
+
+interface ContactFormTouched {
+  name?: boolean;
+  email?: boolean;
+  phone?: boolean;
+  subject?: boolean;
+  message?: boolean;
+}
+
 export default function ContactPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -42,8 +58,8 @@ export default function ContactPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<ContactFormTouched>({});
+  const [fieldErrors, setFieldErrors] = useState<ContactFormErrors>({});
 
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [realtimeNotification, setRealtimeNotification] = useState<string | null>(null);
@@ -115,7 +131,7 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors: Record<string, string> = {};
+    const errors: ContactFormErrors = {};
     const nameVal = validateName(formData.name, "Full Name");
     if (!nameVal.isValid) errors.name = nameVal.error;
 
