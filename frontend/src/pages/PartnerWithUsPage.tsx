@@ -26,6 +26,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { GlowBackdrop } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { socket } from "@/lib/socket";
 import { Collaborator, getDefaultCollaborators } from "@/lib/site-data";
 
@@ -295,6 +296,13 @@ export default function PartnerWithUsPage() {
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 selection:bg-cyan-500 selection:text-white font-sans">
+      <SEOHead
+        pageKey="partner"
+        title="Partner & Sponsor National Summits | Executive Talks Media"
+        description="Explore Title, Platinum, Gold, and Technology partner opportunities with Executive Talks Media Business Intelligence to connect with 2500+ Indian enterprise CXOs."
+        keywords="Partner Executive Talks Media, Summit Sponsorship, B2B Event Partner India, CXO Summit Sponsors, Executive Talks, ET Media, Event Collaboration"
+        url="https://www.executivetalksmedia.in/partner"
+      />
       <GlowBackdrop />
 
       {/* ========================================== */}

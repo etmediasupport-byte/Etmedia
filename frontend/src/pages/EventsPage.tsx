@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { EventCard } from "@/components/site/EventCard";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { events as defaultEvents, EventItem, images, getValidImageUrl } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 import {
@@ -136,6 +137,11 @@ const CATEGORY_TABS = [
 
 export default function EventsPage() {
   const location = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const urlSearch = searchParams.get("search") || searchParams.get("q") || "";
+  const urlCategory = searchParams.get("category") || "all";
+  const urlCity = searchParams.get("city") || "all";
+
   const initialFilter = location.pathname.includes("past")
     ? "past"
     : location.pathname.includes("upcoming")
@@ -145,12 +151,19 @@ export default function EventsPage() {
         : "all";
 
   const [statusFilter, setStatusFilter] = useState<"all" | "live" | "upcoming" | "past">(initialFilter as any);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [cityFilter, setCityFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>(urlCategory);
+  const [cityFilter, setCityFilter] = useState<string>(urlCity);
+  const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
   const [eventList, setEventList] = useState<EventItem[]>([]);
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
+
+  // Sync URL search params if changed externally
+  useEffect(() => {
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [urlSearch]);
 
   // Load real events strictly from Database (Managed in Admin Dashboard)
   useEffect(() => {
@@ -312,6 +325,13 @@ export default function EventsPage() {
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 pb-16 pt-24 sm:pt-28 lg:pt-32 font-sans selection:bg-cyan-500 selection:text-white">
+      <SEOHead
+        pageKey="events"
+        title="Conferences & Leadership Summits Directory | Executive Talks Media"
+        description="Browse upcoming India CFO Summits, National HR Excellence Awards, and Enterprise AI Conclaves curated by Executive Talks Media Business Intelligence."
+        keywords="Executive Talks Media, Executive Talks, ET Media, CFO Summit India, HR Excellence Awards, AI Conclave India, CXO Conferences, Executive Delegate Passes, Hyderabad Events, Business Intelligence"
+        url="https://www.executivetalksmedia.in/events"
+      />
       <GlowBackdrop />
 
       <section className="container-x px-3.5 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8 max-w-7xl mx-auto w-full overflow-hidden">

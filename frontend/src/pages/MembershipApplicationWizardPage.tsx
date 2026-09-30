@@ -1,5 +1,6 @@
 import React from "react";
 import { MultiStepFormWizard, WizardStepConfig } from "@/components/site/MultiStepFormWizard";
+import { SEOHead } from "@/components/site/SEOHead";
 
 const membershipSteps: WizardStepConfig[] = [
   {
@@ -181,16 +182,24 @@ export default function MembershipApplicationWizardPage() {
   };
 
   return (
-    <MultiStepFormWizard
-      storageKey="membership_delegate_app"
-      badgeText="EXECUTIVE MEMBERSHIP APPLICATION"
-      title="Join Executive Membership Council"
-      subtitle="Complete your step-by-step application for VIP access to leadership summits and exclusive network sessions."
-      steps={membershipSteps}
-      onComplete={handleComplete}
-      successTitle="Delegate Application Submitted!"
-      successSubtitle="Our executive committee will review your application and issue membership accreditation shortly."
-      cancelPath="/membership"
-    />
+    <>
+      <SEOHead
+        title="Executive Membership Application | Executive Talks Media"
+        description="Apply for VIP accreditation to the Executive Talks Media Business Intelligence Leadership Council."
+        keywords="Executive Membership Application, CXO Council Passes, Executive Talks Media, ET Media"
+        url="https://www.executivetalksmedia.in/membership/apply"
+      />
+      <MultiStepFormWizard
+        storageKey="membership_delegate_app"
+        badgeText="EXECUTIVE MEMBERSHIP APPLICATION"
+        title="Join Executive Membership Council"
+        subtitle="Complete your step-by-step application for VIP access to leadership summits and exclusive network sessions."
+        steps={membershipSteps}
+        onComplete={handleComplete}
+        successTitle="Delegate Application Submitted!"
+        successSubtitle="Our executive committee will review your application and issue membership accreditation shortly."
+        cancelPath="/membership"
+      />
+    </>
   );
 }

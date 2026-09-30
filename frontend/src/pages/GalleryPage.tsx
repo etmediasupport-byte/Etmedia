@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { PageHero } from "@/components/site/PageHero";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { MediaGalleryItem, getDefaultMediaGallery, images, events } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 import {
@@ -167,6 +168,13 @@ export default function GalleryPage() {
 
   return (
     <div className="relative min-h-screen bg-background pb-4 sm:pb-6 text-foreground selection:bg-cyan-500/30 font-sans">
+      <SEOHead
+        pageKey="gallery"
+        title="Summit Photos & Video Gallery | Executive Talks Media"
+        description="High-definition photo highlights and keynote video coverage from Executive Talks Media national summits, CFO forums, and HR excellence gala awards."
+        keywords="Executive Talks Media Gallery, Summit Photos, CXO Event Videos, Award Gala Highlights, Executive Talks, ET Media"
+        url="https://www.executivetalksmedia.in/gallery"
+      />
       <GlowBackdrop />
 
       {/* Hero Section */}

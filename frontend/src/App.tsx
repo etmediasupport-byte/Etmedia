@@ -109,12 +109,21 @@ function PageTracker() {
   const location = useLocation();
 
   useEffect(() => {
+    // 1. Internal Analytics tracking
     fetch("/api/analytics/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: location.pathname }),
     }).catch(() => {});
-  }, [location.pathname]);
+
+    // 2. Google Analytics 4 (GA4) Pageview Tracking
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("config", "G-K5QRFCW1EW", {
+        page_path: location.pathname + location.search,
+        page_title: document.title,
+      });
+    }
+  }, [location.pathname, location.search]);
 
   return null;
 }

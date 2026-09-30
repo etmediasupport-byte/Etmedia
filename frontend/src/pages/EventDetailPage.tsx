@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import {
   events as defaultEvents,
   EventItem,
@@ -511,6 +512,26 @@ export default function EventDetailPage() {
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 pb-6 sm:pb-8 font-sans pt-24 sm:pt-28 lg:pt-32">
+      <SEOHead
+        title={`${event.title} | Executive Talks Media`}
+        description={event.description || `Register for ${event.title} curated by Executive Talks Media Business Intelligence. Join industry CXOs, keynote speakers, and thought leaders.`}
+        keywords={`${event.title}, ${cityText}, Executive Talks Media, ET Media, Executive Talks, ${event.category || "Leadership Summit"}, CXO Conference India, Delegate Passes`}
+        image={heroImageSrc}
+        url={`https://www.executivetalksmedia.in/events/${event.slug || slug}`}
+        type="event"
+        eventData={{
+          name: event.title,
+          description: event.description,
+          startDate: dateText,
+          locationName: venueText,
+          city: cityText,
+          image: heroImageSrc,
+          price: eventPaymentConfig?.registration_fee || 4999,
+          currency: eventPaymentConfig?.currency || "INR",
+          isFree: eventPaymentConfig?.free_registration_allowed === 1,
+          url: `https://www.executivetalksmedia.in/events/${event.slug || slug}`,
+        }}
+      />
       {/* ========================================================= */}
       {/* BREADCRUMBS & NAVIGATION                                  */}
       {/* ========================================================= */}

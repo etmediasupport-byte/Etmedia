@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHero } from "@/components/site/PageHero";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { images } from "@/lib/site-data";
 import {
   User,
@@ -149,6 +150,13 @@ export default function DelegateRegistrationPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 pb-6 selection:bg-cyan-500/30 selection:text-cyan-200 font-sans">
+      <SEOHead
+        pageKey="membership"
+        title="Executive Membership & Delegate Passes | Executive Talks Media"
+        description="Register for Executive Talks Media Business Intelligence delegate passes and executive leadership membership council accreditation."
+        keywords="Executive Talks Media Membership, Delegate Pass, CXO Registration, Executive Talks, ET Media, Leadership Council Passes India"
+        url="https://www.executivetalksmedia.in/membership"
+      />
       <GlowBackdrop />
 
       <PageHero

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, getDefaultPricingPlans, checkEarlyBirdStatus, images, type PricingPlanTier } from "@/lib/site-data";
+import { SEOHead } from "@/components/site/SEOHead";
 import {
   validateEmail,
   validatePhone,
@@ -685,6 +686,12 @@ export default function EventRegistrationWizardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
+      <SEOHead
+        title={eventData?.title ? `Register: ${eventData.title} | Executive Talks Media` : "Delegate Registration Wizard | Executive Talks Media"}
+        description={eventData?.description || "Online registration and pass checkout for Executive Talks Media Business Intelligence national leadership summits."}
+        keywords={`${eventData?.title || "Conference"}, Delegate Pass Booking, Event Registration, Executive Talks Media, ET Media, CXO Conference`}
+        url={`https://www.executivetalksmedia.in/events/${slug || "event"}/register`}
+      />
       {/* ================= HERO HEADER BANNER ================= */}
       <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/80 via-slate-950 to-purple-950/80 z-0" />

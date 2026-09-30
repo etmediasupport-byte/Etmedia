@@ -5362,11 +5362,131 @@ app.get("/api/admin/newsletter/export", authenticateAdmin, async (_req, res) => 
 
 
 // ==========================================
-// SEO META TAGS API ENDPOINTS
+// SEO META TAGS & DYNAMIC SITEMAP API ENDPOINTS
 // ==========================================
 
-// Get SEO meta tags (Public)
-app.get("/api/seo", async (req, res) => {
+// Dynamic Sitemap.xml Generator (Public & Google Search Console)
+app.get(["/sitemap.xml", "/api/sitemap.xml"], async (req, res) => {
+  try {
+    const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
+    const staticPages = [
+      { url: "", changefreq: "daily", priority: "1.0" },
+      { url: "/events", changefreq: "daily", priority: "0.95" },
+      { url: "/about", changefreq: "monthly", priority: "0.85" },
+      { url: "/magazine", changefreq: "weekly", priority: "0.85" },
+      { url: "/partner", changefreq: "monthly", priority: "0.80" },
+      { url: "/membership", changefreq: "monthly", priority: "0.80" },
+      { url: "/delegate-registration", changefreq: "monthly", priority: "0.80" },
+      { url: "/careers", changefreq: "weekly", priority: "0.75" },
+      { url: "/gallery", changefreq: "weekly", priority: "0.75" },
+      { url: "/contact", changefreq: "monthly", priority: "0.70" },
+    ];
+
+    let dynamicUrls: { url: string; changefreq: string; priority: string; lastmod?: string }[] = [];
+
+    if (pool) {
+      // 1. Published Events from DB
+      try {
+        const [events]: any = await pool.query("SELECT slug, updated_at, created_at FROM events WHERE status != 'draft'");
+        if (Array.isArray(events)) {
+          events.forEach((evt) => {
+            if (evt.slug) {
+              const lastmod = evt.updated_at || evt.created_at ? new Date(evt.updated_at || evt.created_at).toISOString().split("T")[0] : undefined;
+              dynamicUrls.push({
+                url: `/events/${evt.slug}`,
+                changefreq: "weekly",
+                priority: "0.90",
+                lastmod,
+              });
+              dynamicUrls.push({
+                url: `/events/${evt.slug}/register`,
+                changefreq: "weekly",
+                priority: "0.85",
+                lastmod,
+              });
+            }
+          });
+        }
+      } catch (evtErr) {
+        console.warn("[Sitemap] Error fetching events for sitemap:", evtErr);
+      }
+    }
+
+    const todayIso = new Date().toISOString().split("T")[0];
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">\n`;
+
+    for (const p of staticPages) {
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}${p.url}</loc>\n`;
+      xml += `    <lastmod>${todayIso}</lastmod>\n`;
+      xml += `    <changefreq>${p.changefreq}</changefreq>\n`;
+      xml += `    <priority>${p.priority}</priority>\n`;
+      xml += `  </url>\n`;
+    }
+
+    for (const d of dynamicUrls) {
+      xml += `  <url>\n`;
+      xml += `    <loc>${baseUrl}${d.url}</loc>\n`;
+      if (d.lastmod) {
+        xml += `    <lastmod>${d.lastmod}</lastmod>\n`;
+      }
+      xml += `    <changefreq>${d.changefreq}</changefreq>\n`;
+      xml += `    <priority>${d.priority}</priority>\n`;
+      xml += `  </url>\n`;
+    }
+
+    xml += `</urlset>`;
+
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    return res.status(200).send(xml);
+  } catch (err: any) {
+    console.error("[Sitemap] Error generating sitemap:", err);
+    return res.status(500).send("Error generating sitemap");
+  }
+});
+
+// Dynamic Robots.txt (Public & Crawlers)
+app.get(["/robots.txt", "/api/robots.txt"], (_req, res) => {
+  const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
+  const robotsContent = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/admin/
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+// Google Search Console Site Ownership Verification File
+app.get(["/google736712b10fdf4584.html", "/api/google736712b10fdf4584.html"], (_req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.status(200).send("google-site-verification: google736712b10fdf4584.html");
+});
+
+// Generic Google Verification File Handler
+app.get(/^\/google[a-zA-Z0-9_-]+\.html$/, (req, res) => {
+  const filename = path.basename(req.path);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.status(200).send(`google-site-verification: ${filename}`);
+});
+
+// Get all SEO meta tags (Public)
+app.get("/api/seo", async (_req, res) => {
   try {
     if (pool) {
       await ensureNewAdminTables();
@@ -5380,16 +5500,34 @@ app.get("/api/seo", async (req, res) => {
   }
 });
 
+// Get single page SEO meta tag (Public)
+app.get("/api/seo/:page_key", async (req, res) => {
+  const { page_key } = req.params;
+  try {
+    if (pool) {
+      await ensureNewAdminTables();
+      const [rows]: any = await pool.query("SELECT * FROM seo_settings WHERE page_key = ? LIMIT 1", [page_key]);
+      if (rows.length > 0) {
+        return res.json({ success: true, seo: rows[0] });
+      }
+    }
+    return res.json({ success: true, seo: null });
+  } catch (err: any) {
+    console.error("Fetch Single SEO Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch page SEO" });
+  }
+});
+
 // Admin update SEO meta tag
 app.put("/api/admin/seo/:page_key", authenticateAdmin, async (req, res) => {
   const { page_key } = req.params;
-  const { title, description, keywords } = req.body;
+  const { title, description, keywords, og_image } = req.body;
   try {
     if (pool) {
       await ensureNewAdminTables();
       await pool.query(
-        "INSERT INTO seo_settings (page_key, title, description, keywords) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=?, description=?, keywords=?",
-        [page_key, title, description, keywords || "", title, description, keywords || ""]
+        "INSERT INTO seo_settings (page_key, title, description, keywords, og_image) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=?, description=?, keywords=?, og_image=?",
+        [page_key, title, description, keywords || "", og_image || "", title, description, keywords || "", og_image || ""]
       );
     }
     return res.json({ success: true, message: `SEO meta tags updated for page '${page_key}'` });

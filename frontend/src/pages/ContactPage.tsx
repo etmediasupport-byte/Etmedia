@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHero } from "@/components/site/PageHero";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { contact, images } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 import {
@@ -171,6 +172,13 @@ export default function ContactPage() {
 
   return (
     <div className="relative min-h-screen bg-background pb-2 text-foreground selection:bg-cyan-500/30">
+      <SEOHead
+        pageKey="contact"
+        title="Contact Us | Executive Talks Media Business Intelligence"
+        description="Get in touch with Executive Talks Media Business Intelligence for summit sponsorships, delegate passes, magazine features, speaker nominations, or office visit."
+        keywords="Contact Executive Talks Media, Executive Talks Hyderabad Office, Executive Talks Support Phone, Executive Talks Email, ET Media, CXO Summit Enquiries"
+        url="https://www.executivetalksmedia.in/contact"
+      />
       <GlowBackdrop />
 
       {/* Hero Section */}

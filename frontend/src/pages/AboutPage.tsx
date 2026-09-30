@@ -20,6 +20,7 @@ import {
 import { images, stats } from "@/lib/site-data";
 import { PageHero } from "@/components/site/PageHero";
 import { Reveal, SectionHeading } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { MagneticButton } from "@/components/ui/MagneticButton";
@@ -112,9 +113,15 @@ const team = [
 ];
 
 export default function AboutPage() {
-
   return (
     <>
+      <SEOHead
+        pageKey="about"
+        title="About Us | Executive Talks Media Business Intelligence"
+        description="Learn how Executive Talks Media Business Intelligence builds India's most credible leadership platforms, CXO conferences, and corporate media intelligence."
+        keywords="About Executive Talks Media, Executive Talks, ET Media, B2B media, leadership platforms, CXO summits India, Hyderabad business events"
+        url="https://www.executivetalksmedia.in/about"
+      />
       <PageHero
         crumb="About Us"
         title="About Executive Talks Media Business Intelligence"

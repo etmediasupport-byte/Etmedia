@@ -1,5 +1,6 @@
 import React from "react";
 import { MultiStepFormWizard, WizardStepConfig } from "@/components/site/MultiStepFormWizard";
+import { SEOHead } from "@/components/site/SEOHead";
 
 const partnerSteps: WizardStepConfig[] = [
   {
@@ -143,16 +144,24 @@ export default function PartnerApplicationWizardPage() {
   };
 
   return (
-    <MultiStepFormWizard
-      storageKey="partner_application"
-      badgeText="PARTNERSHIP APPLICATION"
-      title="Partner With Executive Talks Media"
-      subtitle="Complete your step-by-step application to showcase your brand at executive summits."
-      steps={partnerSteps}
-      onComplete={handleComplete}
-      successTitle="Partnership Proposal Submitted!"
-      successSubtitle="Our partnerships team will evaluate your application and reach out within 24-48 business hours."
-      cancelPath="/partner"
-    />
+    <>
+      <SEOHead
+        title="Partnership Application Wizard | Executive Talks Media"
+        description="Submit your enterprise brand partnership or summit sponsorship proposal to Executive Talks Media Business Intelligence."
+        keywords="Partner Application, Sponsorship Proposal, Executive Talks Media, ET Media"
+        url="https://www.executivetalksmedia.in/partner/apply"
+      />
+      <MultiStepFormWizard
+        storageKey="partner_application"
+        badgeText="PARTNERSHIP APPLICATION"
+        title="Partner With Executive Talks Media"
+        subtitle="Complete your step-by-step application to showcase your brand at executive summits."
+        steps={partnerSteps}
+        onComplete={handleComplete}
+        successTitle="Partnership Proposal Submitted!"
+        successSubtitle="Our partnerships team will evaluate your application and reach out within 24-48 business hours."
+        cancelPath="/partner"
+      />
+    </>
   );
 }

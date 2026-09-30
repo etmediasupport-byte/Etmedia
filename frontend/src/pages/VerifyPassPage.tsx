@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SEOHead } from "@/components/site/SEOHead";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 
 interface PassData {
@@ -108,6 +109,12 @@ export default function VerifyPassPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pt-28 sm:pt-32 pb-20 font-sans selection:bg-cyan-500/20 print:p-0 print:bg-white print:text-black">
+      <SEOHead
+        title={passData?.name ? `Verify Pass: ${passData.name} | Executive Talks Media` : `Verify Delegate Pass | Executive Talks Media`}
+        description="Verify the digital authenticity and QR ticket badge for Executive Talks Media Business Intelligence national leadership summits."
+        keywords="Verify Pass Executive Talks Media, Ticket Verification, ET Media QR Verification, Delegate Pass Authentic Check"
+        url={`https://www.executivetalksmedia.in/verify-pass/${regId || ""}`}
+      />
       {/* Aligned with main website header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Navigation Top Bar (Hidden during print) */}

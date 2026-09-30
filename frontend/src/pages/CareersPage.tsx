@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { GlowBackdrop } from "@/components/site/primitives";
 import { PageHero } from "@/components/site/PageHero";
+import { SEOHead } from "@/components/site/SEOHead";
 import { socket } from "@/lib/socket";
 import {
   validateEmail,
@@ -264,6 +265,13 @@ export default function CareersPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 selection:bg-purple-500/30 selection:text-purple-200">
+      <SEOHead
+        pageKey="careers"
+        title="Careers & Job Openings | Executive Talks Media"
+        description="Explore exciting career opportunities at Executive Talks Media Business Intelligence in conference production, sponsorship sales, digital marketing, and event operations."
+        keywords="Executive Talks Media Careers, Event Management Jobs Hyderabad, Conference Production Hiring, Sponsorship Sales Jobs, Executive Talks, ET Media, Media Jobs India"
+        url="https://www.executivetalksmedia.in/careers"
+      />
       <GlowBackdrop />
 
       {/* ========================================== */}

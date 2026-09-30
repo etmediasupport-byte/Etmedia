@@ -22,6 +22,7 @@ import {
   Award,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SEOHead } from "@/components/site/SEOHead";
 import {
   validateEmail,
   validatePhone,
@@ -301,6 +302,12 @@ export default function CareerApplicationWizardPage() {
 
   return (
     <div className="min-h-screen bg-slate-100/70">
+      <SEOHead
+        title={`Apply for ${jobTitle} | Executive Talks Media Careers`}
+        description={`Submit your resume for the ${jobTitle} position at Executive Talks Media Business Intelligence.`}
+        keywords={`${jobTitle}, Executive Talks Media Careers, Job Application, Hyderabad Jobs`}
+        url="https://www.executivetalksmedia.in/careers/apply"
+      />
       {/* ================= HERO BANNER ================= */}
       <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-12 sm:pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/30 via-purple-900/20 to-slate-950/80 pointer-events-none" />

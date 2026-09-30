@@ -19,6 +19,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SEOHead } from "@/components/site/SEOHead";
 import { events as defaultEvents } from "@/lib/site-data";
 import {
   validateEmail,
@@ -284,6 +285,12 @@ export default function FreeRegistrationPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
+      <SEOHead
+        title={eventData?.title ? `Complimentary Pass Application: ${eventData.title} | Executive Talks Media` : "Complimentary VIP Pass Application | Executive Talks Media"}
+        description={eventData?.description || "Apply for complimentary VIP delegate pass to Executive Talks Media Business Intelligence national summits."}
+        keywords={`${eventData?.title || "Conferences"}, Complimentary VIP Pass, Free Registration, Executive Talks Media, ET Media`}
+        url={`https://www.executivetalksmedia.in/events/${slug || "event"}/register-free`}
+      />
       {/* ================= HERO HEADER BANNER ================= */}
       <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/80 via-slate-950 to-cyan-950/80 z-0" />

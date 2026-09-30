@@ -1,5 +1,6 @@
 import React from "react";
 import { MultiStepFormWizard, WizardStepConfig } from "@/components/site/MultiStepFormWizard";
+import { SEOHead } from "@/components/site/SEOHead";
 
 const contactSteps: WizardStepConfig[] = [
   {
@@ -97,16 +98,24 @@ export default function ContactFormWizardPage() {
   };
 
   return (
-    <MultiStepFormWizard
-      storageKey="contact_enquiry"
-      badgeText="EXECUTIVE TALKS MEDIA ENQUIRY"
-      title="Contact Advisory Desk"
-      subtitle="Complete your multi-step enquiry to connect with our summit directors and media team."
-      steps={contactSteps}
-      onComplete={handleComplete}
-      successTitle="Enquiry Received!"
-      successSubtitle="Thank you for contacting Executive Talks Media. Our support executive will respond to your email promptly."
-      cancelPath="/contact"
-    />
+    <>
+      <SEOHead
+        title="Contact Form Wizard | Executive Talks Media"
+        description="Submit your enquiry to Executive Talks Media Business Intelligence executive advisory desk."
+        keywords="Contact Form, Enquiry, Executive Talks Media, ET Media"
+        url="https://www.executivetalksmedia.in/contact/form"
+      />
+      <MultiStepFormWizard
+        storageKey="contact_enquiry"
+        badgeText="EXECUTIVE TALKS MEDIA ENQUIRY"
+        title="Contact Advisory Desk"
+        subtitle="Complete your multi-step enquiry to connect with our summit directors and media team."
+        steps={contactSteps}
+        onComplete={handleComplete}
+        successTitle="Enquiry Received!"
+        successSubtitle="Thank you for contacting Executive Talks Media. Our support executive will respond to your email promptly."
+        cancelPath="/contact"
+      />
+    </>
   );
 }

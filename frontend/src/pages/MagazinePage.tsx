@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { images, getDefaultMagazines, MagazineItem } from "@/lib/site-data";
 import { Reveal } from "@/components/site/primitives";
+import { SEOHead } from "@/components/site/SEOHead";
 import { socket } from "@/lib/socket";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Magazine3DViewer } from "@/components/site/Magazine3DViewer";
@@ -192,6 +193,13 @@ export default function MagazinePage() {
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 selection:bg-cyan-500/30 selection:text-cyan-900 font-sans">
+      <SEOHead
+        pageKey="magazine"
+        title="Executive Talks Magazine | Executive Talks Media"
+        description="Read Executive Talks Magazine featuring exclusive C-suite leadership interviews, CXO insights, market reports, and interactive 3D digital flipbooks."
+        keywords="Executive Talks Magazine, Executive Talks, ET Media, CXO Interviews, B2B Magazine India, Leadership Intelligence, Digital Flipbook, Business Articles"
+        url="https://www.executivetalksmedia.in/magazine"
+      />
       {/* ========================================== */}
       {/* 1. HERO SECTION WITH 3D FLOATING COVER     */}
       {/* ========================================== */}
