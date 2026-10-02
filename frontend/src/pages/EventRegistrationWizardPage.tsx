@@ -853,13 +853,14 @@ export default function EventRegistrationWizardPage() {
           
           {/* LEFT COLUMN: Event Overview & Order Summary (Shown on Steps 1, 2, 3, 5, 6, 7) */}
           {currentStep !== 4 && (
-            <div className="lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-5">
+            <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
+              <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm space-y-3.5">
                 {eventData?.image && (
-                  <div className="relative h-44 w-full rounded-2xl overflow-hidden shadow-sm">
+                  <div className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm">
                     <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover" />
-                    <div className="absolute top-3 left-3">
-                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-950/80 text-cyan-400 border border-cyan-500/40 backdrop-blur-md">
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-950/90 text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
                         {eventData.category || "Leadership Summit"}
                       </span>
                     </div>
@@ -867,78 +868,67 @@ export default function EventRegistrationWizardPage() {
                 )}
 
                 <div>
-                  <h3 className="text-base sm:text-lg font-black font-display text-slate-900 leading-tight">
+                  <h3 className="text-sm sm:text-base font-black font-display text-slate-900 leading-tight">
                     {eventData?.title}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{eventData?.description}</p>
                 </div>
 
-                <div className="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 font-semibold">
+                <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs text-slate-700 font-semibold">
                   {eventData?.date && (
-                    <div className="flex items-center gap-2.5">
-                      <Calendar className="w-4 h-4 text-cyan-600 shrink-0" />
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
                       <span>{eventData.date}</span>
                     </div>
                   )}
                   {(eventData?.venue || eventData?.city) && (
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4 h-4 text-cyan-600 shrink-0" />
-                      <span>{eventData.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData.city}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                      <span className="truncate">{eventData.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData.city}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2.5">
-                    <Globe className="w-4 h-4 text-cyan-600 shrink-0" />
-                    <span>Executive Talks Media Official Conclave</span>
-                  </div>
                 </div>
 
-                {/* Selected Pass Summary */}
-                {selectedPlan && (
-                  <div className="rounded-2xl bg-cyan-50 border border-cyan-200 p-4 space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700">Selected Pass Tier</span>
+                {/* Selected Pass Summary (Shown on Steps 5, 6, 7) */}
+                {selectedPlan && currentStep >= 4 && (
+                  <div className="rounded-2xl bg-cyan-50/80 border border-cyan-200 p-3 space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-cyan-700">Selected Pass Tier</span>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-black text-slate-900">{selectedPlan.name}</span>
-                      <span className="text-sm font-black text-cyan-700">₹{paymentBreakdown.finalAmount.toLocaleString("en-IN")}</span>
+                      <span className="text-xs font-black text-slate-900">{selectedPlan.name}</span>
+                      <span className="text-xs font-black text-cyan-700">₹{paymentBreakdown.finalAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 )}
 
-                {/* Inclusions */}
-                <div className="pt-4 border-t border-slate-100 space-y-2.5">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
-                    Every Pass Includes:
+                {/* Compact Inclusions */}
+                <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                    Pass Inclusions:
                   </span>
-                  <ul className="space-y-2 text-xs text-slate-600 font-medium">
-                    <li className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 gap-1 text-[11px] text-slate-600 font-medium">
+                    <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>Full Access to All Keynotes & Panel Tracks</span>
-                    </li>
-                    <li className="flex items-center gap-2">
+                      <span>Full Access to Keynotes & Tracks</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>5-Star Networking Luncheon & High Tea</span>
-                    </li>
-                    <li className="flex items-center gap-2">
+                      <span>5-Star Networking Luncheon</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>Digital Verified Delegate Pass & Certificate</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>C-Suite Mastermind & Connect Lounge</span>
-                    </li>
-                  </ul>
+                      <span>Verified Digital Pass & Certificate</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Security */}
-                <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500 font-semibold">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>256-Bit SSL Encrypted & Verified Portal</span>
-                </div>
-
-                {/* Support Contact */}
-                <div className="rounded-2xl bg-slate-50 p-3.5 text-[11px] text-slate-600 space-y-1">
-                  <div className="font-bold text-slate-800">Need Assistance?</div>
-                  <div>Call: <a href="tel:+919100266777" className="text-cyan-700 font-bold hover:underline">+91 91002 66777</a></div>
-                  <div>Email: <a href="mailto:registration@executivetalksmedia.in" className="text-cyan-700 font-bold hover:underline">registration@executivetalksmedia.in</a></div>
+                {/* Compact Footer: SSL & Support Phone */}
+                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                  <div className="flex items-center gap-1 font-bold text-emerald-700">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>256-Bit SSL Encrypted</span>
+                  </div>
+                  <a href="tel:+919100266777" className="font-bold text-cyan-700 hover:underline">
+                    Help: +91 91002 66777
+                  </a>
                 </div>
               </div>
             </div>
