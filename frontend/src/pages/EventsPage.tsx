@@ -3,7 +3,15 @@ import { useLocation } from "react-router-dom";
 import { EventCard } from "@/components/site/EventCard";
 import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { SEOHead } from "@/components/site/SEOHead";
-import { events as defaultEvents, EventItem, images, getValidImageUrl } from "@/lib/site-data";
+import {
+  events as defaultEvents,
+  EventItem,
+  images,
+  getValidImageUrl,
+  parseEventTimestamp,
+  getEventStatus,
+  sortEventsChronologically,
+} from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 import {
   Calendar,
@@ -25,81 +33,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
-
-// Helper function to extract and parse event date timestamp reliably
-function parseEventTimestamp(evt: any): number {
-  let dateStr = evt.date || "";
-  try {
-    let locs = typeof evt.locations === "string" ? JSON.parse(evt.locations) : evt.locations;
-    if (Array.isArray(locs) && locs[0]?.date) {
-      dateStr = locs[0].date;
-    }
-  } catch (e) {}
-
-  if (!dateStr || typeof dateStr !== "string") {
-    return evt.created_at ? new Date(evt.created_at).getTime() : 0;
-  }
-
-  const cleanStr = dateStr.trim();
-
-  // Try standard parse (e.g. "2026-11-18", "November 18, 2026", "24 October 2026")
-  const parsed = Date.parse(cleanStr);
-  if (!isNaN(parsed)) {
-    return parsed;
-  }
-
-  // Handle formats like "24 October 2026" or "18 Nov 2026"
-  const dmyMatch = cleanStr.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
-  if (dmyMatch) {
-    const p = Date.parse(`${dmyMatch[2]} ${dmyMatch[1]}, ${dmyMatch[3]}`);
-    if (!isNaN(p)) return p;
-  }
-
-  // Handle formats like "October 15 - 16, 2026" or "15 - 16 October 2026"
-  const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
-  if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[4]) {
-    const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
-    if (!isNaN(p)) return p;
-  }
-
-  // Year fallback (e.g. "2026")
-  const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
-  if (yearMatch && yearMatch[1]) {
-    const year = parseInt(yearMatch[1], 10);
-    return new Date(year, 0, 1).getTime();
-  }
-
-  return evt.created_at ? new Date(evt.created_at).getTime() : 0;
-}
-
-// Classify event status: "live" | "upcoming" | "past"
-function getEventStatus(evt: any): "live" | "upcoming" | "past" {
-  if (evt.status === "live" || evt.is_live === 1 || evt.is_live === true) {
-    return "live";
-  }
-  if (evt.status === "past" || evt.status === "completed") {
-    return "past";
-  }
-
-  const eventTime = parseEventTimestamp(evt);
-  if (!eventTime) {
-    return "upcoming";
-  }
-
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
-
-  if (eventTime >= todayStart && eventTime <= todayEnd) {
-    return "live";
-  }
-
-  if (eventTime < todayStart) {
-    return "past";
-  }
-
-  return "upcoming";
-}
 
 // Extract all cities associated with an event
 function getEventCities(evt: any): string[] {
@@ -172,7 +105,7 @@ export default function EventsPage() {
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived");
-          setEventList(activeEvents);
+          setEventList(sortEventsChronologically(activeEvents));
         } else {
           setEventList([]);
         }
@@ -205,7 +138,7 @@ export default function EventsPage() {
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {
             const activeEvents = data.data.filter((e: any) => e.status !== "archived");
-            setEventList(activeEvents);
+            setEventList(sortEventsChronologically(activeEvents));
           }
         })
         .catch(() => {});

@@ -1794,6 +1794,90 @@ app.get("/robots.txt", (_req, res) => {
 });
 
 
+// Helper functions to parse event timestamps and sort chronologically (live/upcoming first, past at the bottom)
+function parseBackendEventTimestamp(evt: any): number {
+  let dateStr = evt?.date || "";
+  try {
+    let locs = typeof evt?.locations === "string" ? JSON.parse(evt.locations) : evt?.locations;
+    if (Array.isArray(locs) && locs[0]?.date) {
+      dateStr = locs[0].date;
+    }
+  } catch (e) {}
+
+  if (!dateStr || typeof dateStr !== "string") {
+    return evt?.created_at ? new Date(evt.created_at).getTime() : 0;
+  }
+
+  const cleanStr = dateStr.trim().replace(/(\d+)(st|nd|rd|th)/gi, "$1");
+  const parsed = Date.parse(cleanStr);
+  if (!isNaN(parsed)) return parsed;
+
+  const dmySlashMatch = cleanStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (dmySlashMatch) {
+    const day = parseInt(dmySlashMatch[1], 10);
+    const month = parseInt(dmySlashMatch[2], 10) - 1;
+    const year = parseInt(dmySlashMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+
+  const dmyMatch = cleanStr.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (dmyMatch) {
+    const p = Date.parse(`${dmyMatch[2]} ${dmyMatch[1]}, ${dmyMatch[3]}`);
+    if (!isNaN(p)) return p;
+  }
+
+  const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
+  if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[4]) {
+    const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
+    if (!isNaN(p)) return p;
+  }
+
+  const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
+  if (yearMatch && yearMatch[1]) {
+    return new Date(parseInt(yearMatch[1], 10), 0, 1).getTime();
+  }
+
+  return evt?.created_at ? new Date(evt.created_at).getTime() : 0;
+}
+
+function sortBackendEventsChronologically(eventList: any[]): any[] {
+  if (!Array.isArray(eventList) || eventList.length === 0) return [];
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+
+  const live: any[] = [];
+  const upcoming: any[] = [];
+  const past: any[] = [];
+
+  eventList.forEach((evt) => {
+    if (evt?.status === "live" || evt?.is_live === 1 || evt?.is_live === true) {
+      live.push(evt);
+      return;
+    }
+    if (evt?.status === "past" || evt?.status === "completed") {
+      past.push(evt);
+      return;
+    }
+    const t = parseBackendEventTimestamp(evt);
+    if (!t) {
+      upcoming.push(evt);
+    } else if (t >= todayStart && t <= todayEnd) {
+      live.push(evt);
+    } else if (t < todayStart) {
+      past.push(evt);
+    } else {
+      upcoming.push(evt);
+    }
+  });
+
+  upcoming.sort((a, b) => parseBackendEventTimestamp(a) - parseBackendEventTimestamp(b));
+  past.sort((a, b) => parseBackendEventTimestamp(b) - parseBackendEventTimestamp(a));
+
+  return [...live, ...upcoming, ...past];
+}
+
 // 2. Events listing (Public API with DB query & static fallback)
 app.get("/api/events", async (req, res) => {
   try {
@@ -1811,9 +1895,9 @@ app.get("/api/events", async (req, res) => {
         params.push(status);
       }
 
-      query += " ORDER BY is_featured DESC, date ASC, created_at DESC";
       const [rows]: any = await pool.query(query, params);
-      return res.json({ success: true, data: rows });
+      const sortedRows = sortBackendEventsChronologically(rows);
+      return res.json({ success: true, data: sortedRows });
     }
 
     // Static fallback

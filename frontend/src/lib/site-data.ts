@@ -62,13 +62,118 @@ export function getValidImageUrl(url?: string, title?: string, category?: string
     if (lower.includes("hero-networking") || lower.includes("network")) return images.heroNetworking;
     if (lower.includes("about-office")) return images.aboutOffice;
     if (lower.includes("magazine-cover")) return images.magazineCover;
+  }
+  return getDefaultEventImage(title, category);
+}
 
-    if (trimmed.startsWith("/uploads/")) {
-      return trimmed;
+export function parseEventTimestamp(evt: any): number {
+  let dateStr = evt?.date || "";
+  try {
+    let locs = typeof evt?.locations === "string" ? JSON.parse(evt.locations) : evt?.locations;
+    if (Array.isArray(locs) && locs[0]?.date) {
+      dateStr = locs[0].date;
     }
+  } catch (e) {}
+
+  if (!dateStr || typeof dateStr !== "string") {
+    return evt?.created_at ? new Date(evt.created_at).getTime() : 0;
   }
 
-  return getDefaultEventImage(title, category);
+  // Remove ordinal suffixes like 21st, 22nd, 23rd, 24th
+  const cleanStr = dateStr.trim().replace(/(\d+)(st|nd|rd|th)/gi, "$1");
+
+  // Try standard parse
+  const parsed = Date.parse(cleanStr);
+  if (!isNaN(parsed)) {
+    return parsed;
+  }
+
+  // Handle "DD-MM-YYYY" or "DD/MM/YYYY" (e.g. 14-10-2026 or 14/10/2026)
+  const dmySlashMatch = cleanStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (dmySlashMatch) {
+    const day = parseInt(dmySlashMatch[1], 10);
+    const month = parseInt(dmySlashMatch[2], 10) - 1;
+    const year = parseInt(dmySlashMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+
+  // Handle "24 October 2026" or "18 Nov 2026"
+  const dmyMatch = cleanStr.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (dmyMatch) {
+    const p = Date.parse(`${dmyMatch[2]} ${dmyMatch[1]}, ${dmyMatch[3]}`);
+    if (!isNaN(p)) return p;
+  }
+
+  // Handle "October 15 - 16, 2026"
+  const rangeMatch = cleanStr.match(/([A-Za-z]+)\s+(\d{1,2})\s*-\s*(\d{1,2}),?\s+(\d{4})/);
+  if (rangeMatch && rangeMatch[1] && rangeMatch[2] && rangeMatch[4]) {
+    const p = Date.parse(`${rangeMatch[1]} ${rangeMatch[2]}, ${rangeMatch[4]}`);
+    if (!isNaN(p)) return p;
+  }
+
+  // Year fallback (e.g. "2026")
+  const yearMatch = cleanStr.match(/\b(20\d\d)\b/);
+  if (yearMatch && yearMatch[1]) {
+    const year = parseInt(yearMatch[1], 10);
+    return new Date(year, 0, 1).getTime();
+  }
+
+  return evt?.created_at ? new Date(evt.created_at).getTime() : 0;
+}
+
+export function getEventStatus(evt: any): "live" | "upcoming" | "past" {
+  if (evt?.status === "live" || evt?.is_live === 1 || evt?.is_live === true) {
+    return "live";
+  }
+  if (evt?.status === "past" || evt?.status === "completed") {
+    return "past";
+  }
+
+  const eventTime = parseEventTimestamp(evt);
+  if (!eventTime) {
+    return "upcoming";
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+
+  if (eventTime >= todayStart && eventTime <= todayEnd) {
+    return "live";
+  }
+
+  if (eventTime < todayStart) {
+    return "past";
+  }
+
+  return "upcoming";
+}
+
+export function sortEventsChronologically<T extends EventItem | any>(eventList: T[]): T[] {
+  if (!Array.isArray(eventList) || eventList.length === 0) return [];
+
+  const live: T[] = [];
+  const upcoming: T[] = [];
+  const past: T[] = [];
+
+  eventList.forEach((e) => {
+    const status = getEventStatus(e);
+    if (status === "live") {
+      live.push(e);
+    } else if (status === "past") {
+      past.push(e);
+    } else {
+      upcoming.push(e);
+    }
+  });
+
+  // Upcoming: nearest date first (ascending)
+  upcoming.sort((a, b) => parseEventTimestamp(a) - parseEventTimestamp(b));
+  // Past: recent past first, older past last (descending)
+  past.sort((a, b) => parseEventTimestamp(b) - parseEventTimestamp(a));
+
+  return [...live, ...upcoming, ...past];
 }
 
 export const contact = {

@@ -51,6 +51,7 @@ import {
   getDefaultCollaborators,
   MediaGalleryItem,
   getDefaultMediaGallery,
+  sortEventsChronologically,
 } from "@/lib/site-data";
 import { GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
 import { EventCard } from "@/components/site/EventCard";
@@ -304,7 +305,7 @@ function UpcomingEvents() {
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived");
-          setEventList(activeEvents);
+          setEventList(sortEventsChronologically(activeEvents));
         } else {
           setEventList([]);
         }

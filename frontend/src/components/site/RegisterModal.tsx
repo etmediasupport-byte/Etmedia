@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Loader2, CheckCircle2, ShieldCheck, Mail, Calendar, MapPin, Sparkles, Award, User, Tag, CreditCard, ChevronDown, Crown } from "lucide-react";
 import { toast } from "sonner";
-import { events as defaultEvents, type EventItem, getDefaultPricingPlans, checkEarlyBirdStatus, type PricingPlanTier } from "@/lib/site-data";
+import {
+  events as defaultEvents,
+  type EventItem,
+  getDefaultPricingPlans,
+  checkEarlyBirdStatus,
+  type PricingPlanTier,
+  sortEventsChronologically,
+} from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import {
   validateEmail,
@@ -66,7 +73,8 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setEventsList(data.data);
+          const active = data.data.filter((e: any) => e.status !== "archived");
+          setEventsList(sortEventsChronologically(active));
         }
       })
       .catch((err) => console.warn("Using static events data for modal selector", err));

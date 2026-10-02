@@ -19,6 +19,8 @@ import {
   type EventItem,
   getValidImageUrl,
   getDefaultEventImage,
+  sortEventsChronologically,
+  getEventStatus,
 } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
 
@@ -53,7 +55,7 @@ export function EventSelectionModal({
           const activeEvents = json.data.filter(
             (ev: any) => ev.status !== "archived"
           );
-          setEventsList(activeEvents);
+          setEventsList(sortEventsChronologically(activeEvents));
         } else {
           setEventsList([]);
         }
@@ -137,7 +139,9 @@ export function EventSelectionModal({
         if (selectedFilter === "featured") {
           if (!event.is_featured) return false;
         } else if (selectedFilter === "upcoming") {
-          if (event.status === "past") return false;
+          if (getEventStatus(event) === "past") return false;
+        } else if (selectedFilter === "past") {
+          if (getEventStatus(event) !== "past") return false;
         } else {
           if ((event.category || "").toLowerCase() !== selectedFilter.toLowerCase()) {
             return false;
