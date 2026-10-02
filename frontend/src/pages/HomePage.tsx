@@ -297,7 +297,7 @@ function AboutSnapshot() {
 }
 
 function UpcomingEvents() {
-  const [eventList, setEventList] = useState<any[]>([]);
+  const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => e.status !== "archived")));
 
   const fetchUpcoming = () => {
     fetch("/api/events")
@@ -306,13 +306,10 @@ function UpcomingEvents() {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived");
           setEventList(sortEventsChronologically(activeEvents));
-        } else {
-          setEventList([]);
         }
       })
       .catch((err) => {
         console.warn("Error fetching events for homepage:", err);
-        setEventList([]);
       });
   };
 

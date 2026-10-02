@@ -87,7 +87,7 @@ export default function EventsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>(urlCategory);
   const [cityFilter, setCityFilter] = useState<string>(urlCity);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
-  const [eventList, setEventList] = useState<EventItem[]>([]);
+  const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => e.status !== "archived")));
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
 
@@ -98,7 +98,7 @@ export default function EventsPage() {
     }
   }, [urlSearch]);
 
-  // Load real events strictly from Database (Managed in Admin Dashboard)
+  // Load real events from Database with instant optimistic fallback
   useEffect(() => {
     fetch("/api/events")
       .then((res) => res.json())
@@ -106,13 +106,10 @@ export default function EventsPage() {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived");
           setEventList(sortEventsChronologically(activeEvents));
-        } else {
-          setEventList([]);
         }
       })
       .catch((err) => {
         console.warn("Error loading events from API:", err);
-        setEventList([]);
       });
 
     // Socket.IO real-time listeners

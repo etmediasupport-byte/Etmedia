@@ -57,8 +57,17 @@ import { socket } from "@/lib/socket";
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [event, setEvent] = useState<EventItem | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const targetSlug = (slug || "hr-recall-2k26").replace(/-\d+$/, "").toLowerCase();
+  const initialMatched = defaultEvents.find(
+    (e) => (e.slug || "").toLowerCase() === targetSlug ||
+           (e.id || "").toLowerCase() === targetSlug ||
+           (e.slug || "").toLowerCase().includes(targetSlug) ||
+           targetSlug.includes((e.slug || "").toLowerCase())
+  ) || defaultEvents[0]!;
+
+  const [event, setEvent] = useState<EventItem>(initialMatched);
+  const [loading, setLoading] = useState(false);
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regMode, setRegMode] = useState<"paid" | "free">("paid");
   const [activeSection, setActiveSection] = useState<string>("overview");
@@ -75,10 +84,9 @@ export default function EventDetailPage() {
   // Video / Highlight Modal State
   const [showVideoModal, setShowVideoModal] = useState(false);
 
-  // Hook 1: Fetch event data
+  // Hook 1: Fetch fresh event data in background
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
     const loadEventData = async () => {
       try {
@@ -87,19 +95,11 @@ export default function EventDetailPage() {
           const data = await res.json();
           if (data.success && data.event && isMounted) {
             setEvent(data.event);
-            setLoading(false);
             return;
           }
         }
       } catch (err) {
-        console.log("Fetching from API failed, checking local static data:", err);
-      }
-
-      // Fallback search in static list
-      const matched = defaultEvents.find((e) => e.slug === slug || e.id === slug);
-      if (isMounted) {
-        setEvent(matched || defaultEvents[0] || null);
-        setLoading(false);
+        console.log("Using static event data cache:", err);
       }
     };
 
@@ -256,19 +256,6 @@ export default function EventDetailPage() {
       goldPart: "",
     };
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-3 border-cyan-600 border-t-transparent animate-spin" />
-          <p className="text-xs font-bold tracking-wider uppercase text-cyan-700 font-display">
-            Loading Event Details...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (!event) {
     return (

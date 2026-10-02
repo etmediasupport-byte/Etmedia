@@ -63,8 +63,17 @@ export default function FreeRegistrationPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [eventData, setEventData] = useState<any>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
+  const targetSlug = slug || searchParams.get("event") || "hr-recall-2k26";
+  const cleanTargetSlug = targetSlug.replace(/-\d+$/, "").toLowerCase();
+
+  const initialFallback = defaultEvents.find(
+    (e) => (e.slug || "").toLowerCase() === cleanTargetSlug ||
+           (e.id || "").toLowerCase() === cleanTargetSlug ||
+           (e.slug || "").toLowerCase().includes(cleanTargetSlug) ||
+           cleanTargetSlug.includes((e.slug || "").toLowerCase())
+  ) || defaultEvents[0];
+
+  const [eventData, setEventData] = useState<any>(initialFallback);
   const [submitting, setSubmitting] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -86,31 +95,24 @@ export default function FreeRegistrationPage() {
   });
 
   useEffect(() => {
-    const fetchEvent = async () => {
-      setLoadingEvent(true);
-      const targetSlug = slug || searchParams.get("event") || "hr-recall-2k26";
+    let isMounted = true;
+    const activeSlug = slug || searchParams.get("event") || "hr-recall-2k26";
 
-      try {
-        const res = await fetch(`/api/events/${targetSlug}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.event) {
-            setEventData(json.event);
-            setLoadingEvent(false);
-            return;
-          }
+    fetch(`/api/events/${activeSlug}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (!isMounted) return;
+        if (json.success && json.event) {
+          setEventData(json.event);
         }
-      } catch (e) {}
+      })
+      .catch((e) => {
+        console.warn("[FreeRegistration] Fast mode fallback active:", e);
+      });
 
-      const found = defaultEvents.find(
-        (e) => (e.slug || "").toLowerCase() === targetSlug.toLowerCase() || (e.id || "").toLowerCase() === targetSlug.toLowerCase()
-      ) || defaultEvents[0];
-
-      setEventData(found);
-      setLoadingEvent(false);
+    return () => {
+      isMounted = false;
     };
-
-    fetchEvent();
   }, [slug, searchParams]);
 
   // Validation errors state
@@ -309,15 +311,6 @@ export default function FreeRegistrationPage() {
     "Compensation, Benefits & Tax Structuring",
     "Diversity, Equity & Inclusion (DEI)",
   ];
-
-  if (loadingEvent) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-        <p className="text-sm font-semibold text-slate-400">Loading Free Registration Portal...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">

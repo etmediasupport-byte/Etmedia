@@ -96,9 +96,38 @@ export default function EventRegistrationWizardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Selected event state
-  const [eventData, setEventData] = useState<EventData | null>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
+  const targetSlug = slug || searchParams.get("event") || "hr-recall-2k26";
+  const cleanTargetSlug = targetSlug.replace(/-\d+$/, "").toLowerCase();
+
+  // Instant fallback matching so page renders in 0ms on any 2G/3G/4G/5G connection
+  const initialFallback = defaultEvents.find(
+    (e) => (e.slug || "").toLowerCase() === cleanTargetSlug ||
+           (e.id || "").toLowerCase() === cleanTargetSlug ||
+           (e.slug || "").toLowerCase().includes(cleanTargetSlug) ||
+           cleanTargetSlug.includes((e.slug || "").toLowerCase())
+  ) || defaultEvents[0]!;
+
+  const initialPlans = getDefaultPricingPlans();
+  const reqPass = searchParams.get("pass") || searchParams.get("plan");
+  const initialSelectedPlan = reqPass
+    ? initialPlans.find((p) => p.name.toLowerCase().includes(reqPass.toLowerCase())) || initialPlans[0]
+    : initialPlans.find((p) => p.is_featured) || initialPlans[0];
+
+  // Selected event state (instant 0ms initialization)
+  const [eventData, setEventData] = useState<EventData>({
+    id: initialFallback.id || "hr-recall-2k26",
+    slug: initialFallback.slug || "hr-recall-2k26",
+    title: initialFallback.title || "HR RECALL 2K26",
+    category: initialFallback.category || "Leadership Summit",
+    date: initialFallback.date,
+    venue: initialFallback.venue,
+    city: initialFallback.city,
+    image: initialFallback.image,
+    description: initialFallback.description,
+    early_bird_enabled: true,
+    early_bird_start_date: "2026-01-01",
+    early_bird_end_date: "2026-12-31",
+  });
 
   // Wizard active step: 1..5
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -125,8 +154,8 @@ export default function EventRegistrationWizardPage() {
   });
 
   // --- STEP 2 FORM STATE: Selected Pass ---
-  const [pricingPlans, setPricingPlans] = useState<PricingPlanTier[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlanTier | null>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlanTier[]>(initialPlans);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlanTier | null>(initialSelectedPlan || null);
 
   // --- STEP 3 FORM STATE: Coupon & Summary ---
   const [couponCode, setCouponCode] = useState("");
@@ -161,78 +190,45 @@ export default function EventRegistrationWizardPage() {
     };
   }, []);
 
-  // Fetch Event Data dynamically from backend or fallback to site-data
+  // SWR: Fetch fresh Event Data in background and update seamlessly
   useEffect(() => {
-    const fetchEvent = async () => {
-      setLoadingEvent(true);
-      const targetSlug = slug || searchParams.get("event") || "hr-recall-2k26";
+    let isMounted = true;
+    const activeSlug = slug || searchParams.get("event") || "hr-recall-2k26";
 
-      try {
-        const res = await fetch(`/api/events/${targetSlug}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.event) {
-            const ev = json.event;
-            setEventData(ev);
+    fetch(`/api/events/${activeSlug}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (!isMounted) return;
+        if (json.success && json.event) {
+          const ev = json.event;
+          setEventData(ev);
 
-            // Parse plans
-            let parsed: PricingPlanTier[] = [];
-            if (typeof ev.pricing_plans === "string") {
-              try {
-                parsed = JSON.parse(ev.pricing_plans);
-              } catch (e) {}
-            } else if (Array.isArray(ev.pricing_plans)) {
-              parsed = ev.pricing_plans;
-            }
-            if (!parsed || parsed.length === 0) {
-              parsed = getDefaultPricingPlans();
-            }
+          // Parse plans
+          let parsed: PricingPlanTier[] = [];
+          if (typeof ev.pricing_plans === "string") {
+            try {
+              parsed = JSON.parse(ev.pricing_plans);
+            } catch (e) {}
+          } else if (Array.isArray(ev.pricing_plans)) {
+            parsed = ev.pricing_plans;
+          }
+          if (parsed && parsed.length > 0) {
             setPricingPlans(parsed);
             const reqPass1 = searchParams.get("pass") || searchParams.get("plan");
             const matchedPlan1 = reqPass1
               ? parsed.find((p) => p.name.toLowerCase().includes(reqPass1.toLowerCase()))
               : null;
             setSelectedPlan(matchedPlan1 || parsed.find((p) => p.is_featured) || parsed[0] || null);
-            setLoadingEvent(false);
-            return;
           }
         }
-      } catch (err) {
-        console.warn("[Wizard] Error fetching event from API, using static fallbacks:", err);
-      }
-
-      // Fallback matching from static site-data
-      const fallbackEvent = defaultEvents[0]!;
-      const found = defaultEvents.find(
-        (e) => (e.slug || "").toLowerCase() === targetSlug.toLowerCase() || (e.id || "").toLowerCase() === targetSlug.toLowerCase()
-      ) || fallbackEvent;
-
-      setEventData({
-        id: found.id || "hr-recall-2k26",
-        slug: found.slug || "hr-recall-2k26",
-        title: found.title || "HR RECALL 2K26",
-        category: found.category || "Leadership Summit",
-        date: found.date,
-        venue: found.venue,
-        city: found.city,
-        image: found.image,
-        description: found.description,
-        early_bird_enabled: true,
-        early_bird_start_date: "2026-01-01",
-        early_bird_end_date: "2026-12-31",
+      })
+      .catch((err) => {
+        console.warn("[Wizard] Operating in offline/fast mode with default data:", err);
       });
 
-      const fallbackPlans = getDefaultPricingPlans();
-      setPricingPlans(fallbackPlans);
-      const reqPass2 = searchParams.get("pass") || searchParams.get("plan");
-      const matchedPlan2 = reqPass2
-        ? fallbackPlans.find((p) => p.name.toLowerCase().includes(reqPass2.toLowerCase()))
-        : null;
-      setSelectedPlan(matchedPlan2 || fallbackPlans.find((p) => p.is_featured) || fallbackPlans[0] || null);
-      setLoadingEvent(false);
+    return () => {
+      isMounted = false;
     };
-
-    fetchEvent();
   }, [slug, searchParams]);
 
   // Early Bird Status
@@ -702,15 +698,6 @@ export default function EventRegistrationWizardPage() {
     "Compensation, Benefits & Tax Structuring",
     "Diversity, Equity & Inclusion (DEI)",
   ];
-
-  if (loadingEvent) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="h-12 w-12 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin" />
-        <p className="text-sm font-semibold text-slate-400">Loading Executive Conference Registration Portal...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
