@@ -2888,7 +2888,7 @@ app.post("/api/events/register", async (req, res) => {
 
 // 4. Contact form submission
 app.post("/api/contact", async (req, res) => {
-  const { name, email, phone, enquiryType, message } = req.body;
+  const { name, email, phone, enquiryType, message, organization, designation } = req.body;
 
   if (!name || !email || !message) {
     return res.status(400).json({
@@ -2918,6 +2918,17 @@ app.post("/api/contact", async (req, res) => {
     });
   }
 
+  let finalMessage = message;
+  if (organization || designation) {
+    const metaParts = [
+      organization ? `Organization: ${organization}` : "",
+      designation ? `Designation: ${designation}` : "",
+    ].filter(Boolean).join(" | ");
+    if (metaParts && !finalMessage.includes(organization || "")) {
+      finalMessage = `[${metaParts}]\n\n${finalMessage}`;
+    }
+  }
+
   const enqId = `ENQ-${Date.now()}`;
   const newEnquiry = {
     id: enqId,
@@ -2925,7 +2936,7 @@ app.post("/api/contact", async (req, res) => {
     email,
     phone: phone || "N/A",
     enquiryType: enquiryType || "General Enquiry",
-    message,
+    message: finalMessage,
     submittedAt: new Date().toISOString(),
   };
 
@@ -2933,7 +2944,7 @@ app.post("/api/contact", async (req, res) => {
     if (pool) {
       await pool.query(
         "INSERT INTO contacts (id, name, email, phone, enquiry_type, message) VALUES (?, ?, ?, ?, ?, ?)",
-        [enqId, name, email, newEnquiry.phone, newEnquiry.enquiryType, message]
+        [enqId, name, email, newEnquiry.phone, newEnquiry.enquiryType, finalMessage]
       );
     }
 

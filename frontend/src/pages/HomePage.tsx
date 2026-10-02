@@ -534,17 +534,31 @@ function CollaboratorsMarquee() {
 
   return (
     <section className="bg-slate-50 py-6 sm:py-8 overflow-hidden border-y border-slate-200/90 relative">
-      <div className="container-x relative z-10 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
-          <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
-          <span>Corporate Sponsors & Strategic Partners</span>
+      <div className="container-x relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-2 gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+              <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
+              <span>Corporate Sponsors & Strategic Partners</span>
+            </div>
+            <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight text-left">
+              <span className="whitespace-normal xl:whitespace-nowrap">Trusted By Industry Leaders & Corporate Sponsors</span>
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 font-sans font-medium text-left whitespace-normal sm:whitespace-nowrap">
+              Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers.
+            </p>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2.5 shrink-0 mb-1">
+            <Link
+              to="/partner"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-700 hover:text-cyan-600 transition-colors"
+            >
+              <span>Partner With Us</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
-        <h3 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight">
-          Trusted By Industry Leaders & Corporate Sponsors
-        </h3>
-        <p className="mt-1 text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-medium">
-          Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers.
-        </p>
       </div>
 
       {/* INFINITE MARQUEE SCROLLER */}

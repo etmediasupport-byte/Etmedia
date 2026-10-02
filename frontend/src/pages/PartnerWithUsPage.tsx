@@ -31,12 +31,15 @@ import {
   Crown,
   FileText,
   Star,
+  ArrowRight,
+  Headphones,
 } from "lucide-react";
 import { PageHero } from "@/components/site/PageHero";
 import { GlowBackdrop, Reveal, Counter, SectionHeading } from "@/components/site/primitives";
 import { SEOHead } from "@/components/site/SEOHead";
 import { socket } from "@/lib/socket";
 import { Collaborator, getDefaultCollaborators, images, contact } from "@/lib/site-data";
+import { MagneticButton } from "@/components/ui/MagneticButton";
 
 const partnershipBenefits = [
   {
@@ -45,12 +48,12 @@ const partnershipBenefits = [
     icon: Sparkles,
     badge: "High Visibility",
     color: "from-cyan-500 to-blue-600",
-    bgGlow: "bg-cyan-50 border-cyan-200 text-cyan-700",
+    bgGlow: "bg-cyan-50 border-cyan-200 text-cyan-800",
     description:
       "Position your brand at the forefront of national summits with premium venue branding, LED stage backdrops, badge co-branding, and digital press coverage.",
     perks: [
-      "Stage & Backdrop Co-Branding",
-      "Executive Summit Passes & VIP Lounge Access",
+      "Mainstage LED Backdrop Co-Branding",
+      "VIP Delegate Passes & Lounge Access",
       "Digital Banner & National Press Release Mentions",
     ],
   },
@@ -60,12 +63,12 @@ const partnershipBenefits = [
     icon: Megaphone,
     badge: "B2B Lead Scale",
     color: "from-blue-600 to-indigo-600",
-    bgGlow: "bg-blue-50 border-blue-200 text-blue-700",
+    bgGlow: "bg-blue-50 border-blue-200 text-blue-800",
     description:
       "Engage directly with CXOs, VP decision-makers, and enterprise buyers through dedicated exhibition pavilions, booth spaces, and lead capture points.",
     perks: [
       "Dedicated Exhibition Pavilion Booth Space",
-      "Direct Qualified Lead List Access",
+      "Direct Qualified Decision-Maker Lead List",
       "Exclusive One-on-One CXO Business Meetings",
     ],
   },
@@ -75,11 +78,11 @@ const partnershipBenefits = [
     icon: Mic,
     badge: "Authority",
     color: "from-purple-600 to-indigo-600",
-    bgGlow: "bg-purple-50 border-purple-200 text-purple-700",
+    bgGlow: "bg-purple-50 border-purple-200 text-purple-800",
     description:
-      "Gain thought leadership authority by delivering keynote presentations, leading executive panel sessions, and hosting closed-door roundtable discussions.",
+      "Gain thought leadership authority by delivering keynote presentations, leading executive panel sessions, and hosting closed-door boardroom roundtables.",
     perks: [
-      "Keynote & Panel Discussion Slot",
+      "Keynote & Panel Discussion Speaker Slot",
       "Fireside Executive Broadcast Interview",
       "Full Video Recording & Multi-Channel Distribution",
     ],
@@ -90,9 +93,9 @@ const partnershipBenefits = [
     icon: Rocket,
     badge: "Spotlight",
     color: "from-pink-600 to-rose-600",
-    bgGlow: "bg-pink-50 border-pink-200 text-pink-700",
+    bgGlow: "bg-pink-50 border-pink-200 text-pink-800",
     description:
-      "Unveil new technologies, enterprise software platforms, and innovative solutions directly to live audiences of corporate executives and journalists.",
+      "Unveil new enterprise technologies, software platforms, and innovative solutions directly to live audiences of corporate executives and journalists.",
     perks: [
       "Mainstage Product Unveiling Session",
       "Live Interactive Demo Zone Space",
@@ -105,7 +108,7 @@ const partnershipBenefits = [
     icon: Award,
     badge: "Benchmark Honor",
     color: "from-amber-500 to-orange-600",
-    bgGlow: "bg-amber-50 border-amber-200 text-amber-700",
+    bgGlow: "bg-amber-50 border-amber-200 text-amber-800",
     description:
       "Co-present prestigious industry excellence awards, hand over benchmark trophies to top CEOs/CHROs/CFOs, and establish your brand as an industry pillar.",
     perks: [
@@ -120,7 +123,7 @@ const partnershipBenefits = [
     icon: Newspaper,
     badge: "Multi-Channel Reach",
     color: "from-emerald-500 to-teal-600",
-    bgGlow: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    bgGlow: "bg-emerald-50 border-emerald-200 text-emerald-800",
     description:
       "Amplify your brand message across digital press publications, Executive Talks Magazine features, social campaigns, and targeted corporate newsletters.",
     perks: [
@@ -136,7 +139,7 @@ const sponsorshipTiers = [
     id: "title",
     name: "Title Partner",
     badge: "Exclusive Flagship",
-    badgeColor: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+    badgeColor: "bg-amber-50 text-amber-800 border-amber-300",
     gradient: "from-amber-500 via-orange-500 to-yellow-500",
     icon: Crown,
     description: "Top-of-bill naming rights with keynote authority, VIP lounge hosting, and primary brand prominence across all event assets.",
@@ -155,7 +158,7 @@ const sponsorshipTiers = [
     id: "platinum",
     name: "Platinum Partner",
     badge: "Most Popular",
-    badgeColor: "bg-cyan-500/10 text-cyan-600 border-cyan-500/30",
+    badgeColor: "bg-cyan-50 text-cyan-800 border-cyan-300",
     gradient: "from-cyan-500 via-blue-600 to-indigo-600",
     icon: Star,
     description: "High-impact stage co-hosting with strategic speaking slots, extensive exhibition presence, and national media coverage.",
@@ -174,7 +177,7 @@ const sponsorshipTiers = [
     id: "gold",
     name: "Gold Partner",
     badge: "High Lead ROI",
-    badgeColor: "bg-indigo-500/10 text-indigo-600 border-indigo-500/30",
+    badgeColor: "bg-indigo-50 text-indigo-800 border-indigo-300",
     gradient: "from-indigo-500 via-purple-600 to-pink-600",
     icon: Target,
     description: "Targeted brand positioning designed for B2B pipeline development, active CXO networking, and enterprise solution showcasing.",
@@ -191,9 +194,9 @@ const sponsorshipTiers = [
   },
   {
     id: "ecosystem",
-    name: "Ecosystem & Media",
+    name: "Ecosystem & Tech Partner",
     badge: "Strategic Reach",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+    badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-300",
     gradient: "from-emerald-500 via-teal-600 to-cyan-600",
     icon: Globe,
     description: "Ideal for technology alliances, institutional partners, and industry associations looking for national co-marketing reach.",
@@ -214,21 +217,21 @@ const roadmapSteps = [
   {
     step: "01",
     title: "Submit Proposal",
-    desc: "Fill our rapid 2-minute online wizard detailing your industry, target audience, and preferred summit engagement tier.",
+    desc: "Fill our rapid online wizard detailing your industry, target audience, and preferred summit engagement tier.",
     icon: FileText,
     color: "from-cyan-500 to-blue-600",
   },
   {
     step: "02",
     title: "Strategic Discovery",
-    desc: "A 15-minute consultation with our Summit Director to align on speaking sessions, booth footprint, and bespoke deliverables.",
+    desc: "A brief consultation with our Summit Director to align on speaking sessions, booth footprint, and bespoke deliverables.",
     icon: Target,
     color: "from-blue-600 to-indigo-600",
   },
   {
     step: "03",
     title: "Pre-Summit Activation",
-    desc: "We initiate national digital PR, stage branding assets, invite matching, and announce your brand across industry channels.",
+    desc: "We initiate national digital PR, stage branding assets, invite matching, and announce your brand across channels.",
     icon: Megaphone,
     color: "from-indigo-600 to-purple-600",
   },
@@ -252,7 +255,7 @@ const faqs = [
   },
   {
     q: "How are delegate attendees qualified and verified?",
-    a: "Every delegate at Executive Talks Media summits undergoes a strict professional verification process. Attendees represent C-suite executives (CEOs, CFOs, CHROs, CIOs, CTOs, CMOs) and Senior VPs with active enterprise purchasing budgets.",
+    a: "Every delegate at Executive Talks Media summits undergoes a strict professional verification process. Attendees represent C-suite executives (CEOs, CFOs, CHROs, CIOs, CTOs, CMOs) and Senior VPs with active enterprise purchasing authority.",
   },
   {
     q: "Is speaking on stage guaranteed with our partnership package?",
@@ -262,13 +265,25 @@ const faqs = [
     q: "How soon do we receive the post-summit lead intelligence?",
     a: "Opt-in delegate attendee lists, contact information, session attendance metrics, and high-resolution event media assets are securely delivered to your team within 48 to 72 hours post-conclave.",
   },
+  {
+    q: "Are corporate sponsorships eligible for GST input tax credit?",
+    a: "Yes, 100%. All corporate sponsorships and exhibition packages include official GST-compliant tax invoices containing your organization's registered GSTIN.",
+  },
+  {
+    q: "Can our brand host an exclusive closed-door VIP dinner?",
+    a: "Yes. We curate private, strictly-by-invitation executive dinners for senior leadership teams to engage with 20–30 handpicked C-Suite leaders in an intimate setting.",
+  },
+  {
+    q: "What digital & print PR reach is included in Executive Talks Magazine?",
+    a: "Depending on your sponsorship tier, packages include full-page thought leadership articles, executive interviews, logo visibility on magazine covers, and digital distribution to 50,000+ corporate subscribers.",
+  },
 ];
 
 export default function PartnerWithUsPage() {
   const navigate = useNavigate();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   // Fetch partners & Socket listeners
   useEffect(() => {
@@ -319,18 +334,15 @@ export default function PartnerWithUsPage() {
             c.category?.toLowerCase().includes(selectedCategory.toLowerCase())
         );
 
-  const marqueeItems = [
-    ...(filteredCollaborators.length > 0 ? filteredCollaborators : getDefaultCollaborators()),
-    ...(filteredCollaborators.length > 0 ? filteredCollaborators : getDefaultCollaborators()),
-    ...(filteredCollaborators.length > 0 ? filteredCollaborators : getDefaultCollaborators()),
-  ];
+  const partnerList = filteredCollaborators.length > 0 ? filteredCollaborators : getDefaultCollaborators();
+  const marqueeItems = [...partnerList, ...partnerList, ...partnerList, ...partnerList];
 
   return (
     <div className="relative min-h-screen bg-white text-slate-900 selection:bg-cyan-500 selection:text-white font-sans overflow-x-hidden">
       <SEOHead
         pageKey="partner"
         title="Partner & Sponsor National Summits | Executive Talks Media"
-        description="Explore Title, Platinum, Gold, and Technology partner opportunities with Executive Talks Media Business Intelligence to connect with 2500+ Indian enterprise CXOs."
+        description="Explore Title, Platinum, Gold, and Technology partner opportunities with Executive Talks Media Business Intelligence to connect with 50,000+ Indian enterprise CXOs."
         keywords="Partner Executive Talks Media, Summit Sponsorship, B2B Event Partner India, CXO Summit Sponsors, Executive Talks, ET Media, Event Collaboration"
         url="https://www.executivetalksmedia.in/partner"
       />
@@ -340,93 +352,112 @@ export default function PartnerWithUsPage() {
       {/* 1. HERO SECTION                            */}
       {/* ========================================== */}
       <PageHero
-        crumb="Partners"
+        crumb="Partners & Sponsors"
         title="Strategic Brand & Sponsorship Alliances"
-        subtitle="Position your brand in front of 2,500+ Indian CXOs, Founders, and C-Suite Decision Makers at high-impact national summits, conclaves, and industry awards."
+        subtitle="Position your brand in front of 50,000+ Indian CXOs, Founders, and C-Suite Decision Makers at high-impact national summits, conclaves, and industry awards."
         image={images.heroNetworking}
       />
 
       {/* ========================================== */}
-      {/* 2. STATS BAR                               */}
+      {/* 2. STATS BAR (CLEAN & WHITE)               */}
       {/* ========================================== */}
-      <section className="relative z-20 -mt-8 sm:-mt-10 mb-12">
+      <section className="relative z-20 -mt-6 sm:-mt-8 mb-6">
         <div className="container-x">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-xl">
-            <div className="p-3 sm:p-4 text-center border-r border-slate-100 last:border-none">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 font-display">
-                <Counter value={2500} suffix="+" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-md">
+            <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100">
+                <Users className="h-5 w-5" />
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                C-Suite Decision Makers
-              </p>
+              <div>
+                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 font-display leading-none">
+                  <Counter value={50000} suffix="+" />
+                </div>
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                  C-Suite Decision Makers
+                </p>
+              </div>
             </div>
-            <div className="p-3 sm:p-4 text-center border-r border-slate-100 last:border-none">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-cyan-600 font-display">
-                <Counter value={15} suffix="+" />
+
+            <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 border border-purple-100">
+                <Crown className="h-5 w-5" />
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Annual Flagship Summits
-              </p>
+              <div>
+                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-purple-600 font-display leading-none">
+                  <Counter value={100} suffix="+" />
+                </div>
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                  National Summits Hosted
+                </p>
+              </div>
             </div>
-            <div className="p-3 sm:p-4 text-center border-r border-slate-100 last:border-none">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-purple-600 font-display">
-                <Counter value={98} suffix="%" />
+
+            <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <TrendingUp className="h-5 w-5" />
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Partner Renewal & ROI Rate
-              </p>
+              <div>
+                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 font-display leading-none">
+                  <Counter value={98} suffix="%" />
+                </div>
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                  Partner Renewal & ROI Rate
+                </p>
+              </div>
             </div>
-            <div className="p-3 sm:p-4 text-center">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-blue-600 font-display">
-                <Counter value={50} suffix="+" />
+
+            <div className="flex items-center gap-3 px-2">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+                <Award className="h-5 w-5" />
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Enterprise & Tech Sponsors
-              </p>
+              <div>
+                <div className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 font-display leading-none">
+                  <Counter value={500} suffix="+" />
+                </div>
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                  Brand Sponsors & GCCs
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ========================================== */}
-      {/* 3. FAST-TRACK WIZARD CALLOUT BANNER        */}
+      {/* 3. FAST-TRACK WIZARD CALLOUT (CLEAN WHITE) */}
       {/* ========================================== */}
       <section className="py-4 sm:py-6 relative">
         <div className="container-x">
-          <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-slate-950 via-[#0a1224] to-slate-900 p-6 sm:p-10 lg:p-12 shadow-2xl relative overflow-hidden text-white">
-            {/* Ambient Background Glows */}
-            <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center relative z-10">
-              <div className="lg:col-span-8 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-black uppercase tracking-widest font-display">
-                  <Zap className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                  <span>Multi-Step Partnership Wizard</span>
+          <div className="rounded-3xl border border-slate-200/90 bg-slate-50/60 p-6 sm:p-8 shadow-sm relative overflow-hidden text-slate-900">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
+              <div className="lg:col-span-8 space-y-2 text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-[10.5px] font-extrabold uppercase tracking-widest font-btn">
+                  <Zap className="h-3 w-3 text-cyan-600 animate-pulse" />
+                  <span>Fast-Track Partnership Desk</span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-display tracking-tight leading-tight">
-                  Ready to Position Your Brand in Front of India's CXOs?
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 font-display tracking-tight leading-tight">
+                  Position Your Enterprise in Front of India's C-Suite
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans max-w-2xl">
-                  Submit your strategic proposal using our step-by-step full-page application wizard. Select your preferred engagement tier, custom keynote slots, or exhibition space in minutes.
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans font-medium max-w-2xl text-justify">
+                  Submit your strategic proposal using our step-by-step full-page application wizard. Select your preferred engagement tier, custom keynote slots, or exhibition pavilion space in minutes.
                 </p>
               </div>
 
-              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
+              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2.5 justify-center">
                 <button
                   type="button"
                   onClick={() => navigate("/partner/apply")}
-                  className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-6 py-4 text-sm font-black text-white hover:scale-[1.03] active:scale-[0.98] transition-all shadow-xl shadow-cyan-600/25 cursor-pointer"
+                  className="gradient-brand inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border-none"
                 >
                   <span>Start Partner Application</span>
                   <ArrowUpRight className="h-4 w-4" />
                 </button>
                 <a
-                  href={`tel:${(contact.phones[0] ?? "+91 90000 00000").replace(/\s+/g, "")}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 px-6 py-3.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-center"
+                  href={`tel:${(contact.phones[0] ?? "+91 91002 66777").replace(/\s+/g, "")}`}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white hover:bg-slate-100 px-6 py-2.5 text-xs font-bold text-slate-700 transition-all text-center shadow-2xs"
                 >
-                  <Phone className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>Call Alliances: {contact.phones[0] ?? "+91 90000 00000"}</span>
+                  <Phone className="h-3.5 w-3.5 text-cyan-600" />
+                  <span>Call Alliances: {contact.phones[0] ?? "+91 91002 66777"}</span>
                 </a>
               </div>
             </div>
@@ -437,68 +468,61 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 4. PARTNERSHIP BENEFITS GRID               */}
       {/* ========================================== */}
-      <section id="benefits" className="py-12 sm:py-16 relative bg-white">
+      <section id="benefits" className="py-8 sm:py-10 relative bg-white border-y border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Partnership Benefits"
-            title={
-              <>
-                Why Partner With{" "}
-                <span className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Executive Talks Media?
-                </span>
-              </>
-            }
+            title={<span className="whitespace-normal xl:whitespace-nowrap">Why Partner With Executive Talks Media?</span>}
             description="Tailored sponsorship and strategic engagement tiers engineered for maximum brand resonance, thought leadership authority, and high-value lead acquisition."
-            className="mb-10 sm:mb-12"
+            align="left"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {partnershipBenefits.map((item, idx) => (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.07, duration: 0.4 }}
-                className="group relative rounded-3xl border border-slate-200 bg-slate-50/70 p-6 sm:p-8 shadow-xs hover:shadow-xl hover:border-cyan-500/50 hover:bg-white transition-all duration-300 flex flex-col justify-between"
+                transition={{ delay: idx * 0.05, duration: 0.35 }}
+                className="group relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-6 shadow-2xs hover:shadow-xl hover:border-cyan-400 hover:bg-white transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   {/* Top Icon & Badge */}
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-4">
                     <div
-                      className={`p-3.5 rounded-2xl bg-gradient-to-br ${item.color} text-white shadow-md shadow-cyan-500/10 group-hover:scale-110 transition-transform`}
+                      className={`p-3 rounded-2xl bg-gradient-to-br ${item.color} text-white shadow-xs group-hover:scale-105 transition-transform`}
                     >
-                      <item.icon className="h-6 w-6" />
+                      <item.icon className="h-5 w-5" />
                     </div>
                     <span
-                      className={`text-[11px] font-extrabold uppercase px-3 py-1 rounded-full border ${item.bgGlow}`}
+                      className={`text-[10.5px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${item.bgGlow}`}
                     >
                       {item.badge}
                     </span>
                   </div>
 
                   {/* Card Title */}
-                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-cyan-700 transition-colors font-display">
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors font-display">
                     {item.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans font-medium">
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed font-sans font-medium text-justify">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Perk List */}
-                <div className="mt-6 pt-5 border-t border-slate-200/80">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                <div className="mt-5 pt-4 border-t border-slate-200/70">
+                  <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 font-display">
                     Key Highlights
                   </div>
-                  <ul className="space-y-2.5">
+                  <ul className="space-y-2">
                     {item.perks.map((perk, pIdx) => (
-                      <li key={pIdx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
-                        <CheckCircle2 className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
-                        <span>{perk}</span>
+                      <li key={pIdx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{perk}</span>
                       </li>
                     ))}
                   </ul>
@@ -512,41 +536,34 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 5. SPONSORSHIP TIERS MATRIX                */}
       {/* ========================================== */}
-      <section id="tiers" className="py-12 sm:py-16 relative bg-slate-50/80 border-y border-slate-200">
+      <section id="tiers" className="py-8 sm:py-10 relative bg-slate-50/50 border-b border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Sponsorship Packages"
-            title={
-              <>
-                Tailored{" "}
-                <span className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Engagement Tiers
-                </span>
-              </>
-            }
+            title={<span className="whitespace-normal xl:whitespace-nowrap">Tailored Engagement Tiers</span>}
             description="Choose the tier that aligns with your brand's quarterly growth objectives, or consult our summit directors for bespoke custom activations."
-            className="mb-10 sm:mb-12"
+            align="left"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {sponsorshipTiers.map((tier, idx) => (
               <motion.div
                 key={tier.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.08, duration: 0.4 }}
-                className={`relative rounded-3xl bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 flex flex-col justify-between border ${
+                transition={{ delay: idx * 0.06, duration: 0.35 }}
+                className={`relative rounded-3xl bg-white p-6 shadow-sm transition-all duration-300 flex flex-col justify-between border ${
                   tier.featured
-                    ? "border-amber-400/80 shadow-lg shadow-amber-500/10 ring-2 ring-amber-400/20"
+                    ? "border-amber-400 shadow-md shadow-amber-500/10 ring-2 ring-amber-400/20"
                     : tier.popular
-                    ? "border-cyan-500/60 shadow-lg shadow-cyan-500/10 ring-2 ring-cyan-500/20"
-                    : "border-slate-200 hover:border-slate-300 hover:shadow-md"
+                    ? "border-cyan-500 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
+                    : "border-slate-200/90 hover:border-slate-300 hover:shadow-md"
                 }`}
               >
                 {/* Popular / Featured Badge */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${tier.badgeColor}`}>
+                <div className="flex items-center justify-between mb-3.5">
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tier.badgeColor}`}>
                     {tier.badge}
                   </span>
                   <div className={`p-2 rounded-xl bg-gradient-to-br ${tier.gradient} text-white shadow-xs`}>
@@ -555,19 +572,19 @@ export default function PartnerWithUsPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-extrabold text-slate-900 font-display">
+                  <h3 className="text-lg font-extrabold text-slate-900 font-display">
                     {tier.name}
                   </h3>
-                  <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium text-justify">
                     {tier.description}
                   </p>
 
                   {/* Deliverables Checklist */}
-                  <div className="mt-5 pt-4 border-t border-slate-100">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  <div className="mt-4 pt-3.5 border-t border-slate-100">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 font-display">
                       Package Inclusions
                     </div>
-                    <ul className="space-y-2.5">
+                    <ul className="space-y-2">
                       {tier.deliverables.map((deliv, dIdx) => (
                         <li key={dIdx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
                           <Check className="h-3.5 w-3.5 text-cyan-600 shrink-0 mt-0.5" />
@@ -578,15 +595,15 @@ export default function PartnerWithUsPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 pt-4">
+                <div className="mt-6 pt-3 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => navigate("/partner/apply")}
-                    className={`w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-extrabold transition-all cursor-pointer ${
+                    className={`w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                       tier.featured
                         ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-orange-500/20 hover:scale-[1.02]"
                         : tier.popular
-                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/20 hover:scale-[1.02]"
+                        ? "gradient-brand text-white shadow-md shadow-cyan-600/20 hover:scale-[1.02]"
                         : "bg-slate-100 hover:bg-slate-200 text-slate-800"
                     }`}
                   >
@@ -603,52 +620,45 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 6. 4-STEP PARTNERSHIP ROADMAP              */}
       {/* ========================================== */}
-      <section className="py-12 sm:py-16 relative bg-white">
+      <section className="py-8 sm:py-10 relative bg-white border-b border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Partnership Roadmap"
-            title={
-              <>
-                How Collaboration{" "}
-                <span className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Works
-                </span>
-              </>
-            }
+            title={<span className="whitespace-normal xl:whitespace-nowrap">How Collaboration Works</span>}
             description="A structured, frictionless onboarding experience from initial discovery to live summit execution and verified lead delivery."
-            className="mb-10 sm:mb-12"
+            align="left"
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {roadmapSteps.map((step, idx) => (
               <motion.div
                 key={step.step}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.08, duration: 0.4 }}
-                className="relative rounded-3xl border border-slate-200 bg-slate-50/50 p-6 sm:p-7 shadow-xs hover:shadow-lg hover:border-cyan-500/40 hover:bg-white transition-all flex flex-col justify-between"
+                transition={{ delay: idx * 0.06, duration: 0.35 }}
+                className="relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-6 shadow-2xs hover:shadow-md hover:border-cyan-400 hover:bg-white transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <span className="text-3xl font-black text-slate-300 font-display">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-2xl font-black text-slate-300 font-display">
                       {step.step}
                     </span>
-                    <div className={`p-3 rounded-2xl bg-gradient-to-br ${step.color} text-white shadow-xs`}>
-                      <step.icon className="h-5 w-5" />
+                    <div className={`p-2.5 rounded-2xl bg-gradient-to-br ${step.color} text-white shadow-xs`}>
+                      <step.icon className="h-4 w-4" />
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-slate-900 font-display">
+                  <h3 className="text-base font-bold text-slate-900 font-display">
                     {step.title}
                   </h3>
-                  <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium text-justify">
                     {step.desc}
                   </p>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-bold text-cyan-700">
-                  <span>Step {step.step} Deliverable</span>
+                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-bold text-cyan-700">
+                  <span>Step {step.step} Milestone</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
               </motion.div>
@@ -660,63 +670,63 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 7. OUR COLLABORATORS ANIMATED MARQUEE      */}
       {/* ========================================== */}
-      <section className="py-12 sm:py-16 bg-slate-50 border-y border-slate-200 overflow-hidden relative">
-        <div className="container-x mb-8 text-center">
-          <SectionHeading
-            kicker="Trusted Ecosystem"
-            title={
-              <>
-                Our Collaborators &{" "}
-                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Brand Partners
-                </span>
-              </>
-            }
-            description="Honoured to collaborate with world-class enterprise brands, tech pioneers, and strategic institutions across India."
-            align="center"
-            className="mb-8"
-          />
+      <section className="py-8 sm:py-10 bg-slate-50/70 border-b border-slate-200/90 overflow-hidden relative">
+        <div className="container-x mb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+                <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
+                <span>Trusted Ecosystem</span>
+              </div>
+              <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight leading-snug text-left">
+                <span className="whitespace-normal xl:whitespace-nowrap">Our Collaborators & Brand Partners</span>
+              </h2>
+              <p className="mt-1 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
+                Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers across India.
+              </p>
+            </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  selectedCategory === cat
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/20 border-transparent"
-                    : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap gap-1.5 shrink-0">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    selectedCategory === cat
+                      ? "gradient-brand text-white shadow-xs border-transparent"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Continuous Animated Marquee */}
-        <div className="relative w-full overflow-hidden py-4">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 sm:w-36 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 sm:w-36 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10" />
+        <div className="relative w-full overflow-hidden py-2">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10" />
 
           <motion.div
-            className="flex items-center gap-6 w-max"
+            className="flex items-center gap-4 w-max"
             animate={{ x: ["0%", "-50%"] }}
             transition={{
               repeat: Infinity,
               ease: "linear",
-              duration: 28,
+              duration: 32,
             }}
           >
             {marqueeItems.map((collab, index) => (
               <div
                 key={`${collab.id}-${index}`}
-                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs hover:shadow-xl hover:border-cyan-500/60 transition-all shrink-0 min-w-[220px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-2xs hover:shadow-lg hover:border-cyan-400 transition-all shrink-0 min-w-[200px]"
               >
                 {/* Logo Image Box */}
-                <div className="h-24 w-44 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 p-3 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-cyan-200 transition-colors">
+                <div className="h-20 w-40 rounded-xl overflow-hidden bg-white border border-slate-100 p-2.5 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-cyan-200 transition-colors">
                   <img
                     src={collab.logo}
                     alt={collab.brand_name}
@@ -729,7 +739,7 @@ export default function PartnerWithUsPage() {
 
                 {/* Brand Name & Category */}
                 <div className="flex flex-col items-center text-center">
-                  <h4 className="text-sm font-bold text-slate-800 group-hover:text-cyan-600 transition-colors font-display line-clamp-1 flex items-center justify-center gap-1.5">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-cyan-600 transition-colors font-display line-clamp-1 flex items-center justify-center gap-1">
                     {collab.brand_name}
                     {collab.website && (
                       <a
@@ -743,8 +753,8 @@ export default function PartnerWithUsPage() {
                       </a>
                     )}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80">
                       {collab.category || "Strategic Partner"}
                     </span>
                   </div>
@@ -756,37 +766,34 @@ export default function PartnerWithUsPage() {
       </section>
 
       {/* ========================================== */}
-      {/* 8. FREQUENTLY ASKED QUESTIONS (ACCORDION)  */}
+      {/* 8. 2-COLUMN BALANCED FAQS (CLEAN & WHITE)  */}
       {/* ========================================== */}
-      <section className="py-12 sm:py-16 relative bg-white">
-        <div className="container-x max-w-4xl">
+      <section className="py-8 sm:py-10 relative bg-white border-b border-slate-200/90">
+        <div className="container-x">
           <SectionHeading
             kicker="Got Questions?"
-            title={
-              <>
-                Frequently Asked{" "}
-                <span className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Questions
-                </span>
-              </>
-            }
-            description="Find clear answers regarding summit sponsorships, custom packages, and lead handovers."
-            align="center"
-            className="mb-10 text-center"
+            title={<span className="whitespace-normal xl:whitespace-nowrap">Frequently Asked Questions</span>}
+            description="Find clear answers regarding summit sponsorships, customized enterprise packages, speaking slots, and lead handovers."
+            align="left"
           />
 
-          <div className="space-y-3">
+          {/* 2-COLUMN BALANCED FAQ GRID */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {faqs.map((faq, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden transition-all duration-200"
+                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                    isOpen
+                      ? "border-cyan-400 bg-cyan-50/30 shadow-xs"
+                      : "border-slate-200/90 bg-white hover:bg-slate-50/60"
+                  }`}
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between gap-4 p-5 text-left font-bold text-slate-900 text-sm sm:text-base hover:bg-slate-100/60 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between gap-3 p-4 text-left font-bold text-xs sm:text-sm text-slate-900 cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
@@ -804,7 +811,7 @@ export default function PartnerWithUsPage() {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans font-medium border-t border-slate-200/60">
+                        <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed font-sans font-medium border-t border-cyan-100/60 text-justify">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -818,62 +825,59 @@ export default function PartnerWithUsPage() {
       </section>
 
       {/* ========================================== */}
-      {/* 9. BOTTOM HIGH-CONVERSION CTA BANNER       */}
+      {/* 9. BOTTOM HIGH-CONVERSION CTA (CLEAN WHITE) */}
       {/* ========================================== */}
-      <section className="py-12 sm:py-16 relative">
-        <div className="container-x">
-          <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-slate-950 via-[#0B1528] to-slate-950 p-8 sm:p-14 overflow-hidden relative shadow-2xl text-center text-white">
-            {/* Background Orbs */}
-            <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+      <section className="py-10 sm:py-12 relative bg-gradient-to-b from-white via-cyan-50/30 to-white border-t border-slate-200/90">
+        <div className="container-x text-center max-w-3xl mx-auto space-y-3.5">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold uppercase tracking-widest font-btn shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5 text-cyan-600" />
+            <span>Executive Talks Media Alliances</span>
+          </span>
 
-            <div className="relative z-10 max-w-3xl mx-auto space-y-5">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-black uppercase tracking-widest font-display">
-                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-                <span>Executive Talks Media Alliances</span>
-              </span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-display text-slate-900 leading-tight tracking-tight">
+            Scale Your Enterprise Authority Across India's C-Suite
+          </h2>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display leading-tight tracking-tight">
-                Scale Your Enterprise Authority Across India's C-Suite
-              </h2>
+          <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto text-justify">
+            Join India's most respected enterprise leaders, tech innovators, and industry pioneers. Reserve your summit partnership package or request a custom proposal today.
+          </p>
 
-              <p className="text-xs sm:text-sm lg:text-base text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
-                Join India's most respected enterprise leaders, tech innovators, and industry pioneers. Reserve your summit partnership package or request a custom proposal today.
-              </p>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <MagneticButton strength={15}>
+              <button
+                type="button"
+                onClick={() => navigate("/partner/apply")}
+                className="gradient-brand inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-105 transition-transform cursor-pointer border-none"
+              >
+                <span>Start Partner Application</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+            </MagneticButton>
 
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => navigate("/partner/apply")}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-8 py-4 text-sm font-black text-white hover:scale-105 active:scale-95 transition-all shadow-xl shadow-cyan-600/30 cursor-pointer"
-                >
-                  <span>Start Partner Application</span>
-                  <ArrowUpRight className="h-5 w-5" />
-                </button>
+            <MagneticButton strength={15}>
+              <a
+                href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}`}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 px-7 py-3 text-xs sm:text-sm font-extrabold text-slate-800 transition-colors cursor-pointer shadow-2xs"
+              >
+                <Mail className="h-4 w-4 text-cyan-600" />
+                <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}</span>
+              </a>
+            </MagneticButton>
+          </div>
 
-                <a
-                  href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partnerships@executivetalks.in"}`}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 px-8 py-4 text-sm font-bold text-slate-200 hover:text-white hover:bg-slate-800 transition-all text-center"
-                >
-                  <Mail className="h-4 w-4 text-cyan-400" />
-                  <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partnerships@executivetalks.in"}</span>
-                </a>
-              </div>
-
-              <div className="pt-4 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-4">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-cyan-400" />
-                  Verified CXO Audience
-                </span>
-                <span>•</span>
-                <span>Exclusive Category Sponsorships</span>
-                <span>•</span>
-                <span>Full PR Syndication</span>
-              </div>
-            </div>
+          <div className="pt-2 text-[11px] text-slate-500 font-medium flex flex-wrap items-center justify-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-cyan-600" />
+              Verified CXO Audience
+            </span>
+            <span>•</span>
+            <span>Exclusive Category Rights</span>
+            <span>•</span>
+            <span>Full National PR Syndication</span>
           </div>
         </div>
       </section>
+
     </div>
   );
 }
