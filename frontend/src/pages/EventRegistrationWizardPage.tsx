@@ -27,6 +27,9 @@ import {
   Zap,
   Layers,
   FileCheck2,
+  Maximize2,
+  Eye,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { events as defaultEvents, getDefaultPricingPlans, checkEarlyBirdStatus, images, type PricingPlanTier } from "@/lib/site-data";
@@ -132,6 +135,9 @@ export default function EventRegistrationWizardPage() {
 
   // Wizard active step: 1..7 (Divided into concise, focused steps)
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // Fullscreen event flyer modal state
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
 
   // Saved registration ID from backend
   const [registrationId, setRegistrationId] = useState<string>("");
@@ -856,12 +862,23 @@ export default function EventRegistrationWizardPage() {
             <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
               <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm space-y-3.5">
                 {eventData?.image && (
-                  <div className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm">
-                    <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover" />
+                  <div
+                    onClick={() => {
+                      const el = document.getElementById("event-flyer-preview");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                      else setIsImageModalOpen(true);
+                    }}
+                    className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer group"
+                    title="Click to view full event flyer below"
+                  >
+                    <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                    <div className="absolute bottom-2 left-2">
+                    <div className="absolute bottom-2 left-2 flex items-center justify-between right-2">
                       <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-950/90 text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
                         {eventData.category || "Leadership Summit"}
+                      </span>
+                      <span className="text-[9px] font-bold text-cyan-300 bg-slate-950/80 px-2 py-0.5 rounded-full border border-cyan-500/30 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye className="w-3 h-3" /> Full View
                       </span>
                     </div>
                   </div>
@@ -2011,6 +2028,130 @@ export default function EventRegistrationWizardPage() {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* ================= FULL EVENT FLYER & BROCHURE SHOWCASE ================= */}
+        {eventData?.image && (
+          <div id="event-flyer-preview" className="mt-12 pt-10 border-t border-slate-200">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-600 animate-pulse" />
+                    <span>Official Conclave Flyer & Speaker Lineup</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black font-display text-slate-900">
+                    {eventData?.title} — Full Event Brochure
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    Complete keynote schedule, distinguished speaker panel, and summit highlights.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsImageModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-extrabold shadow-md shadow-cyan-600/20 transition-all cursor-pointer"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    <span>View Fullscreen</span>
+                  </button>
+                  <a
+                    href={eventData.image}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Open in New Tab</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* High-Res Flyer Image Box */}
+              <div
+                onClick={() => setIsImageModalOpen(true)}
+                className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-950/5 group cursor-pointer shadow-lg hover:shadow-xl transition-all"
+              >
+                <img
+                  src={eventData.image}
+                  alt={`${eventData.title} Flyer`}
+                  className="w-full h-auto max-h-[850px] object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
+                />
+                <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                  <div className="px-5 py-2.5 rounded-2xl bg-slate-950/90 text-white font-extrabold text-xs inline-flex items-center gap-2 shadow-2xl border border-white/20">
+                    <Eye className="w-4 h-4 text-cyan-400" />
+                    <span>Click to Zoom & View Fullscreen</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Event Metadata Banner Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs text-slate-600 font-semibold">
+                <div className="flex flex-wrap items-center gap-4">
+                  {eventData?.date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-cyan-600" />
+                      <span>{eventData.date}</span>
+                    </div>
+                  )}
+                  {(eventData?.venue || eventData?.city) && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-cyan-600" />
+                      <span>{eventData.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData.city}</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="text-cyan-700 font-extrabold hover:underline inline-flex items-center gap-1 cursor-pointer text-xs"
+                >
+                  <span>Ready to Register? Scroll to Form</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= FULLSCREEN IMAGE MODAL ================= */}
+        <AnimatePresence>
+          {isImageModalOpen && eventData?.image && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsImageModalOpen(false)}
+              className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-5xl max-h-[95vh] w-full bg-slate-900 rounded-3xl border border-slate-800 p-2 sm:p-4 overflow-hidden shadow-2xl flex flex-col"
+              >
+                <div className="flex items-center justify-between p-3 border-b border-slate-800 text-white">
+                  <div className="font-bold text-sm truncate pr-4">
+                    {eventData.title} — Official Event Flyer
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsImageModalOpen(false)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="overflow-auto max-h-[85vh] p-2 flex items-center justify-center">
+                  <img
+                    src={eventData.image}
+                    alt={eventData.title}
+                    className="max-w-full h-auto object-contain rounded-2xl shadow-xl"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
