@@ -302,30 +302,31 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
             className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl"
           />
 
-          {/* Modal Container - Full Width & Premium Responsive Layout */}
+          {/* Modal Container - Premium Executive Responsive Layout */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-[96vw] xl:max-w-[1500px] max-h-[94vh] sm:max-h-[90vh] flex flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl backdrop-blur-2xl text-slate-900 overflow-hidden z-10 my-auto"
+            exit={{ opacity: 0, scale: 0.96, y: 15 }}
+            transition={{ type: "spring", damping: 26, stiffness: 320 }}
+            className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-[28px] border border-slate-200/90 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.22)] text-slate-900 overflow-hidden z-10 my-auto"
           >
             {/* Top Glowing Gradient Beam */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 shadow-[0_0_20px_#00AEEF] shrink-0" />
+            <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-sm shrink-0" />
 
             {/* Header Controls */}
-            <div className="p-4 sm:p-6 md:p-8 border-b border-slate-200 flex items-center justify-between gap-4 bg-slate-50/90 shrink-0">
+            <div className="px-5 sm:px-8 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-gradient-to-b from-slate-50/80 to-white shrink-0">
               <div className="flex items-center gap-3.5">
-                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-md shrink-0">
-                  <Crown className="h-6 w-6 sm:h-7 sm:w-7" />
+                <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-purple-500/20 shrink-0">
+                  <Crown className="h-6 w-6" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-cyan-700 bg-cyan-100 border border-cyan-300 px-2.5 py-0.5 rounded-full">
-                      Executive Talks Media Business Intelligence
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-[10px] font-black uppercase tracking-wider text-purple-700 font-display">
+                      <Sparkles className="h-2.5 w-2.5 text-purple-600" />
+                      Executive Talks Business Intelligence
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 font-display mt-1">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display tracking-tight mt-0.5">
                     Executive Membership Application
                   </h2>
                 </div>
@@ -335,63 +336,65 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="p-3 rounded-full border border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
+                className="p-2.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                 aria-label="Close modal"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* If Submitted: Show Confirmation Screen */}
             {submittedData ? (
-              <div className="p-6 sm:p-10 md:p-12 text-center space-y-6 max-w-3xl mx-auto bg-white overflow-y-auto flex-1">
+              <div className="p-6 sm:p-10 text-center space-y-6 max-w-2xl mx-auto bg-white overflow-y-auto flex-1 my-auto">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5 shadow-xl flex items-center justify-center"
+                  className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-0.5 shadow-xl flex items-center justify-center"
                 >
                   <div className="h-full w-full rounded-[22px] bg-white flex items-center justify-center">
-                    <ShieldCheck className="h-10 w-10 text-cyan-600" />
+                    <ShieldCheck className="h-10 w-10 text-purple-600" />
                   </div>
                 </motion.div>
 
                 <div>
-                  <span className="text-xs font-extrabold uppercase tracking-widest text-cyan-700">
-                    Ref ID: {submittedData.referenceId}
+                  <span className="text-xs font-black uppercase tracking-widest text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                    Reference ID: {submittedData.referenceId}
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-display">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 font-display">
                     Membership Application Received!
                   </h3>
-                  <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Dear <strong className="text-slate-900">{submittedData.fullName}</strong>, thank you for applying for <strong className="text-cyan-700">{MEMBERSHIP_TIERS.find(t => t.id === submittedData.selectedTier)?.title || "Executive Membership"}</strong> at Executive Talks Media.
+                  <p className="mt-2 text-slate-600 text-xs sm:text-sm leading-relaxed font-sans font-medium text-justify">
+                    Dear <strong className="text-slate-900">{submittedData.fullName}</strong>, thank you for applying for <strong className="text-purple-700">{MEMBERSHIP_TIERS.find(t => t.id === submittedData.selectedTier)?.title || "Executive Membership"}</strong> at Executive Talks Media.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-left text-xs sm:text-sm space-y-3 text-slate-800">
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Organization:</span>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 text-left text-xs sm:text-sm space-y-2.5 text-slate-800">
+                  <div className="flex justify-between border-b border-slate-200/80 pb-2">
+                    <span className="text-slate-500 font-medium">Organization:</span>
                     <strong className="text-slate-900">{submittedData.organization}</strong>
                   </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Designation:</span>
+                  <div className="flex justify-between border-b border-slate-200/80 pb-2">
+                    <span className="text-slate-500 font-medium">Designation:</span>
                     <strong className="text-slate-900">{submittedData.designation}</strong>
                   </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Work Email:</span>
-                    <strong className="text-cyan-700">{submittedData.officialEmail}</strong>
+                  <div className="flex justify-between border-b border-slate-200/80 pb-2">
+                    <span className="text-slate-500 font-medium">Work Email:</span>
+                    <strong className="text-purple-700">{submittedData.officialEmail}</strong>
                   </div>
-                  <div className="flex justify-between pt-1">
-                    <span className="text-slate-500">Review Window:</span>
-                    <strong className="text-emerald-700 font-bold">24 Business Hours</strong>
+                  <div className="flex justify-between pt-0.5">
+                    <span className="text-slate-500 font-medium">Review Clearance:</span>
+                    <strong className="text-emerald-700 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> 24 Business Hours
+                    </strong>
                   </div>
                 </div>
 
-                <div className="pt-4 flex justify-center gap-4">
+                <div className="pt-2 flex justify-center gap-4">
                   <button
                     type="button"
                     onClick={handleResetModal}
-                    className="gradient-brand rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-cyan-500/20 hover:scale-105 transition-all cursor-pointer"
+                    className="gradient-brand rounded-2xl px-8 py-3 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-purple-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                   >
                     Done & Close Window
                   </button>
@@ -400,8 +403,8 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
             ) : (
               <>
                 {/* STEP INDICATOR BAR */}
-                <div className="px-4 sm:px-8 md:px-10 pt-5 pb-3 bg-slate-50 border-b border-slate-200 shrink-0">
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                <div className="px-5 sm:px-8 py-3 bg-slate-50/70 border-b border-slate-100 shrink-0">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                     {[
                       { step: 1, title: "1. Executive Profile" },
                       { step: 2, title: "2. Tier & Industry" },
@@ -415,18 +418,18 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                           onClick={() => {
                             if (isDone) setCurrentStep(s.step);
                           }}
-                          className={`flex items-center justify-center gap-2 p-2.5 sm:p-3 rounded-2xl border text-xs sm:text-sm font-bold transition-all ${
+                          className={`flex items-center justify-center gap-2 p-2 sm:p-2.5 rounded-xl border text-xs font-bold transition-all ${
                             isDone
                               ? "border-emerald-300 bg-emerald-50 text-emerald-800 cursor-pointer"
                               : isActive
-                              ? "border-cyan-600 bg-cyan-50 text-cyan-800 shadow-sm"
-                              : "border-slate-200 bg-slate-100 text-slate-500"
+                              ? "border-purple-600 bg-white text-purple-900 shadow-xs ring-2 ring-purple-500/10"
+                              : "border-slate-200 bg-white/70 text-slate-400"
                           }`}
                         >
                           {isDone ? (
                             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                           ) : (
-                            <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${isActive ? "bg-cyan-600 text-white font-black" : "bg-slate-200 text-slate-600"}`}>
+                            <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${isActive ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black shadow-xs" : "bg-slate-200 text-slate-600"}`}>
                               {s.step}
                             </span>
                           )}
@@ -439,68 +442,73 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
                 {/* FORM CONTENT BODY */}
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0 bg-white">
-                  <div className="flex-1 overflow-y-auto p-5 sm:p-8 md:p-10 space-y-6 bg-white custom-scrollbar overscroll-contain touch-pan-y">
+                  <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 bg-white custom-scrollbar overscroll-contain touch-pan-y">
                     {/* STEP 1: EXECUTIVE PROFILE */}
                     {currentStep === 1 && (
                       <motion.div
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: 15 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="space-y-6"
+                        className="space-y-4"
                       >
-                        <div className="border-b border-slate-200 pb-3">
-                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 font-display flex items-center gap-2">
-                            <User className="h-5 w-5 text-cyan-600" />
-                            Executive Contact & Corporate Identity
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-                            Provide your official business credentials for verification by the Executive Talks Media Advisory Desk.
-                          </p>
+                        {/* Section Header Card */}
+                        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 shadow-2xs">
+                            <User className="h-4.5 w-4.5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 font-display">
+                              Executive Contact & Corporate Identity
+                            </h3>
+                            <p className="text-[11.5px] text-slate-500 font-medium">
+                              Provide your official business credentials for verification by the Executive Talks Media Advisory Desk.
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                           {/* Full Name */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               Full Name *
                             </label>
                             <div className="relative">
-                              <User className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <User className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="text"
                                 required
                                 placeholder="e.g. Vikramaditya Sharma"
                                 value={formData.fullName}
                                 onChange={(e) => handleInputChange("fullName", e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* Official Email */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               Official Work Email *
                             </label>
                             <div className="relative">
-                              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="email"
                                 required
                                 placeholder="v.sharma@company.com"
                                 value={formData.officialEmail}
                                 onChange={(e) => handleInputChange("officialEmail", e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* Mobile Number */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               Mobile Number *
                             </label>
                             <div className="relative">
-                              <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <Phone className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="tel"
                                 required
@@ -508,61 +516,61 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                                 placeholder="e.g. 98765 43210"
                                 value={formData.mobileNumber}
                                 onChange={(e) => handleInputChange("mobileNumber", sanitizePhoneInput(e.target.value))}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* Designation */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               Designation / Title *
                             </label>
                             <div className="relative">
-                              <Briefcase className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <Briefcase className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="text"
                                 required
                                 placeholder="e.g. Chief Technology Officer"
                                 value={formData.designation}
                                 onChange={(e) => handleInputChange("designation", e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* Organization */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               Organization / Company Name *
                             </label>
                             <div className="relative">
-                              <Building2 className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <Building2 className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="text"
                                 required
                                 placeholder="e.g. Tata Consultancy Services"
                                 value={formData.organization}
                                 onChange={(e) => handleInputChange("organization", e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* City Location */}
-                          <div>
+                          <div className="group">
                             <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                               City & Country *
                             </label>
                             <div className="relative">
-                              <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                              <MapPin className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                               <input
                                 type="text"
                                 required
                                 placeholder="Mumbai, India"
                                 value={formData.cityLocation}
                                 onChange={(e) => handleInputChange("cityLocation", e.target.value)}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                               />
                             </div>
                           </div>
@@ -573,61 +581,66 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                     {/* STEP 2: MEMBERSHIP TIER & INDUSTRY */}
                     {currentStep === 2 && (
                       <motion.div
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: 15 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="space-y-6"
+                        className="space-y-4"
                       >
-                        <div className="border-b border-slate-200 pb-3">
-                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 font-display flex items-center gap-2">
-                            <Crown className="h-5 w-5 text-purple-600" />
-                            Select Preferred Membership Tier
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-                            Choose the engagement level aligned with your strategic networking and corporate objectives.
-                          </p>
+                        {/* Section Header Card */}
+                        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 shadow-2xs">
+                            <Crown className="h-4.5 w-4.5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 font-display">
+                              Select Preferred Membership Tier
+                            </h3>
+                            <p className="text-[11.5px] text-slate-500 font-medium">
+                              Choose the engagement level aligned with your strategic networking and corporate leadership goals.
+                            </p>
+                          </div>
                         </div>
 
                         {/* Tier Cards Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
                           {MEMBERSHIP_TIERS.map((tier) => {
                             const isSelected = formData.selectedTier === tier.id;
                             return (
                               <div
                                 key={tier.id}
                                 onClick={() => handleInputChange("selectedTier", tier.id)}
-                                className={`relative rounded-2xl border p-5 cursor-pointer transition-all duration-300 flex flex-col justify-between ${
+                                className={`relative rounded-2xl border p-4.5 cursor-pointer transition-all duration-300 flex flex-col justify-between ${
                                   isSelected
-                                    ? `border-purple-600 bg-purple-50/50 shadow-md ring-2 ring-purple-500/30`
-                                    : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
+                                    ? `border-2 border-purple-600 bg-purple-50/40 shadow-md ring-2 ring-purple-500/20`
+                                    : "border-slate-200 bg-white hover:border-purple-300 hover:bg-slate-50/50 shadow-2xs"
                                 }`}
                               >
                                 {tier.popular && (
-                                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-[10px] font-black uppercase tracking-wider text-white px-3 py-0.5 rounded-full shadow-md">
+                                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-[9.5px] font-black uppercase tracking-wider text-white px-3 py-0.5 rounded-full shadow-sm">
                                     Most Recommended
                                   </span>
                                 )}
 
                                 <div>
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-800 bg-cyan-100 px-2.5 py-0.5 rounded-full border border-cyan-300">
+                                  <div className="flex items-center justify-between mb-2.5">
+                                    <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                                       {tier.badge}
                                     </span>
                                     <div className={`h-5 w-5 rounded-full border flex items-center justify-center ${isSelected ? "border-purple-600 bg-purple-600 text-white" : "border-slate-300 bg-white"}`}>
-                                      {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                                      {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                                     </div>
                                   </div>
 
-                                  <h4 className="text-base font-extrabold text-slate-900 font-display">
+                                  <h4 className="text-sm sm:text-base font-extrabold text-slate-900 font-display">
                                     {tier.title}
                                   </h4>
-                                  <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-sans font-medium text-justify">
                                     {tier.desc}
                                   </p>
 
-                                  <ul className="mt-4 space-y-2 pt-3 border-t border-slate-200">
+                                  <ul className="mt-3 space-y-1.5 pt-2.5 border-t border-slate-100">
                                     {tier.perks.map((perk, idx) => (
-                                      <li key={idx} className="flex items-start gap-2 text-[11px] text-slate-700 font-medium">
-                                        <Zap className="h-3 w-3 text-cyan-600 shrink-0 mt-0.5" />
+                                      <li key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-700 font-medium">
+                                        <Zap className="h-3 w-3 text-purple-600 shrink-0 mt-0.5" />
                                         <span>{perk}</span>
                                       </li>
                                     ))}
@@ -640,13 +653,13 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
                         {/* Primary Industry Select */}
                         <div className="pt-2">
-                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                             Primary Industry Focus *
                           </label>
                           <select
                             value={formData.primaryIndustry}
                             onChange={(e) => handleInputChange("primaryIndustry", e.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium cursor-pointer"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium cursor-pointer shadow-2xs"
                           >
                             {INDUSTRIES_LIST.map((ind) => (
                               <option key={ind} value={ind} className="bg-white text-slate-900 font-medium">
@@ -661,39 +674,44 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                     {/* STEP 3: OBJECTIVES & FINAL SUBMIT */}
                     {currentStep === 3 && (
                       <motion.div
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: 15 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="space-y-6"
+                        className="space-y-4"
                       >
-                        <div className="border-b border-slate-200 pb-3">
-                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 font-display flex items-center gap-2">
-                            <Award className="h-5 w-5 text-emerald-600" />
-                            Executive Objectives & Preferences
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-                            Help us customize your membership briefings and event invitations.
-                          </p>
+                        {/* Section Header Card */}
+                        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
+                            <Award className="h-4.5 w-4.5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 font-display">
+                              Executive Objectives & Preferences
+                            </h3>
+                            <p className="text-[11.5px] text-slate-500 font-medium">
+                              Help us customize your membership briefings, roundtable privileges, and event invitations.
+                            </p>
+                          </div>
                         </div>
 
                         {/* Objectives Checkboxes */}
                         <div>
-                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-3">
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
                             Primary Membership Goals (Select all that apply)
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                             {OBJECTIVES_LIST.map((obj) => {
                               const checked = formData.objectives.includes(obj);
                               return (
                                 <div
                                   key={obj}
                                   onClick={() => toggleObjective(obj)}
-                                  className={`p-3.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all ${
+                                  className={`p-3 rounded-2xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                                     checked
-                                      ? "border-cyan-600 bg-cyan-50 text-slate-900"
-                                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+                                      ? "border-purple-600 bg-purple-50 text-slate-900 shadow-2xs"
+                                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                                   }`}
                                 >
-                                  <div className={`h-4 w-4 rounded flex items-center justify-center border ${checked ? "bg-cyan-600 border-cyan-600 text-white" : "border-slate-300 bg-white"}`}>
+                                  <div className={`h-4 w-4 rounded flex items-center justify-center border ${checked ? "bg-purple-600 border-purple-600 text-white" : "border-slate-300 bg-white"}`}>
                                     {checked && <Check className="h-3 w-3 stroke-[3]" />}
                                   </div>
                                   <span className="text-xs font-bold">{obj}</span>
@@ -705,19 +723,19 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
                         {/* Attendance Frequency */}
                         <div>
-                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                             Expected Summit Participation
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                             {["1-2 Summits / Year", "3-5 Summits / Year", "All Major Summits"].map((val) => (
                               <button
                                 key={val}
                                 type="button"
                                 onClick={() => handleInputChange("attendanceCount", val)}
-                                className={`p-3 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
+                                className={`p-2.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
                                   formData.attendanceCount === val
                                     ? "border-purple-600 bg-purple-50 text-purple-900 shadow-xs"
-                                    : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                                 }`}
                               >
                                 {val}
@@ -728,7 +746,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
 
                         {/* Notes / Special Requests */}
                         <div>
-                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                          <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                             Special Requirements / Note for Membership Desk
                           </label>
                           <textarea
@@ -736,12 +754,12 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                             placeholder="Specify any preferred roundtable topics, keynote interests, or executive delegate pass requests..."
                             value={formData.specialNotes}
                             onChange={(e) => handleInputChange("specialNotes", e.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-medium hover:border-slate-300 shadow-2xs"
                           />
                         </div>
 
                         {/* Terms Agreement */}
-                        <div className="pt-2">
+                        <div className="pt-1">
                           <EventTermsAndConditionsBox
                             checked={formData.agreeTerms}
                             onChange={(val) => handleInputChange("agreeTerms", val)}
@@ -752,12 +770,12 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                   </div>
 
                   {/* BOTTOM ACTION BUTTONS - NON-SCROLLING STICKY FOOTER */}
-                  <div className="shrink-0 sticky bottom-0 bg-slate-50 border-t border-slate-200 p-4 sm:px-8 py-3.5 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 shadow-md z-30">
+                  <div className="shrink-0 sticky bottom-0 bg-slate-50/90 backdrop-blur-md border-t border-slate-100 px-5 sm:px-8 py-3.5 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 shadow-md z-30">
                     {currentStep > 1 ? (
                       <button
                         type="button"
                         onClick={() => setCurrentStep((s) => s - 1)}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-all cursor-pointer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
                       >
                         <ChevronLeft className="h-4 w-4" />
                         <span>Back</span>
@@ -770,7 +788,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       <button
                         type="button"
                         onClick={handleNextStep}
-                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 hover:scale-[1.02] transition-all cursor-pointer sm:ml-auto"
+                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer sm:ml-auto"
                       >
                         <span>Continue to Step {currentStep + 1}</span>
                         <ChevronRight className="h-4 w-4" />
@@ -779,7 +797,7 @@ export function MembershipModal({ isOpen, onClose }: MembershipModalProps) {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-cyan-500/25 hover:scale-[1.02] transition-all cursor-pointer disabled:opacity-50 sm:ml-auto"
+                        className="w-full sm:w-auto gradient-brand inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 sm:ml-auto"
                       >
                         {isSubmitting ? (
                           <>
