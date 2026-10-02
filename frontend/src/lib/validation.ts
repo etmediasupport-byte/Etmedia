@@ -102,19 +102,16 @@ export function isGibberishOrSpam(val: string): boolean {
       }
     }
 
-    // B. Impossible 4+ consonant cluster (e.g. "fdgs", "sfgs", "dsdf", "bcdf", "zxvc", "plkj")
-    // Exception for standard English clusters like "ngth", "tchs", "rths", "sch"
-    const consonantClusters = w.match(/[^aeiouy\d\s]{4,}/gi);
+    // B. Unrealistic 6+ consonant cluster (e.g. "zxvbnm", "bcdfgh", "plkjhg")
+    const consonantClusters = w.match(/[^aeiouy\d\s]{6,}/gi);
     if (consonantClusters) {
-      const allowedClusters = ["ngth", "tchs", "rths", "sch", "phth", "str", "ndst"];
-      const hasDisallowed = consonantClusters.some((c) => !allowedClusters.includes(c.toLowerCase()));
-      if (hasDisallowed) return true;
+      return true;
     }
 
-    // C. Very low unique character diversity for words >= 5 chars (e.g. "dfffsf" has only 3 unique chars, "dsdfsfs" has only 3 unique chars)
-    if (w.length >= 5) {
+    // C. Very low unique character diversity for words >= 6 chars (e.g. "aaaaaa", "ababab")
+    if (w.length >= 6) {
       const uniqueChars = new Set(w.split("")).size;
-      if (uniqueChars <= 3) return true;
+      if (uniqueChars <= 2) return true;
     }
 
     // D. Home-row key mash (words >= 6 chars composed ONLY of a,s,d,f,g,h,j,k,l with high irregularity)
@@ -142,9 +139,13 @@ export function validateEmail(email: string, fieldName = "Email address"): { isV
     return { isValid: false, error: `Please enter a valid official ${fieldName.toLowerCase()} (e.g. name@company.com).` };
   }
   // Check for common fake/garbage emails
-  const domain = trimmed.split("@")[1];
+  const domain = trimmed.split("@")[1]?.toLowerCase();
   if (!domain || !domain.includes(".") || domain.endsWith(".")) {
     return { isValid: false, error: "Please enter an email with a valid domain name." };
+  }
+  // Whitelist official platform domain
+  if (domain.includes("executivetalksmedia") || domain.includes("etmedia")) {
+    return { isValid: true, error: "" };
   }
   const domainParts = domain.split(".");
   if (domainParts.some((part) => isGibberishOrSpam(part))) {
