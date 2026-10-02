@@ -310,7 +310,7 @@
 }
 
 @utility section {
-  padding-block: clamp(1.5rem, 3vw, 2.5rem);
+  padding-block: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 @utility container-x {

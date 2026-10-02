@@ -78,7 +78,7 @@ export function SectionHeading({
   return (
     <Reveal
       className={cn(
-        "max-w-3xl",
+        "w-full",
         align === "center" ? "mx-auto text-center" : "text-left",
         className,
       )}
@@ -86,7 +86,7 @@ export function SectionHeading({
       {kicker ? (
         <span
           className={cn(
-            "inline-flex items-center rounded-full border border-border bg-accent/60 px-3.5 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.14em] text-accent-foreground uppercase",
+            "inline-flex items-center rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-700 uppercase font-btn shadow-2xs",
             kickerClassName,
           )}
         >
@@ -95,7 +95,7 @@ export function SectionHeading({
       ) : null}
       <h2
         className={cn(
-          "mt-2 text-2xl sm:text-3xl lg:text-[2.75rem] leading-tight font-bold tracking-tight text-foreground",
+          "mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] leading-snug font-extrabold tracking-tight text-foreground font-display",
           align === "center" ? "text-center" : "text-left",
           titleClassName,
         )}
@@ -105,8 +105,8 @@ export function SectionHeading({
       {description ? (
         <p
           className={cn(
-            "text-muted-foreground mt-2 text-sm sm:text-base leading-relaxed",
-            align === "center" ? "text-center" : "text-left",
+            "text-muted-foreground mt-1 text-xs sm:text-sm leading-relaxed max-w-3xl",
+            align === "center" ? "mx-auto text-center" : "text-left",
             descriptionClassName,
           )}
         >

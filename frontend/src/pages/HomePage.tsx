@@ -221,30 +221,30 @@ function EventNetwork() {
   ];
 
   return (
-    <section className="bg-surface section relative overflow-hidden">
+    <section className="bg-surface py-6 sm:py-8 relative overflow-hidden">
       <div className="container-x relative z-10">
         <SectionHeading
           kicker="Platform Formats"
-          title="Executive Talks Media Event Network"
+          title={<span className="whitespace-normal xl:whitespace-nowrap">Executive Talks Media Event Network</span>}
           description="Four signature conference and event formats engineered to connect decision makers with high-value commercial outcomes."
           align="left"
         />
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 sm:mt-5 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {formats.map((f, i) => (
-            <Reveal key={f.title} delay={i * 0.08}>
+            <Reveal key={f.title} delay={i * 0.06}>
               <MouseTiltCard
-                maxTilt={12}
-                className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 border border-border/80 flex flex-col justify-between shadow-xl transition-all duration-300 hover:shadow-cyan-500/10"
+                maxTilt={10}
+                className="glass-card gradient-ring h-full rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none p-5 sm:p-6 border border-border/80 flex flex-col justify-between shadow-md transition-all duration-300 hover:shadow-cyan-500/10"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none gradient-brand text-white flex items-center justify-center shadow-md shrink-0">
-                    <f.icon className="h-6 w-6" />
+                  <div className="w-10 h-10 rounded-tl-xl rounded-br-xl rounded-tr-none rounded-bl-none gradient-brand text-white flex items-center justify-center shadow-xs shrink-0">
+                    <f.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-5 text-xl font-bold font-display text-foreground">{f.title}</h3>
-                  <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{f.desc}</p>
+                  <h3 className="mt-4 text-base sm:text-lg font-bold font-display text-foreground">{f.title}</h3>
+                  <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm leading-relaxed">{f.desc}</p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-border/60">
-                  <span className="text-xs font-bold text-brand-blue uppercase tracking-wider">{f.count}</span>
+                <div className="mt-4 pt-3 border-t border-border/60">
+                  <span className="text-[11px] font-extrabold text-brand-blue uppercase tracking-wider">{f.count}</span>
                 </div>
               </MouseTiltCard>
             </Reveal>
@@ -258,22 +258,22 @@ function EventNetwork() {
 // SECTION 3: ABOUT EXECUTIVE TALKS MEDIA SNAPSHOT
 function AboutSnapshot() {
   return (
-    <section className="section relative overflow-hidden bg-background">
+    <section className="py-6 sm:py-8 relative overflow-hidden bg-background">
       <FloatingShapes />
-      <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
+      <div className="container-x relative z-10 grid items-center gap-8 lg:grid-cols-2">
         <Reveal>
-          <ImageZoomCard src={images.aboutOffice} alt="Executive Talks Media Executive Office" className="aspect-[4/3] rounded-4xl shadow-2xl">
+          <ImageZoomCard src={images.aboutOffice} alt="Executive Talks Media Executive Office" className="aspect-[4/3] rounded-3xl shadow-xl">
             <div className="gradient-soft absolute inset-0 pointer-events-none" />
           </ImageZoomCard>
         </Reveal>
         <Reveal delay={0.1}>
-          <span className="text-brand-blue text-xs font-bold tracking-[0.24em] uppercase font-btn">
+          <span className="text-brand-blue text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase font-btn">
             About Executive Talks Media
           </span>
-          <h2 className="mt-4 text-3xl font-bold font-display sm:text-5xl leading-tight">
+          <h2 className="mt-2 text-2xl sm:text-3xl lg:text-[1.85rem] font-bold font-display leading-tight">
             Building India's Premier Corporate Platforms
           </h2>
-          <div className="text-muted-foreground mt-6 space-y-4 leading-relaxed text-base sm:text-lg">
+          <div className="text-muted-foreground mt-3 space-y-2.5 leading-relaxed text-xs sm:text-sm">
             <p>
               Executive Talks Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
             </p>
@@ -281,11 +281,11 @@ function AboutSnapshot() {
               From CFO leadership summits to national HR excellence awards and GCC expansion conclaves, our events connect more than 50,000 corporate delegates each year.
             </p>
           </div>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <MagneticButton strength={15} className="gradient-brand rounded-full px-7 py-3.5 text-sm font-semibold text-white shadow-md">
+          <div className="mt-5 flex flex-wrap gap-3">
+            <MagneticButton strength={15} className="gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md">
               <Link to="/about">Learn Our Story</Link>
             </MagneticButton>
-            <MagneticButton strength={15} className="hover:bg-accent rounded-full border border-border px-7 py-3.5 text-sm font-semibold transition-colors">
+            <MagneticButton strength={15} className="hover:bg-accent rounded-full border border-border px-6 py-2.5 text-xs sm:text-sm font-semibold transition-colors">
               <Link to="/events/partner">Partner With Us</Link>
             </MagneticButton>
           </div>
@@ -311,32 +311,32 @@ function UpcomingEvents() {
   }, []);
 
   return (
-    <section className="bg-surface section relative overflow-hidden w-full max-w-full">
-      <div className="container-x relative z-10 w-full max-w-full">
+    <section className="bg-surface py-6 sm:py-8 relative overflow-hidden">
+      <div className="container-x relative z-10">
         <SectionHeading
           kicker="Upcoming Events"
           title="Reserve Your Delegate Seat"
           description="Conferences currently open for senior executive registration across India's top business hubs."
         />
-        <div className="mt-6 grid gap-5 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full max-w-full">
+        <div className="mt-4 sm:mt-5 grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {eventList.slice(0, 3).map((evt, i) => (
-            <Reveal key={evt.id || evt.slug || i} delay={i * 0.08} className="h-full w-full max-w-full">
+            <Reveal key={evt.id || evt.slug || i} delay={i * 0.06} className="h-full w-full">
               <EventCard event={evt} />
             </Reveal>
           ))}
         </div>
-        <Reveal className="mt-12 flex justify-center">
+        <Reveal className="mt-6 sm:mt-8 flex justify-center">
           <MagneticButton
-            strength={20}
-            className="group relative inline-flex items-center justify-center rounded-full gradient-brand px-9 py-4 text-base font-extrabold text-white shadow-[0_4px_25px_rgba(0,174,239,0.45)] hover:shadow-[0_8px_35px_rgba(0,174,239,0.75)] hover:scale-105 transition-all duration-300 cursor-pointer border-none"
+            strength={16}
+            className="group relative inline-flex items-center justify-center rounded-full gradient-brand px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_20px_rgba(0,174,239,0.35)] hover:shadow-[0_6px_28px_rgba(0,174,239,0.6)] hover:scale-[1.03] transition-all duration-300 cursor-pointer border-none"
           >
             <Link
               to="/events"
-              className="flex items-center gap-3 font-btn text-white text-base font-extrabold tracking-wide"
+              className="flex items-center gap-2.5 font-btn text-white text-xs sm:text-sm font-extrabold tracking-wide"
             >
               <span>View All Upcoming Events</span>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-white group-hover:bg-white group-hover:text-cyan-600 transition-all duration-300 shadow-sm">
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-white group-hover:bg-white group-hover:text-cyan-600 transition-all duration-300 shadow-sm">
+                <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform duration-300" />
               </div>
             </Link>
           </MagneticButton>
@@ -356,24 +356,23 @@ function WhyExecutiveTalksMedia() {
   ];
 
   return (
-    <section className="section relative bg-background">
+    <section className="py-6 sm:py-8 relative bg-background">
       <div className="container-x relative z-10">
         <SectionHeading
           kicker="Why Choose Us"
-          title={<span className="sm:whitespace-nowrap">Why Enterprises Partner With Executive Talks Media</span>}
+          title={<span className="whitespace-normal xl:whitespace-nowrap">Why Enterprises Partner With Executive Talks Media</span>}
           description="Four core pillars that set Executive Talks Media Business Intelligence apart in corporate event curation."
-          className="max-w-full"
         />
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 sm:mt-5 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.08}>
-              <MouseTiltCard maxTilt={14} className="glass-card gradient-ring h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none p-7 border border-border/80">
+            <Reveal key={p.title} delay={i * 0.06}>
+              <MouseTiltCard maxTilt={10} className="glass-card gradient-ring h-full rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none p-5 sm:p-6 border border-border/80">
                 <div>
-                  <div className="w-12 h-12 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none gradient-soft text-brand-blue flex items-center justify-center shadow-sm shrink-0">
-                    <p.icon className="h-6 w-6" />
+                  <div className="w-10 h-10 rounded-tl-xl rounded-br-xl rounded-tr-none rounded-bl-none gradient-soft text-brand-blue flex items-center justify-center shadow-xs shrink-0">
+                    <p.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-6 text-lg font-bold font-display">{p.title}</h3>
-                  <p className="text-muted-foreground mt-2.5 text-sm leading-relaxed">{p.desc}</p>
+                  <h3 className="mt-4 text-base sm:text-lg font-bold font-display">{p.title}</h3>
+                  <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm leading-relaxed">{p.desc}</p>
                 </div>
               </MouseTiltCard>
             </Reveal>
@@ -414,7 +413,7 @@ function IndustriesWeServe() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-surface py-20 text-slate-900 border-y border-slate-200/80">
+    <section className="relative overflow-hidden bg-surface py-6 sm:py-8 text-slate-900 border-y border-slate-200/80">
       {/* Background Floating Orbs */}
       <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan-400/10 blur-[120px] pointer-events-none float-orb" />
       <div className="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[120px] pointer-events-none float-orb" />
@@ -422,27 +421,27 @@ function IndustriesWeServe() {
       <FloatingShapes />
 
       <div className="container-x relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-5 sm:mb-6 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-extrabold tracking-[0.2em] text-cyan-600 dark:text-cyan-400 uppercase font-btn backdrop-blur-md shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-700 uppercase font-btn shadow-2xs">
+              <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
               <span>Sector Focus</span>
             </div>
-            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-slate-900 tracking-tight leading-tight">
+            <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight leading-snug">
               Industries We Serve
             </h2>
-            <p className="mt-3 max-w-2xl text-slate-600 text-base sm:text-lg font-sans font-medium text-left">
+            <p className="mt-1 max-w-2xl text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
               Specialized leadership conclaves and executive summits tailored for sector-specific enterprise challenges.
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 shrink-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Curated Verticals</span>
-            <div className="h-2.5 w-2.5 rounded-full bg-cyan-500 animate-ping" />
+          <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Curated Verticals</span>
+            <div className="h-2 w-2 rounded-full bg-cyan-500 animate-ping" />
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {sectors.map((sec, i) => {
             const IconComponent = sectorIconsMap[sec.icon] || Building2;
 
@@ -450,39 +449,39 @@ function IndustriesWeServe() {
               <Reveal key={sec.id || sec.title || i} delay={i * 0.05}>
                 <MouseTiltCard
                   maxTilt={8}
-                  className="group relative h-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/15 flex flex-col justify-between overflow-hidden"
+                  className="group relative h-full rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white p-5 sm:p-6 shadow-md hover:shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-300 hover:border-cyan-400 hover:shadow-cyan-500/15 flex flex-col justify-between overflow-hidden"
                 >
                   {/* Subtle Card Ambient Highlight */}
                   <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500 pointer-events-none" />
 
                   <div>
-                    <div className="flex items-center justify-between gap-4 mb-5">
-                      <div className="relative flex h-12 w-12 items-center justify-center rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none bg-gradient-to-br from-cyan-500 to-blue-600 p-3 text-white shadow-md shadow-cyan-500/25 group-hover:scale-110 transition-all duration-300">
-                        <IconComponent className="h-6 w-6" />
+                    <div className="flex items-center justify-between gap-3 mb-3.5">
+                      <div className="relative flex h-10 w-10 items-center justify-center rounded-tl-xl rounded-br-xl rounded-tr-none rounded-bl-none bg-gradient-to-br from-cyan-500 to-blue-600 p-2 text-white shadow-sm shadow-cyan-500/25 group-hover:scale-105 transition-all duration-300">
+                        <IconComponent className="h-5 w-5" />
                       </div>
 
                       {sec.tag && (
-                        <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800 group-hover:border-cyan-400 group-hover:text-cyan-600 transition-colors">
+                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-800 group-hover:border-cyan-400 group-hover:text-cyan-600 transition-colors">
                           {sec.tag}
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-xl font-bold font-display text-slate-900 group-hover:text-cyan-600 transition-colors text-left">
+                    <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 group-hover:text-cyan-600 transition-colors text-left">
                       {sec.title}
                     </h3>
-                    <p className="mt-2.5 text-slate-700 text-sm leading-snug font-sans font-normal text-left">
+                    <p className="mt-1.5 text-slate-700 text-xs sm:text-sm leading-relaxed font-sans font-normal text-left">
                       {sec.description}
                     </p>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-700 font-semibold">
-                    <span className="flex items-center gap-2 group-hover:text-cyan-600 transition-colors">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-700 font-semibold">
+                    <span className="flex items-center gap-1.5 group-hover:text-cyan-600 transition-colors text-[11px]">
                       <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
                       Executive Platform
                     </span>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 group-hover:border-cyan-400 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
-                      <ArrowUpRight className="h-4 w-4" />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 group-hover:border-cyan-400 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300">
+                      <ArrowUpRight className="h-3.5 w-3.5" />
                     </div>
                   </div>
                 </MouseTiltCard>
@@ -531,38 +530,33 @@ function CollaboratorsMarquee() {
   };
 
   const partnerList = collaborators.length > 0 ? collaborators : getDefaultCollaborators();
-  // Multiply items for smooth infinite horizontal loop marquee animation
   const marqueeItems = [...partnerList, ...partnerList, ...partnerList, ...partnerList];
 
   return (
-    <section className="bg-slate-50 py-20 overflow-hidden border-y border-slate-200/90 relative">
-      {/* Background glow aura */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-[800px] bg-cyan-500/5 blur-[120px] pointer-events-none" />
-
+    <section className="bg-slate-50 py-6 sm:py-8 overflow-hidden border-y border-slate-200/90 relative">
       <div className="container-x relative z-10 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-50 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-800 uppercase font-btn shadow-sm">
-          <Sparkles className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+          <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
           <span>Corporate Sponsors & Strategic Partners</span>
         </div>
-        <h3 className="mt-3 text-2xl font-extrabold font-display text-slate-900 tracking-tight sm:text-3xl">
+        <h3 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight">
           Trusted By Industry Leaders & Corporate Sponsors
         </h3>
-        <p className="mt-2 text-xs text-slate-600 max-w-xl mx-auto font-medium">
-          Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers. Click any brand logo to visit their website.
+        <p className="mt-1 text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-medium">
+          Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers.
         </p>
       </div>
 
       {/* INFINITE MARQUEE SCROLLER */}
-      <div className="mt-12 overflow-hidden relative z-10">
-        {/* Gradient Side Fade Masks */}
-        <div className="absolute top-0 bottom-0 left-0 w-28 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
-        <div className="absolute top-0 bottom-0 right-0 w-28 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
+      <div className="mt-5 sm:mt-6 overflow-hidden relative z-10">
+        <div className="absolute top-0 bottom-0 left-0 w-20 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 right-0 w-20 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
 
         <motion.div
           animate={{ x: ["0%", "-50%"] }}
           transition={{ duration: 35, ease: "linear", repeat: Infinity }}
           whileHover={{ animationPlayState: "paused" }}
-          className="flex w-max gap-6 items-center py-4"
+          className="flex w-max gap-4 sm:gap-5 items-center py-2"
         >
           {marqueeItems.map((item, idx) => {
             const targetUrl = item.website && item.website.trim() !== "" ? item.website : undefined;
@@ -574,10 +568,9 @@ function CollaboratorsMarquee() {
                 target={targetUrl ? "_blank" : "_self"}
                 rel={targetUrl ? "noopener noreferrer" : undefined}
                 title={targetUrl ? `Visit ${item.brand_name} website (${item.website})` : item.brand_name}
-                className="group relative flex flex-col items-center justify-center text-center gap-3 rounded-tl-[2rem] rounded-br-[2rem] rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white px-5 py-4 text-slate-900 shadow-sm hover:shadow-xl hover:border-cyan-500/60 transition-all duration-300 hover:scale-105 shrink-0 cursor-pointer min-w-[210px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-2 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none border border-slate-200/90 bg-white px-4 py-3 text-slate-900 shadow-2xs hover:shadow-md hover:border-cyan-500/60 transition-all duration-300 hover:scale-102 shrink-0 cursor-pointer min-w-[180px]"
               >
-                {/* Brand Logo Container (Large Image Box matching reference design) */}
-                <div className="flex h-28 w-48 shrink-0 items-center justify-center rounded-tl-[1.25rem] rounded-br-[1.25rem] rounded-tr-none rounded-bl-none bg-white p-3 border border-slate-100 shadow-sm group-hover:border-cyan-200 transition-colors overflow-hidden">
+                <div className="flex h-20 w-40 shrink-0 items-center justify-center rounded-tl-xl rounded-br-xl rounded-tr-none rounded-bl-none bg-white p-2.5 border border-slate-100 shadow-2xs group-hover:border-cyan-200 transition-colors overflow-hidden">
                   {item.logo ? (
                     <img
                       src={item.logo}
@@ -588,20 +581,19 @@ function CollaboratorsMarquee() {
                       }}
                     />
                   ) : (
-                    <Building2 className="h-8 w-8 text-cyan-600" />
+                    <Building2 className="h-7 w-7 text-cyan-600" />
                   )}
                 </div>
 
-                {/* Brand Name & Category (Below Image) */}
                 <div className="flex flex-col items-center text-center">
-                  <span className="text-sm font-bold font-display text-slate-800 group-hover:text-cyan-600 transition-colors whitespace-nowrap flex items-center justify-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-bold font-display text-slate-800 group-hover:text-cyan-600 transition-colors whitespace-nowrap flex items-center justify-center gap-1">
                     {item.brand_name}
                     {targetUrl && (
-                      <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-600 transition-colors" />
+                      <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-cyan-600 transition-colors" />
                     )}
                   </span>
                   {item.category && (
-                    <span className="text-[10px] font-mono text-slate-500 tracking-wider uppercase font-semibold mt-0.5">
+                    <span className="text-[9.5px] font-mono text-slate-500 tracking-wider uppercase font-semibold mt-0.5">
                       {item.category}
                     </span>
                   )}
@@ -613,10 +605,10 @@ function CollaboratorsMarquee() {
       </div>
 
       {/* FOOTER CTA TO PARTNERS PAGE */}
-      <div className="mt-8 text-center relative z-10">
+      <div className="mt-4 sm:mt-5 text-center relative z-10">
         <Link
           to="/partner"
-          className="inline-flex items-center gap-2 text-xs font-bold text-cyan-700 hover:text-cyan-600 transition-colors underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-700 hover:text-cyan-600 transition-colors underline-offset-4 hover:underline"
         >
           <span>Become an Official Executive Talks Media Sponsor & Strategic Partner</span>
           <ArrowRight className="h-3.5 w-3.5" />
@@ -709,7 +701,7 @@ function TestimonialsSection() {
   const isInstagram = Boolean(videoEmbedUrl.includes("instagram.com") || t?.video_platform === "instagram");
 
   return (
-    <section className="section bg-surface overflow-hidden">
+    <section className="py-6 sm:py-8 bg-surface overflow-hidden">
       <div className="container-x">
         <SectionHeading
           kicker="Testimonials"
@@ -717,7 +709,7 @@ function TestimonialsSection() {
           description="Hear from C-Suite executives who participate in Executive Talks Media platforms."
         />
 
-        <div className="mt-16 relative max-w-4xl mx-auto">
+        <div className="mt-6 sm:mt-8 relative max-w-4xl mx-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeIdx}
@@ -727,9 +719,9 @@ function TestimonialsSection() {
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             >
               {t && (
-                <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-border/80 shadow-2xl p-6 sm:p-10">
-                  <div className="grid gap-8 lg:grid-cols-12 items-center">
-                    <div className={`lg:col-span-6 relative rounded-2xl overflow-hidden shadow-lg border border-border bg-slate-950 ${isInstagram ? "aspect-[9/16] max-h-[480px] mx-auto w-full max-w-[320px]" : "aspect-video w-full"}`}>
+                <MouseTiltCard maxTilt={8} className="glass-card overflow-hidden rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none border border-border/80 shadow-xl p-5 sm:p-8">
+                  <div className="grid gap-6 lg:grid-cols-12 items-center">
+                    <div className={`lg:col-span-6 relative rounded-2xl overflow-hidden shadow-md border border-border bg-slate-950 ${isInstagram ? "aspect-[9/16] max-h-[440px] mx-auto w-full max-w-[300px]" : "aspect-video w-full"}`}>
                       {videoEmbedUrl ? (
                         <iframe
                           src={videoEmbedUrl}
@@ -742,9 +734,9 @@ function TestimonialsSection() {
                       ) : (
                         <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-slate-900 to-slate-950">
                           {t.avatar ? (
-                            <img src={t.avatar} alt={t.name} className="h-28 w-28 rounded-full object-cover border-2 border-cyan-400 shadow-xl mb-3" />
+                            <img src={t.avatar} alt={t.name} className="h-24 w-24 rounded-full object-cover border-2 border-cyan-400 shadow-xl mb-3" />
                           ) : (
-                            <div className="h-24 w-24 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-3xl font-extrabold border border-cyan-500/40 mb-3">
+                            <div className="h-20 w-20 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-2xl font-extrabold border border-cyan-500/40 mb-3">
                               {(t.name || "CXO").charAt(0)}
                             </div>
                           )}
@@ -753,19 +745,19 @@ function TestimonialsSection() {
                       )}
                     </div>
 
-                    <div className="lg:col-span-6 space-y-4">
-                      <Quote className="text-cyan-500 h-8 w-8 opacity-80" />
-                      <p className="text-base sm:text-lg leading-relaxed text-foreground font-sans font-medium italic">
+                    <div className="lg:col-span-6 space-y-3">
+                      <Quote className="text-cyan-500 h-7 w-7 opacity-80" />
+                      <p className="text-sm sm:text-base leading-relaxed text-foreground font-sans font-medium italic">
                         "{t.quote}"
                       </p>
-                      <div className="flex items-center gap-1 pt-2">
+                      <div className="flex items-center gap-1 pt-1">
                         {Array.from({ length: t.rating || 5 }).map((_, s) => (
-                          <Star key={s} className="fill-cyan-400 text-cyan-400 h-4 w-4" />
+                          <Star key={s} className="fill-cyan-400 text-cyan-400 h-3.5 w-3.5" />
                         ))}
                       </div>
                       <div className="pt-2 border-t border-border/60">
-                        <p className="font-bold text-lg font-display text-foreground">{t.name}</p>
-                        <p className="text-muted-foreground text-sm font-btn">
+                        <p className="font-bold text-base font-display text-foreground">{t.name}</p>
+                        <p className="text-muted-foreground text-xs font-btn">
                           {t.role || t.designation}, <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{t.company}</span>
                         </p>
                       </div>
@@ -777,26 +769,26 @@ function TestimonialsSection() {
           </AnimatePresence>
 
           {/* Carousel Navigation Controls */}
-          <div className="mt-8 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="mt-5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
               {activeList.map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   aria-label={`Go to testimonial ${i + 1}`}
                   onClick={() => setActiveIdx(i)}
-                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    i === activeIdx ? "w-8 gradient-brand" : "w-2.5 bg-slate-300 dark:bg-slate-700"
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === activeIdx ? "w-6 gradient-brand" : "w-2 bg-slate-300 dark:bg-slate-700"
                   }`}
                 />
               ))}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={prevSlide}
-                className="p-3 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-md"
+                className="p-2 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-sm text-xs"
                 aria-label="Previous Testimonial"
               >
                 ←
@@ -804,7 +796,7 @@ function TestimonialsSection() {
               <button
                 type="button"
                 onClick={nextSlide}
-                className="p-3 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-md"
+                className="p-2 rounded-full border border-border bg-background text-foreground hover:border-cyan-500 hover:text-cyan-500 transition-all cursor-pointer shadow-sm text-xs"
                 aria-label="Next Testimonial"
               >
                 →
@@ -907,38 +899,38 @@ function GalleryPreview() {
   };
 
   return (
-    <section className="section bg-background relative overflow-hidden">
+    <section className="py-6 sm:py-8 bg-background relative overflow-hidden">
       <FloatingShapes />
       <div className="container-x relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-5 sm:mb-6 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-bold tracking-[0.2em] text-cyan-600 dark:text-cyan-300 uppercase font-btn shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-700 uppercase font-btn shadow-2xs">
+              <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
               <span>Summit Highlights & Media Assets</span>
             </div>
-            <h2 className="mt-4 text-3xl font-extrabold font-display sm:text-5xl text-foreground tracking-tight leading-tight">
+            <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-foreground tracking-tight leading-snug">
               Moments From Flagship Summits
             </h2>
-            <p className="mt-3 max-w-2xl text-muted-foreground text-base sm:text-lg font-sans">
+            <p className="mt-1 max-w-2xl text-muted-foreground text-xs sm:text-sm font-sans">
               High-resolution photo and video assets captured across India's leading executive conclaves and leadership awards.
             </p>
           </div>
 
           <Link
             to="/gallery"
-            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 transition-colors shrink-0 group"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-cyan-600 hover:text-cyan-500 transition-colors shrink-0 group"
           >
             <span>Explore Full Media Gallery</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {previewItems.map((item, i) => (
-            <Reveal key={item.id || i} delay={i * 0.08}>
+            <Reveal key={item.id || i} delay={i * 0.06}>
               <MouseTiltCard
-                maxTilt={10}
-                className="group relative overflow-hidden rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none border border-border/80 bg-surface shadow-lg hover:shadow-2xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
+                maxTilt={8}
+                className="group relative overflow-hidden rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none border border-border/80 bg-surface shadow-md hover:shadow-xl hover:border-cyan-500/50 transition-all duration-300 cursor-pointer flex flex-col h-full"
                 onClick={(e) => handleMediaClick(item, e)}
               >
                 {/* Media Image Thumbnail Container */}
@@ -946,18 +938,18 @@ function GalleryPreview() {
                   <img
                     src={item.thumbnail_url || item.url}
                     alt={item.title}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 
                   {/* Category & Type Badges */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
-                    <span className="rounded-full bg-slate-950/70 border border-white/20 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-300 backdrop-blur-md">
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
+                    <span className="rounded-full bg-slate-950/70 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 backdrop-blur-md">
                       {item.category || "Gallery"}
                     </span>
 
-                    <span className="flex items-center gap-1 rounded-full bg-slate-950/70 border border-white/20 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md uppercase">
+                    <span className="flex items-center gap-1 rounded-full bg-slate-950/70 border border-white/20 px-2 py-0.5 text-[9.5px] font-bold text-white backdrop-blur-md uppercase">
                       {item.type === "video" ? (
                         <>
                           <VideoIcon className="h-3 w-3 text-cyan-400" /> Video
@@ -973,33 +965,33 @@ function GalleryPreview() {
                   {/* Center Play Button for Video or Hover Zoom Icon for Photo */}
                   <div className="absolute inset-0 flex items-center justify-center z-10 opacity-90 group-hover:opacity-100 transition-opacity">
                     {item.type === "video" ? (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-xl shadow-cyan-500/40 group-hover:scale-110 transition-transform">
-                        <Play className="h-6 w-6 fill-white ml-0.5" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500 text-white shadow-lg shadow-cyan-500/40 group-hover:scale-105 transition-transform">
+                        <Play className="h-5 w-5 fill-white ml-0.5" />
                       </div>
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950/60 text-white border border-white/30 backdrop-blur-md opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
-                        <Maximize2 className="h-4 w-4" />
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950/60 text-white border border-white/30 backdrop-blur-md opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300">
+                        <Maximize2 className="h-3.5 w-3.5" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Card Content Body */}
-                <div className="p-5 flex-1 flex flex-col justify-between bg-card">
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-card">
                   <div>
                     {item.event_title && (
-                      <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 block mb-1 truncate">
+                      <span className="text-[11px] font-semibold text-cyan-600 block mb-1 truncate">
                         📍 {item.event_title}
                       </span>
                     )}
-                    <h3 className="font-bold text-foreground text-base font-display line-clamp-2 group-hover:text-cyan-500 transition-colors">
+                    <h3 className="font-bold text-foreground text-sm sm:text-base font-display line-clamp-2 group-hover:text-cyan-600 transition-colors">
                       {item.title}
                     </h3>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                    <span className="group-hover:text-cyan-500 transition-colors">{getMediaLabel(item)}</span>
-                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                    <span className="group-hover:text-cyan-600 transition-colors">{getMediaLabel(item)}</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </div>
               </MouseTiltCard>
@@ -1007,10 +999,10 @@ function GalleryPreview() {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <MagneticButton strength={18} className="gradient-brand rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-luxe">
+        <div className="mt-6 sm:mt-8 text-center">
+          <MagneticButton strength={15} className="gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md">
             <Link to="/gallery" className="flex items-center gap-2">
-              View All Summit Photos & Videos <ArrowRight className="h-4 w-4" />
+              View All Summit Photos & Videos <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </MagneticButton>
         </div>

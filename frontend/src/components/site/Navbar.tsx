@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   ChevronDown,
   Menu,
-  Search,
   X,
   Calendar,
   Award,
@@ -13,7 +12,6 @@ import {
   BookOpen,
   ArrowRight,
   Sparkles,
-  LayoutGrid,
   Home,
   Building2,
   Briefcase,
@@ -24,17 +22,6 @@ import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { events } from "@/lib/site-data";
-
-const waffleMenuItems = [
-  { to: "/", label: "Home", icon: Home, color: "from-cyan-500 to-blue-600" },
-  { to: "/about", label: "About", icon: Building2, color: "from-purple-500 to-indigo-600" },
-  { to: "/events", label: "Events", icon: Calendar, color: "from-blue-500 to-cyan-600" },
-  { to: "/partner", label: "Partners", icon: Handshake, color: "from-emerald-500 to-teal-600" },
-  { to: "/magazine", label: "Magazines", icon: BookOpen, color: "from-pink-500 to-purple-600" },
-  { to: "/membership", label: "Membership", icon: Crown, color: "from-amber-500 to-orange-600", isMembership: true },
-  { to: "/careers", label: "Careers", icon: Briefcase, color: "from-cyan-600 to-indigo-600" },
-  { to: "/contact", label: "Contact", icon: Phone, color: "from-blue-600 to-purple-600" },
-];
 
 const megaEventCategories = [
   {
@@ -88,8 +75,6 @@ export function Navbar() {
     }, 1800);
     return () => clearTimeout(timer);
   }, []);
-
-
 
   // Global custom event listener for "navbar-loading"
   useEffect(() => {
@@ -145,22 +130,22 @@ export function Navbar() {
     window.scrollTo(0, 0);
   };
 
+  // Ultra-clean, premium active link styling
   const navLinkStyle = (isActive: boolean) =>
     cn(
-      "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-bold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-800 hover:text-cyan-600",
-      "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-cyan-500 after:to-purple-600 after:transition-transform after:duration-300 hover:after:scale-x-100",
-      isActive && "text-cyan-600 font-extrabold after:scale-x-100"
+      "relative px-3.5 py-1.5 rounded-full text-xs xl:text-[13px] font-bold font-btn transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5",
+      isActive
+        ? "text-cyan-700 bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-indigo-500/15 border border-cyan-500/30 shadow-[0_2px_10px_rgba(6,182,212,0.15)] font-extrabold"
+        : "text-slate-700 hover:text-slate-950 hover:bg-slate-100/80 border border-transparent"
     );
 
   return (
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-white border-b border-slate-200 shadow-sm",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)]",
           isLoading && "border-b-cyan-500 shadow-[0_4px_25px_rgba(0,174,239,0.25)] animate-navbar-loading",
-          scrolled
-            ? "py-2 shadow-md shadow-slate-300/40"
-            : "py-2.5 shadow-xs"
+          scrolled ? "py-1.5 shadow-md shadow-slate-200/50 bg-white/98" : "py-2"
         )}
       >
         {/* Animated Scanning Beam on Loading State */}
@@ -175,28 +160,43 @@ export function Navbar() {
             />
           )}
         </AnimatePresence>
-        <nav className="container-x flex items-center justify-between gap-2 lg:gap-3 xl:gap-5">
+
+        <nav className="container-x flex items-center justify-between gap-2 lg:gap-3 xl:gap-4">
           {/* LEFT: Executive Talks Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-white transition-transform hover:scale-[1.03]"
+            className="flex min-w-0 shrink-0 items-center bg-white transition-transform hover:scale-[1.02]"
             onClick={handleNavClick}
           >
             <img
               src={executivetalksLogo}
               alt="Executive Talks Media"
-              className="h-13 sm:h-16 lg:h-20 xl:h-22 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
+              className="h-9 sm:h-10 lg:h-11 xl:h-12 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
             />
           </Link>
 
-          {/* CENTER: Navigation Links Single Row */}
-          <div className="hidden items-center gap-2.5 lg:gap-3 xl:gap-5 lg:flex shrink-0">
+          {/* CENTER: Navigation Links Single Row (Desktop & Laptop) */}
+          <div className="hidden items-center gap-1.5 lg:gap-2 xl:gap-3 lg:flex shrink-0">
             <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Home
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>Home</span>
+                </>
+              )}
             </NavLink>
 
             <NavLink to="/about" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              About
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>About</span>
+                </>
+              )}
             </NavLink>
 
             {/* MEGA DROPDOWN: Events */}
@@ -209,14 +209,17 @@ export function Navbar() {
                 to="/events"
                 onClick={handleNavClick}
                 className={({ isActive }) =>
-                  cn(navLinkStyle(isActive), "inline-flex items-center gap-1")
+                  cn(navLinkStyle(isActive || location.pathname.startsWith("/events")), "inline-flex items-center gap-1.5")
                 }
               >
-                Events
+                {location.pathname.startsWith("/events") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                )}
+                <span>Events</span>
                 <ChevronDown
                   className={cn(
                     "h-3.5 w-3.5 transition-transform duration-200",
-                    eventsMegaOpen && "rotate-180 text-cyan-400"
+                    eventsMegaOpen && "rotate-180 text-cyan-600"
                   )}
                 />
               </NavLink>
@@ -224,17 +227,17 @@ export function Navbar() {
               <AnimatePresence>
                 {eventsMegaOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                    initial={{ opacity: 0, y: 12, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[34rem] mt-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl backdrop-blur-2xl text-slate-900 z-50"
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 w-[32rem] mt-2 rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-2xl p-4 shadow-2xl text-slate-900 z-50"
                   >
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-cyan-600" />
-                        <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-600 font-display">
-                          Executive Talks Media Business Intelligence Conferences
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-700 font-display">
+                          Executive Talks Business Summits
                         </span>
                       </div>
                       <Link
@@ -246,7 +249,7 @@ export function Navbar() {
                       </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                       {megaEventCategories.map((cat) => (
                         cat.isRegister ? (
                           <button
@@ -257,17 +260,17 @@ export function Navbar() {
                               handleNavClick();
                               window.dispatchEvent(new CustomEvent("open-select-event-modal"));
                             }}
-                            className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs text-left cursor-pointer"
+                            className="group flex flex-col p-2.5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/40 transition-all duration-200 shadow-2xs text-left cursor-pointer"
                           >
-                            <div className="flex items-center gap-2.5">
-                              <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
-                                <cat.icon className="h-4 w-4" />
+                            <div className="flex items-center gap-2">
+                              <span className="gradient-brand p-1.5 rounded-xl text-white group-hover:scale-105 transition-transform shadow-xs">
+                                <cat.icon className="h-3.5 w-3.5" />
                               </span>
-                              <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
+                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
                                 {cat.title}
                               </span>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500 leading-snug">
+                            <p className="mt-1.5 text-[11px] text-slate-500 leading-snug">
                               {cat.desc}
                             </p>
                           </button>
@@ -276,17 +279,17 @@ export function Navbar() {
                             key={cat.to || cat.title}
                             to={cat.to!}
                             onClick={handleNavClick}
-                            className="group flex flex-col p-3 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/50 transition-all duration-200 shadow-xs"
+                            className="group flex flex-col p-2.5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/40 transition-all duration-200 shadow-2xs"
                           >
-                            <div className="flex items-center gap-2.5">
-                              <span className="gradient-brand p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-sm">
-                                <cat.icon className="h-4 w-4" />
+                            <div className="flex items-center gap-2">
+                              <span className="gradient-brand p-1.5 rounded-xl text-white group-hover:scale-105 transition-transform shadow-xs">
+                                <cat.icon className="h-3.5 w-3.5" />
                               </span>
-                              <span className="text-sm font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
+                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
                                 {cat.title}
                               </span>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500 leading-snug">
+                            <p className="mt-1.5 text-[11px] text-slate-500 leading-snug">
                               {cat.desc}
                             </p>
                           </Link>
@@ -299,13 +302,28 @@ export function Navbar() {
             </div>
 
             <NavLink to="/partner" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Partners
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>Partners</span>
+                </>
+              )}
             </NavLink>
 
             <NavLink to="/magazine" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Magazines
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>Magazines</span>
+                </>
+              )}
             </NavLink>
 
+            {/* VIP Membership Link */}
             <button
               type="button"
               onClick={() => {
@@ -313,8 +331,10 @@ export function Navbar() {
                 window.dispatchEvent(new CustomEvent("open-membership-modal"));
               }}
               className={cn(
-                "relative py-1.5 text-[11px] lg:text-xs xl:text-sm font-bold font-btn transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 text-slate-800 hover:text-cyan-600 bg-transparent border-none",
-                "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-amber-500 after:to-cyan-500 after:transition-transform after:duration-300 hover:after:scale-x-100 inline-flex items-center gap-1.5 text-amber-600 hover:text-amber-700 font-extrabold"
+                "relative px-3.5 py-1.5 rounded-full text-xs xl:text-[13px] font-bold font-btn transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 border",
+                location.pathname === "/membership"
+                  ? "text-amber-800 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-amber-500/40 shadow-[0_2px_10px_rgba(245,158,11,0.2)] font-extrabold"
+                  : "text-amber-600 hover:text-amber-700 bg-amber-500/8 hover:bg-amber-500/15 border-amber-500/25 shadow-xs"
               )}
             >
               <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
@@ -322,25 +342,39 @@ export function Navbar() {
             </button>
 
             <NavLink to="/careers" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Careers
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>Careers</span>
+                </>
+              )}
             </NavLink>
 
             <NavLink to="/contact" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
-              Contact
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>Contact</span>
+                </>
+              )}
             </NavLink>
           </div>
 
           {/* RIGHT: Glowing Register Button • Mobile Menu */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Glowing Register CTA Button */}
             <MagneticButton
-              strength={18}
-              className="relative shrink-0 whitespace-nowrap gradient-brand rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-extrabold text-white shadow-[0_4px_18px_rgba(0,174,239,0.4)] hover:shadow-[0_6px_25px_rgba(0,174,239,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer"
+              strength={14}
+              className="relative shrink-0 whitespace-nowrap gradient-brand rounded-full px-3.5 sm:px-4.5 py-1.5 sm:py-2 text-xs sm:text-[13px] font-extrabold text-white shadow-[0_3px_14px_rgba(0,174,239,0.35)] hover:shadow-[0_5px_22px_rgba(0,174,239,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
             >
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("open-register-modal"))}
-                className="flex items-center gap-1.5 font-btn cursor-pointer bg-transparent border-none text-white text-xs sm:text-sm font-extrabold whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 font-btn cursor-pointer bg-transparent border-none text-white text-xs sm:text-[13px] font-extrabold whitespace-nowrap shrink-0"
               >
                 <span className="whitespace-nowrap">Register Now</span>
                 <ArrowRight className="h-3.5 w-3.5 shrink-0" />
@@ -352,73 +386,128 @@ export function Navbar() {
               type="button"
               aria-label="Toggle navigation"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="p-2 sm:p-2.5 rounded-full border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:text-black lg:hidden cursor-pointer transition-colors"
+              className={cn(
+                "p-2 rounded-full border transition-all lg:hidden cursor-pointer",
+                mobileMenuOpen
+                  ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                  : "border-slate-200/90 bg-slate-100/90 text-slate-800 hover:bg-slate-200"
+              )}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
             </button>
           </div>
         </nav>
 
-        {/* MOBILE NAV DRAWER */}
+        {/* MOBILE & TABLET DRAWER */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="container-x overflow-hidden lg:hidden"
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="container-x overflow-hidden lg:hidden pt-1.5 pb-3"
             >
-              <div className="mt-2 space-y-1.5 rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl backdrop-blur-2xl max-h-[75vh] overflow-y-auto">
-                {[
-                  { to: "/", label: "Home" },
-                  { to: "/about", label: "About" },
-                  { to: "/events", label: "Events" },
-                  { to: "/events/partner", label: "Partners" },
-                  { to: "/magazine", label: "Magazines" },
-                  { label: "Membership", isMembership: true },
-                  { to: "/careers", label: "Careers" },
-                  { to: "/contact", label: "Contact" },
-                ].map((item) => (
-                  item.isMembership ? (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        window.dispatchEvent(new CustomEvent("open-membership-modal"));
-                      }}
-                      className="w-full text-left block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-amber-600 hover:bg-slate-100 hover:text-amber-700 transition-colors bg-transparent border-none cursor-pointer flex items-center justify-between"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Crown className="h-4 w-4 text-amber-500" />
-                        <span>Membership</span>
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                        Apply Now
-                      </span>
-                    </button>
-                  ) : (
-                    <Link
-                      key={item.label}
-                      to={item.to!}
-                      onClick={handleNavClick}
-                      className="block rounded-2xl px-4 py-2.5 text-sm font-bold font-btn text-slate-800 hover:bg-slate-100 hover:text-cyan-600 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  )
-                ))}
+              <div className="space-y-2.5 rounded-3xl border border-slate-200/90 bg-white/98 backdrop-blur-2xl p-4 sm:p-5 text-slate-900 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.18)] max-h-[80vh] overflow-y-auto">
+                {/* Drawer Top Header Badge */}
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4] animate-pulse" />
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">
+                      Executive Navigation
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-700 px-2.5 py-0.5 rounded-full border border-cyan-200/60">
+                    C-Suite Portal
+                  </span>
+                </div>
+
+                {/* Nav Items List */}
+                <div className="grid grid-cols-1 gap-1">
+                  {[
+                    { to: "/", label: "Home", icon: Home },
+                    { to: "/about", label: "About Us", icon: Building2 },
+                    { to: "/events", label: "Summits & Events", icon: Calendar },
+                    { to: "/partner", label: "Partners & Sponsors", icon: Handshake },
+                    { to: "/magazine", label: "Executive Magazines", icon: BookOpen },
+                    { to: "/careers", label: "Careers & Openings", icon: Briefcase },
+                    { to: "/contact", label: "Contact & Enquiry", icon: Phone },
+                  ].map((item) => {
+                    const isItemActive = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold font-btn transition-all duration-200",
+                          isItemActive
+                            ? "bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-indigo-500/15 text-cyan-700 border border-cyan-500/30 shadow-xs"
+                            : "text-slate-700 hover:text-cyan-600 hover:bg-slate-100/80"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "p-1.5 rounded-xl transition-colors",
+                              isItemActive
+                                ? "bg-cyan-500 text-white shadow-xs"
+                                : "bg-slate-100 text-slate-600"
+                            )}
+                          >
+                            <item.icon className="h-4 w-4" />
+                          </span>
+                          <span>{item.label}</span>
+                        </div>
+                        {isItemActive && (
+                          <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* VIP Membership Card */}
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    window.dispatchEvent(new CustomEvent("open-register-modal"));
+                    window.dispatchEvent(new CustomEvent("open-membership-modal"));
                   }}
-                  className="gradient-brand mt-4 w-full block rounded-2xl px-4 py-3 text-center text-sm font-bold font-btn text-white shadow-lg cursor-pointer border-none"
+                  className="w-full text-left rounded-2xl p-3 bg-gradient-to-r from-amber-500/10 via-amber-400/10 to-orange-500/10 border border-amber-400/30 hover:border-amber-400/60 transition-all cursor-pointer flex items-center justify-between shadow-xs group"
                 >
-                  Register Now
+                  <div className="flex items-center gap-3">
+                    <span className="p-2 rounded-xl bg-amber-500 text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <Crown className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold font-btn text-amber-950 group-hover:text-amber-800">
+                        Executive Membership
+                      </p>
+                      <p className="text-xs text-amber-700/80">
+                        Exclusive C-Suite Access & Privileges
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-white px-2.5 py-1 rounded-full shadow-xs">
+                    Apply
+                  </span>
                 </button>
+
+                {/* Quick Actions at Bottom */}
+                <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent("open-register-modal"));
+                    }}
+                    className="gradient-brand w-full flex items-center justify-center gap-2 rounded-2xl py-2.5 px-4 text-center text-sm font-extrabold font-btn text-white shadow-[0_4px_18px_rgba(0,174,239,0.35)] active:scale-[0.98] transition-all cursor-pointer border-none"
+                  >
+                    <span>Register for Summit Pass</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

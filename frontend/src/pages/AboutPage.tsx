@@ -129,31 +129,31 @@ export default function AboutPage() {
         image={images.heroLeadership}
       />
 
-      <section className="section relative overflow-hidden">
+      <section className="py-6 sm:py-8 relative overflow-hidden">
         <FloatingShapes />
-        <div className="container-x relative z-10 grid items-center gap-14 lg:grid-cols-2">
+        <div className="container-x relative z-10 grid items-center gap-8 lg:grid-cols-2">
           <Reveal>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3.5">
               {[images.aboutOffice, images.heroNetworking, images.eventHr, images.heroSummit].map(
                 (src, i) => (
                   <ImageZoomCard
                     key={i}
                     src={src}
                     alt="Executive Talks Media events and workspaces"
-                    className={`h-52 w-full rounded-tl-[2.5rem] rounded-br-[2.5rem] rounded-tr-none rounded-bl-none ${i % 3 === 0 ? "mt-8" : ""}`}
+                    className={`h-48 sm:h-52 w-full rounded-tl-3xl rounded-br-3xl rounded-tr-none rounded-bl-none ${i % 3 === 0 ? "mt-4 sm:mt-6" : ""}`}
                   />
                 ),
               )}
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <span className="text-brand-blue text-xs font-bold tracking-[0.22em] uppercase font-btn">
+            <span className="text-brand-blue text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase font-btn">
               Our Story
             </span>
-            <h2 className="mt-4 text-3xl font-bold font-display sm:text-5xl leading-tight">
+            <h2 className="mt-2 text-2xl sm:text-3xl lg:text-[1.85rem] font-bold font-display leading-tight">
               Built On Conversations That Change Businesses
             </h2>
-            <div className="text-muted-foreground mt-6 space-y-4 leading-relaxed text-base sm:text-lg">
+            <div className="text-muted-foreground mt-3 space-y-2.5 leading-relaxed text-xs sm:text-sm">
               <p>
                 Executive Talks Media Business Intelligence was founded on a simple observation: India's most
                 valuable business insight rarely leaves the room it is spoken in. We built a company
