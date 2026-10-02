@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,12 +13,10 @@ import {
   ExternalLink,
   MessageCircle,
   Clock,
-  Layers,
-  Flame,
+  Zap,
 } from "lucide-react";
 import {
   type EventItem,
-  events as defaultEvents,
   getValidImageUrl,
   getDefaultEventImage,
 } from "@/lib/site-data";
@@ -42,8 +40,9 @@ export function EventSelectionModal({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch live events from Database API and merge with default summits
+  // Fetch live events strictly from Database API (matches /events page)
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -51,42 +50,19 @@ export function EventSelectionModal({
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
-          const dbEvents = json.data.filter(
+          const publishedEvents = json.data.filter(
             (ev: any) => ev.status !== "draft" && ev.status !== "archived"
           );
-
-          // Deduplicate and combine DB events with default site-data events
-          const seenKeys = new Set<string>();
-          const combined: EventItem[] = [];
-
-          // 1. Add DB events first (admin added events)
-          dbEvents.forEach((ev: any) => {
-            const key = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
-            if (key && !seenKeys.has(key)) {
-              seenKeys.add(key);
-              combined.push(ev);
-            }
-          });
-
-          // 2. Add default conclaves/summits
-          (defaultEvents as EventItem[]).forEach((ev: EventItem) => {
-            const key = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
-            if (key && !seenKeys.has(key)) {
-              seenKeys.add(key);
-              combined.push(ev);
-            }
-          });
-
-          setEventsList(combined.length > 0 ? combined : (defaultEvents as EventItem[]));
+          setEventsList(publishedEvents.length > 0 ? publishedEvents : json.data);
         } else {
-          setEventsList(defaultEvents as EventItem[]);
+          setEventsList([]);
         }
       } else {
-        setEventsList(defaultEvents as EventItem[]);
+        setEventsList([]);
       }
     } catch (err) {
-      console.warn("Failed to fetch live events from database, fallback to defaults:", err);
-      setEventsList(defaultEvents as EventItem[]);
+      console.warn("Failed to fetch live events from database:", err);
+      setEventsList([]);
     } finally {
       setLoading(false);
     }
@@ -122,14 +98,12 @@ export function EventSelectionModal({
     };
   }, []);
 
-  // Prevent background scrolling when modal is open
+  // Prevent background scrolling cleanly when modal is open
   useEffect(() => {
     if (!isOpen) return;
 
     const origOverflow = document.body.style.overflow;
-    const origHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -139,8 +113,7 @@ export function EventSelectionModal({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = origOverflow;
-      document.documentElement.style.overflow = origHtmlOverflow;
+      document.body.style.overflow = origOverflow === "hidden" ? "" : origOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -185,11 +158,18 @@ export function EventSelectionModal({
     });
   }, [eventsList, searchQuery, selectedFilter]);
 
-  // Navigate to Registration
-  const handleSelectRegister = (event: EventItem) => {
+  // Navigate to Paid Registration
+  const handleSelectPaid = (event: EventItem) => {
     const slug = event.slug || event.id || "hr-recall-2k26";
     onClose();
     navigate(`/events/${slug}/register`);
+  };
+
+  // Navigate to Free Registration
+  const handleSelectFree = (event: EventItem) => {
+    const slug = event.slug || event.id || "hr-recall-2k26";
+    onClose();
+    navigate(`/events/${slug}/register-free`);
   };
 
   // Navigate to Event Detail
@@ -203,7 +183,10 @@ export function EventSelectionModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto">
+      <div
+        data-lenis-prevent="true"
+        className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto overscroll-contain"
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -220,7 +203,14 @@ export function EventSelectionModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-white border border-slate-200/90 shadow-[0_25px_70px_rgba(15,23,42,0.22)] z-10 overflow-hidden text-slate-900"
+          onClick={(e) => e.stopPropagation()}
+          onWheel={(e) => {
+            if (listScrollRef.current) {
+              listScrollRef.current.scrollTop += e.deltaY;
+            }
+          }}
+          data-lenis-prevent="true"
+          className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-white border border-slate-200/90 shadow-[0_25px_70px_rgba(15,23,42,0.22)] z-10 overflow-hidden text-slate-900 my-auto"
         >
           {/* Top Brand Accent Line */}
           <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shrink-0" />
@@ -268,7 +258,7 @@ export function EventSelectionModal({
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -280,7 +270,7 @@ export function EventSelectionModal({
                 <button
                   type="button"
                   onClick={() => setSelectedFilter("all")}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     selectedFilter === "all"
                       ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20"
                       : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -291,7 +281,7 @@ export function EventSelectionModal({
                 <button
                   type="button"
                   onClick={() => setSelectedFilter("upcoming")}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                     selectedFilter === "upcoming"
                       ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20"
                       : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -304,7 +294,7 @@ export function EventSelectionModal({
                     key={cat}
                     type="button"
                     onClick={() => setSelectedFilter(cat)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                       selectedFilter.toLowerCase() === cat.toLowerCase()
                         ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -317,8 +307,15 @@ export function EventSelectionModal({
             </div>
           </div>
 
-          {/* Modal Body: Scrollable Events Grid */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 custom-scrollbar max-h-[58vh] bg-slate-50/40">
+          {/* Modal Body: Scrollable Events Grid with Lenis Wheel Isolation */}
+          <div
+            ref={listScrollRef}
+            data-lenis-prevent="true"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
+            className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-3.5 custom-scrollbar max-h-[58vh] bg-slate-50/40"
+          >
             {loading ? (
               <div className="py-14 flex flex-col items-center justify-center space-y-3">
                 <div className="h-8 w-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
@@ -447,26 +444,39 @@ export function EventSelectionModal({
                         </div>
                       </div>
 
-                      {/* Right Actions: Register Buttons */}
-                      <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 justify-end">
-                        {/* Secondary: Details */}
+                      {/* Right Actions: Details, Register Free, Register (Paid) */}
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 justify-end">
+                        {/* 1. Details */}
                         <button
                           type="button"
                           onClick={() => handleViewDetail(event)}
                           className="px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+                          title="View event details & agenda"
                         >
                           <span>Details</span>
                           <ExternalLink className="h-3 w-3 text-slate-400" />
                         </button>
 
-                        {/* Primary: Register Now */}
+                        {/* 2. Register as Free */}
                         <button
                           type="button"
-                          onClick={() => handleSelectRegister(event)}
-                          className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                          onClick={() => handleSelectFree(event)}
+                          className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                          title="Apply for a Free Delegate Pass"
                         >
-                          <span>Register</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          <Sparkles className="h-3.5 w-3.5 text-white" />
+                          <span>Register Free</span>
+                        </button>
+
+                        {/* 3. Register with Payment */}
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPaid(event)}
+                          className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                          title="Book Delegate Pass with Payment"
+                        >
+                          <Zap className="h-3.5 w-3.5 text-white" />
+                          <span>Register (Paid)</span>
                         </button>
                       </div>
                     </motion.div>

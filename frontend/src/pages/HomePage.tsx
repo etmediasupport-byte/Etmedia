@@ -303,31 +303,15 @@ function UpcomingEvents() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          const dbEvents = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
-          const seen = new Set<string>();
-          const combined: any[] = [];
-          dbEvents.forEach((ev: any) => {
-            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
-            if (k && !seen.has(k)) {
-              seen.add(k);
-              combined.push(ev);
-            }
-          });
-          (events as any[]).forEach((ev: any) => {
-            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
-            if (k && !seen.has(k)) {
-              seen.add(k);
-              combined.push(ev);
-            }
-          });
-          setEventList(combined.length > 0 ? combined : events);
+          const published = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
+          setEventList(published.length > 0 ? published : data.data);
         } else {
-          setEventList(events);
+          setEventList([]);
         }
       })
       .catch((err) => {
         console.warn("Error fetching events for homepage:", err);
-        setEventList(events);
+        setEventList([]);
       });
   }, []);
 
