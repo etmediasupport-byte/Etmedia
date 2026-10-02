@@ -522,7 +522,7 @@ www.executivetalksmedia.in
   );
 
   const adminMailOptions: any = {
-    from: `"ET Media Registration System" <${smtpUser}>`,
+    from: `"Executive Talks Media Registration System" <${smtpUser}>`,
     replyTo: userEmail,
     to: adminRecipients.join(", "),
     subject: `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`,
@@ -779,7 +779,7 @@ www.executivetalksmedia.in
   );
 
   const adminMailOptions: any = {
-    from: `"ET Media Alerts" <${smtpUser}>`,
+    from: `"Executive Talks Media Alerts" <${smtpUser}>`,
     replyTo: userEmail,
     to: adminRecipients.join(", "),
     subject: `🚨 [New Free Pass Application] ${data.fullName} (${data.organization}) — ${eventName}`,
@@ -1323,8 +1323,27 @@ if (activeFrontendDist) {
   app.use(express.static(activeFrontendDist));
 }
 
-app.get(["/favicon.ico", "/favicon.png"], (_req, res) => {
-  res.sendFile(path.join(publicPath, "favicon.ico"));
+app.get([
+  "/favicon.ico",
+  "/favicon.png",
+  "/favicon-16x16.png",
+  "/favicon-32x32.png",
+  "/favicon-48x48.png",
+  "/favicon-96x96.png",
+  "/favicon-144x144.png",
+  "/favicon-192x192.png",
+  "/favicon-512x512.png",
+  "/apple-touch-icon.png",
+  "/logo.jpeg",
+  "/site.webmanifest"
+], (req, res) => {
+  const filename = req.path.replace(/^\//, "");
+  const targetPath = path.join(publicPath, filename);
+  if (fs.existsSync(targetPath)) {
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    return res.sendFile(targetPath);
+  }
+  return res.sendFile(path.join(publicPath, "favicon.ico"));
 });
 
 const io = new Server(server, {

@@ -166,12 +166,12 @@ const team = [
 
 export default function AboutPage() {
   return (
-    <div className="relative min-h-screen bg-slate-900/5 text-foreground selection:bg-cyan-500/30">
+    <div className="relative min-h-screen bg-white text-slate-900 selection:bg-cyan-500 selection:text-white font-sans">
       <SEOHead
         pageKey="about"
         title="About Us | Executive Talks Media Business Intelligence"
         description="Discover how Executive Talks Media Business Intelligence curates premier C-Suite leadership summits, national awards, and executive intelligence platforms connecting 50,000+ corporate leaders."
-        keywords="About Executive Talks Media, ET Media B2B Summits, CXO Conferences India, Business Intelligence Platforms, Executive Talks Magazine, Hyderabad Corporate Headquarters"
+        keywords="About Executive Talks Media, Executive Talks Media B2B Summits, CXO Conferences India, Business Intelligence Platforms, Executive Talks Magazine, Hyderabad Corporate Headquarters"
         url="https://www.executivetalksmedia.in/about"
       />
       <GlowBackdrop />
@@ -610,40 +610,48 @@ export default function AboutPage() {
       {/* ========================================================= */}
       {/* 8. CLOSING EXECUTIVE CALL-TO-ACTION BANNER                */}
       {/* ========================================================= */}
-      <section className="py-12 sm:py-16 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white relative overflow-hidden border-t border-slate-800">
-        <div className="container-x relative z-10 text-center max-w-4xl mx-auto space-y-5">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1 text-xs font-bold tracking-widest text-cyan-300 uppercase font-btn">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Scale With Executive Talks Media</span>
-          </div>
+      <section className="py-12 sm:py-16 bg-white relative overflow-hidden border-t border-slate-100">
+        <div className="container-x relative z-10 max-w-5xl mx-auto">
+          <div className="relative rounded-3xl overflow-hidden border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950 p-8 sm:p-12 md:p-14 text-center shadow-2xl">
+            {/* Glowing Accent Orbs inside card */}
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
 
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight leading-tight">
-            Ready to Position Your Brand In Front of 50,000+ C-Suite Decision Makers?
-          </h2>
+            <div className="relative z-10 max-w-3xl mx-auto space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-500/15 px-4 py-1 text-xs font-bold tracking-widest text-cyan-300 uppercase font-btn">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-300 animate-pulse" />
+                <span>Scale With Executive Talks Media</span>
+              </div>
 
-          <p className="text-slate-300 text-xs sm:text-sm md:text-base font-medium max-w-2xl mx-auto leading-relaxed">
-            Partner with India's premier business intelligence media house. Explore bespoke sponsorship packages, keynote slots, and closed-door leadership conclaves.
-          </p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black font-display !text-white tracking-tight leading-tight">
+                Ready to Position Your Brand In Front of 50,000+ C-Suite Decision Makers?
+              </h2>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <MagneticButton strength={15}>
-              <Link
-                to="/events"
-                className="gradient-brand inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-lg hover:scale-105 transition-transform"
-              >
-                <span>View 2026 Summits Calendar</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </MagneticButton>
+              <p className="!text-slate-200 text-xs sm:text-sm md:text-base font-medium max-w-2xl mx-auto leading-relaxed">
+                Partner with India's premier business intelligence media house. Explore bespoke sponsorship packages, keynote slots, and closed-door leadership conclaves.
+              </p>
 
-            <MagneticButton strength={15}>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white transition-colors"
-              >
-                <span>Connect With Alliances Team</span>
-              </Link>
-            </MagneticButton>
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                <MagneticButton strength={15}>
+                  <Link
+                    to="/events"
+                    className="gradient-brand inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-xs sm:text-sm font-extrabold !text-white shadow-lg hover:scale-105 transition-transform"
+                  >
+                    <span>View 2026 Summits Calendar</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </MagneticButton>
+
+                <MagneticButton strength={15}>
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 hover:bg-white/20 px-8 py-3.5 text-xs sm:text-sm font-extrabold !text-white transition-colors backdrop-blur-sm"
+                  >
+                    <span>Connect With Alliances Team</span>
+                  </Link>
+                </MagneticButton>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -183,7 +183,7 @@ export default function DelegateRegistrationPage() {
         pageKey="membership"
         title="Executive Membership & Delegate Passes | Executive Talks Media"
         description="Register for Executive Talks Media Business Intelligence delegate passes and executive leadership membership council accreditation."
-        keywords="Executive Talks Media Membership, Delegate Pass, CXO Registration, Executive Talks, ET Media, Leadership Council Passes India"
+        keywords="Executive Talks Media Membership, Delegate Pass, CXO Registration, Executive Talks, Executive Talks Media, Leadership Council Passes India"
         url="https://www.executivetalksmedia.in/membership"
       />
       <GlowBackdrop />

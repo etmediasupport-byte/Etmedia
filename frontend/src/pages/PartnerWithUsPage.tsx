@@ -343,7 +343,7 @@ export default function PartnerWithUsPage() {
         pageKey="partner"
         title="Partner & Sponsor National Summits | Executive Talks Media"
         description="Explore Title, Platinum, Gold, and Technology partner opportunities with Executive Talks Media Business Intelligence to connect with 50,000+ Indian enterprise CXOs."
-        keywords="Partner Executive Talks Media, Summit Sponsorship, B2B Event Partner India, CXO Summit Sponsors, Executive Talks, ET Media, Event Collaboration"
+        keywords="Partner Executive Talks Media, Summit Sponsorship, B2B Event Partner India, CXO Summit Sponsors, Executive Talks, Executive Talks Media, Event Collaboration"
         url="https://www.executivetalksmedia.in/partner"
       />
       <GlowBackdrop />

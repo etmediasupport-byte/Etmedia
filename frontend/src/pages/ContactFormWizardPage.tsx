@@ -110,7 +110,7 @@ export default function ContactFormWizardPage() {
       <SEOHead
         title="Contact Form Wizard | Executive Talks Media"
         description="Submit your enquiry to Executive Talks Media Business Intelligence executive advisory desk."
-        keywords="Contact Form, Enquiry, Executive Talks Media, ET Media"
+        keywords="Contact Form, Enquiry, Executive Talks Media, Executive Talks"
         url="https://www.executivetalksmedia.in/contact/form"
       />
       <MultiStepFormWizard

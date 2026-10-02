@@ -515,7 +515,7 @@ export default function EventDetailPage() {
       <SEOHead
         title={`${event.title} | Executive Talks Media`}
         description={event.description || `Register for ${event.title} curated by Executive Talks Media Business Intelligence. Join industry CXOs, keynote speakers, and thought leaders.`}
-        keywords={`${event.title}, ${cityText}, Executive Talks Media, ET Media, Executive Talks, ${event.category || "Leadership Summit"}, CXO Conference India, Delegate Passes`}
+        keywords={`${event.title}, ${cityText}, Executive Talks Media, Executive Talks, ${event.category || "Leadership Summit"}, CXO Conference India, Delegate Passes`}
         image={heroImageSrc}
         url={`https://www.executivetalksmedia.in/events/${event.slug || slug}`}
         type="event"
@@ -607,7 +607,7 @@ export default function EventDetailPage() {
 
               <p className="text-xs text-slate-200/90 font-normal leading-relaxed max-w-xl line-clamp-2">
                 {event.description ||
-                  "A premier multi-city flagship event series by ET Media Business Intelligence, bringing together Chief Procurement Officers (CPOs), supply chain heads, and industry leaders to discuss digital transformation, strategic sourcing, sustainability, and the future of procurement."}
+                  "A premier multi-city flagship event series by Executive Talks Media Business Intelligence, bringing together Chief Procurement Officers (CPOs), supply chain heads, and industry leaders to discuss digital transformation, strategic sourcing, sustainability, and the future of procurement."}
               </p>
             </div>
 

@@ -172,7 +172,7 @@ export default function GalleryPage() {
         pageKey="gallery"
         title="Summit Photos & Video Gallery | Executive Talks Media"
         description="High-definition photo highlights and keynote video coverage from Executive Talks Media national summits, CFO forums, and HR excellence gala awards."
-        keywords="Executive Talks Media Gallery, Summit Photos, CXO Event Videos, Award Gala Highlights, Executive Talks, ET Media"
+        keywords="Executive Talks Media Gallery, Summit Photos, CXO Event Videos, Award Gala Highlights, Executive Talks, Executive Talks Media"
         url="https://www.executivetalksmedia.in/gallery"
       />
       <GlowBackdrop />

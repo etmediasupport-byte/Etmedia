@@ -1162,7 +1162,7 @@ export default function HomePage() {
         pageKey="home"
         title="Executive Talks Media Business Intelligence | India's Premier CXO Summit Platform"
         description="Executive Talks Media Business Intelligence builds India's premier C-suite conferences, CFO leadership summits, national HR awards, Enterprise AI conclaves, and Executive Talks Magazine."
-        keywords="Executive Talks Media, Executive Talks, ET Media, ETMedia, Executive Talks Media Business Intelligence, Executive Talks India, Executive Talks Hyderabad, Executive Talks Magazine, Executive Talks Summits, Executive Talks Media Console, Executive Talks Search Console, India CFO Summit, National HR Excellence Awards, Enterprise Technology AI Conclave, CXO Conferences India, B2B Leadership Summits, Corporate Awards India, Business Intelligence India"
+        keywords="Executive Talks Media, Executive Talks, Executive Talks Media Business Intelligence, Executive Talks India, Executive Talks Hyderabad, Executive Talks Magazine, Executive Talks Summits, Executive Talks Media Console, Executive Talks Search Console, India CFO Summit, National HR Excellence Awards, Enterprise Technology AI Conclave, CXO Conferences India, B2B Leadership Summits, Corporate Awards India, Business Intelligence India"
         url="https://www.executivetalksmedia.in"
       />
       {/* 1. Hero Carousel */}

@@ -29,7 +29,7 @@ export interface SEOHeadProps {
 
 const DEFAULT_TITLE = "Executive Talks Media Business Intelligence | India's Premier CXO Summit Platform";
 const DEFAULT_DESC = "Executive Talks Media Business Intelligence curates India's premier C-suite conferences, CFO leadership summits, national HR awards, Enterprise AI conclaves, and Executive Talks Magazine.";
-const DEFAULT_KEYWORDS = "Executive Talks Media, Executive Talks, ET Media, ETMedia, Executive Talks Media Business Intelligence, Executive Talks India, Executive Talks Hyderabad, Executive Talks Magazine, Executive Talks Summits, Executive Talks Media Console, Executive Talks Search Console, India CFO Summit, National HR Excellence Awards, Enterprise Technology AI Conclave, CXO Conferences India, B2B Leadership Summits, Corporate Awards India, Business Intelligence India, Hyderabad B2B Events, C-Suite Networking India";
+const DEFAULT_KEYWORDS = "Executive Talks Media, Executive Talks, Executive Talks Media Business Intelligence, Executive Talks India, Executive Talks Hyderabad, Executive Talks Magazine, Executive Talks Summits, Executive Talks Media Console, Executive Talks Search Console, India CFO Summit, National HR Excellence Awards, Enterprise Technology AI Conclave, CXO Conferences India, B2B Leadership Summits, Corporate Awards India, Business Intelligence India, Hyderabad B2B Events, C-Suite Networking India";
 const DEFAULT_IMAGE = "https://www.executivetalksmedia.in/assets/hero-summit-ClCGVqfO.jpg";
 const BASE_URL = "https://www.executivetalksmedia.in";
 
@@ -88,11 +88,11 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   const fullTitle = rawTitle.includes("Executive Talks Media") ? rawTitle : `${rawTitle} | Executive Talks Media`;
   const metaDescription = dbSeo?.description || description || DEFAULT_DESC;
   
-  // Ensure "Executive Talks Media" and "ET Media" are always part of the keywords string
+  // Ensure "Executive Talks Media" is always part of the keywords string
   const baseKeywords = dbSeo?.keywords || keywords || DEFAULT_KEYWORDS;
   const fullKeywords = baseKeywords.includes("Executive Talks Media")
     ? baseKeywords
-    : `Executive Talks Media, ET Media, Executive Talks, ${baseKeywords}`;
+    : `Executive Talks Media, Executive Talks, ${baseKeywords}`;
 
   const canonicalUrl = url || (typeof window !== "undefined" ? window.location.href : BASE_URL);
   const metaImage = dbSeo?.og_image || image || DEFAULT_IMAGE;
@@ -105,7 +105,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
     "@type": "Organization",
     "@id": `${BASE_URL}/#organization`,
     "name": "Executive Talks Media Business Intelligence",
-    "alternateName": ["Executive Talks Media", "ET Media", "Executive Talks"],
+    "alternateName": ["Executive Talks Media", "Executive Talks"],
     "url": BASE_URL,
     "logo": `${BASE_URL}/logo-official.png`,
     "image": DEFAULT_IMAGE,

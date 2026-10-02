@@ -285,7 +285,7 @@ export default function EventsPage() {
         pageKey="events"
         title="Conferences & Leadership Summits Directory | Executive Talks Media"
         description="Browse upcoming India CFO Summits, National HR Excellence Awards, and Enterprise AI Conclaves curated by Executive Talks Media Business Intelligence."
-        keywords="Executive Talks Media, Executive Talks, ET Media, CFO Summit India, HR Excellence Awards, AI Conclave India, CXO Conferences, Executive Delegate Passes, Hyderabad Events, Business Intelligence"
+        keywords="Executive Talks Media, Executive Talks, Executive Talks Media Business Intelligence, CFO Summit India, HR Excellence Awards, AI Conclave India, CXO Conferences, Executive Delegate Passes, Hyderabad Events, Business Intelligence"
         url="https://www.executivetalksmedia.in/events"
       />
       <GlowBackdrop />

@@ -245,7 +245,7 @@ export default function ContactPage() {
         pageKey="contact"
         title="Contact Us | Executive Talks Media Business Intelligence"
         description="Connect with Executive Talks Media Business Intelligence for B2B summit sponsorships, delegate passes, magazine features, speaker nominations, and executive partnerships."
-        keywords="Contact Executive Talks Media, Executive Talks Hyderabad Headquarters, ET Media B2B Summits, CXO Conferences India, Corporate Sponsorships"
+        keywords="Contact Executive Talks Media, Executive Talks Hyderabad Headquarters, Executive Talks Media B2B Summits, CXO Conferences India, Corporate Sponsorships"
         url="https://www.executivetalksmedia.in/contact"
       />
       <GlowBackdrop />

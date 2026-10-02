@@ -186,7 +186,7 @@ export default function MembershipApplicationWizardPage() {
       <SEOHead
         title="Executive Membership Application | Executive Talks Media"
         description="Apply for VIP accreditation to the Executive Talks Media Business Intelligence Leadership Council."
-        keywords="Executive Membership Application, CXO Council Passes, Executive Talks Media, ET Media"
+        keywords="Executive Membership Application, CXO Council Passes, Executive Talks Media, Executive Talks"
         url="https://www.executivetalksmedia.in/membership/apply"
       />
       <MultiStepFormWizard

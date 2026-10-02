@@ -324,7 +324,7 @@ export default function FreeRegistrationPage() {
       <SEOHead
         title={eventData?.title ? `Complimentary Pass Application: ${eventData.title} | Executive Talks Media` : "Complimentary VIP Pass Application | Executive Talks Media"}
         description={eventData?.description || "Apply for complimentary VIP delegate pass to Executive Talks Media Business Intelligence national summits."}
-        keywords={`${eventData?.title || "Conferences"}, Complimentary VIP Pass, Free Registration, Executive Talks Media, ET Media`}
+        keywords={`${eventData?.title || "Conferences"}, Complimentary VIP Pass, Free Registration, Executive Talks Media, Executive Talks`}
         url={`https://www.executivetalksmedia.in/events/${slug || "event"}/register-free`}
       />
       {/* ================= HERO HEADER BANNER ================= */}

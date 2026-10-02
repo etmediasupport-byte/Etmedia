@@ -717,7 +717,7 @@ export default function EventRegistrationWizardPage() {
       <SEOHead
         title={eventData?.title ? `Register: ${eventData.title} | Executive Talks Media` : "Delegate Registration Wizard | Executive Talks Media"}
         description={eventData?.description || "Online registration and pass checkout for Executive Talks Media Business Intelligence national leadership summits."}
-        keywords={`${eventData?.title || "Conference"}, Delegate Pass Booking, Event Registration, Executive Talks Media, ET Media, CXO Conference`}
+        keywords={`${eventData?.title || "Conference"}, Delegate Pass Booking, Event Registration, Executive Talks Media, Executive Talks, CXO Conference`}
         url={`https://www.executivetalksmedia.in/events/${slug || "event"}/register`}
       />
       {/* ================= HERO HEADER BANNER ================= */}

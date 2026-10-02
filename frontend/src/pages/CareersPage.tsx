@@ -269,7 +269,7 @@ export default function CareersPage() {
         pageKey="careers"
         title="Careers & Job Openings | Executive Talks Media"
         description="Explore exciting career opportunities at Executive Talks Media Business Intelligence in conference production, sponsorship sales, digital marketing, and event operations."
-        keywords="Executive Talks Media Careers, Event Management Jobs Hyderabad, Conference Production Hiring, Sponsorship Sales Jobs, Executive Talks, ET Media, Media Jobs India"
+        keywords="Executive Talks Media Careers, Event Management Jobs Hyderabad, Conference Production Hiring, Sponsorship Sales Jobs, Executive Talks, Executive Talks Media, Media Jobs India"
         url="https://www.executivetalksmedia.in/careers"
       />
       <GlowBackdrop />
@@ -630,7 +630,7 @@ export default function CareersPage() {
                   Offer & Welcome
                 </h4>
                 <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
-                  Receive your formal offer letter, complete orientation, and embark on your leadership journey at ET Media!
+                  Receive your formal offer letter, complete orientation, and embark on your leadership journey at Executive Talks Media!
                 </p>
               </div>
             </div>

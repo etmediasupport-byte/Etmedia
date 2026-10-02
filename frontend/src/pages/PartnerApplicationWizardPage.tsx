@@ -504,7 +504,7 @@ export default function PartnerApplicationWizardPage() {
       <SEOHead
         title="Partnership Application Wizard | Executive Talks Media"
         description="Submit your enterprise brand partnership or summit sponsorship proposal to Executive Talks Media Business Intelligence."
-        keywords="Partner Application, Sponsorship Proposal, Executive Talks Media, ET Media, CXO Sponsorship"
+        keywords="Partner Application, Sponsorship Proposal, Executive Talks Media, Executive Talks, CXO Sponsorship"
         url="https://www.executivetalksmedia.in/partner/apply"
       />
 

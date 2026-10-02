@@ -197,7 +197,7 @@ export default function MagazinePage() {
         pageKey="magazine"
         title="Executive Talks Magazine | Executive Talks Media"
         description="Read Executive Talks Magazine featuring exclusive C-suite leadership interviews, CXO insights, market reports, and interactive 3D digital flipbooks."
-        keywords="Executive Talks Magazine, Executive Talks, ET Media, CXO Interviews, B2B Magazine India, Leadership Intelligence, Digital Flipbook, Business Articles"
+        keywords="Executive Talks Magazine, Executive Talks, Executive Talks Media, CXO Interviews, B2B Magazine India, Leadership Intelligence, Digital Flipbook, Business Articles"
         url="https://www.executivetalksmedia.in/magazine"
       />
       {/* ========================================== */}

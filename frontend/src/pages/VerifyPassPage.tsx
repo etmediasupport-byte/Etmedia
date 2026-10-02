@@ -112,7 +112,7 @@ export default function VerifyPassPage() {
       <SEOHead
         title={passData?.name ? `Verify Pass: ${passData.name} | Executive Talks Media` : `Verify Delegate Pass | Executive Talks Media`}
         description="Verify the digital authenticity and QR ticket badge for Executive Talks Media Business Intelligence national leadership summits."
-        keywords="Verify Pass Executive Talks Media, Ticket Verification, ET Media QR Verification, Delegate Pass Authentic Check"
+        keywords="Verify Pass Executive Talks Media, Ticket Verification, Executive Talks Media QR Verification, Delegate Pass Authentic Check"
         url={`https://www.executivetalksmedia.in/verify-pass/${regId || ""}`}
       />
       {/* Aligned with main website header */}
