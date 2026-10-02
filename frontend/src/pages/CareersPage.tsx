@@ -287,44 +287,44 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 1. OPEN POSITIONS SECTION (WHITE MODE)     */}
       {/* ========================================== */}
-      <section id="open-positions" className="relative w-full bg-white text-slate-900 py-10 sm:py-14 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
+      <section id="open-positions" className="relative w-full bg-white text-slate-900 py-6 sm:py-8 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
         <div className="w-full max-w-[1400px] mx-auto">
           
           {/* Header Title Box */}
-          <div className="text-left max-w-3xl mb-10 border-b border-slate-200 pb-6">
+          <div className="text-left max-w-3xl mb-5 border-b border-slate-200 pb-3.5">
             <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-purple-700 font-display">
               <Zap className="h-4 w-4 text-purple-600" /> Active Vacancies
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 font-display tracking-tight mt-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display tracking-tight mt-1.5">
               Open Positions
             </h2>
-            <p className="mt-3 text-slate-600 text-sm sm:text-base font-medium leading-relaxed font-sans">
+            <p className="mt-2 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed font-sans text-justify">
               Browse current career opportunities across our summit departments. Click any position to view details or apply.
             </p>
           </div>
 
           {/* Search Bar & Department Filter Bar */}
-          <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-200/90 shadow-sm">
+          <div className="mb-5 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
             {/* Search Input Box */}
             <div className="relative w-full md:w-96">
-              <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-4 top-3 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search job title, location or department..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
+                className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
               />
             </div>
 
             {/* Department Filter Pills */}
-            <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar py-1">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 w-full md:w-auto overflow-x-auto no-scrollbar py-0.5">
               {departmentsList.map((dept) => (
                 <button
                   key={dept}
                   type="button"
                   onClick={() => setSelectedDepartment(dept)}
-                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     selectedDepartment === dept
                       ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-purple-600/25 border-none"
                       : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
@@ -338,11 +338,11 @@ export default function CareersPage() {
 
           {/* Job Openings Responsive 2-Column Grid Layout */}
           {filteredJobs.length === 0 ? (
-            <div className="py-20 text-center rounded-3xl border border-slate-200 bg-slate-50 text-slate-500 text-sm font-semibold">
+            <div className="py-14 text-center rounded-3xl border border-slate-200 bg-slate-50 text-slate-500 text-sm font-semibold">
               No open positions currently match your search query.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-4.5">
               {filteredJobs.map((job, idx) => {
                 const IconComp = getDepartmentIcon(job.department);
                 const isClosed = job.status === "Closed";
@@ -354,23 +354,23 @@ export default function CareersPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: idx * 0.04, duration: 0.3 }}
-                    className="group relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm hover:shadow-xl hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full"
+                    className="group relative rounded-3xl border border-slate-200/90 bg-white p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-purple-500/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full"
                   >
                     <div>
                       {/* Top Header Row: Icon + Department Badge & Status Badge */}
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 shadow-xs">
-                            <IconComp className="h-5 w-5" />
+                      <div className="flex items-center justify-between gap-2.5 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 shadow-xs">
+                            <IconComp className="h-4.5 w-4.5" />
                           </div>
 
-                          <span className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 truncate">
+                          <span className="text-[10.5px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 truncate">
                             {job.department}
                           </span>
                         </div>
 
                         <span
-                          className={`text-[11px] font-extrabold px-3 py-1 rounded-full border shrink-0 flex items-center gap-1.5 ${
+                          className={`text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border shrink-0 flex items-center gap-1.5 ${
                             isClosed
                               ? "bg-rose-50 text-rose-700 border-rose-200"
                               : "bg-emerald-50 text-emerald-800 border-emerald-200"
@@ -382,40 +382,40 @@ export default function CareersPage() {
                       </div>
 
                       {/* Job Title */}
-                      <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 group-hover:text-purple-700 transition-colors font-display tracking-tight leading-snug mt-4 line-clamp-2">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-purple-700 transition-colors font-display tracking-tight leading-snug mt-3 line-clamp-2">
                         {job.title}
                       </h3>
 
                       {/* Meta Info Row: Location, Experience, Work Type */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700 mt-3">
-                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700 mt-2">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-xl">
                           <MapPin className="h-3.5 w-3.5 text-purple-600 shrink-0" />
                           <span>{job.location}</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-xl">
                           <Briefcase className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
                           <span>Exp: {job.experience}</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 bg-purple-50/70 border border-purple-200 text-purple-800 px-3 py-1 rounded-xl">
+                        <div className="flex items-center gap-1.5 bg-purple-50/70 border border-purple-200 text-purple-800 px-2.5 py-0.5 rounded-xl">
                           <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
                           <span>Full-Time</span>
                         </div>
                       </div>
 
                       {/* Short Description */}
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans font-medium line-clamp-3 text-justify mt-3.5 mb-5">
+                      <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium line-clamp-3 text-justify mt-2 mb-3.5">
                         {job.description}
                       </p>
                     </div>
 
                     {/* Footer Action Buttons Row */}
-                    <div className="pt-4 border-t border-slate-100 flex items-center gap-3 mt-auto">
+                    <div className="pt-3 border-t border-slate-100 flex items-center gap-2.5 mt-auto">
                       <button
                         type="button"
                         onClick={() => setSelectedJobDetail(job)}
-                        className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-xs text-center"
+                        className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-2xs text-center"
                       >
                         View Details
                       </button>
@@ -426,10 +426,10 @@ export default function CareersPage() {
                         onClick={() => {
                           navigate(`/careers/apply?jobId=${job.id}&title=${encodeURIComponent(job.title)}`);
                         }}
-                        className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-md shadow-purple-600/20 hover:shadow-lg hover:shadow-purple-600/35 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                        className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none"
                       >
                         <span>Apply Now</span>
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </motion.div>
@@ -444,18 +444,18 @@ export default function CareersPage() {
       {/* ================================================== */}
       {/* 2. WHY JOIN EXECUTIVE TALKS MEDIA / MAKE AN IMPACT */}
       {/* ================================================== */}
-      <section className="relative w-full bg-white text-slate-900 py-12 sm:py-16 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
+      <section className="relative w-full bg-white text-slate-900 py-6 sm:py-8 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
         <div className="w-full max-w-[1400px] mx-auto">
           {/* Header Title Box */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 border-b border-slate-200 pb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5 border-b border-slate-200 pb-3.5">
             <div className="text-left max-w-3xl">
               <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-purple-700 font-display">
                 <Sparkles className="h-4 w-4 text-purple-600" /> Life At Executive Talks
               </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 font-display tracking-tight mt-2">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display tracking-tight mt-1.5">
                 Make an Impact with Us
               </h2>
-              <p className="mt-3 text-slate-600 text-sm sm:text-base font-medium leading-relaxed font-sans text-justify">
+              <p className="mt-2 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed font-sans text-justify">
                 Join Executive Talks Media and be part of a dynamic team that brings ideas to life, connects C-suite leaders, and shapes corporate summit ecosystems across India.
               </p>
             </div>
@@ -463,70 +463,70 @@ export default function CareersPage() {
             <button
               type="button"
               onClick={scrollToPositions}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 hover:bg-purple-700 px-6 py-3.5 text-xs font-extrabold text-white transition-all cursor-pointer shadow-md shrink-0"
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 hover:bg-purple-700 px-5 py-2.5 text-xs font-extrabold text-white transition-all cursor-pointer shadow-sm shrink-0"
             >
               <span>View Open Positions</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
           {/* 4 Value Pillars Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Value 1 */}
-            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 shadow-xs mb-4 group-hover:scale-110 transition-transform">
-                  <Trophy className="h-6 w-6" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 shadow-xs mb-3 group-hover:scale-105 transition-transform">
+                  <Trophy className="h-5 w-5" />
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   High-Impact Summits
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Directly curate and deliver India's most prestigious B2B leadership conferences, CXO forums, and award galas.
                 </p>
               </div>
             </div>
 
             {/* Value 2 */}
-            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-xs mb-4 group-hover:scale-110 transition-transform">
-                  <UserCheck className="h-6 w-6" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-xs mb-3 group-hover:scale-105 transition-transform">
+                  <UserCheck className="h-5 w-5" />
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Learn from Leaders
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Collaborate directly with top CXOs, Fortune 500 enterprise heads, and pioneering industry specialists.
                 </p>
               </div>
             </div>
 
             {/* Value 3 */}
-            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-indigo-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-indigo-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs mb-4 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="h-6 w-6" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs mb-3 group-hover:scale-105 transition-transform">
+                  <TrendingUp className="h-5 w-5" />
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Accelerated Growth
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Fast-track career advancement with transparent meritocracy, leadership mentorship, and continuous learning.
                 </p>
               </div>
             </div>
 
             {/* Value 4 */}
-            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:border-rose-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+            <div className="group rounded-3xl border border-slate-200/90 bg-slate-50/50 hover:bg-white p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-rose-400/50 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 shadow-xs mb-4 group-hover:scale-110 transition-transform">
-                  <Heart className="h-6 w-6" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 shadow-xs mb-3 group-hover:scale-105 transition-transform">
+                  <Heart className="h-5 w-5" />
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   People-First Culture
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   A high-energy, supportive, and inclusive work environment where every individual contribution is celebrated.
                 </p>
               </div>
@@ -538,98 +538,98 @@ export default function CareersPage() {
       {/* ========================================== */}
       {/* 3. GET STARTED / HIRING PROCESS SECTION    */}
       {/* ========================================== */}
-      <section className="relative w-full bg-slate-50/80 text-slate-900 py-12 sm:py-16 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
+      <section className="relative w-full bg-slate-50/80 text-slate-900 py-6 sm:py-8 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 border-b border-slate-200">
         <div className="w-full max-w-[1400px] mx-auto">
           {/* Header */}
-          <div className="text-left max-w-3xl mb-10 border-b border-slate-200/80 pb-6">
+          <div className="text-left max-w-3xl mb-5 border-b border-slate-200/80 pb-3.5">
             <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-purple-700 font-display">
               <CheckCircle2 className="h-4 w-4 text-purple-600" /> Step-by-Step Guide
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 font-display tracking-tight mt-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display tracking-tight mt-1.5">
               Our Hiring Process
             </h2>
-            <p className="mt-3 text-slate-600 text-sm sm:text-base font-medium leading-relaxed font-sans text-justify">
+            <p className="mt-2 text-slate-600 text-xs sm:text-sm font-medium leading-relaxed font-sans text-justify">
               Our streamlined 4-step recruitment journey is designed to connect exceptional talent with dynamic summit leadership roles.
             </p>
           </div>
 
           {/* 4-Step Flow Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Step 1 */}
-            <div className="group relative flex flex-col p-6 sm:p-7 rounded-3xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-blue-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
+            <div className="group relative flex flex-col p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 bg-white shadow-2xs hover:shadow-xl hover:border-blue-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm shadow-md shadow-blue-500/20">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs shadow-xs">
                     01
                   </div>
-                  <span className="text-[11px] font-extrabold uppercase px-3 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
                     Step 1
                   </span>
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Apply Online
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Browse open positions above, review requirements, and submit your resume and profile in under 2 minutes.
                 </p>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="group relative flex flex-col p-6 sm:p-7 rounded-3xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
+            <div className="group relative flex flex-col p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 bg-white shadow-2xs hover:shadow-xl hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-sm shadow-md shadow-purple-500/20">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-xs shadow-xs">
                     02
                   </div>
-                  <span className="text-[11px] font-extrabold uppercase px-3 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
                     Step 2
                   </span>
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Profile Screening
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Our talent acquisition team carefully reviews your qualifications, skills, and background for role alignment.
                 </p>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="group relative flex flex-col p-6 sm:p-7 rounded-3xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
+            <div className="group relative flex flex-col p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 bg-white shadow-2xs hover:shadow-xl hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-600 text-white font-black text-sm shadow-md shadow-cyan-500/20">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-600 text-white font-black text-xs shadow-xs">
                     03
                   </div>
-                  <span className="text-[11px] font-extrabold uppercase px-3 py-1 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
                     Step 3
                   </span>
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Interview Round
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Meet with our department heads and summit producers to discuss your aspirations, experience, and domain strengths.
                 </p>
               </div>
             </div>
 
             {/* Step 4 */}
-            <div className="group relative flex flex-col p-6 sm:p-7 rounded-3xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-emerald-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
+            <div className="group relative flex flex-col p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 bg-white shadow-2xs hover:shadow-xl hover:border-emerald-400/50 hover:-translate-y-1 transition-all duration-300 justify-between">
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-emerald-600 text-white font-black text-sm shadow-md shadow-emerald-500/20">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-emerald-600 text-white font-black text-xs shadow-xs">
                     04
                   </div>
-                  <span className="text-[11px] font-extrabold uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                     Step 4
                   </span>
                 </div>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+                <h4 className="text-base font-extrabold text-slate-900 font-display">
                   Offer & Welcome
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed font-sans font-medium text-justify">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans font-medium text-justify">
                   Receive your formal offer letter, complete orientation, and embark on your leadership journey at ET Media!
                 </p>
               </div>

@@ -361,60 +361,60 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 2. STATS BAR (CLEAN & WHITE)               */}
       {/* ========================================== */}
-      <section className="relative z-20 -mt-6 sm:-mt-8 mb-6">
+      <section className="relative z-20 -mt-5 sm:-mt-6 mb-3">
         <div className="container-x">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-md">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3.5 sm:p-4.5 rounded-3xl bg-white border border-slate-200/90 shadow-md">
             <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100">
                 <Users className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 font-display leading-none">
                   <Counter value={50000} suffix="+" />
                 </div>
-                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                   C-Suite Decision Makers
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 border border-purple-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 border border-purple-100">
                 <Crown className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-purple-600 font-display leading-none">
                   <Counter value={100} suffix="+" />
                 </div>
-                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                   National Summits Hosted
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 px-2 border-r border-slate-100 last:border-none">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
                 <TrendingUp className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 font-display leading-none">
                   <Counter value={98} suffix="%" />
                 </div>
-                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                   Partner Renewal & ROI Rate
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 px-2">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
                 <Award className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 font-display leading-none">
                   <Counter value={500} suffix="+" />
                 </div>
-                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                <p className="text-[10.5px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                   Brand Sponsors & GCCs
                 </p>
               </div>
@@ -426,11 +426,11 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 3. FAST-TRACK WIZARD CALLOUT (CLEAN WHITE) */}
       {/* ========================================== */}
-      <section className="py-4 sm:py-6 relative">
+      <section className="py-2.5 sm:py-3.5 relative">
         <div className="container-x">
-          <div className="rounded-3xl border border-slate-200/90 bg-slate-50/60 p-6 sm:p-8 shadow-sm relative overflow-hidden text-slate-900">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
-              <div className="lg:col-span-8 space-y-2 text-left">
+          <div className="rounded-3xl border border-slate-200/90 bg-slate-50/60 p-5 sm:p-6 shadow-xs relative overflow-hidden text-slate-900">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center relative z-10">
+              <div className="lg:col-span-8 space-y-1.5 text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-[10.5px] font-extrabold uppercase tracking-widest font-btn">
                   <Zap className="h-3 w-3 text-cyan-600 animate-pulse" />
                   <span>Fast-Track Partnership Desk</span>
@@ -443,18 +443,18 @@ export default function PartnerWithUsPage() {
                 </p>
               </div>
 
-              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2.5 justify-center">
+              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2 justify-center">
                 <button
                   type="button"
                   onClick={() => navigate("/partner/apply")}
-                  className="gradient-brand inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border-none"
+                  className="gradient-brand inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border-none"
                 >
                   <span>Start Partner Application</span>
                   <ArrowUpRight className="h-4 w-4" />
                 </button>
                 <a
                   href={`tel:${(contact.phones[0] ?? "+91 91002 66777").replace(/\s+/g, "")}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white hover:bg-slate-100 px-6 py-2.5 text-xs font-bold text-slate-700 transition-all text-center shadow-2xs"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white hover:bg-slate-100 px-6 py-2 text-xs font-bold text-slate-700 transition-all text-center shadow-2xs"
                 >
                   <Phone className="h-3.5 w-3.5 text-cyan-600" />
                   <span>Call Alliances: {contact.phones[0] ?? "+91 91002 66777"}</span>
@@ -468,7 +468,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 4. PARTNERSHIP BENEFITS GRID               */}
       {/* ========================================== */}
-      <section id="benefits" className="py-8 sm:py-10 relative bg-white border-y border-slate-200/90">
+      <section id="benefits" className="py-6 sm:py-8 relative bg-white border-y border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Partnership Benefits"
@@ -477,7 +477,7 @@ export default function PartnerWithUsPage() {
             align="left"
           />
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-4.5">
             {partnershipBenefits.map((item, idx) => (
               <motion.div
                 key={item.id}
@@ -485,40 +485,40 @@ export default function PartnerWithUsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05, duration: 0.35 }}
-                className="group relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-6 shadow-2xs hover:shadow-xl hover:border-cyan-400 hover:bg-white transition-all duration-300 flex flex-col justify-between"
+                className="group relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-4.5 sm:p-5 shadow-2xs hover:shadow-xl hover:border-cyan-400 hover:bg-white transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   {/* Top Icon & Badge */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div
-                      className={`p-3 rounded-2xl bg-gradient-to-br ${item.color} text-white shadow-xs group-hover:scale-105 transition-transform`}
+                      className={`p-2.5 rounded-2xl bg-gradient-to-br ${item.color} text-white shadow-xs group-hover:scale-105 transition-transform`}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-4.5 w-4.5" />
                     </div>
                     <span
-                      className={`text-[10.5px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${item.bgGlow}`}
+                      className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${item.bgGlow}`}
                     >
                       {item.badge}
                     </span>
                   </div>
 
                   {/* Card Title */}
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors font-display">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors font-display">
                     {item.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="mt-2 text-xs text-slate-600 leading-relaxed font-sans font-medium text-justify">
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-sans font-medium text-justify">
                     {item.description}
                   </p>
                 </div>
 
                 {/* Perk List */}
-                <div className="mt-5 pt-4 border-t border-slate-200/70">
-                  <div className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 font-display">
+                <div className="mt-3.5 pt-3 border-t border-slate-200/70">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2 font-display">
                     Key Highlights
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-1.5">
                     {item.perks.map((perk, pIdx) => (
                       <li key={pIdx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
                         <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600 shrink-0 mt-0.5" />
@@ -536,7 +536,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 5. SPONSORSHIP TIERS MATRIX                */}
       {/* ========================================== */}
-      <section id="tiers" className="py-8 sm:py-10 relative bg-slate-50/50 border-b border-slate-200/90">
+      <section id="tiers" className="py-6 sm:py-8 relative bg-slate-50/50 border-b border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Sponsorship Packages"
@@ -545,7 +545,7 @@ export default function PartnerWithUsPage() {
             align="left"
           />
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {sponsorshipTiers.map((tier, idx) => (
               <motion.div
                 key={tier.id}
@@ -553,7 +553,7 @@ export default function PartnerWithUsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.06, duration: 0.35 }}
-                className={`relative rounded-3xl bg-white p-6 shadow-sm transition-all duration-300 flex flex-col justify-between border ${
+                className={`relative rounded-3xl bg-white p-4.5 sm:p-5 shadow-xs transition-all duration-300 flex flex-col justify-between border ${
                   tier.featured
                     ? "border-amber-400 shadow-md shadow-amber-500/10 ring-2 ring-amber-400/20"
                     : tier.popular
@@ -562,31 +562,31 @@ export default function PartnerWithUsPage() {
                 }`}
               >
                 {/* Popular / Featured Badge */}
-                <div className="flex items-center justify-between mb-3.5">
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tier.badgeColor}`}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className={`text-[9.5px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tier.badgeColor}`}>
                     {tier.badge}
                   </span>
                   <div className={`p-2 rounded-xl bg-gradient-to-br ${tier.gradient} text-white shadow-xs`}>
-                    <tier.icon className="h-4 w-4" />
+                    <tier.icon className="h-3.5 w-3.5" />
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900 font-display">
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
                     {tier.name}
                   </h3>
-                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium text-justify">
+                  <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium text-justify">
                     {tier.description}
                   </p>
 
                   {/* Deliverables Checklist */}
-                  <div className="mt-4 pt-3.5 border-t border-slate-100">
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 font-display">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100">
+                    <div className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 mb-2 font-display">
                       Package Inclusions
                     </div>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {tier.deliverables.map((deliv, dIdx) => (
-                        <li key={dIdx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                        <li key={dIdx} className="flex items-start gap-1.5 text-xs text-slate-700 font-medium">
                           <Check className="h-3.5 w-3.5 text-cyan-600 shrink-0 mt-0.5" />
                           <span className="leading-snug">{deliv}</span>
                         </li>
@@ -595,11 +595,11 @@ export default function PartnerWithUsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-3 border-t border-slate-100">
+                <div className="mt-4 pt-2.5 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => navigate("/partner/apply")}
-                    className={`w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
+                    className={`w-full inline-flex items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                       tier.featured
                         ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-orange-500/20 hover:scale-[1.02]"
                         : tier.popular
@@ -620,7 +620,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 6. 4-STEP PARTNERSHIP ROADMAP              */}
       {/* ========================================== */}
-      <section className="py-8 sm:py-10 relative bg-white border-b border-slate-200/90">
+      <section className="py-6 sm:py-8 relative bg-white border-b border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Partnership Roadmap"
@@ -629,7 +629,7 @@ export default function PartnerWithUsPage() {
             align="left"
           />
 
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {roadmapSteps.map((step, idx) => (
               <motion.div
                 key={step.step}
@@ -637,14 +637,14 @@ export default function PartnerWithUsPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.06, duration: 0.35 }}
-                className="relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-6 shadow-2xs hover:shadow-md hover:border-cyan-400 hover:bg-white transition-all flex flex-col justify-between"
+                className="relative rounded-3xl border border-slate-200/90 bg-slate-50/50 p-4.5 sm:p-5 shadow-2xs hover:shadow-md hover:border-cyan-400 hover:bg-white transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-black text-slate-300 font-display">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xl sm:text-2xl font-black text-slate-300 font-display">
                       {step.step}
                     </span>
-                    <div className={`p-2.5 rounded-2xl bg-gradient-to-br ${step.color} text-white shadow-xs`}>
+                    <div className={`p-2 rounded-2xl bg-gradient-to-br ${step.color} text-white shadow-xs`}>
                       <step.icon className="h-4 w-4" />
                     </div>
                   </div>
@@ -652,12 +652,12 @@ export default function PartnerWithUsPage() {
                   <h3 className="text-base font-bold text-slate-900 font-display">
                     {step.title}
                   </h3>
-                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium text-justify">
+                  <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium text-justify">
                     {step.desc}
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-bold text-cyan-700">
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center gap-1 text-[11px] font-bold text-cyan-700">
                   <span>Step {step.step} Milestone</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
@@ -670,18 +670,18 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 7. OUR COLLABORATORS ANIMATED MARQUEE      */}
       {/* ========================================== */}
-      <section className="py-8 sm:py-10 bg-slate-50/70 border-b border-slate-200/90 overflow-hidden relative">
-        <div className="container-x mb-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <section className="py-6 sm:py-8 bg-slate-50/70 border-b border-slate-200/90 overflow-hidden relative">
+        <div className="container-x mb-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
                 <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
                 <span>Trusted Ecosystem</span>
               </div>
-              <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight leading-snug text-left">
+              <h2 className="mt-1 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight leading-snug text-left">
                 <span className="whitespace-normal xl:whitespace-nowrap">Our Collaborators & Brand Partners</span>
               </h2>
-              <p className="mt-1 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
+              <p className="mt-0.5 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
                 Collaborating with Fortune 500 enterprises, GCCs, and high-growth technology pioneers across India.
               </p>
             </div>
@@ -707,12 +707,12 @@ export default function PartnerWithUsPage() {
         </div>
 
         {/* Continuous Animated Marquee */}
-        <div className="relative w-full overflow-hidden py-2">
+        <div className="relative w-full overflow-hidden py-1">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10" />
 
           <motion.div
-            className="flex items-center gap-4 w-max"
+            className="flex items-center gap-3.5 w-max"
             animate={{ x: ["0%", "-50%"] }}
             transition={{
               repeat: Infinity,
@@ -723,10 +723,10 @@ export default function PartnerWithUsPage() {
             {marqueeItems.map((collab, index) => (
               <div
                 key={`${collab.id}-${index}`}
-                className="group relative flex flex-col items-center justify-center text-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-2xs hover:shadow-lg hover:border-cyan-400 transition-all shrink-0 min-w-[200px]"
+                className="group relative flex flex-col items-center justify-center text-center gap-1.5 rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-2xs hover:shadow-lg hover:border-cyan-400 transition-all shrink-0 min-w-[180px]"
               >
                 {/* Logo Image Box */}
-                <div className="h-20 w-40 rounded-xl overflow-hidden bg-white border border-slate-100 p-2.5 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-cyan-200 transition-colors">
+                <div className="h-16 w-36 rounded-xl overflow-hidden bg-white border border-slate-100 p-2 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-cyan-200 transition-colors">
                   <img
                     src={collab.logo}
                     alt={collab.brand_name}
@@ -768,7 +768,7 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 8. 2-COLUMN BALANCED FAQS (CLEAN & WHITE)  */}
       {/* ========================================== */}
-      <section className="py-8 sm:py-10 relative bg-white border-b border-slate-200/90">
+      <section className="py-6 sm:py-8 relative bg-white border-b border-slate-200/90">
         <div className="container-x">
           <SectionHeading
             kicker="Got Questions?"
@@ -778,7 +778,7 @@ export default function PartnerWithUsPage() {
           />
 
           {/* 2-COLUMN BALANCED FAQ GRID */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {faqs.map((faq, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
@@ -793,7 +793,7 @@ export default function PartnerWithUsPage() {
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between gap-3 p-4 text-left font-bold text-xs sm:text-sm text-slate-900 cursor-pointer"
+                    className="w-full flex items-center justify-between gap-3 p-3.5 sm:p-4 text-left font-bold text-xs sm:text-sm text-slate-900 cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
@@ -811,7 +811,7 @@ export default function PartnerWithUsPage() {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed font-sans font-medium border-t border-cyan-100/60 text-justify">
+                        <div className="px-4 pb-3.5 pt-1 text-xs text-slate-600 leading-relaxed font-sans font-medium border-t border-cyan-100/60 text-justify">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -827,9 +827,9 @@ export default function PartnerWithUsPage() {
       {/* ========================================== */}
       {/* 9. BOTTOM HIGH-CONVERSION CTA (CLEAN WHITE) */}
       {/* ========================================== */}
-      <section className="py-10 sm:py-12 relative bg-gradient-to-b from-white via-cyan-50/30 to-white border-t border-slate-200/90">
-        <div className="container-x text-center max-w-3xl mx-auto space-y-3.5">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold uppercase tracking-widest font-btn shadow-2xs">
+      <section className="py-6 sm:py-8 relative bg-gradient-to-b from-white via-cyan-50/30 to-white border-t border-slate-200/90">
+        <div className="container-x text-center max-w-3xl mx-auto space-y-2.5">
+          <span className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-[11px] font-bold uppercase tracking-widest font-btn shadow-2xs">
             <Sparkles className="h-3.5 w-3.5 text-cyan-600" />
             <span>Executive Talks Media Alliances</span>
           </span>
@@ -842,12 +842,12 @@ export default function PartnerWithUsPage() {
             Join India's most respected enterprise leaders, tech innovators, and industry pioneers. Reserve your summit partnership package or request a custom proposal today.
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-1.5 flex flex-wrap items-center justify-center gap-3">
             <MagneticButton strength={15}>
               <button
                 type="button"
                 onClick={() => navigate("/partner/apply")}
-                className="gradient-brand inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-105 transition-transform cursor-pointer border-none"
+                className="gradient-brand inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md hover:scale-105 transition-transform cursor-pointer border-none"
               >
                 <span>Start Partner Application</span>
                 <ArrowUpRight className="h-4 w-4" />
@@ -857,7 +857,7 @@ export default function PartnerWithUsPage() {
             <MagneticButton strength={15}>
               <a
                 href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}`}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 px-7 py-3 text-xs sm:text-sm font-extrabold text-slate-800 transition-colors cursor-pointer shadow-2xs"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 px-7 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 transition-colors cursor-pointer shadow-2xs"
               >
                 <Mail className="h-4 w-4 text-cyan-600" />
                 <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}</span>
@@ -865,7 +865,7 @@ export default function PartnerWithUsPage() {
             </MagneticButton>
           </div>
 
-          <div className="pt-2 text-[11px] text-slate-500 font-medium flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-1 text-[11px] text-slate-500 font-medium flex flex-wrap items-center justify-center gap-3">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-cyan-600" />
               Verified CXO Audience
