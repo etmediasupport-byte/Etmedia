@@ -88,8 +88,6 @@ export default function EventsPage() {
   const [cityFilter, setCityFilter] = useState<string>(urlCity);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
   const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => e.status !== "archived")));
-  const [activeUsers, setActiveUsers] = useState<number | null>(null);
-  const [liveRegistrations, setLiveRegistrations] = useState<number>(0);
 
   // Sync URL search params if changed externally
   useEffect(() => {
@@ -112,23 +110,6 @@ export default function EventsPage() {
         console.warn("Error loading events from API:", err);
       });
 
-    // Socket.IO real-time listeners
-    socket.emit("get_initial_data");
-
-    const onInitialData = (data: { activeUsers: number; totalRegistrations: number }) => {
-      setActiveUsers(data.activeUsers);
-      setLiveRegistrations(data.totalRegistrations);
-    };
-
-    const onLiveUsers = (data: { activeUsers: number }) => {
-      setActiveUsers(data.activeUsers);
-    };
-
-    const onNewRegistration = (data: { registration: any; totalRegistrations: number; message: string }) => {
-      setLiveRegistrations(data.totalRegistrations);
-      toast.success(data.message);
-    };
-
     const reloadEvents = () => {
       fetch("/api/events")
         .then((res) => res.json())
@@ -141,9 +122,6 @@ export default function EventsPage() {
         .catch(() => {});
     };
 
-    socket.on("initial_data", onInitialData);
-    socket.on("live_users_update", onLiveUsers);
-    socket.on("new_registration", onNewRegistration);
     socket.on("event_created", reloadEvents);
     socket.on("event_updated", reloadEvents);
     socket.on("event_deleted", reloadEvents);
@@ -151,9 +129,6 @@ export default function EventsPage() {
     socket.on("event_featured_changed", reloadEvents);
 
     return () => {
-      socket.off("initial_data", onInitialData);
-      socket.off("live_users_update", onLiveUsers);
-      socket.off("new_registration", onNewRegistration);
       socket.off("event_created", reloadEvents);
       socket.off("event_updated", reloadEvents);
       socket.off("event_deleted", reloadEvents);
@@ -310,29 +285,12 @@ export default function EventsPage() {
             </p>
           </div>
 
-          {/* Real-time stats strip */}
+          {/* Executive Summits Count Badge */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {activeUsers !== null && activeUsers > 0 && (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span>{activeUsers} Live Visitors</span>
-              </div>
-            )}
-
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold shadow-2xs">
               <Layers className="h-3.5 w-3.5 text-cyan-600" />
               <span>{allCount} Flagship Conclaves</span>
             </div>
-
-            {liveRegistrations > 0 && (
-              <div className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold shadow-2xs">
-                <TrendingUp className="h-3.5 w-3.5 text-indigo-600" />
-                <span>{liveRegistrations}+ Verified Registrations</span>
-              </div>
-            )}
           </div>
         </div>
 
