@@ -1458,124 +1458,206 @@ export default function EventRegistrationWizardPage() {
                       <Crown className="w-4 h-4 text-amber-500" />
                       <span>STEP 4 OF 7: PASS SELECTION</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
-                      Select Your Delegate Pass Tier
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black font-display text-slate-900 mt-1">
+                      Choose Your Executive Delegate Pass Tier
                     </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Choose your preferred pass tier for {eventData?.title}.
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                      Select your desired level of summit access, VIP networking privileges, and delegate seating for {eventData?.title}.
                     </p>
                   </div>
 
-                  {/* Early Bird Live Offer Banner */}
+                  {/* Early Bird VIP Invitation Banner */}
                   {isEarlyBirdActive && (
-                    <div className="rounded-3xl bg-slate-950 text-white p-4 sm:p-6 border border-amber-500/30 shadow-xl relative overflow-hidden">
-                      <div className="flex flex-col sm:row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-pink-500 flex items-center justify-center shrink-0">
-                            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                    <div className="relative rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950/90 to-slate-950 text-white p-5 sm:p-6 border border-amber-500/40 shadow-2xl overflow-hidden">
+                      <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+                        <div className="flex items-center gap-4 text-center sm:text-left">
+                          <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 p-0.5 shadow-lg shadow-amber-500/20 shrink-0">
+                            <div className="h-full w-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                              <Sparkles className="w-6 h-6 text-amber-400 animate-pulse" />
+                            </div>
                           </div>
                           <div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                              PROMO OFFER ACTIVE
+                            <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-400">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+                              <span>OFFICIAL PROMO OFFER ACTIVE</span>
                             </div>
-                            <h4 className="text-sm sm:text-base font-black text-white">
+                            <h4 className="text-sm sm:text-base font-black text-white mt-0.5">
                               Early Bird Special Pricing Discount Unlocked
                             </h4>
+                            <p className="text-xs text-slate-400">Discounted executive rates automatically applied across all tiers below.</p>
                           </div>
                         </div>
-                        <div className="px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black inline-flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 animate-spin" />
-                          <span>Limited Seats Available</span>
+                        <div className="px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black inline-flex items-center gap-2 shadow-inner shrink-0">
+                          <Clock className="w-4 h-4 text-amber-400" />
+                          <span>Limited VIP Quota</span>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Pricing Cards Grid */}
-                  <div className="grid gap-6 md:grid-cols-3">
+                  {/* Luxury Pricing Cards Grid */}
+                  <div className="grid gap-6 md:grid-cols-3 pt-2 items-stretch">
                     {pricingPlans.map((plan, idx) => {
                       const isSelected = selectedPlan?.name === plan.name;
                       const isPopular = plan.is_featured || idx === 1;
                       const originalPrice = Number(plan.price) || 8000;
                       const ebPrice = typeof plan.early_bird_price === "number" && plan.early_bird_price > 0 ? plan.early_bird_price : originalPrice;
                       const activePrice = isEarlyBirdActive ? ebPrice : originalPrice;
+                      const savings = Math.max(0, originalPrice - activePrice);
+
+                      const isGold = idx === 0 || plan.name.toLowerCase().includes("gold") || plan.name.toLowerCase().includes("standard");
+                      const isVip = isPopular || plan.name.toLowerCase().includes("premium") || plan.name.toLowerCase().includes("vip");
+                      const isPlatinum = idx === 2 || plan.name.toLowerCase().includes("platinum") || plan.name.toLowerCase().includes("diamond") || plan.name.toLowerCase().includes("cxo");
 
                       return (
                         <div
                           key={plan.name || idx}
                           onClick={() => setSelectedPlan(plan)}
-                          className={`relative rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between cursor-pointer border ${
+                          className={`relative rounded-3xl p-6 sm:p-7 transition-all duration-300 flex flex-col justify-between cursor-pointer border backdrop-blur-md group ${
                             isSelected
-                              ? "border-cyan-500 ring-4 ring-cyan-500/20 bg-gradient-to-b from-cyan-50/40 to-white shadow-xl scale-[1.02]"
-                              : "border-slate-200 bg-white hover:border-slate-300 shadow-md hover:shadow-lg"
+                              ? isVip
+                                ? "bg-gradient-to-b from-cyan-50/80 via-white to-white border-cyan-500 ring-4 ring-cyan-500/30 shadow-2xl shadow-cyan-500/20 scale-[1.03] z-20"
+                                : isPlatinum
+                                ? "bg-gradient-to-b from-purple-50/80 via-white to-white border-purple-500 ring-4 ring-purple-500/30 shadow-2xl shadow-purple-500/20 scale-[1.03] z-20"
+                                : "bg-gradient-to-b from-amber-50/80 via-white to-white border-amber-500 ring-4 ring-amber-500/30 shadow-2xl shadow-amber-500/20 scale-[1.03] z-20"
+                              : isVip
+                              ? "bg-white border-cyan-200/90 hover:border-cyan-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5 z-10"
+                              : isPlatinum
+                              ? "bg-white border-purple-200/90 hover:border-purple-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
+                              : "bg-white border-amber-200/90 hover:border-amber-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
                           }`}
                         >
-                          {/* Top Badges */}
-                          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                            {isEarlyBirdActive && typeof plan.early_bird_price === "number" ? (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-600 text-white shadow-sm">
-                                ⚡ Early Bird
-                              </span>
-                            ) : isPopular ? (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm">
-                                🔥 Most Popular
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-700">
-                                Delegate Pass
-                              </span>
-                            )}
+                          {/* Top Floating Badge for VIP / Featured */}
+                          {isVip && (
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-wider shadow-lg shadow-cyan-500/30 flex items-center gap-1.5 whitespace-nowrap z-30">
+                              <Star className="w-3 h-3 fill-current" />
+                              <span>Most Popular • Recommended</span>
+                            </div>
+                          )}
 
-                            {isSelected && (
-                              <span className="h-6 w-6 rounded-full bg-cyan-600 text-white flex items-center justify-center">
-                                <Check className="w-4 h-4 stroke-[3]" />
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="space-y-3">
-                            <h3 className="text-lg font-black text-slate-900">{plan.name}</h3>
-
-                            {/* Price */}
-                            <div className="flex items-baseline gap-2">
-                              {isEarlyBirdActive && ebPrice < originalPrice && (
-                                <span className="text-xs text-slate-400 font-bold line-through">
-                                  ₹{originalPrice.toLocaleString("en-IN")}
+                          <div>
+                            {/* Header Badge & Selection Indicator */}
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shadow-sm ${
+                                  isPlatinum
+                                    ? "bg-purple-100 text-purple-700"
+                                    : isVip
+                                    ? "bg-cyan-100 text-cyan-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}>
+                                  {isPlatinum ? <Zap className="w-4 h-4" /> : isVip ? <Crown className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+                                </div>
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  isPlatinum
+                                    ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                    : isVip
+                                    ? "bg-cyan-50 text-cyan-800 border border-cyan-200"
+                                    : "bg-amber-50 text-amber-800 border border-amber-200"
+                                }`}>
+                                  {isPlatinum ? "💎 Diamond Elite" : isVip ? "👑 Executive VIP" : "⭐ Gold Access"}
                                 </span>
+                              </div>
+
+                              <div className={`h-6 w-6 rounded-full flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? isPlatinum
+                                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                                    : isVip
+                                    ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+                                    : "bg-amber-500 text-white shadow-md shadow-amber-500/30"
+                                  : "border border-slate-300 bg-slate-50 text-transparent"
+                              }`}>
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </div>
+                            </div>
+
+                            {/* Pass Name */}
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                              {isPlatinum
+                                ? "C-Suite masterclasses & exclusive gala access"
+                                : isVip
+                                ? "Front-row seating & VIP lounge networking"
+                                : "Full keynote tracks & standard conclave pass"}
+                            </p>
+
+                            {/* Price Presentation */}
+                            <div className="mt-5 p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl sm:text-4xl font-black font-display text-slate-900 tracking-tight">
+                                  ₹{activePrice.toLocaleString("en-IN")}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">/ delegate</span>
+                              </div>
+
+                              {isEarlyBirdActive && savings > 0 && (
+                                <div className="flex items-center gap-2 pt-1">
+                                  <span className="text-xs text-slate-400 font-bold line-through">
+                                    ₹{originalPrice.toLocaleString("en-IN")}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Save ₹{savings.toLocaleString("en-IN")}
+                                  </span>
+                                </div>
                               )}
-                              <span className="text-2xl sm:text-3xl font-black text-slate-900 font-display">
-                                ₹{activePrice.toLocaleString("en-IN")}
-                              </span>
-                              <span className="text-[11px] font-bold text-slate-500">/ pass</span>
+                              <div className="text-[10px] text-slate-400 font-semibold pt-1">
+                                + 18% GST • Official GST Tax Invoice Included
+                              </div>
                             </div>
 
                             {/* Features Checklist */}
-                            <div className="space-y-2 pt-3 border-t border-slate-100">
+                            <div className="space-y-2.5 pt-5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                                Pass Inclusions:
+                              </span>
                               {(plan.features || [
                                 "Access to all Keynotes & Panel Discussions",
                                 "Executive Networking Lunch & Coffee Breaks",
                                 "Delegate Registration Kit & Souvenir",
                                 "Official Certificate of Participation",
                               ]).map((feat, fIdx) => (
-                                <div key={fIdx} className="flex items-start gap-2 text-xs font-semibold text-slate-700">
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                                  <span>{feat}</span>
+                                <div key={fIdx} className="flex items-start gap-2.5 text-xs font-semibold text-slate-700">
+                                  <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                    isPlatinum
+                                      ? "text-purple-600"
+                                      : isVip
+                                      ? "text-cyan-600"
+                                      : "text-amber-500"
+                                  }`} />
+                                  <span className="leading-snug">{feat}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          <div className="pt-6">
+                          {/* CTA Button */}
+                          <div className="pt-6 mt-4 border-t border-slate-100">
                             <button
                               type="button"
                               onClick={() => setSelectedPlan(plan)}
-                              className={`w-full py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
                                 isSelected
-                                  ? "bg-cyan-600 text-white shadow-md"
-                                  : "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                                  ? isPlatinum
+                                    ? "bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-lg shadow-purple-600/30"
+                                    : isVip
+                                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30"
+                                    : "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30"
+                                  : "bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white"
                               }`}
                             >
-                              {isSelected ? "Selected Pass Tier" : "Select This Pass"}
+                              {isSelected ? (
+                                <>
+                                  <Check className="w-4 h-4 stroke-[3]" />
+                                  <span>Selected Pass Tier</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>Select This Pass</span>
+                                  <ArrowRight className="w-4 h-4" />
+                                </>
+                              )}
                             </button>
                           </div>
                         </div>
