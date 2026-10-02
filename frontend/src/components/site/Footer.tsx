@@ -127,11 +127,11 @@ export function Footer() {
           
           {/* COLUMN 1: BRAND IDENTITY & OVERVIEW (4 cols) */}
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-3.5">
-            <Link to="/" className="inline-flex transition-transform hover:scale-[1.02] bg-white rounded-xl p-1.5 shadow-sm border border-slate-200">
+            <Link to="/" className="inline-block transition-transform hover:scale-[1.02] bg-white rounded-2xl p-2 sm:p-2.5 shadow-sm border border-slate-200">
               <img
                 src={executivetalksLogo}
                 alt="Executive Talks Media Business Intelligence"
-                className="h-10 sm:h-11 w-auto object-contain bg-white"
+                className="h-12 sm:h-14 w-auto object-contain bg-white"
                 loading="lazy"
               />
             </Link>
@@ -140,59 +140,59 @@ export function Footer() {
               Executive Talks Media Business Intelligence curates India's premier C-suite leadership platforms — national conferences, executive summits, corporate awards, and industry intelligence.
             </p>
 
-            {/* Social Channels with Sleek Glass Badges */}
+            {/* Social Channels with Original Vibrant Brand Icons */}
             <div className="pt-1">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block mb-2 font-display">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 block mb-2.5 font-display">
                 Connect With Us
               </span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {[
                   {
                     href: socialLinks.linkedin,
                     Icon: Linkedin,
                     label: "LinkedIn",
-                    hoverColor: "hover:text-[#0A66C2] hover:border-[#0A66C2]/40 hover:bg-[#0A66C2]/10",
+                    bgColor: "bg-[#0A66C2] shadow-[0_4px_14px_rgba(10,102,194,0.4)] hover:shadow-[0_6px_20px_rgba(10,102,194,0.7)]",
                   },
                   {
                     href: socialLinks.instagram,
                     Icon: Instagram,
                     label: "Instagram",
-                    hoverColor: "hover:text-[#E4405F] hover:border-[#E4405F]/40 hover:bg-[#E4405F]/10",
+                    bgColor: "bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] shadow-[0_4px_14px_rgba(220,39,67,0.4)] hover:shadow-[0_6px_20px_rgba(220,39,67,0.7)]",
                   },
                   {
                     href: socialLinks.youtube,
                     Icon: Youtube,
                     label: "YouTube",
-                    hoverColor: "hover:text-[#FF0000] hover:border-[#FF0000]/40 hover:bg-[#FF0000]/10",
+                    bgColor: "bg-[#FF0000] shadow-[0_4px_14px_rgba(255,0,0,0.4)] hover:shadow-[0_6px_20px_rgba(255,0,0,0.7)]",
                   },
                   {
                     href: socialLinks.facebook,
                     Icon: Facebook,
                     label: "Facebook",
-                    hoverColor: "hover:text-[#1877F2] hover:border-[#1877F2]/40 hover:bg-[#1877F2]/10",
+                    bgColor: "bg-[#1877F2] shadow-[0_4px_14px_rgba(24,119,242,0.4)] hover:shadow-[0_6px_20px_rgba(24,119,242,0.7)]",
                   },
                   {
                     href: socialLinks.whatsapp,
                     Icon: MessageCircle,
                     label: "WhatsApp",
-                    hoverColor: "hover:text-[#25D366] hover:border-[#25D366]/40 hover:bg-[#25D366]/10",
+                    bgColor: "bg-[#25D366] shadow-[0_4px_14px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_20px_rgba(37,211,102,0.7)]",
                   },
                   {
                     href: socialLinks.twitter,
                     Icon: Twitter,
                     label: "X (Twitter)",
-                    hoverColor: "hover:text-cyan-400 hover:border-cyan-500/40 hover:bg-cyan-500/10",
+                    bgColor: "bg-black border border-slate-700 shadow-[0_4px_14px_rgba(0,0,0,0.4)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.2)]",
                   },
-                ].map(({ href, Icon, label, hoverColor }) => (
+                ].map(({ href, Icon, label, bgColor }) => (
                   <a
                     key={label}
                     href={href}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-slate-400 transition-all duration-200 hover:scale-105 shadow-2xs ${hoverColor}`}
+                    className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl text-white transition-all duration-300 hover:scale-110 cursor-pointer ${bgColor}`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4.5 w-4.5" />
                   </a>
                 ))}
               </div>

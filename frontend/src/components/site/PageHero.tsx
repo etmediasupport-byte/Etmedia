@@ -48,7 +48,7 @@ export function PageHero({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-4 max-w-3xl text-sm sm:text-base lg:text-lg text-white/90 font-medium leading-relaxed font-sans"
+          className="mt-3 max-w-3xl text-xs sm:text-sm lg:text-base text-white/90 font-medium leading-relaxed font-sans text-justify"
         >
           {subtitle}
         </motion.p>

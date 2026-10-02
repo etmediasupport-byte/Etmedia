@@ -145,7 +145,7 @@ export function Navbar() {
         className={cn(
           "fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)]",
           isLoading && "border-b-cyan-500 shadow-[0_4px_25px_rgba(0,174,239,0.25)] animate-navbar-loading",
-          scrolled ? "py-1.5 shadow-md shadow-slate-200/50 bg-white/98" : "py-2"
+          scrolled ? "py-2 sm:py-2.5 shadow-md shadow-slate-200/50 bg-white/98" : "py-2.5 sm:py-3.5"
         )}
       >
         {/* Animated Scanning Beam on Loading State */}
@@ -171,7 +171,7 @@ export function Navbar() {
             <img
               src={executivetalksLogo}
               alt="Executive Talks Media"
-              className="h-9 sm:h-10 lg:h-11 xl:h-12 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
+              className="h-11 sm:h-12 md:h-13 lg:h-14 xl:h-15 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
             />
           </Link>
 

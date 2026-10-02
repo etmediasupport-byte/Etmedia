@@ -105,8 +105,8 @@ export function SectionHeading({
       {description ? (
         <p
           className={cn(
-            "text-muted-foreground mt-1 text-xs sm:text-sm leading-relaxed max-w-3xl",
-            align === "center" ? "mx-auto text-center" : "text-left",
+            "text-muted-foreground mt-1 text-xs sm:text-sm leading-relaxed max-w-3xl text-justify",
+            align === "center" ? "mx-auto text-center" : "text-justify",
             descriptionClassName,
           )}
         >
