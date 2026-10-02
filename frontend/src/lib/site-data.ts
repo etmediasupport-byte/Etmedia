@@ -18,6 +18,30 @@ export const images = {
   magazineCover,
 };
 
+export function getDefaultEventImage(title?: string, category?: string): string {
+  const titleAndCat = `${title || ""} ${category || ""}`.toLowerCase();
+  if (titleAndCat.includes("hr") || titleAndCat.includes("recaller") || titleAndCat.includes("talent") || titleAndCat.includes("people")) {
+    return images.eventHr;
+  }
+  if (titleAndCat.includes("cfo") || titleAndCat.includes("finance") || titleAndCat.includes("treasury") || titleAndCat.includes("capital")) {
+    return images.eventCfo;
+  }
+  if (titleAndCat.includes("award") || titleAndCat.includes("excellence") || titleAndCat.includes("recognition")) {
+    return images.heroAwards;
+  }
+  if (titleAndCat.includes("tech") || titleAndCat.includes("ai") || titleAndCat.includes("creator") || titleAndCat.includes("enterprise") || titleAndCat.includes("summit")) {
+    return images.heroSummit;
+  }
+  if (titleAndCat.includes("gcc") || titleAndCat.includes("global") || titleAndCat.includes("leadership")) {
+    return images.heroLeadership;
+  }
+  if (titleAndCat.includes("network") || titleAndCat.includes("procurement") || titleAndCat.includes("admin")) {
+    return images.heroNetworking;
+  }
+
+  return images.eventHr;
+}
+
 export function getValidImageUrl(url?: string, title?: string, category?: string): string {
   if (url && typeof url === "string" && url.trim()) {
     const trimmed = url.trim();
@@ -39,29 +63,12 @@ export function getValidImageUrl(url?: string, title?: string, category?: string
     if (lower.includes("about-office")) return images.aboutOffice;
     if (lower.includes("magazine-cover")) return images.magazineCover;
 
-    if (trimmed.startsWith("/")) {
+    if (trimmed.startsWith("/uploads/")) {
       return trimmed;
     }
   }
 
-  const titleAndCat = `${title || ""} ${category || ""}`.toLowerCase();
-  if (titleAndCat.includes("hr") || titleAndCat.includes("recaller") || titleAndCat.includes("talent") || titleAndCat.includes("people")) {
-    return images.eventHr;
-  }
-  if (titleAndCat.includes("cfo") || titleAndCat.includes("finance") || titleAndCat.includes("treasury") || titleAndCat.includes("capital")) {
-    return images.eventCfo;
-  }
-  if (titleAndCat.includes("award") || titleAndCat.includes("excellence") || titleAndCat.includes("recognition")) {
-    return images.heroAwards;
-  }
-  if (titleAndCat.includes("tech") || titleAndCat.includes("ai") || titleAndCat.includes("creator") || titleAndCat.includes("enterprise")) {
-    return images.heroSummit;
-  }
-  if (titleAndCat.includes("gcc") || titleAndCat.includes("global") || titleAndCat.includes("leadership")) {
-    return images.heroLeadership;
-  }
-
-  return images.eventHr;
+  return getDefaultEventImage(title, category);
 }
 
 export const contact = {

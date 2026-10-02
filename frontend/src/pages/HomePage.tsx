@@ -295,7 +295,6 @@ function AboutSnapshot() {
   );
 }
 
-// SECTION 4: UPCOMING EVENTS (Dynamic API CMS)
 function UpcomingEvents() {
   const [eventList, setEventList] = useState<any[]>([]);
 
@@ -304,10 +303,32 @@ function UpcomingEvents() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          setEventList(data.data);
+          const dbEvents = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
+          const seen = new Set<string>();
+          const combined: any[] = [];
+          dbEvents.forEach((ev: any) => {
+            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
+            if (k && !seen.has(k)) {
+              seen.add(k);
+              combined.push(ev);
+            }
+          });
+          (events as any[]).forEach((ev: any) => {
+            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
+            if (k && !seen.has(k)) {
+              seen.add(k);
+              combined.push(ev);
+            }
+          });
+          setEventList(combined.length > 0 ? combined : events);
+        } else {
+          setEventList(events);
         }
       })
-      .catch((err) => console.warn("Error fetching events for homepage:", err));
+      .catch((err) => {
+        console.warn("Error fetching events for homepage:", err);
+        setEventList(events);
+      });
   }, []);
 
   return (

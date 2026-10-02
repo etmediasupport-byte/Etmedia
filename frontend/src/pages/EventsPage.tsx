@@ -165,20 +165,37 @@ export default function EventsPage() {
     }
   }, [urlSearch]);
 
-  // Load real events strictly from Database (Managed in Admin Dashboard)
+  // Load events from Database with default fallback summits
   useEffect(() => {
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          setEventList(data.data);
+          const dbEvents = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
+          const seen = new Set<string>();
+          const combined: any[] = [];
+          dbEvents.forEach((ev: any) => {
+            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
+            if (k && !seen.has(k)) {
+              seen.add(k);
+              combined.push(ev);
+            }
+          });
+          (defaultEvents as any[]).forEach((ev: any) => {
+            const k = (ev.slug || ev.id || ev.title || "").toLowerCase().trim();
+            if (k && !seen.has(k)) {
+              seen.add(k);
+              combined.push(ev);
+            }
+          });
+          setEventList(combined.length > 0 ? combined : defaultEvents);
         } else {
-          setEventList([]);
+          setEventList(defaultEvents);
         }
       })
       .catch((err) => {
         console.warn("Error loading events from API:", err);
-        setEventList([]);
+        setEventList(defaultEvents);
       });
 
     // Socket.IO real-time listeners

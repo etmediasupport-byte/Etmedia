@@ -48,17 +48,17 @@ export function ThreeDMagazineHero({ magazine, onOpenReader, onScrollToEditions 
 
   const handleMagazineClick = () => {
     setIsOpening(true);
+    onOpenReader(magazine);
     setTimeout(() => {
-      onOpenReader(magazine);
       setIsOpening(false);
-    }, 900);
+    }, 400);
   };
 
   return (
     <section
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative pt-28 sm:pt-32 pb-10 sm:pb-12 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 select-none border-b border-slate-200/80"
+      className="relative pt-24 sm:pt-28 pb-5 sm:pb-6 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 select-none border-b border-slate-200/80"
     >
       {/* Background Subtle Luxury Glows */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-purple-500/5 blur-[140px] pointer-events-none rounded-full" />
@@ -66,7 +66,7 @@ export function ThreeDMagazineHero({ magazine, onOpenReader, onScrollToEditions 
 
       <div className="container-x relative z-10 max-w-7xl mx-auto">
         {/* MAIN HERO GRID: LEFT CONTENT & RIGHT 3D MAGAZINE + SPREAD PREVIEW */}
-        <div className="grid items-center gap-8 lg:gap-10 lg:grid-cols-12">
+        <div className="grid items-center gap-6 lg:gap-8 lg:grid-cols-12">
           
           {/* LEFT COLUMN: HERO TYPOGRAPHY & FEATURES */}
           <div className="lg:col-span-6 space-y-4 sm:space-y-5 text-center lg:text-left">
@@ -143,20 +143,22 @@ export function ThreeDMagazineHero({ magazine, onOpenReader, onScrollToEditions 
               animate={
                 isOpening
                   ? {
-                      scale: [1, 1.1, 1.2],
-                      opacity: [1, 1, 0],
+                      scale: 1.05,
+                      opacity: 1,
                     }
                   : {
                       y: [-6, 6, -6],
+                      scale: 1,
+                      opacity: 1,
                     }
               }
               transition={
                 isOpening
-                  ? { duration: 0.9, ease: [0.16, 1, 0.3, 1] }
-                  : { duration: 7, repeat: Infinity, ease: "easeInOut" }
+                  ? { duration: 0.35, ease: "easeOut" }
+                  : { y: { duration: 7, repeat: Infinity, ease: "easeInOut" } }
               }
               onClick={handleMagazineClick}
-              className="group relative flex items-center justify-center gap-3.5 sm:gap-4 cursor-pointer select-none"
+              className="group relative flex items-center justify-center gap-3.5 sm:gap-4 cursor-pointer select-none opacity-100"
             >
               {/* Cover Card (3D Floating Perspective) */}
               <div className="relative w-52 sm:w-64 lg:w-72 aspect-[1/1.42] rounded-r-2xl border-2 border-slate-200/90 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.16)] overflow-hidden shrink-0 group-hover:border-purple-500 group-hover:shadow-[0_25px_70px_rgba(75,31,167,0.22)] transition-all duration-500">
@@ -227,8 +229,8 @@ export function ThreeDMagazineHero({ magazine, onOpenReader, onScrollToEditions 
         </div>
 
         {/* BOTTOM HIGHLIGHTS BAR (CLEAN EXECUTIVE WHITE FLOATING CARD) */}
-        <div className="mt-10 sm:mt-12 p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-white text-slate-900 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-center">
+        <div className="mt-6 sm:mt-7 p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 bg-white text-slate-900 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 items-center">
             
             {/* Col 1: Current Edition */}
             <div className="flex items-center gap-3 border-b sm:border-b-0 sm:border-r border-slate-200/80 pb-3 sm:pb-0 sm:pr-4">

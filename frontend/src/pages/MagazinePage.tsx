@@ -214,25 +214,25 @@ export default function MagazinePage() {
       {/* ========================================== */}
       {/* 2. EXPLORE OUR EDITIONS (WHITE MODE GRID)  */}
       {/* ========================================== */}
-      <section id="all-magazines" className="py-10 sm:py-14 relative bg-slate-50/70 border-b border-slate-200/80">
+      <section id="all-magazines" className="py-5 sm:py-7 relative bg-slate-50/70 border-b border-slate-200/80">
         <div className="container-x">
           
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <div className="text-center max-w-3xl mx-auto mb-4 sm:mb-5">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-[10.5px] font-black uppercase tracking-wider text-purple-700 font-display">
               <Sparkles className="h-3 w-3 text-purple-600" />
               EXPLORE OUR EDITIONS
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display mt-2 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 font-display mt-1.5 tracking-tight">
               All Magazine Editions
             </h2>
-            <p className="mt-2 text-slate-600 text-xs sm:text-sm leading-relaxed font-sans font-medium">
+            <p className="mt-1.5 text-slate-600 text-xs sm:text-sm text-center max-w-2xl mx-auto leading-relaxed font-sans font-medium">
               A curated collection of leadership dialogues, strategic intelligence, and industry trends from visionary executives worldwide.
             </p>
           </div>
 
           {/* Search Bar & Category Filter Pills */}
-          <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-3 p-2.5 sm:p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="mb-5 sm:mb-6 flex flex-col md:flex-row items-center justify-between gap-3 p-2.5 sm:p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
             {/* Search Input Box */}
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
