@@ -50,10 +50,10 @@ export function EventSelectionModal({
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
-          const publishedEvents = json.data.filter(
-            (ev: any) => ev.status !== "draft" && ev.status !== "archived"
+          const activeEvents = json.data.filter(
+            (ev: any) => ev.status !== "archived"
           );
-          setEventsList(publishedEvents.length > 0 ? publishedEvents : json.data);
+          setEventsList(activeEvents);
         } else {
           setEventsList([]);
         }

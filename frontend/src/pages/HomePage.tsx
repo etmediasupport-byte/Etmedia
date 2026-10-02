@@ -298,13 +298,13 @@ function AboutSnapshot() {
 function UpcomingEvents() {
   const [eventList, setEventList] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchUpcoming = () => {
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          const published = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
-          setEventList(published.length > 0 ? published : data.data);
+          const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+          setEventList(activeEvents);
         } else {
           setEventList([]);
         }
@@ -313,6 +313,24 @@ function UpcomingEvents() {
         console.warn("Error fetching events for homepage:", err);
         setEventList([]);
       });
+  };
+
+  useEffect(() => {
+    fetchUpcoming();
+
+    socket.on("event_created", fetchUpcoming);
+    socket.on("event_updated", fetchUpcoming);
+    socket.on("event_deleted", fetchUpcoming);
+    socket.on("event_status_changed", fetchUpcoming);
+    socket.on("event_featured_changed", fetchUpcoming);
+
+    return () => {
+      socket.off("event_created", fetchUpcoming);
+      socket.off("event_updated", fetchUpcoming);
+      socket.off("event_deleted", fetchUpcoming);
+      socket.off("event_status_changed", fetchUpcoming);
+      socket.off("event_featured_changed", fetchUpcoming);
+    };
   }, []);
 
   return (

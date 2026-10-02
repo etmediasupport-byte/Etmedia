@@ -171,8 +171,8 @@ export default function EventsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          const published = data.data.filter((e: any) => e.status !== "draft" && e.status !== "archived");
-          setEventList(published.length > 0 ? published : data.data);
+          const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+          setEventList(activeEvents);
         } else {
           setEventList([]);
         }
@@ -199,14 +199,36 @@ export default function EventsPage() {
       toast.success(data.message);
     };
 
+    const reloadEvents = () => {
+      fetch("/api/events")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+            setEventList(activeEvents);
+          }
+        })
+        .catch(() => {});
+    };
+
     socket.on("initial_data", onInitialData);
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
+    socket.on("event_created", reloadEvents);
+    socket.on("event_updated", reloadEvents);
+    socket.on("event_deleted", reloadEvents);
+    socket.on("event_status_changed", reloadEvents);
+    socket.on("event_featured_changed", reloadEvents);
 
     return () => {
       socket.off("initial_data", onInitialData);
       socket.off("live_users_update", onLiveUsers);
       socket.off("new_registration", onNewRegistration);
+      socket.off("event_created", reloadEvents);
+      socket.off("event_updated", reloadEvents);
+      socket.off("event_deleted", reloadEvents);
+      socket.off("event_status_changed", reloadEvents);
+      socket.off("event_featured_changed", reloadEvents);
     };
   }, []);
 
