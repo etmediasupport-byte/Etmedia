@@ -84,12 +84,16 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   }, [pageKey]);
 
   // Compute final metadata
-  const rawTitle = dbSeo?.title || title || DEFAULT_TITLE;
+  let rawTitle = dbSeo?.title || title || DEFAULT_TITLE;
+  // Eliminate any legacy "ET Media" or "ETMedia" from database or cached settings
+  rawTitle = rawTitle.replace(/ET\s*Media/gi, "Executive Talks Media").trim();
   const fullTitle = rawTitle.includes("Executive Talks Media") ? rawTitle : `${rawTitle} | Executive Talks Media`;
-  const metaDescription = dbSeo?.description || description || DEFAULT_DESC;
+  
+  let metaDescription = dbSeo?.description || description || DEFAULT_DESC;
+  metaDescription = metaDescription.replace(/ET\s*Media/gi, "Executive Talks Media").trim();
   
   // Ensure "Executive Talks Media" is always part of the keywords string
-  const baseKeywords = dbSeo?.keywords || keywords || DEFAULT_KEYWORDS;
+  const baseKeywords = (dbSeo?.keywords || keywords || DEFAULT_KEYWORDS).replace(/ET\s*Media/gi, "Executive Talks Media");
   const fullKeywords = baseKeywords.includes("Executive Talks Media")
     ? baseKeywords
     : `Executive Talks Media, Executive Talks, ${baseKeywords}`;

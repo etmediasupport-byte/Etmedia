@@ -1054,6 +1054,12 @@ export async function seedNewAdminTables() {
       console.log("[MySQL] Seeded default SEO meta tags!");
     }
 
+    // Migration to replace any legacy ET Media with Executive Talks Media in DB
+    try {
+      await pool.query("UPDATE seo_settings SET title = REPLACE(title, 'ET Media', 'Executive Talks Media'), description = REPLACE(description, 'ET Media', 'Executive Talks Media'), keywords = REPLACE(keywords, 'ET Media', 'Executive Talks Media') WHERE title LIKE '%ET Media%' OR description LIKE '%ET Media%' OR keywords LIKE '%ET Media%'");
+      await pool.query("UPDATE website_settings SET setting_value = REPLACE(setting_value, 'ET Media', 'Executive Talks Media') WHERE setting_value LIKE '%ET Media%'");
+    } catch (e) {}
+
     // Seed Website Settings
     const [settCount]: any = await pool.query("SELECT COUNT(*) as count FROM website_settings");
     if (settCount[0]?.count === 0) {
