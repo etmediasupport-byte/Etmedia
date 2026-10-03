@@ -273,6 +273,86 @@ type TabType =
   | "popup"
   | "database";
 
+// ==========================================
+// TIME & CLOCK PICKER UTILITY FUNCTIONS
+// ==========================================
+export const convert24To12Hour = (time24: string): string => {
+  if (!time24) return "";
+  const parts = time24.split(":");
+  if (parts.length < 2) return time24;
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1].padStart(2, "0");
+  if (isNaN(hours)) return time24;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedHours = String(hours).padStart(2, "0");
+  return `${formattedHours}:${minutes} ${ampm}`;
+};
+
+export const formatTimeTo12Hour = convert24To12Hour;
+
+export const parse12HourTo24 = (time12: string): string => {
+  if (!time12) return "";
+  const clean = time12.trim();
+  if (/^\d{1,2}:\d{2}$/.test(clean)) {
+    const [h, m] = clean.split(":");
+    return `${String(parseInt(h, 10)).padStart(2, "0")}:${m}`;
+  }
+  const match = clean.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!match) return "";
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const ampm = (match[3] || "").toUpperCase();
+
+  if (ampm === "PM" && hours < 12) {
+    hours += 12;
+  } else if (ampm === "AM" && hours === 12) {
+    hours = 0;
+  }
+  return `${String(hours).padStart(2, "0")}:${minutes}`;
+};
+
+export const parseTimeRangeToClocks = (rangeStr: string): { start: string; end: string } => {
+  if (!rangeStr) return { start: "09:00", end: "18:00" };
+  const splitters = ["—", "–", " to ", " - ", "-"];
+  let startPart = "";
+  let endPart = "";
+  for (const s of splitters) {
+    if (rangeStr.includes(s)) {
+      const parts = rangeStr.split(s);
+      startPart = parts[0]?.trim() || "";
+      endPart = parts[1]?.trim() || "";
+      break;
+    }
+  }
+  if (!startPart && !endPart) {
+    startPart = rangeStr.trim();
+  }
+  return {
+    start: parse12HourTo24(startPart) || "09:00",
+    end: parse12HourTo24(endPart) || "18:00",
+  };
+};
+
+export const parseOfficeHoursToClocks = (str: string) => {
+  if (!str) return { days: "Mon - Fri", start: "09:00", end: "18:00", tz: "IST" };
+  let days = "Mon - Fri";
+  let rangePart = str;
+  let tz = "IST";
+  if (str.includes(":")) {
+    const idx = str.indexOf(":");
+    days = str.substring(0, idx).trim();
+    rangePart = str.substring(idx + 1).trim();
+  }
+  if (/IST$/i.test(rangePart)) {
+    tz = "IST";
+    rangePart = rangePart.replace(/IST$/i, "").trim();
+  }
+  const { start, end } = parseTimeRangeToClocks(rangePart);
+  return { days: days || "Mon - Fri", start, end, tz };
+};
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [adminUser, setAdminUser] = useState<any>(null);
@@ -422,82 +502,6 @@ export default function AdminDashboardPage() {
     const dateObj = new Date(year, month - 1, 1);
     if (isNaN(dateObj.getTime())) return isoMonth;
     return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  };
-
-  // Time conversion & Clock picker helpers
-  const formatTimeTo12Hour = (time24: string): string => {
-    if (!time24) return "";
-    const parts = time24.split(":");
-    if (parts.length < 2) return time24;
-    let hours = parseInt(parts[0], 10);
-    const minutes = parts[1].padStart(2, "0");
-    if (isNaN(hours)) return time24;
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const formattedHours = String(hours).padStart(2, "0");
-    return `${formattedHours}:${minutes} ${ampm}`;
-  };
-
-  const parse12HourTo24 = (time12: string): string => {
-    if (!time12) return "";
-    const clean = time12.trim();
-    if (/^\d{1,2}:\d{2}$/.test(clean)) {
-      const [h, m] = clean.split(":");
-      return `${String(parseInt(h, 10)).padStart(2, "0")}:${m}`;
-    }
-    const match = clean.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-    if (!match) return "";
-    let hours = parseInt(match[1], 10);
-    const minutes = match[2];
-    const ampm = (match[3] || "").toUpperCase();
-
-    if (ampm === "PM" && hours < 12) {
-      hours += 12;
-    } else if (ampm === "AM" && hours === 12) {
-      hours = 0;
-    }
-    return `${String(hours).padStart(2, "0")}:${minutes}`;
-  };
-
-  const parseTimeRangeToClocks = (rangeStr: string): { start: string; end: string } => {
-    if (!rangeStr) return { start: "09:00", end: "18:00" };
-    const splitters = ["—", "–", " to ", " - ", "-"];
-    let startPart = "";
-    let endPart = "";
-    for (const s of splitters) {
-      if (rangeStr.includes(s)) {
-        const parts = rangeStr.split(s);
-        startPart = parts[0]?.trim() || "";
-        endPart = parts[1]?.trim() || "";
-        break;
-      }
-    }
-    if (!startPart && !endPart) {
-      startPart = rangeStr.trim();
-    }
-    return {
-      start: parse12HourTo24(startPart) || "09:00",
-      end: parse12HourTo24(endPart) || "18:00",
-    };
-  };
-
-  const parseOfficeHoursToClocks = (str: string) => {
-    if (!str) return { days: "Mon - Fri", start: "09:00", end: "18:00", tz: "IST" };
-    let days = "Mon - Fri";
-    let rangePart = str;
-    let tz = "IST";
-    if (str.includes(":")) {
-      const idx = str.indexOf(":");
-      days = str.substring(0, idx).trim();
-      rangePart = str.substring(idx + 1).trim();
-    }
-    if (/IST$/i.test(rangePart)) {
-      tz = "IST";
-      rangePart = rangePart.replace(/IST$/i, "").trim();
-    }
-    const { start, end } = parseTimeRangeToClocks(rangePart);
-    return { days: days || "Mon - Fri", start, end, tz };
   };
 
   const [newMagForm, setNewMagForm] = useState({
