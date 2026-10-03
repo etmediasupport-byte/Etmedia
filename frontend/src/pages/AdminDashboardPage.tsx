@@ -359,6 +359,55 @@ export const parseOfficeHoursToClocks = (str: string) => {
   return { days: days || "Mon - Fri", start, end, tz };
 };
 
+export const isDelegatePaid = (r: any): boolean => {
+  if (!r) return false;
+  const pStatus = (r.payment_status || "").toString().toLowerCase();
+  return (
+    pStatus.includes("paid") &&
+    !pStatus.includes("dropped") &&
+    !pStatus.includes("incomplete") &&
+    !pStatus.includes("rejected")
+  );
+};
+
+export const isDelegateGrantedFree = (r: any): boolean => {
+  if (!r || isDelegatePaid(r)) return false;
+  const pStatus = (r.payment_status || "").toString().toLowerCase();
+  const passName = (r.pass_name || "").toString().toLowerCase();
+  const payId = (r.payment_id || "").toString().toLowerCase();
+  const category = (r.registration_category || "").toString().toLowerCase();
+  const price = Number(r.pass_price) || Number(r.payment_amount) || 0;
+
+  return (
+    pStatus === "approved (free pass)" ||
+    pStatus === "free" ||
+    pStatus === "approved" ||
+    pStatus.includes("approved (free") ||
+    passName.includes("complimentary") ||
+    passName.includes("free") ||
+    category.includes("complimentary") ||
+    category.includes("free") ||
+    payId.includes("admin-") ||
+    payId.includes("free") ||
+    (price === 0 && (pStatus === "approved" || pStatus === "confirmed" || pStatus === "free"))
+  );
+};
+
+export const isDelegatePendingReview = (r: any): boolean => {
+  if (!r || isDelegatePaid(r) || isDelegateGrantedFree(r)) return false;
+  const pStatus = (r.payment_status || "").toString().toLowerCase();
+  return pStatus === "pending approval" || pStatus.includes("pending approval");
+};
+
+export const isDelegateDropped = (r: any): boolean => {
+  if (!r || isDelegatePaid(r) || isDelegateGrantedFree(r) || isDelegatePendingReview(r)) return false;
+  return true;
+};
+
+export const isDelegateEligibleForGrant = (r: any): boolean => {
+  return !isDelegatePaid(r) && !isDelegateGrantedFree(r);
+};
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [adminUser, setAdminUser] = useState<any>(null);
@@ -2089,14 +2138,22 @@ export default function AdminDashboardPage() {
   };
 
   const handleToggleSelectAllRegistrations = () => {
-    if (selectedRegIds.length === filteredRegistrations.length && filteredRegistrations.length > 0) {
-      setSelectedRegIds([]);
+    const eligibleIds = eligibleRegistrationsInFilter.map((r) => r.id);
+    if (eligibleIds.length === 0) return;
+    const allEligibleSelected = eligibleIds.every((id) => selectedRegIds.includes(id));
+    if (allEligibleSelected) {
+      setSelectedRegIds((prev) => prev.filter((id) => !eligibleIds.includes(id)));
     } else {
-      setSelectedRegIds(filteredRegistrations.map((r) => r.id));
+      setSelectedRegIds((prev) => Array.from(new Set([...prev, ...eligibleIds])));
     }
   };
 
   const handleToggleSelectRegistration = (id: string) => {
+    const reg = eventRegistrationsList.find((r) => r.id === id);
+    if (reg && !isDelegateEligibleForGrant(reg)) {
+      toast.info("This delegate has already been granted a pass or confirmed paid.");
+      return;
+    }
     setSelectedRegIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
@@ -4307,21 +4364,17 @@ export default function AdminDashboardPage() {
 
       // 3. Status Filter
       if (regFilterStatus !== "all") {
+        const isPaid = isDelegatePaid(r);
+        const isFreeGranted = isDelegateGrantedFree(r);
+        const isPendingReview = isDelegatePendingReview(r);
+        const isDropped = isDelegateDropped(r);
         const pStatus = (r.payment_status || "").toString().toLowerCase();
-        if (regFilterStatus === "paid") {
-          const isPaid = pStatus.includes("paid") && !pStatus.includes("dropped") && !pStatus.includes("incomplete");
-          if (!isPaid) return false;
-        } else if (regFilterStatus === "free") {
-          const isFree = pStatus.includes("free") || pStatus.includes("approved") || r.pass_price === 0;
-          if (!isFree) return false;
-        } else if (regFilterStatus === "dropped") {
-          const isDropped = pStatus.includes("dropped") || pStatus.includes("incomplete") || pStatus.includes("pending") || pStatus.includes("rejected");
-          if (!isDropped) return false;
-        } else if (regFilterStatus === "pending") {
-          if (pStatus !== "pending approval" && pStatus !== "pending") return false;
-        } else if (regFilterStatus === "rejected") {
-          if (!pStatus.includes("rejected")) return false;
-        }
+
+        if (regFilterStatus === "paid" && !isPaid) return false;
+        if ((regFilterStatus === "free_granted" || regFilterStatus === "free") && !isFreeGranted) return false;
+        if ((regFilterStatus === "pending_review" || regFilterStatus === "pending") && !isPendingReview) return false;
+        if (regFilterStatus === "dropped" && !isDropped) return false;
+        if (regFilterStatus === "rejected" && !pStatus.includes("rejected")) return false;
       }
 
       // 4. Date Filter
@@ -4342,17 +4395,23 @@ export default function AdminDashboardPage() {
     });
   }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate, dateFilterRange, customStartDate, customEndDate]);
 
+  const eligibleRegistrationsInFilter = useMemo(() => {
+    return filteredRegistrations.filter((r) => isDelegateEligibleForGrant(r));
+  }, [filteredRegistrations]);
+
   const regStatusCounts = useMemo(() => {
     let paid = 0;
-    let free = 0;
+    let freeGranted = 0;
+    let pendingReview = 0;
     let dropped = 0;
 
     eventRegistrationsList.forEach((r) => {
-      const pStatus = (r.payment_status || "").toString().toLowerCase();
-      if (pStatus.includes("paid") && !pStatus.includes("dropped") && !pStatus.includes("incomplete")) {
+      if (isDelegatePaid(r)) {
         paid++;
-      } else if (pStatus.includes("free") || pStatus.includes("approved") || r.pass_price === 0) {
-        free++;
+      } else if (isDelegateGrantedFree(r)) {
+        freeGranted++;
+      } else if (isDelegatePendingReview(r)) {
+        pendingReview++;
       } else {
         dropped++;
       }
@@ -4361,7 +4420,8 @@ export default function AdminDashboardPage() {
     return {
       all: eventRegistrationsList.length,
       paid,
-      free,
+      freeGranted,
+      pendingReview,
       dropped,
     };
   }, [eventRegistrationsList]);
@@ -5888,8 +5948,8 @@ export default function AdminDashboardPage() {
           {/* TAB 1: EVENT REGISTRATIONS */}
           {activeTab === "event-registrations" && (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
-              {/* 4 Interactive Quick Filter Cards: All, Paid, Free, Dropout */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* 5 Interactive Quick Filter Cards: All, Paid, Granted Free, Pending Free, Dropout */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {/* Card 1: All Delegates */}
                 <button
                   type="button"
@@ -5946,18 +6006,18 @@ export default function AdminDashboardPage() {
                   </div>
                 </button>
 
-                {/* Card 3: Free Passes */}
+                {/* Card 3: Granted Free Passes (Free to Grant Done) */}
                 <button
                   type="button"
-                  onClick={() => setRegFilterStatus(regFilterStatus === "free" ? "all" : "free")}
+                  onClick={() => setRegFilterStatus(regFilterStatus === "free_granted" || regFilterStatus === "free" ? "all" : "free_granted")}
                   className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                    regFilterStatus === "free"
+                    regFilterStatus === "free_granted" || regFilterStatus === "free"
                       ? "bg-purple-50 dark:bg-purple-950/80 border-purple-500 ring-2 ring-purple-500/25 shadow-md shadow-purple-500/10"
                       : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
                   }`}
                 >
                   <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
-                    regFilterStatus === "free"
+                    regFilterStatus === "free_granted" || regFilterStatus === "free"
                       ? "bg-purple-600 text-white shadow-xs scale-105"
                       : "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
                   }`}>
@@ -5965,16 +6025,44 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400 truncate">
-                      Free Passes
+                      Granted Free Passes
                     </p>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.free}</span>
-                      <span className="text-[10px] text-purple-600 font-bold">Granted</span>
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.freeGranted}</span>
+                      <span className="text-[10px] text-purple-600 font-bold">Granted ✅</span>
                     </div>
                   </div>
                 </button>
 
-                {/* Card 4: Dropout / Incomplete */}
+                {/* Card 4: Pending Free Review */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                      ? "bg-amber-600 text-white shadow-xs scale-105"
+                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                  }`}>
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                      Pending Review
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.pendingReview}</span>
+                      <span className="text-[10px] text-amber-600 font-bold">Awaiting ⏳</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 5: Dropout / Incomplete */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "dropped" ? "all" : "dropped")}
@@ -6072,9 +6160,9 @@ export default function AdminDashboardPage() {
                       className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
                     >
                       <option value="all">💳 All Statuses</option>
-                      <option value="paid">✅ Paid (Confirmed)</option>
-                      <option value="pending">⏳ Pending Approval</option>
-                      <option value="free">🎁 Approved (Free Pass)</option>
+                      <option value="paid">💳 Paid Passes (Confirmed)</option>
+                      <option value="free_granted">🎟️ Granted Free Passes (Free to Grant)</option>
+                      <option value="pending_review">⏳ Pending Free Review (Awaiting Grant)</option>
                       <option value="dropped">⚠️ Dropped / Incomplete Leads</option>
                       <option value="rejected">❌ Rejected</option>
                     </select>
@@ -6185,13 +6273,21 @@ export default function AdminDashboardPage() {
                 <table className="w-full min-w-[1000px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
                     <tr>
-                      <th className="py-3.5 px-3 min-w-[48px] w-12 text-center">
+                      <th className="py-3.5 px-3 min-w-[56px] w-14 text-center">
                         <input
                           type="checkbox"
-                          checked={filteredRegistrations.length > 0 && selectedRegIds.length === filteredRegistrations.length}
+                          checked={
+                            eligibleRegistrationsInFilter.length > 0 &&
+                            eligibleRegistrationsInFilter.every((r) => selectedRegIds.includes(r.id))
+                          }
+                          disabled={eligibleRegistrationsInFilter.length === 0}
                           onChange={handleToggleSelectAllRegistrations}
-                          title="Select / Deselect All Filtered Delegates"
-                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          title={
+                            eligibleRegistrationsInFilter.length === 0
+                              ? "No eligible ungranted delegates in this view"
+                              : "Select / Deselect All Eligible Delegates"
+                          }
+                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         />
                       </th>
                       <th className="py-3.5 px-4 min-w-[240px]">Delegate & Contact</th>
@@ -6204,6 +6300,9 @@ export default function AdminDashboardPage() {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
                     {filteredRegistrations.map((reg) => {
                       const isSelected = selectedRegIds.includes(reg.id);
+                      const isPaid = isDelegatePaid(reg);
+                      const isFreeGranted = isDelegateGrantedFree(reg);
+
                       return (
                         <tr
                           key={reg.id}
@@ -6213,15 +6312,33 @@ export default function AdminDashboardPage() {
                               : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                           }`}
                         >
-                          {/* 0. Row Selection Checkbox */}
+                          {/* 0. Row Selection Checkbox / Granted / Paid Badge */}
                           <td className="py-3.5 px-3 align-middle text-center">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelectRegistration(reg.id)}
-                              title={`Select ${reg.name}`}
-                              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                            />
+                            {isFreeGranted ? (
+                              <span
+                                title="Free pass has been granted to this delegate"
+                                className="inline-flex items-center gap-1 rounded-md bg-purple-100/90 dark:bg-purple-950/90 border border-purple-300 dark:border-purple-800 px-2 py-0.5 text-[10px] font-black text-purple-800 dark:text-purple-300 shadow-2xs select-none whitespace-nowrap"
+                              >
+                                <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                                <span>Granted</span>
+                              </span>
+                            ) : isPaid ? (
+                              <span
+                                title="Confirmed Paid Delegate"
+                                className="inline-flex items-center gap-1 rounded-md bg-emerald-100/90 dark:bg-emerald-950/90 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300 shadow-2xs select-none whitespace-nowrap"
+                              >
+                                <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span>Paid</span>
+                              </span>
+                            ) : (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSelectRegistration(reg.id)}
+                                title={`Select ${reg.name} to grant free pass`}
+                                className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                              />
+                            )}
                           </td>
 
                           {/* 1. Delegate & Contact */}
@@ -6270,29 +6387,29 @@ export default function AdminDashboardPage() {
                           {/* 4. Payment & Date */}
                           <td className="py-3.5 px-4 align-middle space-y-1">
                             {(() => {
-                              const pStatus = (reg.payment_status || "").toString();
-                              if (pStatus === "Pending Approval") {
+                              if (isFreeGranted) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-950/70 border border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-300 px-2.5 py-0.5 text-[10px] font-black shadow-2xs">
+                                    🎟️ Free Pass
+                                  </span>
+                                );
+                              }
+                              if (isPaid) {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 px-2.5 py-0.5 text-[10px] font-black shadow-2xs">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    💳 Paid
+                                  </span>
+                                );
+                              }
+                              if (isDelegatePendingReview(reg)) {
                                 return (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-300 px-2.5 py-0.5 text-[10px] font-black animate-pulse">
                                     ⏳ Pending Review
                                   </span>
                                 );
                               }
-                              if (pStatus === "Approved (Free Pass)" || pStatus === "Free") {
-                                return (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-300 px-2.5 py-0.5 text-[10px] font-black">
-                                    🎟️ Free Pass
-                                  </span>
-                                );
-                              }
-                              if (pStatus.startsWith("Dropped") || pStatus === "Incomplete" || (pStatus === "Pending" && !reg.payment_id)) {
-                                const label = pStatus.startsWith("Dropped (") ? pStatus.replace("Dropped (", "").replace(")", "") : (pStatus === "Pending" ? "Incomplete Profile" : "Dropped Lead");
-                                return (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black" title="User started registering but dropped off before completing">
-                                    ⚠️ {label}
-                                  </span>
-                                );
-                              }
+                              const pStatus = (reg.payment_status || "").toString();
                               if (pStatus === "Rejected") {
                                 return (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black">
@@ -6300,10 +6417,10 @@ export default function AdminDashboardPage() {
                                   </span>
                                 );
                               }
+                              const label = pStatus.startsWith("Dropped (") ? pStatus.replace("Dropped (", "").replace(")", "") : (pStatus === "Pending" ? "Incomplete Profile" : "Dropped Lead");
                               return (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 px-2.5 py-0.5 text-[10px] font-black">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  💳 Paid
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black" title="User started registering but dropped off before completing">
+                                  ⚠️ {label}
                                 </span>
                               );
                             })()}
