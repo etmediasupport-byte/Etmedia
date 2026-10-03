@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Lock,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
@@ -60,8 +61,19 @@ export default function VerifyPassPage() {
   const [verified, setVerified] = useState(false);
   const [passData, setPassData] = useState<PassData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [adminCheckingIn, setAdminCheckingIn] = useState(false);
+
+  // Check admin authorization token
+  const adminToken = typeof window !== "undefined" ? localStorage.getItem("etmedia_admin_token") : null;
+  const isAdmin = !!adminToken;
 
   useEffect(() => {
+    // If not admin, do not fetch any details; protect data privacy completely
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
+
     if (!regId) {
       setLoading(false);
       setErrorMsg("No Registration Pass ID provided.");
@@ -69,7 +81,11 @@ export default function VerifyPassPage() {
     }
 
     setLoading(true);
-    fetch(`/api/verify-pass/${encodeURIComponent(regId)}`)
+    fetch(`/api/verify-pass/${encodeURIComponent(regId)}`, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.verified && data.data) {
@@ -86,26 +102,76 @@ export default function VerifyPassPage() {
         setErrorMsg("Failed to connect to verification server.");
       })
       .finally(() => setLoading(false));
-  }, [regId]);
+  }, [regId, isAdmin, adminToken]);
 
-  const fullName = passData?.name || passData?.full_name || "Sai Doddi";
-  const userEmail = passData?.email || passData?.official_email || "sairamadoddi@gmail.com";
-  const userPhone = passData?.phone || passData?.mobile_number || "+91 98765 43210";
-  const company = passData?.organization || passData?.company_name || "Sai Rama Doddi Enterprise";
-  const desig = passData?.designation || "Java Architect / Director";
+  // -------------------------------------------------------------------------
+  // 1. STRICT RESTRICTED VIEW FOR ALL NON-ADMIN USERS (PHONE, LAPTOP, PUBLIC)
+  // ZERO ATTENDEE OR EVENT DETAILS SHOWN
+  // -------------------------------------------------------------------------
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 font-sans selection:bg-red-500/20">
+        <SEOHead
+          title="Access Restricted | Executive Talks Media"
+          description="Gate verification and pass scanning are restricted to authorized event staff."
+        />
+        <div className="max-w-md w-full rounded-3xl border border-red-500/30 bg-slate-900/95 backdrop-blur-xl p-8 sm:p-10 text-center space-y-6 shadow-2xl shadow-red-950/40">
+          {/* Lock Icon */}
+          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10 border-2 border-red-500/40 text-red-400 shadow-inner">
+            <Lock className="h-10 w-10 text-red-500" />
+            <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-red-500 animate-ping" />
+          </div>
+
+          <div className="space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/40">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+              ACCESS RESTRICTED
+            </span>
+            <h1 className="text-2xl font-black font-display text-white">
+              Gate Verification Restricted
+            </h1>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Unauthorized access. This gate verification link is strictly restricted to authorized Executive Talks Media event coordinators. Personal mobile scanning, public viewing, and direct URL access are disabled for event security.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-center">
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Please present your official QR code ticket upon arrival at the venue reception desk. Event coordinators will scan your ticket to issue your admission badge.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-6 py-2.5 text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4 text-cyan-400" />
+              <span>Return to Home</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // 2. AUTHORIZED ADMIN DESK VIEW (ONLY FOR LOGGED-IN ADMINS)
+  // -------------------------------------------------------------------------
+  const fullName = passData?.name || passData?.full_name || "Delegate";
+  const userEmail = passData?.email || passData?.official_email || "N/A";
+  const userPhone = passData?.phone || passData?.mobile_number || "N/A";
+  const company = passData?.organization || passData?.company_name || "Enterprise";
+  const desig = passData?.designation || "Executive Delegate";
   const userCity = passData?.city || "Hyderabad";
   const userCountry = passData?.country || "India";
-  const regCity = passData?.registering_city || userCity;
-  const referral = passData?.referral_source || "Direct Registration";
   const eventTitle =
-    passData?.event_title || "HR Leadership Conclave 2026 - National Executive Summit";
-  const category = passData?.pass_name || passData?.registration_category || "Gold Pass";
+    passData?.event_title || "Executive Leadership Conclave 2026";
+  const category = passData?.pass_name || passData?.registration_category || "Delegate Pass";
   const payStatus = passData?.payment_status || "Paid";
   const payId = passData?.payment_id || `pay_${Date.now().toString().slice(-8)}`;
   const rzpOrder = passData?.razorpay_order_id || "N/A";
-  const rawAmount = passData?.payment_amount !== undefined ? Number(passData?.payment_amount) : 7079;
-  const amountPaid = rawAmount === 5999 ? 7079 : (rawAmount === 9999 ? 11799 : (rawAmount === 14999 ? 17699 : rawAmount));
-  const coupon = passData?.coupon_applied || "None";
+  const rawAmount = passData?.payment_amount !== undefined ? Number(passData?.payment_amount) : 0;
   const isCheckedIn = passData?.checkin_status?.toLowerCase() === "present";
   const checkinTimeFormatted = passData?.checked_in_at
     ? new Date(passData.checked_in_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
@@ -118,17 +184,8 @@ export default function VerifyPassPage() {
     passData?.id || regId || ""
   )}`;
 
-  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("etmedia_admin_token");
-  const [adminCheckingIn, setAdminCheckingIn] = useState(false);
-
   const handleAdminCheckinFromPass = async () => {
-    if (!regId) return;
-    const adminToken = localStorage.getItem("etmedia_admin_token");
-    if (!adminToken) {
-      toast.error("Please log in as Admin first.");
-      navigate("/admin/login");
-      return;
-    }
+    if (!regId || !adminToken) return;
     setAdminCheckingIn(true);
     try {
       const res = await fetch("/api/admin/checkin/scan", {
@@ -163,133 +220,14 @@ export default function VerifyPassPage() {
     }
   };
 
-  // -------------------------------------------------------------
-  // NON-ADMIN VIEW: PERSONAL SCAN DISABLED / SCAN OFF LOCK SCREEN
-  // -------------------------------------------------------------
-  if (!loading && verified && passData && !isAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white pt-24 sm:pt-28 pb-20 font-sans selection:bg-cyan-500/20 px-4">
-        <SEOHead
-          title={`Official Pass: ${fullName} | Executive Talks Media`}
-          description="Official Event Entry Pass for Executive Talks Media Business Intelligence Leadership Summits."
-        />
-        <div className="max-w-lg mx-auto space-y-6">
-          {/* Top Brand Bar */}
-          <div className="flex items-center justify-between">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl"
-            >
-              <ArrowLeft className="h-4 w-4 text-cyan-400" />
-              <span>Back to Home</span>
-            </Link>
-
-            <Link
-              to="/admin/login"
-              className="text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors"
-            >
-              Coordinator Login →
-            </Link>
-          </div>
-
-          {/* MAIN ACCESS RESTRICTED CARD */}
-          <div className="rounded-3xl border border-red-500/30 bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 text-center space-y-6 shadow-2xl shadow-red-950/20">
-            {/* Lock Badge Icon */}
-            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10 border-2 border-red-500/40 text-red-400 shadow-inner">
-              <Lock className="h-10 w-10 text-red-400" />
-              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-ping" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/40">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                PERSONAL MOBILE SCAN OFF
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black font-display text-white">
-                Gate Check-In Restricted
-              </h1>
-              <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-                This official entry pass <strong>cannot be scanned by personal mobile cameras</strong>. 
-                Gate attendance and badge issuance are restricted exclusively to Executive Talks Media coordinators using the authorized Admin Gate Scanner.
-              </p>
-            </div>
-
-            {/* DELEGATE ENTRY TOKEN DETAILS */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left text-xs space-y-3 font-mono">
-              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span className="text-slate-400 text-[11px]">Pass Holder:</span>
-                <strong className="text-white font-bold capitalize text-sm">{fullName}</strong>
-              </div>
-
-              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span className="text-slate-400 text-[11px]">Event Summit:</span>
-                <span className="text-slate-200 text-right font-medium max-w-[220px] truncate">
-                  {eventTitle}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span className="text-slate-400 text-[11px]">Pass Category:</span>
-                <span className="text-cyan-400 font-bold">{category}</span>
-              </div>
-
-              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span className="text-slate-400 text-[11px]">Pass Token ID:</span>
-                <span className="text-purple-400 font-bold bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/60">
-                  {regId}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-slate-400 text-[11px]">Admission Status:</span>
-                {isCheckedIn ? (
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Checked-In at Reception</span>
-                  </span>
-                ) : (
-                  <span className="text-amber-400 font-bold flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>Awaiting Gate Desk Scan</span>
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* INSTRUCTION FOOTER */}
-            <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 text-[11px] text-slate-400 leading-relaxed">
-              👉 <strong>Venue Entry Instruction:</strong> Present this pass on your phone screen upon arrival. The Executive Talks Media reception desk will scan your pass to issue your official physical lanyard badge.
-            </div>
-
-            <div className="pt-2">
-              <Link
-                to="/admin/login"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
-              >
-                <span>Event Coordinator Portal Login</span>
-                <span>→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // -------------------------------------------------------------
-  // ADMIN VIEW: FULL OFFICIAL PASS & GATE CONTROLS
-  // -------------------------------------------------------------
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pt-28 sm:pt-32 pb-20 font-sans selection:bg-cyan-500/20 print:p-0 print:bg-white print:text-black">
       <SEOHead
-        title={passData?.name ? `Verify Pass: ${passData.name} | Executive Talks Media` : `Verify Delegate Pass | Executive Talks Media`}
-        description="Verify the digital authenticity and QR ticket badge for Executive Talks Media Business Intelligence national leadership summits."
-        keywords="Verify Pass Executive Talks Media, Ticket Verification, Executive Talks Media QR Verification, Delegate Pass Authentic Check"
-        url={`https://www.executivetalksmedia.in/verify-pass/${regId || ""}`}
+        title={passData?.name ? `Admin Pass: ${passData.name} | Executive Talks Media` : `Admin Delegate Pass | Executive Talks Media`}
+        description="Admin pass verification for Executive Talks Media Business Intelligence national leadership summits."
       />
-      {/* Aligned with main website header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Navigation Top Bar (Hidden during print) */}
+        {/* Navigation Top Bar */}
         <div className="flex items-center justify-between no-print">
           <Link
             to="/admin/dashboard"
@@ -359,7 +297,7 @@ export default function VerifyPassPage() {
           </div>
         )}
 
-        {/* SUCCESS VERIFIED PASS CARD (ADMIN VIEW) */}
+        {/* SUCCESS VERIFIED PASS CARD (ADMIN VIEW ONLY) */}
         {!loading && verified && passData && (
           <div
             id="printable-pass"
@@ -401,30 +339,6 @@ export default function VerifyPassPage() {
 
             {/* MAIN PASS CONTENT */}
             <div className="p-6 sm:p-10 space-y-6 bg-slate-50/50">
-              {/* GATE NOTICE BANNER - SCAN OFF / GATE RESTRICTION */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-3.5">
-                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-700 border border-slate-200">
-                  <Lock className="h-4 w-4 text-cyan-700" />
-                </div>
-                <div className="space-y-0.5 text-xs">
-                  <div className="flex items-center gap-2">
-                    <h5 className="font-bold text-slate-900">
-                      Official Event Admission Notice
-                    </h5>
-                    {isCheckedIn && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Badge Issued
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-600 text-[11px] leading-relaxed">
-                    {isCheckedIn
-                      ? `Delegate attendance was verified at the venue reception on ${checkinTimeFormatted || "today"}.`
-                      : "Gate check-in and delegate kit issuance are restricted to authorized Executive Talks Media coordinators using the official Admin Scanner at the reception desk. Present your QR code upon arrival."}
-                  </p>
-                </div>
-              </div>
-
               {/* SALUTATION & GREETING */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="space-y-1">
@@ -432,7 +346,7 @@ export default function VerifyPassPage() {
                     Delegate: <span className="text-cyan-700 capitalize">{fullName}</span>
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Registration and entry credentials verified for <strong>{eventTitle}</strong>.
+                    Registration verified for <strong>{eventTitle}</strong>.
                   </p>
                 </div>
                 <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-pink-600 text-white font-black text-xs uppercase tracking-wider shrink-0 shadow-sm">
@@ -442,7 +356,7 @@ export default function VerifyPassPage() {
 
               {/* 3-SECTION GRID DETAILS */}
               <div className="grid gap-6 md:grid-cols-12 items-start">
-                {/* 1. DELEGATE & EXECUTIVE PROFILE (6 cols) */}
+                {/* 1. DELEGATE PROFILE */}
                 <div className="md:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
                   <h4 className="text-xs font-black uppercase tracking-wider text-cyan-700 border-b border-slate-100 pb-2.5 flex items-center gap-2">
                     <User className="h-4 w-4" />
@@ -451,61 +365,38 @@ export default function VerifyPassPage() {
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Full Name
-                      </span>
-                      <strong className="text-sm text-slate-900 font-bold block capitalize">
-                        {fullName}
-                      </strong>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Full Name</span>
+                      <strong className="text-sm text-slate-900 font-bold block capitalize">{fullName}</strong>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Designation
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Designation</span>
                       <span className="text-slate-700 font-semibold block">{desig}</span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Organization / Company
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Organization</span>
                       <span className="text-slate-700 font-semibold block">{company}</span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Official Email
-                      </span>
-                      <a
-                        href={`mailto:${userEmail}`}
-                        className="text-cyan-700 font-mono font-semibold hover:underline block truncate"
-                      >
-                        {userEmail}
-                      </a>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Official Email</span>
+                      <span className="text-cyan-700 font-mono font-semibold block truncate">{userEmail}</span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Contact Phone
-                      </span>
-                      <span className="text-slate-800 font-mono font-semibold block">
-                        {userPhone}
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Contact Phone</span>
+                      <span className="text-slate-800 font-mono font-semibold block">{userPhone}</span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        City & Country
-                      </span>
-                      <span className="text-slate-700 block">
-                        {userCity}, {userCountry}
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">City & Country</span>
+                      <span className="text-slate-700 block">{userCity}, {userCountry}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. PAYMENT & PASS METRICS (4 cols) */}
+                {/* 2. PAYMENT METRICS */}
                 <div className="md:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
                   <h4 className="text-xs font-black uppercase tracking-wider text-purple-700 border-b border-slate-100 pb-2.5 flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
@@ -514,9 +405,7 @@ export default function VerifyPassPage() {
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Payment Status
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Payment Status</span>
                       <span className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-emerald-50 border border-emerald-200 text-emerald-700">
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         {payStatus}
@@ -524,51 +413,33 @@ export default function VerifyPassPage() {
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Amount Paid
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Amount</span>
                       <span className="text-base font-black font-mono text-slate-900 block">
-                        ₹{Number(amountPaid).toLocaleString("en-IN")}
+                        ₹{Number(rawAmount).toLocaleString("en-IN")}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Registration ID
-                      </span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Pass ID</span>
                       <span className="font-mono text-cyan-800 font-bold bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200 inline-block">
                         {passData.id}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Payment ID
-                      </span>
-                      <span className="text-slate-700 font-mono text-[11px] block truncate">
-                        {payId}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Order ID
-                      </span>
-                      <span className="text-slate-600 font-mono text-[11px] block truncate">
-                        {rzpOrder}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[10px] font-black uppercase block">
-                        Verification Timestamp
-                      </span>
-                      <span className="text-slate-600 font-mono text-[11px] block">{timestamp}</span>
+                      <span className="text-slate-400 text-[10px] font-black uppercase block">Gate Admission</span>
+                      {isCheckedIn ? (
+                        <span className="text-emerald-700 font-bold block mt-1">
+                          Checked-In ({checkinTimeFormatted})
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 font-bold block mt-1">Awaiting Gate Desk Scan</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* 3. SCANNABLE GATE CHECK-IN QR (4 cols) */}
+                {/* 3. SCANNABLE GATE QR (ADMIN) */}
                 <div className="md:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm text-center flex flex-col items-center justify-center">
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2.5 w-full flex items-center justify-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
@@ -586,35 +457,9 @@ export default function VerifyPassPage() {
                   </div>
 
                   <span className="text-[10px] font-black tracking-widest text-slate-700 uppercase block">
-                    PRESENT TO DESK COORDINATOR
+                    ADMIN GATE TOKEN
                   </span>
-                  <p className="text-[11px] text-slate-400">
-                    Present this QR token to the Executive Talks Media reception coordinator for attendance validation.
-                  </p>
                 </div>
-              </div>
-
-              {/* FOOTER VERIFICATION NOTICE */}
-              <div className="border-t border-slate-200 pt-6 text-center space-y-2 text-xs text-slate-500">
-                <p className="font-bold text-slate-700">
-                  Executive Talks Media Business Intelligence Executive Advisory Committee
-                </p>
-                <p>
-                  Support Contact:{" "}
-                  <a
-                    href="mailto:registration@executivetalksmedia.in"
-                    className="text-cyan-700 font-semibold hover:underline"
-                  >
-                    registration@executivetalksmedia.in
-                  </a>{" "}
-                  | Website:{" "}
-                  <a
-                    href="https://www.executivetalksmedia.in"
-                    className="text-cyan-700 font-semibold hover:underline"
-                  >
-                    www.executivetalksmedia.in
-                  </a>
-                </p>
               </div>
             </div>
           </div>

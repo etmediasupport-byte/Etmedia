@@ -172,7 +172,9 @@ export default function App() {
               }
             />
             <Route path="/verify-pass/:regId" element={<VerifyPassPage />} />
+            <Route path="/verify-pass" element={<VerifyPassPage />} />
             <Route path="/verify/:regId" element={<VerifyPassPage />} />
+            <Route path="/verify" element={<VerifyPassPage />} />
 
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />

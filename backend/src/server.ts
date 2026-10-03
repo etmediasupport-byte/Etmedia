@@ -235,7 +235,8 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const sgst = gstTotal - cgst;
 
   const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
-  const verifyPassUrl = `${baseUrl}/verify-pass/${encodeURIComponent(regId)}`;
+  const adminScannerUrl = `${baseUrl}/admin/scanner`;
+  const adminLoginUrl = `${baseUrl}/admin/login`;
 
   // Encode pure Secure Gate Token into the QR code so personal mobile phone cameras cannot open any website
   const qrTokenPayload = `ETM-GATE:${regId}`;
@@ -274,9 +275,9 @@ DELEGATE PASS DETAILS:
 - Event / Summit: ${eventName}
 - Registration / Pass ID: ${regId}
 
-SCAN YOUR QR CODE FOR ENTRY:
-Scan the attached QR code or use your Pass ID for fast-track entry at the venue reception:
-${verifyPassUrl}
+VENUE CHECK-IN INSTRUCTION:
+Present the attached official QR code ticket upon arrival at the venue reception desk. Event coordinators will scan your pass using the authorized gate scanner to issue your admission badge.
+Pass Token ID: ${regId}
 
 EVENT REGISTRATION – TERMS & CONDITIONS:
 1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
@@ -458,8 +459,9 @@ Payment & Billing:
 - Coupon Applied: ${coupon}
 - Timestamp: ${regDate}
 
-Verify Scannable Pass: ${verifyPassUrl}
-Admin Dashboard Login: ${baseUrl}/admin-login
+Pass Token ID: ${regId}
+Admin Gate Scanner: ${adminScannerUrl}
+Admin Portal Login: ${adminLoginUrl}
 `,
     html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
@@ -523,11 +525,11 @@ Admin Dashboard Login: ${baseUrl}/admin-login
           </div>
 
           <div style="text-align: center; margin-top: 20px;">
-            <a href="${verifyPassUrl}" style="display: inline-block; background-color: #0891b2; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px; margin-right: 8px;">
-              🎟️ Verify Scannable Pass
+            <a href="${adminScannerUrl}" style="display: inline-block; background-color: #0891b2; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px; margin-right: 8px;">
+              🎟️ Open Admin Scanner
             </a>
-            <a href="${baseUrl}/admin-login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">
-              ⚡ Open Admin Dashboard
+            <a href="${adminLoginUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 10px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">
+              ⚡ Open Admin Portal
             </a>
           </div>
         </div>
@@ -1682,8 +1684,28 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// 1a. Public Registration Pass Verification Endpoint
+// 1a. Restricted Registration Pass Verification Endpoint (Admin Only)
 app.get("/api/verify-pass/:regId", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(403).json({
+      success: false,
+      restricted: true,
+      message: "Access Restricted: Gate verification is restricted to authorized coordinators.",
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    jwt.verify(token, JWT_SECRET);
+  } catch (jwtErr) {
+    return res.status(403).json({
+      success: false,
+      restricted: true,
+      message: "Access Restricted: Invalid or expired coordinator session token.",
+    });
+  }
+
   const { regId } = req.params;
   try {
     if (pool) {

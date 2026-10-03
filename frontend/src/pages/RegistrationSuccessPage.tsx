@@ -202,9 +202,7 @@ export default function RegistrationSuccessPage() {
     .slice(-8)
     .toUpperCase()}`;
   
-  const qrVerificationUrl = `https://www.executivetalksmedia.in/verify-pass/${encodeURIComponent(
-    regDetails?.id || regId
-  )}`;
+  const qrTokenPayload = `ETM-GATE:${regDetails?.id || regId}`;
 
   const handlePrintOrDownload = (type: "pass" | "invoice") => {
     setActiveView(type);
@@ -424,15 +422,10 @@ export default function RegistrationSuccessPage() {
                       <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0" />
                       <span>Present this physical print or digital pass at the registration desk.</span>
                     </div>
-                    <a
-                      href={qrVerificationUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 font-bold text-cyan-700 hover:underline shrink-0 text-[11px]"
-                    >
-                      <span>Live Auth</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <span className="inline-flex items-center gap-1 font-bold text-cyan-800 shrink-0 text-[11px] bg-cyan-100/60 px-2 py-0.5 rounded-full border border-cyan-300/60">
+                      <ShieldCheck className="w-3 h-3 text-cyan-600" />
+                      <span>Official Gate Pass</span>
+                    </span>
                   </div>
                 </div>
 
@@ -441,7 +434,7 @@ export default function RegistrationSuccessPage() {
                   <div className="h-36 w-36 bg-white p-2 rounded-xl border-2 border-slate-300 flex items-center justify-center shadow-sm">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                        qrVerificationUrl
+                        qrTokenPayload
                       )}`}
                       alt="Official QR Pass Token"
                       className="w-full h-full object-contain"
@@ -680,10 +673,10 @@ export default function RegistrationSuccessPage() {
                     Executive Talks Media Business Intelligence
                   </p>
                   <p>
-                    Online Verification Portal:{" "}
-                    <a href={qrVerificationUrl} className="text-cyan-700 underline font-mono">
-                      {qrVerificationUrl}
-                    </a>
+                    Official Pass Token:{" "}
+                    <span className="text-slate-800 font-mono font-bold">
+                      {regDetails?.id || regId}
+                    </span>
                   </p>
                 </div>
                 <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0">

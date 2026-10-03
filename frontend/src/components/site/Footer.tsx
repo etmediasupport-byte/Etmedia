@@ -240,7 +240,7 @@ export function Footer() {
                 { to: "/events/hr-excellence-awards-2026", label: "HR Excellence Awards" },
                 { to: "/events/ai-tech-conclave-2026", label: "Enterprise AI Conclave" },
                 { to: "/careers", label: "Careers Portal" },
-                { to: "/verify-pass", label: "Verify Delegate Pass" },
+                { to: "/contact", label: "Event Help Desk" },
               ].map((l) => (
                 <li key={l.to}>
                   <Link
@@ -369,8 +369,8 @@ export function Footer() {
               Careers Portal
             </Link>
             <span>·</span>
-            <Link to="/verify-pass" className="hover:text-cyan-400 transition-colors">
-              Pass Verification
+            <Link to="/contact" className="hover:text-cyan-400 transition-colors">
+              Help Desk
             </Link>
             <span>·</span>
             <Link to="/admin/login" className="text-slate-500 hover:text-cyan-400 transition-colors">
