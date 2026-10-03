@@ -15,6 +15,8 @@ import {
   ArrowLeft,
   Calendar,
   ExternalLink,
+  Lock,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
@@ -45,6 +47,9 @@ interface PassData {
   razorpay_order_id?: string;
   payment_amount?: number;
   coupon_applied?: string;
+  checkin_status?: string;
+  checked_in_at?: string;
+  checked_in_by?: string;
   created_at?: string;
 }
 
@@ -100,6 +105,10 @@ export default function VerifyPassPage() {
   const rawAmount = passData?.payment_amount !== undefined ? Number(passData?.payment_amount) : 7079;
   const amountPaid = rawAmount === 5999 ? 7079 : (rawAmount === 9999 ? 11799 : (rawAmount === 14999 ? 17699 : rawAmount));
   const coupon = passData?.coupon_applied || "None";
+  const isCheckedIn = passData?.checkin_status?.toLowerCase() === "present";
+  const checkinTimeFormatted = passData?.checked_in_at
+    ? new Date(passData.checked_in_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+    : null;
   const timestamp = passData?.created_at
     ? new Date(passData.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
     : new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -201,14 +210,45 @@ export default function VerifyPassPage() {
                 </div>
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-400/50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300 shrink-0 shadow-sm backdrop-blur-md">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                <span>OFFICIAL VERIFIED PASS</span>
-              </div>
+              {isCheckedIn ? (
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-400/50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300 shrink-0 shadow-sm backdrop-blur-md">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>CHECKED-IN • PRESENT</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 border border-cyan-400/50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-300 shrink-0 shadow-sm backdrop-blur-md">
+                  <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                  <span>OFFICIAL VERIFIED PASS</span>
+                </div>
+              )}
             </div>
 
             {/* MAIN PASS CONTENT */}
-            <div className="p-6 sm:p-10 space-y-8 bg-slate-50/50">
+            <div className="p-6 sm:p-10 space-y-6 bg-slate-50/50">
+              {/* GATE NOTICE BANNER - SCAN OFF / GATE RESTRICTION */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex items-start gap-3.5">
+                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-700 border border-slate-200">
+                  <Lock className="h-4 w-4 text-cyan-700" />
+                </div>
+                <div className="space-y-0.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <h5 className="font-bold text-slate-900">
+                      Official Event Admission Notice
+                    </h5>
+                    {isCheckedIn && (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Badge Issued
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-600 text-[11px] leading-relaxed">
+                    {isCheckedIn
+                      ? `Delegate attendance was verified at the venue reception on ${checkinTimeFormatted || "today"}.`
+                      : "Gate check-in and delegate kit issuance are restricted to authorized Executive Talks Media coordinators using the official Admin Scanner at the reception desk. Present your QR code upon arrival."}
+                  </p>
+                </div>
+              </div>
+
               {/* SALUTATION & GREETING */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="space-y-1">
@@ -370,10 +410,10 @@ export default function VerifyPassPage() {
                   </div>
 
                   <span className="text-[10px] font-black tracking-widest text-slate-700 uppercase block">
-                    SCAN AT ENTRY CHECK-IN DESK
+                    PRESENT TO DESK COORDINATOR
                   </span>
                   <p className="text-[11px] text-slate-400">
-                    Official live verified ticket token for Executive Talks Media events.
+                    Present this QR token to the Executive Talks Media reception coordinator for attendance validation.
                   </p>
                 </div>
               </div>

@@ -14,6 +14,7 @@ import GalleryPage from "@/pages/GalleryPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminLoginPage from "@/pages/AdminLoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminQrScannerPage from "@/pages/AdminQrScannerPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import VerifyPassPage from "@/pages/VerifyPassPage";
@@ -151,6 +152,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/scanner"
+              element={
+                <ProtectedRoute>
+                  <AdminQrScannerPage />
                 </ProtectedRoute>
               }
             />

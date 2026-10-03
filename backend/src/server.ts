@@ -3054,6 +3054,224 @@ app.post("/api/admin/registrations/bulk-import-offline", authenticateAdmin, asyn
   }
 });
 
+// ==========================================
+// SECURE ADMIN GATE CHECK-IN & ATTENDANCE APIS
+// ==========================================
+
+// 1. Admin Scan QR Code or Pass ID for Event Check-In
+app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
+  const { identifier, eventId } = req.body;
+  if (!identifier || typeof identifier !== "string" || !identifier.trim()) {
+    return res.status(400).json({ success: false, message: "Please provide a valid QR code or Pass ID." });
+  }
+
+  try {
+    let cleanId = identifier.trim();
+    // Support scanning raw URL or ID: e.g. https://www.executivetalksmedia.in/verify-pass/ETM-REG-12345
+    const urlMatch = cleanId.match(/verify-pass\/([^/?#]+)/i) || cleanId.match(/verify\/([^/?#]+)/i);
+    if (urlMatch) {
+      cleanId = decodeURIComponent(urlMatch[1]).trim();
+    }
+
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection unavailable." });
+    }
+
+    // A. Check in registrations table
+    let [rows]: any = await pool.query(
+      "SELECT * FROM registrations WHERE id = ? OR razorpay_order_id = ? OR payment_id = ? LIMIT 1",
+      [cleanId, cleanId, cleanId]
+    );
+
+    let isDelegateTable = false;
+
+    // B. Fallback: Check in corporate delegate_registrations table
+    if (!rows || rows.length === 0) {
+      const [delRows]: any = await pool.query(
+        "SELECT * FROM delegate_registrations WHERE id = ? LIMIT 1",
+        [cleanId]
+      );
+      if (delRows && delRows.length > 0) {
+        rows = delRows;
+        isDelegateTable = true;
+      }
+    }
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `❌ Pass ID "${cleanId}" not recognized or not found in registration database.`,
+        scannedId: cleanId,
+      });
+    }
+
+    const reg = rows[0];
+    const delegateName = reg.name || reg.full_name || "Delegate";
+    const checkinStatus = reg.checkin_status || "Absent";
+
+    // Prevent duplicate check-in
+    if (checkinStatus.toLowerCase() === "present" || reg.checked_in_at) {
+      return res.json({
+        success: false,
+        alreadyCheckedIn: true,
+        message: `⚠️ Attendee "${delegateName}" is ALREADY checked-in!`,
+        delegate: reg,
+        checkedInAt: reg.checked_in_at,
+        checkedInBy: reg.checked_in_by || "Reception Desk",
+      });
+    }
+
+    const adminUser = (req as any).admin;
+    const checkedInBy = adminUser?.name || adminUser?.email || "Event Gate Staff";
+    const now = new Date();
+
+    if (isDelegateTable) {
+      await pool.query(
+        "UPDATE delegate_registrations SET checkin_status = 'Present', checked_in_at = NOW(), checked_in_by = ? WHERE id = ?",
+        [checkedInBy, reg.id]
+      );
+    } else {
+      await pool.query(
+        "UPDATE registrations SET checkin_status = 'Present', checked_in_at = NOW(), checked_in_by = ? WHERE id = ?",
+        [checkedInBy, reg.id]
+      );
+    }
+
+    reg.checkin_status = "Present";
+    reg.checked_in_at = now.toISOString();
+    reg.checked_in_by = checkedInBy;
+
+    // Broadcast live check-in event to all connected admin dashboards & scanners
+    if (io) {
+      io.emit("admin_activity", {
+        type: "delegate_checked_in",
+        regId: reg.id,
+        name: delegateName,
+        eventTitle: reg.event_title || reg.event_id || "Executive Talks Summit",
+        category: reg.pass_name || reg.registration_category || "Delegate",
+        checkedInBy,
+        timestamp: now.toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Admission Approved: Welcome ${delegateName}!`,
+      delegate: reg,
+      checkedInAt: reg.checked_in_at,
+      checkedInBy,
+    });
+  } catch (err: any) {
+    console.error("[API] Check-in Scan Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to process gate check-in." });
+  }
+});
+
+// 2. Undo Attendee Check-In (Revert to Absent)
+app.post("/api/admin/checkin/undo", authenticateAdmin, async (req, res) => {
+  const { regId } = req.body;
+  if (!regId) {
+    return res.status(400).json({ success: false, message: "Registration ID is required to undo check-in." });
+  }
+
+  try {
+    if (pool) {
+      await pool.query(
+        "UPDATE registrations SET checkin_status = 'Absent', checked_in_at = NULL, checked_in_by = NULL WHERE id = ?",
+        [regId]
+      );
+      await pool.query(
+        "UPDATE delegate_registrations SET checkin_status = 'Absent', checked_in_at = NULL, checked_in_by = NULL WHERE id = ?",
+        [regId]
+      );
+    }
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "delegate_checkin_undone",
+        regId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({ success: true, message: `Check-in reverted for ${regId}.` });
+  } catch (err: any) {
+    console.error("[API] Check-in Undo Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to undo check-in." });
+  }
+});
+
+// 3. Real-Time Gate Attendance Analytics & Statistics
+app.get("/api/admin/checkin/stats", authenticateAdmin, async (req, res) => {
+  try {
+    const { eventId } = req.query;
+    if (!pool) {
+      return res.json({ success: true, total: 0, checkedIn: 0, absent: 0, recentCheckins: [] });
+    }
+
+    let filterSql = "";
+    let params: any[] = [];
+    if (eventId && eventId !== "all") {
+      filterSql = "WHERE event_id = ?";
+      params = [eventId];
+    }
+
+    const [totalRows]: any = await pool.query(
+      `SELECT COUNT(*) as count FROM registrations ${filterSql}`,
+      params
+    );
+    const total = totalRows[0]?.count || 0;
+
+    const [checkedInRows]: any = await pool.query(
+      `SELECT COUNT(*) as count FROM registrations ${filterSql ? filterSql + " AND" : "WHERE"} LOWER(checkin_status) = 'present'`,
+      params
+    );
+    const checkedIn = checkedInRows[0]?.count || 0;
+    const absent = Math.max(0, total - checkedIn);
+
+    const [recentRows]: any = await pool.query(
+      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by FROM registrations WHERE LOWER(checkin_status) = 'present' ORDER BY checked_in_at DESC LIMIT 20`
+    );
+
+    return res.json({
+      success: true,
+      total,
+      checkedIn,
+      absent,
+      attendanceRate: total > 0 ? Math.round((checkedIn / total) * 100) : 0,
+      recentCheckins: recentRows || [],
+    });
+  } catch (err: any) {
+    console.error("[API] Attendance Stats Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to fetch attendance stats." });
+  }
+});
+
+// 4. Manual Attendee Search for Gate Desk (Fallback when delegate phone battery is dead)
+app.get("/api/admin/checkin/search", authenticateAdmin, async (req, res) => {
+  try {
+    const query = String(req.query.q || "").trim();
+    if (!query) {
+      return res.json({ success: true, delegates: [] });
+    }
+
+    if (!pool) {
+      return res.json({ success: true, delegates: [] });
+    }
+
+    const likeQuery = `%${query}%`;
+    const [rows]: any = await pool.query(
+      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by, payment_status FROM registrations WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR id LIKE ? OR organization LIKE ? ORDER BY created_at DESC LIMIT 15`,
+      [likeQuery, likeQuery, likeQuery, likeQuery, likeQuery]
+    );
+
+    return res.json({ success: true, delegates: rows || [] });
+  } catch (err: any) {
+    console.error("[API] Gate Search Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to search delegates." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {

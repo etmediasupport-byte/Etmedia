@@ -78,6 +78,8 @@ import {
   SearchCode,
   FileText,
   CheckCircle2,
+  QrCode,
+  Camera,
   ExternalLink,
   ChevronRight,
   ChevronDown,
@@ -147,6 +149,9 @@ interface Registration {
   gst_amount?: number;
   payment_amount?: number;
   coupon_applied?: string;
+  checkin_status?: string;
+  checked_in_at?: string;
+  checked_in_by?: string;
 }
 
 interface ContactSubmission {
@@ -279,6 +284,7 @@ type TabType =
   | "settings"
   | "careers"
   | "popup"
+  | "qr-scanner"
   | "database";
 
 // ==========================================
@@ -1021,6 +1027,12 @@ export default function AdminDashboardPage() {
   const [offlineImporting, setOfflineImporting] = useState<boolean>(false);
   const [offlineDragOver, setOfflineDragOver] = useState<boolean>(false);
   const [selectedOfflineRegIds, setSelectedOfflineRegIds] = useState<string[]>([]);
+  // --- GATE QR ATTENDANCE SCANNER TAB STATE ---
+  const [quickScanInput, setQuickScanInput] = useState("");
+  const [quickScanLoading, setQuickScanLoading] = useState(false);
+  const [attendanceSearchQuery, setAttendanceSearchQuery] = useState("");
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState<"all" | "present" | "absent">("all");
+  const [attendanceEventFilter, setAttendanceEventFilter] = useState<string>("all");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2365,6 +2377,95 @@ export default function AdminDashboardPage() {
     );
     toast.success(`Candidate status updated to ${newStatus}`);
   };
+
+  // --- GATE QR CHECK-IN & ATTENDANCE HANDLERS ---
+  const handleQuickCheckin = async (idOrCode?: string) => {
+    const codeToUse = (idOrCode || quickScanInput).trim();
+    if (!codeToUse) {
+      toast.error("Please enter or scan a Pass ID / QR code.");
+      return;
+    }
+    setQuickScanLoading(true);
+    try {
+      const res = await fetch("/api/admin/checkin/scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ identifier: codeToUse }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `✅ Attendance recorded for ${data.delegate?.name || codeToUse}!`);
+        setQuickScanInput("");
+        fetchDashboardData();
+      } else if (data.alreadyCheckedIn) {
+        toast.warning(data.message || `⚠️ Attendee is ALREADY checked in!`);
+      } else {
+        toast.error(data.message || "❌ Invalid Pass ID.");
+      }
+    } catch (err) {
+      toast.error("Network error processing check-in.");
+    } finally {
+      setQuickScanLoading(false);
+    }
+  };
+
+  const handleUndoAttendance = async (regId: string) => {
+    if (!window.confirm("Undo check-in for this attendee and mark them as Absent?")) return;
+    try {
+      const res = await fetch("/api/admin/checkin/undo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ regId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Check-in reverted to Absent.");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to undo check-in.");
+      }
+    } catch (err) {
+      toast.error("Network error undoing check-in.");
+    }
+  };
+
+  const attendanceDelegatesList = useMemo(() => {
+    let list = [...registrations];
+    if (attendanceEventFilter !== "all") {
+      list = list.filter(
+        (r) =>
+          r.event_id === attendanceEventFilter ||
+          r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
+      );
+    }
+    if (attendanceStatusFilter === "present") {
+      list = list.filter((r) => r.checkin_status?.toLowerCase() === "present");
+    } else if (attendanceStatusFilter === "absent") {
+      list = list.filter((r) => r.checkin_status?.toLowerCase() !== "present");
+    }
+    if (attendanceSearchQuery.trim()) {
+      const q = attendanceSearchQuery.toLowerCase();
+      list = list.filter(
+        (r) =>
+          r.name?.toLowerCase().includes(q) ||
+          r.email?.toLowerCase().includes(q) ||
+          r.phone?.toLowerCase().includes(q) ||
+          r.organization?.toLowerCase().includes(q) ||
+          r.id?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [registrations, attendanceEventFilter, attendanceStatusFilter, attendanceSearchQuery]);
+
+  const attendancePresentCount = useMemo(() => {
+    return registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+  }, [registrations]);
 
   // --- OFFLINE EXCEL IMPORT HANDLERS ---
   const generateSampleExcelTemplate = () => {
@@ -4928,6 +5029,7 @@ export default function AdminDashboardPage() {
         { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
         { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
         { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+        { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
         { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
         { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
       ],
@@ -7371,6 +7473,372 @@ export default function AdminDashboardPage() {
                               <span>Sample Template</span>
                             </button>
                           </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1C: GATE QR SCANNER & ATTENDANCE CONTROL */}
+          {activeTab === "qr-scanner" && (
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
+              {/* Header Title & Top Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-600 dark:text-cyan-400 font-bold shadow-xs">
+                    <QrCode className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 font-display">
+                        Gate QR Scanner & Attendance Control
+                      </h2>
+                      <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        LIVE GATE DESK
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Fast-track delegate badge check-in, live QR ticket verification, and event attendance tracking.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin/scanner")}
+                    className="flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 text-xs font-black shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+                  >
+                    <Camera className="h-4 w-4" />
+                    <span>Launch Camera Scanner 🚀</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open("/admin/scanner", "_blank")}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    title="Open scanner in separate full-screen browser window"
+                  >
+                    <ExternalLink className="h-4 w-4 text-slate-500" />
+                    <span>Separate Window</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportToExcel("event-registrations")}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 text-emerald-600" />
+                    <span>Export Attendance Sheet</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* QUICK SCAN & USB SCANNER INPUT FORM */}
+              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-r from-cyan-50/50 via-white to-slate-50 dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                      Quick Gate Check-In (Scanner or Manual Pass ID)
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Works seamlessly with USB barcode guns or typed Pass IDs
+                  </span>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleQuickCheckin();
+                  }}
+                  className="flex gap-2"
+                >
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={quickScanInput}
+                      onChange={(e) => setQuickScanInput(e.target.value)}
+                      placeholder="Scan badge or enter Pass ID (e.g. ETM-REG-12345 or full URL)..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={quickScanLoading || !quickScanInput.trim()}
+                    className="flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                  >
+                    {quickScanLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    <span>Record Admission</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* ATTENDANCE KPI METRICS */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                    Total Registered
+                  </span>
+                  <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100">
+                    {registrations.length.toLocaleString()}
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium">100% of event roster</span>
+                </div>
+
+                <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/20 p-4 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
+                    <span>Checked-In (Present)</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </span>
+                  <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400">
+                    {attendancePresentCount.toLocaleString()}
+                  </div>
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    {registrations.length > 0
+                      ? Math.round((attendancePresentCount / registrations.length) * 100)
+                      : 0}
+                    % Turn-out recorded
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
+                    <span>Awaiting Arrival</span>
+                    <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  </span>
+                  <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400">
+                    {Math.max(0, registrations.length - attendancePresentCount).toLocaleString()}
+                  </div>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                    Pending gate check-in
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block">
+                    Venue Admission Rate
+                  </span>
+                  <div className="space-y-1.5">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${
+                            registrations.length > 0
+                              ? Math.round((attendancePresentCount / registrations.length) * 100)
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                      <span>Rate:</span>
+                      <span className="text-cyan-700 dark:text-cyan-300 font-black">
+                        {registrations.length > 0
+                          ? Math.round((attendancePresentCount / registrations.length) * 100)
+                          : 0}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEARCH & FILTER CONTROLS */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <div className="relative min-w-[240px] flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={attendanceSearchQuery}
+                      onChange={(e) => setAttendanceSearchQuery(e.target.value)}
+                      placeholder="Search attendee by name, company, email, ID..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceStatusFilter("all")}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        attendanceStatusFilter === "all"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      All ({registrations.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceStatusFilter("present")}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        attendanceStatusFilter === "present"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
+                      }`}
+                    >
+                      Present ({attendancePresentCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceStatusFilter("absent")}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        attendanceStatusFilter === "absent"
+                          ? "bg-slate-800 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      Absent ({Math.max(0, registrations.length - attendancePresentCount)})
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Showing <strong>{attendanceDelegatesList.length}</strong> attendees
+                </div>
+              </div>
+
+              {/* ATTENDANCE DELEGATE TABLE */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850/80 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <tr>
+                      <th className="py-3 px-3">#</th>
+                      <th className="py-3 px-3">Attendee Profile</th>
+                      <th className="py-3 px-3">Company & Role</th>
+                      <th className="py-3 px-3">Pass Tier</th>
+                      <th className="py-3 px-3 text-center">Gate Status</th>
+                      <th className="py-3 px-3">Check-in Time</th>
+                      <th className="py-3 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                    {attendanceDelegatesList.length > 0 ? (
+                      attendanceDelegatesList.map((del, idx) => {
+                        const isPresent = del.checkin_status?.toLowerCase() === "present";
+                        return (
+                          <tr
+                            key={del.id}
+                            className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
+                              isPresent ? "bg-emerald-50/20 dark:bg-emerald-950/10" : ""
+                            }`}
+                          >
+                            <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
+                              {idx + 1}
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <div className="space-y-0.5">
+                                <strong className="font-bold text-slate-900 dark:text-white capitalize block">
+                                  {del.name || `${del.first_name || ""} ${del.last_name || ""}`.trim() || "Delegate"}
+                                </strong>
+                                <span className="text-[11px] text-slate-400 font-mono block">
+                                  {del.id}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <div className="space-y-0.5">
+                                <span className="font-semibold text-slate-900 dark:text-slate-100 block">
+                                  {del.organization || "Independent Leader"}
+                                </span>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                  {del.designation || "Executive"}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                {del.pass_name || del.registration_category || "Delegate"}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              {isPresent ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Present</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                  <Clock className="h-3 w-3" />
+                                  <span>Absent</span>
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-xs font-mono text-slate-600 dark:text-slate-400">
+                              {del.checked_in_at ? (
+                                <div>
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-400 block">
+                                    {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 block">
+                                    by {del.checked_in_by || "Admin"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {isPresent ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUndoAttendance(del.id)}
+                                    className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-red-600 hover:border-red-300 transition-colors cursor-pointer"
+                                    title="Undo check-in (revert to Absent)"
+                                  >
+                                    Undo
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickCheckin(del.id)}
+                                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                                  >
+                                    Check In
+                                  </button>
+                                )}
+
+                                <a
+                                  href={`/verify-pass/${del.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded-lg text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="View official digital pass & QR badge"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="py-10 text-center text-slate-500">
+                          No attendees matching the selected filters.
                         </td>
                       </tr>
                     )}

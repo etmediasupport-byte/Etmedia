@@ -133,6 +133,12 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations MODIFY COLUMN payment_status VARCHAR(100) DEFAULT 'Pending';"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations MODIFY COLUMN status VARCHAR(100) DEFAULT 'Pending';"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations MODIFY COLUMN status VARCHAR(100) DEFAULT 'Pending';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN checkin_status VARCHAR(50) DEFAULT 'Absent';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN checked_in_at DATETIME NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN checked_in_by VARCHAR(100) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN checkin_status VARCHAR(50) DEFAULT 'Absent';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN checked_in_at DATETIME NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN checked_in_by VARCHAR(100) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
     try { await pool.query("ALTER TABLE partner_submissions MODIFY COLUMN status VARCHAR(100) DEFAULT 'Pending';"); } catch (e) {}
 
