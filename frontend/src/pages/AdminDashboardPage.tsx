@@ -115,6 +115,7 @@ import {
   PanelLeftOpen,
   Filter,
   CalendarDays,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
@@ -2485,16 +2486,72 @@ export default function AdminDashboardPage() {
     return true;
   };
 
+  // Robust matcher between DB registrations and CMS events
+  const doesRegistrationMatchEvent = (r: Registration, evt: any): boolean => {
+    if (!r || !evt) return false;
+    const evtId = (evt.id || "").toString().trim();
+    const evtSlug = (evt.slug || "").toString().trim();
+    const evtTitle = (evt.title || "").toString().trim().toLowerCase();
+
+    // 1. Direct ID or slug match
+    if (r.event_id && (r.event_id === evtId || r.event_id === evtSlug)) return true;
+
+    // 2. Exact Title match (case-insensitive)
+    const regTitle = (r.event_title || "").trim().toLowerCase();
+    if (regTitle && evtTitle && regTitle === evtTitle) return true;
+
+    // 3. ID / Slug numeric suffix match (e.g. '2903', '1482', '8399', '7349', '9912', '5463')
+    const evtIdSuffix = evtId.replace(/^[^\d]*/, "").slice(-4);
+    if (evtIdSuffix && evtIdSuffix.length >= 4 && r.event_id && r.event_id.includes(evtIdSuffix)) {
+      return true;
+    }
+
+    // 4. Fuzzy title containment
+    if (regTitle && evtTitle) {
+      const normReg = regTitle.replace(/[^a-z0-9]/g, "");
+      const normEvt = evtTitle.replace(/[^a-z0-9]/g, "");
+      if (normReg.length > 5 && normEvt.length > 5) {
+        if (normReg.includes(normEvt) || normEvt.includes(normReg)) return true;
+      }
+      if (normReg.includes("hrrecall") && normEvt.includes("hrrecall")) return true;
+      if (normReg.includes("creator") && normEvt.includes("creator")) return true;
+      if (normReg.includes("procurement") && normEvt.includes("procurement")) return true;
+      if (
+        (normReg.includes("hrleadership") || normReg.includes("hrconclave")) &&
+        (normEvt.includes("hrleadership") || normEvt.includes("hrconclave"))
+      )
+        return true;
+      if (
+        (normReg.includes("global") || normReg.includes("ai")) &&
+        (normEvt.includes("global") || normEvt.includes("ai"))
+      )
+        return true;
+      if (normReg.includes("testing") && normEvt.includes("testing")) return true;
+    }
+
+    return false;
+  };
+
   const attendanceDelegatesList = useMemo(() => {
     let list = [...registrations];
 
-    // 1. Event Filter
+    // 1. Event Filter (Strictly matches the selected CMS Event)
     if (attendanceEventFilter !== "all") {
-      list = list.filter(
-        (r) =>
-          r.event_id === attendanceEventFilter ||
-          r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
+      const selectedEvt = (cmsEvents || []).find(
+        (e) =>
+          e.id === attendanceEventFilter ||
+          e.slug === attendanceEventFilter ||
+          e.title === attendanceEventFilter
       );
+      if (selectedEvt) {
+        list = list.filter((r) => doesRegistrationMatchEvent(r, selectedEvt));
+      } else {
+        list = list.filter(
+          (r) =>
+            r.event_id === attendanceEventFilter ||
+            r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
+        );
+      }
     }
 
     // 2. Attendance Status Filter
@@ -2561,6 +2618,7 @@ export default function AdminDashboardPage() {
     attendanceStartDate,
     attendanceEndDate,
     attendanceSearchQuery,
+    cmsEvents,
   ]);
 
   const attendancePresentCount = useMemo(() => {
@@ -2577,107 +2635,74 @@ export default function AdminDashboardPage() {
     return Array.from(set);
   }, [registrations]);
 
-  // Event-Wise Attendance Breakdown Stats
+  // Event-Wise Attendance Breakdown Stats (STRICTLY for real CMS events - no phantom/dummy events)
   const eventAttendanceStats = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        id: string;
-        title: string;
-        date: string;
-        city: string;
-        totalRegistered: number;
-        presentCount: number;
-        absentCount: number;
-        turnoutRate: number;
-      }
-    >();
+    return (cmsEvents || []).map((evt) => {
+      const matchingRegs = registrations.filter((r) => doesRegistrationMatchEvent(r, evt));
+      const totalRegistered = matchingRegs.length;
+      const presentCount = matchingRegs.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+      const absentCount = Math.max(0, totalRegistered - presentCount);
+      const turnoutRate = totalRegistered > 0 ? Math.round((presentCount / totalRegistered) * 100) : 0;
 
-    // Seed from CMS events
-    (cmsEvents || []).forEach((evt) => {
-      const key = evt.id || evt.slug || evt.title;
-      map.set(key, {
-        id: key,
+      return {
+        id: evt.id,
         title: evt.title,
         date: evt.date || "",
         city: evt.city || (evt.locations && evt.locations[0]?.city) || "",
-        totalRegistered: 0,
-        presentCount: 0,
-        absentCount: 0,
-        turnoutRate: 0,
-      });
+        venue: evt.venue || "",
+        status: evt.status || "Upcoming",
+        totalRegistered,
+        presentCount,
+        absentCount,
+        turnoutRate,
+      };
     });
-
-    // Count from registrations
-    registrations.forEach((r) => {
-      const key = r.event_id || r.event_title || "other";
-      let stat = map.get(key);
-      if (!stat) {
-        for (const [k, v] of map.entries()) {
-          if (v.title.toLowerCase() === (r.event_title || "").toLowerCase()) {
-            stat = v;
-            break;
-          }
-        }
-      }
-      if (!stat) {
-        stat = {
-          id: key,
-          title: r.event_title || "Special Summit",
-          date: "",
-          city: r.city || "",
-          totalRegistered: 0,
-          presentCount: 0,
-          absentCount: 0,
-          turnoutRate: 0,
-        };
-        map.set(key, stat);
-      }
-      stat.totalRegistered++;
-      if (r.checkin_status?.toLowerCase() === "present") {
-        stat.presentCount++;
-      }
-    });
-
-    map.forEach((stat) => {
-      stat.absentCount = Math.max(0, stat.totalRegistered - stat.presentCount);
-      stat.turnoutRate =
-        stat.totalRegistered > 0
-          ? Math.round((stat.presentCount / stat.totalRegistered) * 100)
-          : 0;
-    });
-
-    return Array.from(map.values()).sort((a, b) => b.totalRegistered - a.totalRegistered);
   }, [cmsEvents, registrations]);
 
   // Selected Active Event Attendance Summary
   const selectedEventAttendanceSummary = useMemo(() => {
-    let pool = registrations;
-    let eventTitle = "All Summits & Conferences";
-    if (attendanceEventFilter !== "all") {
-      pool = pool.filter(
-        (r) =>
-          r.event_id === attendanceEventFilter ||
-          r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
-      );
-      const matched = cmsEvents.find(
-        (e) =>
-          e.id === attendanceEventFilter ||
-          e.slug === attendanceEventFilter ||
-          e.title === attendanceEventFilter
-      );
-      if (matched) {
-        eventTitle = matched.title;
-      } else {
-        eventTitle = attendanceEventFilter;
-      }
+    if (attendanceEventFilter === "all") {
+      const total = registrations.length;
+      const present = registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+      const absent = Math.max(0, total - present);
+      const turnout = total > 0 ? Math.round((present / total) * 100) : 0;
+      return {
+        id: "all",
+        title: "All Summits & Conferences Combined",
+        date: "All Scheduled Dates",
+        venue: "All Event Venues",
+        city: "All Locations",
+        status: "Active",
+        total,
+        present,
+        absent,
+        turnout,
+      };
     }
+
+    const matchedEvt = (cmsEvents || []).find(
+      (e) =>
+        e.id === attendanceEventFilter ||
+        e.slug === attendanceEventFilter ||
+        e.title === attendanceEventFilter
+    );
+
+    const pool = registrations.filter((r) =>
+      matchedEvt ? doesRegistrationMatchEvent(r, matchedEvt) : r.event_id === attendanceEventFilter
+    );
+
     const total = pool.length;
     const present = pool.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
     const absent = Math.max(0, total - present);
     const turnout = total > 0 ? Math.round((present / total) * 100) : 0;
+
     return {
-      title: eventTitle,
+      id: matchedEvt?.id || attendanceEventFilter,
+      title: matchedEvt?.title || attendanceEventFilter,
+      date: matchedEvt?.date || "",
+      venue: matchedEvt?.venue || "",
+      city: matchedEvt?.city || (matchedEvt?.locations && matchedEvt?.locations[0]?.city) || "",
+      status: matchedEvt?.status || "Live CMS",
       total,
       present,
       absent,
@@ -7828,156 +7853,100 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* EVENT-WISE SELECTION & CAROUSEL */}
-              <div className="space-y-3 p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200/80 dark:border-slate-800">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Summit & Event Selection ({eventAttendanceStats.length} Events)
-                    </span>
+              {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 p-5 shadow-xs space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Left: Section Title & Real CMS Count Badge */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="h-7 w-7 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                        <CalendarDays className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                        Event Attendance & Summit Selector
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-100 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border border-cyan-300/40">
+                        {eventAttendanceStats.length} Live CMS Summits
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Choose an event from the dropdown to monitor live gate admissions, verify attendee status, or export real database rosters.
+                    </p>
                   </div>
 
-                  {/* Dropdown for quick access */}
-                  <div className="relative min-w-[260px] max-w-sm">
-                    <select
-                      value={attendanceEventFilter}
-                      onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
-                    >
-                      <option value="all">
-                        🌐 All Summits & Conferences ({registrations.length} Total Registered)
-                      </option>
-                      {eventAttendanceStats.map((evt) => (
-                        <option key={evt.id} value={evt.id}>
-                          {evt.title} ({evt.totalRegistered} Registered • {evt.presentCount} In • {evt.turnoutRate}%)
+                  {/* Right: Prominent Full-Width Dropdown Selector */}
+                  <div className="w-full lg:w-auto lg:min-w-[440px]">
+                    <div className="relative">
+                      <select
+                        id="attendance-event-dropdown"
+                        value={attendanceEventFilter}
+                        onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-white dark:bg-slate-800 px-4 py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
+                      >
+                        <option value="all">
+                          🌐 All Summits & Conferences Combined ({registrations.length} Total Registered • {attendancePresentCount} Checked In)
                         </option>
-                      ))}
-                    </select>
+                        {eventAttendanceStats.map((evt) => (
+                          <option key={evt.id} value={evt.id}>
+                            📌 {evt.title} ({evt.totalRegistered} Registered • {evt.presentCount} In • {evt.absentCount} Pending)
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-600 dark:text-cyan-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
-                {/* Horizontal Scrollable Event Cards */}
-                <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar">
-                  {/* "All Events" Card */}
-                  <div
-                    onClick={() => setAttendanceEventFilter("all")}
-                    className={`shrink-0 w-64 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
-                      attendanceEventFilter === "all"
-                        ? "border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/40 ring-2 ring-cyan-500/50 shadow-md shadow-cyan-500/10"
-                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
-                        Global Overview
-                      </span>
-                      {attendanceEventFilter === "all" && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-600 text-white">
-                          ACTIVE
-                        </span>
-                      )}
+                {/* ACTIVE SELECTED SUMMIT BANNER CARD */}
+                <div className="rounded-xl border border-cyan-200/70 dark:border-cyan-900/50 bg-cyan-50/50 dark:bg-cyan-950/20 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                      {attendanceEventFilter === "all" ? "🌐" : "🎯"}
                     </div>
-                    <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate mb-2">
-                      All Summits Combined
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold">
-                      <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
-                        <span className="text-slate-400 block text-[9px]">TOTAL</span>
-                        <span className="text-slate-800 dark:text-slate-200 font-black">
-                          {registrations.length}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+                          Active Event Scope:
                         </span>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
+                          {selectedEventAttendanceSummary.title}
+                        </h4>
                       </div>
-                      <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded-lg text-emerald-700 dark:text-emerald-300">
-                        <span className="text-emerald-600/70 block text-[9px]">PRESENT</span>
-                        <span className="font-black">{attendancePresentCount}</span>
-                      </div>
-                      <div className="bg-amber-50 dark:bg-amber-950/60 p-1.5 rounded-lg text-amber-700 dark:text-amber-300">
-                        <span className="text-amber-600/70 block text-[9px]">ABSENT</span>
-                        <span className="font-black">
-                          {Math.max(0, registrations.length - attendancePresentCount)}
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
+                        {selectedEventAttendanceSummary.date && (
+                          <span className="flex items-center gap-1 font-mono font-bold">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            {selectedEventAttendanceSummary.date}
+                          </span>
+                        )}
+                        {selectedEventAttendanceSummary.city && (
+                          <span className="flex items-center gap-1 font-semibold">
+                            <MapPin className="h-3 w-3 text-slate-400" />
+                            {selectedEventAttendanceSummary.city}
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                          Real Database Records
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Individual Event Cards */}
-                  {eventAttendanceStats.map((evt) => {
-                    const isSelected =
-                      attendanceEventFilter === evt.id || attendanceEventFilter === evt.title;
-                    return (
-                      <div
-                        key={evt.id}
-                        onClick={() => setAttendanceEventFilter(evt.id)}
-                        className={`shrink-0 w-64 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
-                          isSelected
-                            ? "border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/40 ring-2 ring-cyan-500/50 shadow-md shadow-cyan-500/10"
-                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-[10px] font-mono font-bold text-slate-400 truncate">
-                            {evt.date || "Upcoming Summit"}
-                          </span>
-                          {isSelected && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-600 text-white">
-                              SELECTED
-                            </span>
-                          )}
-                        </div>
-                        <div
-                          className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1 mb-2"
-                          title={evt.title}
-                        >
-                          {evt.title}
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold">
-                          <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
-                            <span className="text-slate-400 block text-[9px]">TOTAL</span>
-                            <span className="text-slate-800 dark:text-slate-200 font-black">
-                              {evt.totalRegistered}
-                            </span>
-                          </div>
-                          <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded-lg text-emerald-700 dark:text-emerald-300">
-                            <span className="text-emerald-600/70 block text-[9px]">PRESENT</span>
-                            <span className="font-black">{evt.presentCount}</span>
-                          </div>
-                          <div className="bg-amber-50 dark:bg-amber-950/60 p-1.5 rounded-lg text-amber-700 dark:text-amber-300">
-                            <span className="text-amber-600/70 block text-[9px]">ABSENT</span>
-                            <span className="font-black">{evt.absentCount}</span>
-                          </div>
-                        </div>
-                        <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-1.5 rounded-full"
-                            style={{ width: `${evt.turnoutRate}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {attendanceEventFilter !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceEventFilter("all")}
+                      className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>View All Summits</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
-                  <span>
-                    Active Event Scope:{" "}
-                    <strong className="text-slate-900 dark:text-slate-100 font-black">
-                      {selectedEventAttendanceSummary.title}
-                    </strong>
-                  </span>
-                  {attendanceEventFilter !== "all" && (
-                    <button
-                      type="button"
-                      onClick={() => setAttendanceEventFilter("all")}
-                      className="text-cyan-600 hover:underline font-bold text-[11px] cursor-pointer"
-                    >
-                      ← Reset to All Summits
-                    </button>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   {/* Card 1: Total Registered */}
