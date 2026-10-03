@@ -84,6 +84,7 @@ export default function FreeRegistrationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [draftRegId, setDraftRegId] = useState<string>("");
 
   const [formData, setFormData] = useState({
     // Step 1: Personal
@@ -202,7 +203,7 @@ export default function FreeRegistrationPage() {
     }
   };
 
-  // Step 1 Validation & Next
+  // Step 1 Validation & Next (Auto-captures Step 1 Lead)
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: RegistrationFieldErrors = {};
@@ -234,12 +235,35 @@ export default function FreeRegistrationPage() {
     }
 
     setFieldErrors({});
+
+    // Auto-save Step 1 draft to database immediately so drop-offs are captured
+    try {
+      fetch("/api/registrations/free-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationId: draftRegId || undefined,
+          step: 1,
+          ...formData,
+          contactNumber: phoneVal.cleanDigits || formData.contactNumber,
+          eventId: eventData?.id || slug,
+          eventSlug: eventData?.slug || slug,
+          eventTitle: eventData?.title || "Executive Summit 2026",
+        }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.registrationId) setDraftRegId(d.registrationId);
+        })
+        .catch(() => {});
+    } catch (e) {}
+
     toast.success("Personal details saved!");
     setCurrentStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Step 2 Validation & Next
+  // Step 2 Validation & Next (Auto-captures Step 2 Lead)
   const handleStep2Submit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: RegistrationFieldErrors = {};
@@ -269,6 +293,30 @@ export default function FreeRegistrationPage() {
     }
 
     setFieldErrors({});
+
+    // Auto-save Step 2 draft to database immediately
+    try {
+      const phoneVal = validatePhone(formData.contactNumber, "Contact / Mobile Number");
+      fetch("/api/registrations/free-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationId: draftRegId || undefined,
+          step: 2,
+          ...formData,
+          contactNumber: phoneVal.cleanDigits || formData.contactNumber,
+          eventId: eventData?.id || slug,
+          eventSlug: eventData?.slug || slug,
+          eventTitle: eventData?.title || "Executive Summit 2026",
+        }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.registrationId) setDraftRegId(d.registrationId);
+        })
+        .catch(() => {});
+    } catch (e) {}
+
     toast.success("Organization profile saved!");
     setCurrentStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -311,6 +359,7 @@ export default function FreeRegistrationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          registrationId: draftRegId || undefined,
           ...formData,
           contactNumber: phoneVal.cleanDigits || formData.contactNumber,
           eventId: eventData?.id || slug,

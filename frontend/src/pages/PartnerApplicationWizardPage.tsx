@@ -153,6 +153,7 @@ export default function PartnerApplicationWizardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [draftSubmissionId, setDraftSubmissionId] = useState<string>("");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -316,14 +317,60 @@ export default function PartnerApplicationWizardPage() {
   };
 
   // Step Navigation
+  // Step Navigation with Auto-Draft Lead Capture
   const handleNextStep = () => {
     if (currentStep === 1) {
       if (validateStep1()) {
+        try {
+          fetch("/api/partners/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              submissionId: draftSubmissionId || undefined,
+              step: 1,
+              company_name: formData.company_name.trim(),
+              website: formData.website.trim(),
+              industry: formData.industry,
+              location: formData.location.trim(),
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.success && d.submissionId) setDraftSubmissionId(d.submissionId);
+            })
+            .catch(() => {});
+        } catch (e) {}
+
         setCurrentStep(2);
         window.scrollTo({ top: 100, behavior: "smooth" });
       }
     } else if (currentStep === 2) {
       if (validateStep2()) {
+        try {
+          fetch("/api/partners/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              submissionId: draftSubmissionId || undefined,
+              step: 2,
+              company_name: formData.company_name.trim(),
+              website: formData.website.trim(),
+              industry: formData.industry,
+              location: formData.location.trim(),
+              contact_person: formData.contact_person.trim(),
+              designation: formData.designation.trim(),
+              email: formData.email.trim(),
+              phone: formData.phone.trim(),
+              partnership_type: formData.partnership_type,
+            }),
+          })
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.success && d.submissionId) setDraftSubmissionId(d.submissionId);
+            })
+            .catch(() => {});
+        } catch (e) {}
+
         setCurrentStep(3);
         window.scrollTo({ top: 100, behavior: "smooth" });
       }
@@ -357,6 +404,7 @@ export default function PartnerApplicationWizardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          submissionId: draftSubmissionId || undefined,
           company_name: formData.company_name.trim(),
           website: formData.website.trim(),
           industry: formData.industry,

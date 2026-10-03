@@ -2442,8 +2442,8 @@ app.post("/api/registrations/start", async (req, res) => {
         `INSERT INTO registrations (
           id, name, first_name, last_name, email, phone, organization, designation,
           city, country, industry, linkedin_url, registration_category, participation_preference,
-          interest_tracks, event_id, event_title, payment_status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW())
+          interest_tracks, event_id, event_title, payment_status, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dropped (Step 1 Completed)', 'Incomplete', NOW())
         ON DUPLICATE KEY UPDATE
           name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
           phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
@@ -2480,7 +2480,14 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
 
     if (pool && registrationId) {
       await pool.query(
-        "UPDATE registrations SET pass_name = ?, pass_price = ?, payment_amount = ?, gst_amount = ?, coupon_applied = COALESCE(?, coupon_applied) WHERE id = ?",
+        `UPDATE registrations SET 
+          pass_name = ?, 
+          pass_price = ?, 
+          payment_amount = ?, 
+          gst_amount = ?, 
+          coupon_applied = COALESCE(?, coupon_applied),
+          payment_status = CASE WHEN payment_status = 'Paid' THEN 'Paid' ELSE 'Dropped (Pass Selected)' END
+        WHERE id = ?`,
         [passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null, registrationId]
       );
     }
@@ -2551,10 +2558,94 @@ app.get("/api/registrations/:registrationId", async (req, res) => {
   }
 });
 
+// 4b. POST /api/registrations/free-draft - Auto-capture intermediate free registration drop-off steps
+app.post("/api/registrations/free-draft", async (req, res) => {
+  try {
+    const {
+      registrationId,
+      step = 1,
+      firstName = "",
+      lastName = "",
+      workEmail = "",
+      contactNumber = "",
+      designation = "",
+      companyName = "",
+      city = "",
+      country = "India",
+      industry = "",
+      linkedinUrl = "",
+      category = "Free Interest Delegate",
+      participationPreference = "In-Person Delegate",
+      interestTracks,
+      reasonForAttending = "",
+      eventId = "hr-recall-2k26",
+      eventSlug,
+      eventTitle = "HR RECALL 2K26",
+    } = req.body;
+
+    const regId = registrationId || `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullName = `${firstName} ${lastName}`.trim() || firstName || "Interested Delegate";
+    const effectiveEventSlug = eventSlug || eventId;
+    const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
+    const dropStatus = step === 1 ? "Dropped (Free Step 1)" : "Dropped (Free Step 2)";
+
+    if (pool) {
+      const [existing]: any = await pool.query("SELECT id FROM registrations WHERE id = ? LIMIT 1", [regId]);
+      if (existing && existing.length > 0) {
+        await pool.query(
+          `UPDATE registrations SET
+            name = COALESCE(NULLIF(?, ''), name),
+            first_name = COALESCE(NULLIF(?, ''), first_name),
+            last_name = COALESCE(NULLIF(?, ''), last_name),
+            email = COALESCE(NULLIF(?, ''), email),
+            phone = COALESCE(NULLIF(?, ''), phone),
+            organization = COALESCE(NULLIF(?, ''), organization),
+            designation = COALESCE(NULLIF(?, ''), designation),
+            city = COALESCE(NULLIF(?, ''), city),
+            country = COALESCE(NULLIF(?, ''), country),
+            industry = COALESCE(NULLIF(?, ''), industry),
+            linkedin_url = COALESCE(NULLIF(?, ''), linkedin_url),
+            registration_category = COALESCE(NULLIF(?, ''), registration_category),
+            participation_preference = COALESCE(NULLIF(?, ''), participation_preference),
+            interest_tracks = COALESCE(NULLIF(?, ''), interest_tracks),
+            coupon_applied = COALESCE(NULLIF(?, ''), coupon_applied),
+            payment_status = CASE WHEN payment_status = 'Approved (Free Pass)' OR payment_status = 'Pending Approval' THEN payment_status ELSE ? END
+          WHERE id = ?`,
+          [
+            fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
+            city, country, industry, linkedinUrl, category, participationPreference, tracksStr,
+            reasonForAttending ? `Motivation: ${reasonForAttending}` : null, dropStatus, regId
+          ]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO registrations (
+            id, name, first_name, last_name, email, phone, organization, designation,
+            city, country, industry, linkedin_url, registration_category, participation_preference,
+            interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Complimentary Pass (Draft)', ?, ?, ?, 'Incomplete', 0, ?, NOW())`,
+          [
+            regId, fullName, firstName, lastName, (workEmail || "draft@etmedia.in").trim(), contactNumber || "N/A", companyName || "N/A", designation || "N/A",
+            city || "N/A", country, industry || "Technology", linkedinUrl || "", category,
+            participationPreference, tracksStr, effectiveEventSlug, eventTitle, dropStatus,
+            reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Draft"
+          ]
+        );
+      }
+    }
+
+    return res.json({ success: true, registrationId: regId });
+  } catch (err: any) {
+    console.error("[API] Error in /api/registrations/free-draft:", err);
+    return res.json({ success: true, registrationId: req.body.registrationId || `ETM-FREE-${Date.now()}` });
+  }
+});
+
 // 5. POST /api/registrations/free-start - Submit Free Delegate Interest Application (Pending Admin Approval)
 app.post("/api/registrations/free-start", async (req, res) => {
   try {
     const {
+      registrationId,
       firstName,
       lastName,
       workEmail,
@@ -2602,7 +2693,7 @@ app.post("/api/registrations/free-start", async (req, res) => {
       return res.status(400).json({ success: false, message: "Please enter a valid city name (e.g. Hyderabad, Bengaluru, Mumbai)." });
     }
 
-    const regId = `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const regId = registrationId || `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const fullName = `${firstName} ${lastName}`.trim();
     const effectiveEventSlug = eventSlug || eventId;
     const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
@@ -2637,14 +2728,15 @@ app.post("/api/registrations/free-start", async (req, res) => {
         `INSERT INTO registrations (
           id, name, first_name, last_name, email, phone, organization, designation,
           city, country, industry, linkedin_url, registration_category, participation_preference,
-          interest_tracks, pass_name, event_id, event_title, payment_status, payment_amount, coupon_applied, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 0, ?, NOW())
+          interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 'Pending', 0, ?, NOW())
         ON DUPLICATE KEY UPDATE
           name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
           phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
           city = VALUES(city), country = VALUES(country), industry = VALUES(industry),
           linkedin_url = VALUES(linkedin_url), registration_category = VALUES(registration_category),
           participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks),
+          pass_name = VALUES(pass_name), payment_status = 'Pending Approval', status = 'Pending',
           coupon_applied = VALUES(coupon_applied);`,
         [
           regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
@@ -4670,9 +4762,72 @@ app.delete("/api/admin/partners/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
+// Draft / Step-by-Step Partner Lead Capture
+app.post("/api/partners/draft", async (req, res) => {
+  try {
+    const {
+      submissionId,
+      step = 1,
+      company_name = "",
+      website = "",
+      industry = "",
+      location = "",
+      contact_person = "",
+      designation = "",
+      email = "",
+      phone = "",
+      partnership_type = "Strategic Partner",
+      message = "",
+    } = req.body;
+
+    const id = submissionId || `PRT-SUB-${Date.now().toString().slice(-6)}`;
+    const dropStatus = step === 1 ? "Dropped (Partner Step 1)" : "Dropped (Partner Step 2)";
+
+    if (pool) {
+      const [existing]: any = await pool.query("SELECT id FROM partner_submissions WHERE id = ? LIMIT 1", [id]);
+      if (existing && existing.length > 0) {
+        await pool.query(
+          `UPDATE partner_submissions SET
+            company_name = COALESCE(NULLIF(?, ''), company_name),
+            website = COALESCE(NULLIF(?, ''), website),
+            industry = COALESCE(NULLIF(?, ''), industry),
+            location = COALESCE(NULLIF(?, ''), location),
+            contact_person = COALESCE(NULLIF(?, ''), contact_person),
+            designation = COALESCE(NULLIF(?, ''), designation),
+            email = COALESCE(NULLIF(?, ''), email),
+            phone = COALESCE(NULLIF(?, ''), phone),
+            partnership_type = COALESCE(NULLIF(?, ''), partnership_type),
+            message = COALESCE(NULLIF(?, ''), message),
+            status = CASE WHEN status = 'Pending' OR status = 'Replied' THEN status ELSE ? END
+          WHERE id = ?`,
+          [
+            company_name, website, industry, location, contact_person, designation, email, phone, partnership_type, message, dropStatus, id
+          ]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO partner_submissions (id, company_name, website, industry, location, contact_person, designation, email, phone, partnership_type, message, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id, company_name || "Draft Company", website || "", industry || "General", location || "N/A",
+            contact_person || "Partner Representative", designation || "Executive", email || "draft@etmedia.in", phone || "N/A",
+            partnership_type || "Strategic Partner", message || "Draft Partner Inquiry", dropStatus
+          ]
+        );
+      }
+    }
+
+    return res.json({ success: true, submissionId: id });
+  } catch (err: any) {
+    console.error("Partner Draft Error:", err);
+    return res.json({ success: true, submissionId: req.body.submissionId || `PRT-SUB-${Date.now()}` });
+  }
+});
+
 // Submit Partner Form (Public)
 app.post("/api/partners/submit", async (req, res) => {
   const {
+    submissionId,
     company_name,
     website,
     industry,
@@ -4713,7 +4868,7 @@ app.post("/api/partners/submit", async (req, res) => {
     return res.status(400).json({ success: false, message: "Please provide a valid 10-digit contact mobile number." });
   }
 
-  const id = `PRT-SUB-${Date.now().toString().slice(-6)}`;
+  const id = submissionId || `PRT-SUB-${Date.now().toString().slice(-6)}`;
   const submissionData = {
     id,
     company_name,
@@ -4726,16 +4881,29 @@ app.post("/api/partners/submit", async (req, res) => {
     phone,
     partnership_type,
     message: message || "",
+    status: "Pending",
     created_at: new Date().toISOString(),
   };
 
   try {
     if (pool) {
-      await pool.query(
-        `INSERT INTO partner_submissions (id, company_name, website, industry, location, contact_person, designation, email, phone, partnership_type, message)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, company_name, website || "", industry, location, contact_person, designation, email, phone, partnership_type, message || ""]
-      );
+      const [existing]: any = await pool.query("SELECT id FROM partner_submissions WHERE id = ? LIMIT 1", [id]);
+      if (existing && existing.length > 0) {
+        await pool.query(
+          `UPDATE partner_submissions SET 
+            company_name = ?, website = ?, industry = ?, location = ?, 
+            contact_person = ?, designation = ?, email = ?, phone = ?, 
+            partnership_type = ?, message = ?, status = 'Pending' 
+          WHERE id = ?`,
+          [company_name, website || "", industry, location, contact_person, designation, email, phone, partnership_type, message || "", id]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO partner_submissions (id, company_name, website, industry, location, contact_person, designation, email, phone, partnership_type, message, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+          [id, company_name, website || "", industry, location, contact_person, designation, email, phone, partnership_type, message || ""]
+        );
+      }
     }
 
     io.emit("new_partner_submission", submissionData);

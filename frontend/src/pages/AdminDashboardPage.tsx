@@ -4022,9 +4022,10 @@ export default function AdminDashboardPage() {
       // 3. Status Filter
       if (regFilterStatus !== "all") {
         const pStatus = (r.payment_status || "").toString().toLowerCase();
-        if (regFilterStatus === "paid" && !pStatus.includes("paid") && !r.payment_id) return false;
-        if (regFilterStatus === "pending" && !pStatus.includes("pending")) return false;
+        if (regFilterStatus === "paid" && (!pStatus.includes("paid") || pStatus.includes("dropped"))) return false;
+        if (regFilterStatus === "pending" && pStatus !== "pending approval" && pStatus !== "pending") return false;
         if (regFilterStatus === "free" && !pStatus.includes("free") && !pStatus.includes("approved")) return false;
+        if (regFilterStatus === "dropped" && !pStatus.includes("dropped") && !pStatus.includes("incomplete") && pStatus !== "pending") return false;
         if (regFilterStatus === "rejected" && !pStatus.includes("rejected")) return false;
       }
 
@@ -5323,10 +5324,11 @@ export default function AdminDashboardPage() {
                       aria-label="Filter by payment status"
                       className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
                     >
-                      <option value="all">💳 All Payment Statuses</option>
+                      <option value="all">💳 All Statuses</option>
                       <option value="paid">✅ Paid (Confirmed)</option>
                       <option value="pending">⏳ Pending Approval</option>
                       <option value="free">🎁 Approved (Free Pass)</option>
+                      <option value="dropped">⚠️ Dropped / Incomplete Leads</option>
                       <option value="rejected">❌ Rejected</option>
                     </select>
                   </div>
@@ -5460,14 +5462,22 @@ export default function AdminDashboardPage() {
                             if (pStatus === "Pending Approval") {
                               return (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 px-2 py-0.5 text-[10px] font-black animate-pulse">
-                                  ⏳ Pending
+                                  ⏳ Pending Review
                                 </span>
                               );
                             }
                             if (pStatus === "Approved (Free Pass)" || pStatus === "Free") {
                               return (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 border border-blue-300 text-blue-900 px-2 py-0.5 text-[10px] font-black">
-                                  🎁 Free Pass
+                                  🎟️ Free Pass
+                                </span>
+                              );
+                            }
+                            if (pStatus.startsWith("Dropped") || pStatus === "Incomplete" || (pStatus === "Pending" && !reg.payment_id)) {
+                              const label = pStatus.startsWith("Dropped (") ? pStatus.replace("Dropped (", "").replace(")", "") : (pStatus === "Pending" ? "Incomplete Profile" : "Dropped Lead");
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-300 text-rose-800 px-2 py-0.5 text-[10px] font-black" title="User started registering but dropped off before completing">
+                                  ⚠️ {label}
                                 </span>
                               );
                             }
@@ -10409,6 +10419,7 @@ export default function AdminDashboardPage() {
                           <th className="py-3.5 px-4">Contact Executive</th>
                           <th className="py-3.5 px-4">Proposal Category</th>
                           <th className="py-3.5 px-4">Direct Contact</th>
+                          <th className="py-3.5 px-4">Status</th>
                           <th className="py-3.5 px-4">Submitted Date</th>
                           <th className="py-3.5 px-4 text-right rounded-tr-xl">Actions</th>
                         </tr>
@@ -10474,6 +10485,33 @@ export default function AdminDashboardPage() {
                                 <a href={`tel:${sub.phone}`} className="text-[10px] text-slate-500 font-mono hover:text-cyan-700 block">
                                   {sub.phone || "N/A"}
                                 </a>
+                              </td>
+
+                              {/* Status */}
+                              <td className="py-3.5 px-4">
+                                {(() => {
+                                  const st = (sub.status || "Pending").toString();
+                                  if (st === "Replied") {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 px-2.5 py-0.5 text-[10px] font-black">
+                                        ✓ Replied
+                                      </span>
+                                    );
+                                  }
+                                  if (st.startsWith("Dropped")) {
+                                    const stepLabel = st.startsWith("Dropped (") ? st.replace("Dropped (", "").replace(")", "") : "Dropped Lead";
+                                    return (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-300 text-rose-800 px-2.5 py-0.5 text-[10px] font-black" title="Partner started filling form but dropped off">
+                                        ⚠️ {stepLabel}
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 px-2.5 py-0.5 text-[10px] font-black animate-pulse">
+                                      ⏳ Pending
+                                    </span>
+                                  );
+                                })()}
                               </td>
 
                               {/* Date */}
