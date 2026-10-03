@@ -4242,11 +4242,20 @@ export default function AdminDashboardPage() {
       // 3. Status Filter
       if (regFilterStatus !== "all") {
         const pStatus = (r.payment_status || "").toString().toLowerCase();
-        if (regFilterStatus === "paid" && (!pStatus.includes("paid") || pStatus.includes("dropped"))) return false;
-        if (regFilterStatus === "pending" && pStatus !== "pending approval" && pStatus !== "pending") return false;
-        if (regFilterStatus === "free" && !pStatus.includes("free") && !pStatus.includes("approved")) return false;
-        if (regFilterStatus === "dropped" && !pStatus.includes("dropped") && !pStatus.includes("incomplete") && pStatus !== "pending") return false;
-        if (regFilterStatus === "rejected" && !pStatus.includes("rejected")) return false;
+        if (regFilterStatus === "paid") {
+          const isPaid = pStatus.includes("paid") && !pStatus.includes("dropped") && !pStatus.includes("incomplete");
+          if (!isPaid) return false;
+        } else if (regFilterStatus === "free") {
+          const isFree = pStatus.includes("free") || pStatus.includes("approved") || r.pass_price === 0;
+          if (!isFree) return false;
+        } else if (regFilterStatus === "dropped") {
+          const isDropped = pStatus.includes("dropped") || pStatus.includes("incomplete") || pStatus.includes("pending") || pStatus.includes("rejected");
+          if (!isDropped) return false;
+        } else if (regFilterStatus === "pending") {
+          if (pStatus !== "pending approval" && pStatus !== "pending") return false;
+        } else if (regFilterStatus === "rejected") {
+          if (!pStatus.includes("rejected")) return false;
+        }
       }
 
       // 4. Date Filter
@@ -4266,6 +4275,30 @@ export default function AdminDashboardPage() {
       return true;
     });
   }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate, dateFilterRange, customStartDate, customEndDate]);
+
+  const regStatusCounts = useMemo(() => {
+    let paid = 0;
+    let free = 0;
+    let dropped = 0;
+
+    eventRegistrationsList.forEach((r) => {
+      const pStatus = (r.payment_status || "").toString().toLowerCase();
+      if (pStatus.includes("paid") && !pStatus.includes("dropped") && !pStatus.includes("incomplete")) {
+        paid++;
+      } else if (pStatus.includes("free") || pStatus.includes("approved") || r.pass_price === 0) {
+        free++;
+      } else {
+        dropped++;
+      }
+    });
+
+    return {
+      all: eventRegistrationsList.length,
+      paid,
+      free,
+      dropped,
+    };
+  }, [eventRegistrationsList]);
 
   const filteredCmsDelegates = useMemo(() => {
     return cmsDelegates.filter((d) => {
@@ -5788,9 +5821,124 @@ export default function AdminDashboardPage() {
 
           {/* TAB 1: EVENT REGISTRATIONS */}
           {activeTab === "event-registrations" && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
+              {/* 4 Interactive Quick Filter Cards: All, Paid, Free, Dropout */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Card 1: All Delegates */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus("all")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "all"
+                      ? "bg-cyan-50 dark:bg-cyan-950/80 border-cyan-500 ring-2 ring-cyan-500/25 shadow-md shadow-cyan-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "all"
+                      ? "bg-cyan-600 text-white shadow-xs scale-105"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  }`}>
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                      All Delegates
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.all}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Total</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 2: Paid Passes */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "paid" ? "all" : "paid")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "paid"
+                      ? "bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md shadow-emerald-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "paid"
+                      ? "bg-emerald-600 text-white shadow-xs scale-105"
+                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                  }`}>
+                    <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 truncate">
+                      Paid Passes
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.paid}</span>
+                      <span className="text-[10px] text-emerald-600 font-bold">Confirmed</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 3: Free Passes */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "free" ? "all" : "free")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "free"
+                      ? "bg-purple-50 dark:bg-purple-950/80 border-purple-500 ring-2 ring-purple-500/25 shadow-md shadow-purple-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "free"
+                      ? "bg-purple-600 text-white shadow-xs scale-105"
+                      : "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+                  }`}>
+                    <Ticket className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400 truncate">
+                      Free Passes
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.free}</span>
+                      <span className="text-[10px] text-purple-600 font-bold">Granted</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 4: Dropout / Incomplete */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "dropped" ? "all" : "dropped")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "dropped"
+                      ? "bg-rose-50 dark:bg-rose-950/80 border-rose-500 ring-2 ring-rose-500/25 shadow-md shadow-rose-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "dropped"
+                      ? "bg-rose-600 text-white shadow-xs scale-105"
+                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                  }`}>
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 truncate">
+                      Dropout / Leads
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.dropped}</span>
+                      <span className="text-[10px] text-rose-600 font-bold">Incomplete</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
               {/* FILTER & SEARCH CONTROL TOOLBAR */}
-              <div className="space-y-4 pb-5 border-b border-slate-200">
+              <div className="space-y-4 pb-5 border-b border-slate-200 dark:border-slate-800">
                 {/* Top Row: Search & Filters */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* 1. Global Search */}
