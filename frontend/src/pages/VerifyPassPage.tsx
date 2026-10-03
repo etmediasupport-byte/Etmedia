@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -54,6 +54,7 @@ interface PassData {
 }
 
 export default function VerifyPassPage() {
+  const navigate = useNavigate();
   const { regId } = useParams<{ regId: string }>();
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -117,6 +118,167 @@ export default function VerifyPassPage() {
     passData?.id || regId || ""
   )}`;
 
+  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("etmedia_admin_token");
+  const [adminCheckingIn, setAdminCheckingIn] = useState(false);
+
+  const handleAdminCheckinFromPass = async () => {
+    if (!regId) return;
+    const adminToken = localStorage.getItem("etmedia_admin_token");
+    if (!adminToken) {
+      toast.error("Please log in as Admin first.");
+      navigate("/admin/login");
+      return;
+    }
+    setAdminCheckingIn(true);
+    try {
+      const res = await fetch("/api/admin/checkin/scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ identifier: regId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "✅ Delegate Checked-in Successfully!");
+        setPassData((prev) =>
+          prev
+            ? {
+                ...prev,
+                checkin_status: "Present",
+                checked_in_at: new Date().toISOString(),
+              }
+            : prev
+        );
+      } else if (data.alreadyCheckedIn) {
+        toast.warning(data.message || "⚠️ Delegate already checked in!");
+      } else {
+        toast.error(data.message || "Failed to check-in.");
+      }
+    } catch (err) {
+      toast.error("Network error during check-in.");
+    } finally {
+      setAdminCheckingIn(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // NON-ADMIN VIEW: PERSONAL SCAN DISABLED / SCAN OFF LOCK SCREEN
+  // -------------------------------------------------------------
+  if (!loading && verified && passData && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white pt-24 sm:pt-28 pb-20 font-sans selection:bg-cyan-500/20 px-4">
+        <SEOHead
+          title={`Official Pass: ${fullName} | Executive Talks Media`}
+          description="Official Event Entry Pass for Executive Talks Media Business Intelligence Leadership Summits."
+        />
+        <div className="max-w-lg mx-auto space-y-6">
+          {/* Top Brand Bar */}
+          <div className="flex items-center justify-between">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl"
+            >
+              <ArrowLeft className="h-4 w-4 text-cyan-400" />
+              <span>Back to Home</span>
+            </Link>
+
+            <Link
+              to="/admin/login"
+              className="text-xs font-bold text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              Coordinator Login →
+            </Link>
+          </div>
+
+          {/* MAIN ACCESS RESTRICTED CARD */}
+          <div className="rounded-3xl border border-red-500/30 bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 text-center space-y-6 shadow-2xl shadow-red-950/20">
+            {/* Lock Badge Icon */}
+            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10 border-2 border-red-500/40 text-red-400 shadow-inner">
+              <Lock className="h-10 w-10 text-red-400" />
+              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-ping" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/40">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                PERSONAL MOBILE SCAN OFF
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black font-display text-white">
+                Gate Check-In Restricted
+              </h1>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                This official entry pass <strong>cannot be scanned by personal mobile cameras</strong>. 
+                Gate attendance and badge issuance are restricted exclusively to Executive Talks Media coordinators using the authorized Admin Gate Scanner.
+              </p>
+            </div>
+
+            {/* DELEGATE ENTRY TOKEN DETAILS */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left text-xs space-y-3 font-mono">
+              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400 text-[11px]">Pass Holder:</span>
+                <strong className="text-white font-bold capitalize text-sm">{fullName}</strong>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400 text-[11px]">Event Summit:</span>
+                <span className="text-slate-200 text-right font-medium max-w-[220px] truncate">
+                  {eventTitle}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400 text-[11px]">Pass Category:</span>
+                <span className="text-cyan-400 font-bold">{category}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                <span className="text-slate-400 text-[11px]">Pass Token ID:</span>
+                <span className="text-purple-400 font-bold bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/60">
+                  {regId}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-slate-400 text-[11px]">Admission Status:</span>
+                {isCheckedIn ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Checked-In at Reception</span>
+                  </span>
+                ) : (
+                  <span className="text-amber-400 font-bold flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Awaiting Gate Desk Scan</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* INSTRUCTION FOOTER */}
+            <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 text-[11px] text-slate-400 leading-relaxed">
+              👉 <strong>Venue Entry Instruction:</strong> Present this pass on your phone screen upon arrival. The Executive Talks Media reception desk will scan your pass to issue your official physical lanyard badge.
+            </div>
+
+            <div className="pt-2">
+              <Link
+                to="/admin/login"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
+              >
+                <span>Event Coordinator Portal Login</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // ADMIN VIEW: FULL OFFICIAL PASS & GATE CONTROLS
+  // -------------------------------------------------------------
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pt-28 sm:pt-32 pb-20 font-sans selection:bg-cyan-500/20 print:p-0 print:bg-white print:text-black">
       <SEOHead
@@ -130,26 +292,40 @@ export default function VerifyPassPage() {
         {/* Navigation Top Bar (Hidden during print) */}
         <div className="flex items-center justify-between no-print">
           <Link
-            to="/"
+            to="/admin/dashboard"
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
           >
             <ArrowLeft className="h-4 w-4 text-cyan-600" />
-            <span>Return to Home</span>
+            <span>Admin Dashboard</span>
           </Link>
 
-          {verified && (
-            <button
-              type="button"
-              onClick={() => {
-                toast.dismiss();
-                setTimeout(() => window.print(), 100);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-xs font-black text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md uppercase tracking-wider"
-            >
-              <Printer className="h-4 w-4 text-cyan-400" />
-              <span>Print / Save Pass</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {verified && !isCheckedIn && (
+              <button
+                type="button"
+                onClick={handleAdminCheckinFromPass}
+                disabled={adminCheckingIn}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white hover:bg-emerald-700 transition-all cursor-pointer shadow-md uppercase tracking-wider"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{adminCheckingIn ? "Recording..." : "Check In Attendee Now"}</span>
+              </button>
+            )}
+
+            {verified && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.dismiss();
+                  setTimeout(() => window.print(), 100);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-xs font-black text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md uppercase tracking-wider"
+              >
+                <Printer className="h-4 w-4 text-cyan-400" />
+                <span>Print / Save Pass</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* LOADING STATE */}
@@ -183,7 +359,7 @@ export default function VerifyPassPage() {
           </div>
         )}
 
-        {/* SUCCESS VERIFIED PASS CARD */}
+        {/* SUCCESS VERIFIED PASS CARD (ADMIN VIEW) */}
         {!loading && verified && passData && (
           <div
             id="printable-pass"
@@ -218,7 +394,7 @@ export default function VerifyPassPage() {
               ) : (
                 <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 border border-cyan-400/50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-300 shrink-0 shadow-sm backdrop-blur-md">
                   <ShieldCheck className="h-4 w-4 text-cyan-400" />
-                  <span>OFFICIAL VERIFIED PASS</span>
+                  <span>ADMIN VERIFIED PASS</span>
                 </div>
               )}
             </div>
