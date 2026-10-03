@@ -4667,83 +4667,124 @@ app.patch("/api/admin/events/:id/featured", authenticateAdmin, async (req, res) 
 // PARTNERS & COLLABORATORS API ENDPOINTS
 // ==========================================
 
-// Get all partners (Public for carousel with caching)
+// Get all partners (Public for carousel with no-cache option)
 app.get("/api/partners", async (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   const cacheKey = "partners_list";
   const cached = getFastCache(cacheKey);
-  if (cached) {
+  if (cached && Array.isArray((cached as any).partners)) {
     return res.json(cached);
   }
 
   try {
     if (pool) {
       const [rows]: any = await pool.query("SELECT * FROM partners ORDER BY priority ASC, created_at DESC");
-      const resp = { success: true, partners: rows };
-      setFastCache(cacheKey, resp, 60);
+      const resp = { success: true, partners: rows, data: rows };
+      setFastCache(cacheKey, resp, 10);
       return res.json(resp);
     }
-    return res.json({ success: true, partners: [] });
+    return res.json({ success: true, partners: [], data: [] });
   } catch (err: any) {
     console.error("Fetch Partners Error:", err);
-    return res.status(500).json({ success: false, message: "Failed to fetch partners" });
+    return res.status(500).json({ success: false, message: "Failed to fetch partners", partners: [] });
   }
 });
 
 // Admin create partner
 app.post("/api/admin/partners", authenticateAdmin, async (req, res) => {
-  const { brand_name, logo, website, category, priority, status } = req.body;
-  if (!brand_name || !logo) {
+  let { brand_name, logo, website, category, priority, status } = req.body;
+  if (!brand_name || !brand_name.trim() || !logo || !logo.trim()) {
     return res.status(400).json({ success: false, message: "Brand name and logo are required" });
   }
 
-  const id = `PTR-${Date.now().toString().slice(-6)}`;
+  const processedLogo = saveBase64Image(logo.trim());
+  const id = `PTR-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
   const prioVal = Number(priority) || 0;
   const statusVal = status === "Inactive" ? "Inactive" : "Active";
+  const cleanBrandName = brand_name.trim();
+  const cleanWebsite = (website || "").trim();
+  const cleanCategory = category || "Strategic Partner";
 
   try {
     if (pool) {
       await pool.query(
-        "INSERT INTO partners (id, brand_name, logo, website, category, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [id, brand_name, logo, website || "", category || "Strategic Partner", prioVal, statusVal]
+        `INSERT INTO partners (id, brand_name, logo, website, category, priority, status, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+         ON DUPLICATE KEY UPDATE
+          brand_name = VALUES(brand_name),
+          logo = VALUES(logo),
+          website = VALUES(website),
+          category = VALUES(category),
+          priority = VALUES(priority),
+          status = VALUES(status);`,
+        [id, cleanBrandName, processedLogo, cleanWebsite, cleanCategory, prioVal, statusVal]
       );
     }
+    invalidateFastCache("partners_list");
+    invalidateFastCache("partners");
     const newPartner = {
       id,
-      brand_name,
-      logo,
-      website: website || "",
-      category: category || "Strategic Partner",
+      brand_name: cleanBrandName,
+      logo: processedLogo,
+      website: cleanWebsite,
+      category: cleanCategory,
       priority: prioVal,
       status: statusVal,
-      created_at: new Date(),
+      created_at: new Date().toISOString(),
     };
     io.emit("partner_updated", { type: "add", partner: newPartner });
     return res.json({ success: true, partner: newPartner, message: "Partner collaborator added successfully!" });
   } catch (err: any) {
     console.error("Create Partner Error:", err);
-    return res.status(500).json({ success: false, message: "Failed to create partner" });
+    return res.status(500).json({ success: false, message: err.message || "Failed to create partner" });
   }
 });
 
 // Admin edit/update partner
 app.put("/api/admin/partners/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { brand_name, logo, website, category, priority, status } = req.body;
+  let { brand_name, logo, website, category, priority, status } = req.body;
+  if (!brand_name || !brand_name.trim()) {
+    return res.status(400).json({ success: false, message: "Brand name is required." });
+  }
+
+  const processedLogo = logo ? saveBase64Image(logo.trim()) : "";
   const prioVal = Number(priority) || 0;
   const statusVal = status === "Inactive" ? "Inactive" : "Active";
+  const cleanBrandName = brand_name.trim();
+  const cleanWebsite = (website || "").trim();
+  const cleanCategory = category || "Strategic Partner";
 
   try {
     if (pool) {
-      await pool.query(
-        "UPDATE partners SET brand_name = ?, logo = ?, website = ?, category = ?, priority = ?, status = ? WHERE id = ?",
-        [brand_name, logo, website || "", category || "Strategic Partner", prioVal, statusVal, id]
-      );
+      const [existing]: any = await pool.query("SELECT id FROM partners WHERE id = ? LIMIT 1", [id]);
+      if (existing && existing.length > 0) {
+        if (processedLogo) {
+          await pool.query(
+            "UPDATE partners SET brand_name = ?, logo = ?, website = ?, category = ?, priority = ?, status = ? WHERE id = ?",
+            [cleanBrandName, processedLogo, cleanWebsite, cleanCategory, prioVal, statusVal, id]
+          );
+        } else {
+          await pool.query(
+            "UPDATE partners SET brand_name = ?, website = ?, category = ?, priority = ?, status = ? WHERE id = ?",
+            [cleanBrandName, cleanWebsite, cleanCategory, prioVal, statusVal, id]
+          );
+        }
+      } else {
+        // Fallback: If editing an item not yet in MySQL (e.g. from initial hardcoded fallback), insert it
+        await pool.query(
+          "INSERT INTO partners (id, brand_name, logo, website, category, priority, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+          [id, cleanBrandName, processedLogo || "/assets/UPDATED LOGO-BbVqtYqk.jpeg", cleanWebsite, cleanCategory, prioVal, statusVal]
+        );
+      }
     }
+    invalidateFastCache("partners_list");
+    invalidateFastCache("partners");
     io.emit("partner_updated", { type: "update", id });
-    return res.json({ success: true, message: "Partner updated successfully!" });
+    return res.json({ success: true, message: "Partner collaborator updated successfully!" });
   } catch (err: any) {
     console.error("Update Partner Error:", err);
-    return res.status(500).json({ success: false, message: "Failed to update partner" });
+    return res.status(500).json({ success: false, message: err.message || "Failed to update partner" });
   }
 });
 
@@ -4754,6 +4795,8 @@ app.delete("/api/admin/partners/:id", authenticateAdmin, async (req, res) => {
     if (pool) {
       await pool.query("DELETE FROM partners WHERE id = ?", [id]);
     }
+    invalidateFastCache("partners_list");
+    invalidateFastCache("partners");
     io.emit("partner_updated", { type: "delete", id });
     return res.json({ success: true, message: "Partner deleted successfully" });
   } catch (err: any) {

@@ -360,6 +360,7 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const partnerFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (mainScrollRef.current) {
@@ -980,7 +981,7 @@ export default function AdminDashboardPage() {
 
       // 5. Fetch Collaborator Partners
       try {
-        const ptrRes = await fetch("/api/partners");
+        const ptrRes = await fetch("/api/partners", { cache: "no-store" });
         const ptrData = await ptrRes.json();
         if (ptrData.success && Array.isArray(ptrData.partners)) {
           setPartnersList(ptrData.partners);
@@ -3329,17 +3330,26 @@ export default function AdminDashboardPage() {
       const url = isEditing ? `/api/admin/partners/${editingPartner?.id}` : "/api/admin/partners";
       const method = isEditing ? "PUT" : "POST";
 
+      const payload = {
+        brand_name: newPartnerForm.brand_name.trim(),
+        website: newPartnerForm.website?.trim() || "",
+        category: newPartnerForm.category || "Strategic Partner",
+        logo: newPartnerForm.logo.trim(),
+        priority: Number(newPartnerForm.priority) || 0,
+        status: newPartnerForm.status || "Active",
+      };
+
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newPartnerForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(isEditing ? "Collaborator partner updated!" : "Collaborator brand added!");
+        toast.success(isEditing ? "🎉 Collaborator partner updated successfully!" : "🚀 Collaborator brand added & published!");
         setEditingPartner(null);
         setNewPartnerForm({
           brand_name: "",
@@ -3349,7 +3359,24 @@ export default function AdminDashboardPage() {
           priority: 0,
           status: "Active",
         });
-        fetchDashboardData();
+
+        // Instant optimistic update
+        if (isEditing && editingPartner) {
+          setPartnersList((prev) =>
+            prev.map((p) => (p.id === editingPartner.id ? { ...p, ...payload } : p))
+          );
+        } else if (data.partner) {
+          setPartnersList((prev) => [...prev, data.partner]);
+        }
+
+        // Fetch fresh list from server
+        try {
+          const ptrRes = await fetch("/api/partners", { cache: "no-store" });
+          const ptrData = await ptrRes.json();
+          if (ptrData.success && Array.isArray(ptrData.partners)) {
+            setPartnersList(ptrData.partners);
+          }
+        } catch (e) {}
       } else {
         toast.error(data.message || "Failed to save partner.");
       }
@@ -3370,6 +3397,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success("Collaborator deleted!");
+        setPartnersList((prev) => prev.filter((p) => p.id !== id));
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to delete partner.");
@@ -8227,7 +8255,7 @@ export default function AdminDashboardPage() {
               {partnerSubTab === "brands" && (
                 <div className="grid gap-6 lg:grid-cols-3">
                   {/* Upload Form */}
-                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  <div ref={partnerFormRef} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                     <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
                       <PlusCircle className="h-5 w-5 text-cyan-600" />
                       <span>{editingPartner ? `Edit Partner: ${editingPartner.brand_name}` : "Add Partner Brand Logo"}</span>
@@ -8491,6 +8519,8 @@ export default function AdminDashboardPage() {
                                         priority: partner.priority ?? 0,
                                         status: partner.status || "Active",
                                       });
+                                      partnerFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                      toast.info(`Editing "${partner.brand_name}". Make changes in the form and click Update.`);
                                     }}
                                     className="p-1.5 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 transition-colors cursor-pointer flex items-center gap-1 font-bold text-[11px]"
                                     title="Edit Partner"
