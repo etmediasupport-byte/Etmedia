@@ -896,6 +896,8 @@ export default function AdminDashboardPage() {
   const [regFilterEvent, setRegFilterEvent] = useState<string>("all");
   const [regFilterDate, setRegFilterDate] = useState<string>("all");
   const [regFilterStatus, setRegFilterStatus] = useState<string>("all");
+  const [selectedRegIds, setSelectedRegIds] = useState<string[]>([]);
+  const [bulkGrantingFree, setBulkGrantingFree] = useState(false);
   const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
   const [actionLoadingRegId, setActionLoadingRegId] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -2081,6 +2083,62 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error rejecting application.");
+    }
+  };
+
+  const handleToggleSelectAllRegistrations = () => {
+    if (selectedRegIds.length === filteredRegistrations.length && filteredRegistrations.length > 0) {
+      setSelectedRegIds([]);
+    } else {
+      setSelectedRegIds(filteredRegistrations.map((r) => r.id));
+    }
+  };
+
+  const handleToggleSelectRegistration = (id: string) => {
+    setSelectedRegIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkGrantFreePasses = async (category = "Complimentary VIP Pass") => {
+    if (selectedRegIds.length === 0) {
+      toast.error("Please select at least one delegate from the table.");
+      return;
+    }
+
+    const count = selectedRegIds.length;
+    if (!window.confirm(`Grant Free Event Pass to all ${count} selected delegates and automatically dispatch ticket QR pass emails?`)) {
+      return;
+    }
+
+    setBulkGrantingFree(true);
+    toast.info(`Granting Free Passes to ${count} delegates and sending ticket emails...`);
+
+    try {
+      const res = await fetch("/api/admin/registrations/bulk-grant-free", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ids: selectedRegIds,
+          category,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `🎉 Free passes granted & ticket emails sent to ${count} delegates!`);
+        setSelectedRegIds([]);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to grant bulk free passes.");
+      }
+    } catch (err) {
+      toast.error("Network error while granting bulk free passes.");
+    } finally {
+      setBulkGrantingFree(false);
     }
   };
 
@@ -6017,10 +6075,10 @@ export default function AdminDashboardPage() {
 
                 {/* Bottom Row: Metrics, Active Filters & Actions */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 border border-slate-200">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                       <span>Showing</span>
-                      <strong className="text-cyan-800 font-mono text-sm">{filteredRegistrations.length}</strong>
+                      <strong className="text-cyan-800 dark:text-cyan-400 font-mono text-sm">{filteredRegistrations.length}</strong>
                       <span>of {eventRegistrationsList.length} delegates</span>
                     </span>
 
@@ -6032,8 +6090,9 @@ export default function AdminDashboardPage() {
                           setRegFilterEvent("all");
                           setRegFilterDate("all");
                           setRegFilterStatus("all");
+                          setSelectedRegIds([]);
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                       >
                         <RefreshCw className="h-3 w-3" />
                         <span>Reset All Filters</span>
@@ -6042,47 +6101,91 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const defaultEvt = cmsEvents[0] || {};
-                        setGrantAccessForm((prev) => ({
-                          ...prev,
-                          eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
-                          eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
-                        }));
-                        setShowGrantAccessModal(true);
-                      }}
-                      className="flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20"
-                    >
-                      <Ticket className="h-3.5 w-3.5" />
-                      <span>+ Grant Free Event Pass</span>
-                    </button>
+                    {/* BULK SELECTION ACTION BUTTON */}
+                    {selectedRegIds.length > 0 ? (
+                      <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-950/80 border border-purple-300 dark:border-purple-700 rounded-xl px-3 py-1 animate-in fade-in zoom-in-95 duration-200 shadow-sm">
+                        <span className="text-xs font-black text-purple-900 dark:text-purple-200 flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                          <span>{selectedRegIds.length} Selected</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          disabled={bulkGrantingFree}
+                          onClick={() => handleBulkGrantFreePasses()}
+                          className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-black text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/25 disabled:opacity-50"
+                          title="Grant Free Event Pass to all selected delegates and send confirmation QR tickets"
+                        >
+                          {bulkGrantingFree ? (
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Ticket className="h-3.5 w-3.5" />
+                          )}
+                          <span>Grant Free Pass & Email ({selectedRegIds.length})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRegIds([])}
+                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          title="Deselect All"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultEvt = cmsEvents[0] || {};
+                          setGrantAccessForm((prev) => ({
+                            ...prev,
+                            eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
+                            eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
+                          }));
+                          setShowGrantAccessModal(true);
+                        }}
+                        className="flex items-center gap-1.5 rounded-xl border border-purple-300 dark:border-purple-700 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20"
+                      >
+                        <Ticket className="h-3.5 w-3.5" />
+                        <span>+ Grant Free Event Pass</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => exportToExcel("event-registrations")}
-                      className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                      className="flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all cursor-pointer shadow-xs"
                     >
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Export Excel</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => exportToPDF("event-registrations")}
-                      className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                      className="flex items-center gap-1.5 rounded-xl border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-3.5 py-2 text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all cursor-pointer shadow-xs"
                     >
-                      <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                      <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                       <span>Download PDF</span>
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* RESPONSIVE FULL-WIDTH TABLE WITH HORIZONTAL SCROLLBAR */}
+              {/* RESPONSIVE FULL-WIDTH TABLE WITH HORIZONTAL SCROLLBAR & CHECKBOX SELECTION */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full min-w-[960px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full min-w-[1000px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
                     <tr>
+                      <th className="py-3.5 px-3 min-w-[48px] w-12 text-center">
+                        <input
+                          type="checkbox"
+                          checked={filteredRegistrations.length > 0 && selectedRegIds.length === filteredRegistrations.length}
+                          onChange={handleToggleSelectAllRegistrations}
+                          title="Select / Deselect All Filtered Delegates"
+                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        />
+                      </th>
                       <th className="py-3.5 px-4 min-w-[240px]">Delegate & Contact</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Organization & City</th>
                       <th className="py-3.5 px-4 min-w-[240px]">Event & Tier</th>
@@ -6091,154 +6194,175 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
-                    {filteredRegistrations.map((reg) => (
-                      <tr key={reg.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                        {/* 1. Delegate & Contact */}
-                        <td className="py-3.5 px-4 align-middle">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 font-black text-xs shadow-xs">
-                              {reg.name.charAt(0).toUpperCase()}
+                    {filteredRegistrations.map((reg) => {
+                      const isSelected = selectedRegIds.includes(reg.id);
+                      return (
+                        <tr
+                          key={reg.id}
+                          className={`transition-colors ${
+                            isSelected
+                              ? "bg-purple-50/80 dark:bg-purple-950/40"
+                              : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                          }`}
+                        >
+                          {/* 0. Row Selection Checkbox */}
+                          <td className="py-3.5 px-3 align-middle text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRegistration(reg.id)}
+                              title={`Select ${reg.name}`}
+                              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                            />
+                          </td>
+
+                          {/* 1. Delegate & Contact */}
+                          <td className="py-3.5 px-4 align-middle">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 font-black text-xs shadow-xs">
+                                {reg.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0 space-y-0.5">
+                                <span className="block font-black text-slate-900 dark:text-slate-100 truncate">{reg.name}</span>
+                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">{reg.designation || "Executive Delegate"}</span>
+                                <a
+                                  href={`mailto:${reg.email}`}
+                                  className="inline-flex items-center gap-1 text-[11px] text-cyan-700 dark:text-cyan-400 font-semibold hover:underline truncate"
+                                >
+                                  <Mail className="h-2.5 w-2.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                                  <span className="truncate">{reg.email}</span>
+                                </a>
+                              </div>
                             </div>
-                            <div className="min-w-0 space-y-0.5">
-                              <span className="block font-black text-slate-900 dark:text-slate-100 truncate">{reg.name}</span>
-                              <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">{reg.designation || "Executive Delegate"}</span>
-                              <a
-                                href={`mailto:${reg.email}`}
-                                className="inline-flex items-center gap-1 text-[11px] text-cyan-700 dark:text-cyan-400 font-semibold hover:underline truncate"
-                              >
-                                <Mail className="h-2.5 w-2.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                                <span className="truncate">{reg.email}</span>
-                              </a>
+                          </td>
+
+                          {/* 2. Organization & City */}
+                          <td className="py-3.5 px-4 align-middle space-y-1">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold max-w-[220px] truncate">
+                              <Building className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span className="truncate">{reg.organization || "Corporate Enterprise"}</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                              <span>{reg.city || reg.registering_city || "Pan-India"}</span>
+                            </span>
+                          </td>
+
+                          {/* 3. Event & Tier */}
+                          <td className="py-3.5 px-4 align-middle space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold max-w-[250px] truncate">
+                              <Calendar className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                              <span className="truncate">{reg.event_title || reg.event_id}</span>
                             </div>
-                          </div>
-                        </td>
+                            <span className="inline-block rounded-md bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-0.5 text-purple-800 dark:text-purple-300 font-bold text-[10px] uppercase tracking-wider">
+                              {reg.registration_category || "Delegate Pass"}
+                            </span>
+                          </td>
 
-                        {/* 2. Organization & City */}
-                        <td className="py-3.5 px-4 align-middle space-y-1">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold max-w-[220px] truncate">
-                            <Building className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
-                            <span className="truncate">{reg.organization || "Corporate Enterprise"}</span>
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                            <span>{reg.city || reg.registering_city || "Pan-India"}</span>
-                          </span>
-                        </td>
-
-                        {/* 3. Event & Tier */}
-                        <td className="py-3.5 px-4 align-middle space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold max-w-[250px] truncate">
-                            <Calendar className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                            <span className="truncate">{reg.event_title || reg.event_id}</span>
-                          </div>
-                          <span className="inline-block rounded-md bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-0.5 text-purple-800 dark:text-purple-300 font-bold text-[10px] uppercase tracking-wider">
-                            {reg.registration_category || "Delegate Pass"}
-                          </span>
-                        </td>
-
-                        {/* 4. Payment & Date */}
-                        <td className="py-3.5 px-4 align-middle space-y-1">
-                          {(() => {
-                            const pStatus = (reg.payment_status || "").toString();
-                            if (pStatus === "Pending Approval") {
+                          {/* 4. Payment & Date */}
+                          <td className="py-3.5 px-4 align-middle space-y-1">
+                            {(() => {
+                              const pStatus = (reg.payment_status || "").toString();
+                              if (pStatus === "Pending Approval") {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-300 px-2.5 py-0.5 text-[10px] font-black animate-pulse">
+                                    ⏳ Pending Review
+                                  </span>
+                                );
+                              }
+                              if (pStatus === "Approved (Free Pass)" || pStatus === "Free") {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-300 px-2.5 py-0.5 text-[10px] font-black">
+                                    🎟️ Free Pass
+                                  </span>
+                                );
+                              }
+                              if (pStatus.startsWith("Dropped") || pStatus === "Incomplete" || (pStatus === "Pending" && !reg.payment_id)) {
+                                const label = pStatus.startsWith("Dropped (") ? pStatus.replace("Dropped (", "").replace(")", "") : (pStatus === "Pending" ? "Incomplete Profile" : "Dropped Lead");
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black" title="User started registering but dropped off before completing">
+                                    ⚠️ {label}
+                                  </span>
+                                );
+                              }
+                              if (pStatus === "Rejected") {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black">
+                                    ❌ Rejected
+                                  </span>
+                                );
+                              }
                               return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-300 px-2.5 py-0.5 text-[10px] font-black animate-pulse">
-                                  ⏳ Pending Review
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 px-2.5 py-0.5 text-[10px] font-black">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  💳 Paid
                                 </span>
                               );
-                            }
-                            if (pStatus === "Approved (Free Pass)" || pStatus === "Free") {
-                              return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-300 px-2.5 py-0.5 text-[10px] font-black">
-                                  🎟️ Free Pass
-                                </span>
-                              );
-                            }
-                            if (pStatus.startsWith("Dropped") || pStatus === "Incomplete" || (pStatus === "Pending" && !reg.payment_id)) {
-                              const label = pStatus.startsWith("Dropped (") ? pStatus.replace("Dropped (", "").replace(")", "") : (pStatus === "Pending" ? "Incomplete Profile" : "Dropped Lead");
-                              return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black" title="User started registering but dropped off before completing">
-                                  ⚠️ {label}
-                                </span>
-                              );
-                            }
-                            if (pStatus === "Rejected") {
-                              return (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-300 px-2.5 py-0.5 text-[10px] font-black">
-                                  ❌ Rejected
-                                </span>
-                              );
-                            }
-                            return (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 px-2.5 py-0.5 text-[10px] font-black">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                💳 Paid
-                              </span>
-                            );
-                          })()}
-                          <div className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">
-                            ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
-                          </div>
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                            {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
-                          </div>
-                        </td>
+                            })()}
+                            <div className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">
+                              ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                              {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
+                            </div>
+                          </td>
 
-                        {/* 5. Actions */}
-                        <td className="py-3.5 px-4 align-middle text-right space-y-1.5">
-                          {reg.payment_status === "Pending Approval" && (
-                            <div className="flex items-center justify-end gap-1 mb-1">
+                          {/* 5. Actions */}
+                          <td className="py-3.5 px-4 align-middle text-right space-y-1.5">
+                            {reg.payment_status === "Pending Approval" && (
+                              <div className="flex items-center justify-end gap-1 mb-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
+                                  title="Approve Free Pass and Send Ticket Pass"
+                                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-black text-white hover:bg-emerald-700 shadow-sm cursor-pointer"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  <span>Approve</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectFreeRegistration(reg.id, reg.name)}
+                                  title="Reject Application"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-2 py-1 text-[11px] font-bold text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
-                                onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
-                                title="Approve Free Pass and Send Ticket Pass"
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-black text-white hover:bg-emerald-700 shadow-sm cursor-pointer"
+                                title="Resend Pass & Tax Invoice Email"
+                                disabled={resendingEmailId === reg.id}
+                                onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
+                                className="inline-flex items-center justify-center h-8.5 w-8.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-cyan-950/60 hover:text-cyan-700 dark:hover:text-cyan-300 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                               >
-                                <CheckCircle2 className="h-3 w-3" />
-                                <span>Approve</span>
+                                {resendingEmailId === reg.id ? (
+                                  <RefreshCw className="h-3.5 w-3.5 text-cyan-600 animate-spin" />
+                                ) : (
+                                  <Mail className="h-3.5 w-3.5" />
+                                )}
                               </button>
+
                               <button
                                 type="button"
-                                onClick={() => handleRejectFreeRegistration(reg.id, reg.name)}
-                                title="Reject Application"
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-2 py-1 text-[11px] font-bold text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer"
+                                onClick={() => setSelectedRegDetail(reg)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-950/60 px-3 py-1.5 text-xs font-black text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 hover:scale-105 transition-all shadow-xs cursor-pointer"
                               >
-                                <X className="h-3 w-3" />
+                                <Eye className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-400" />
+                                <span>View</span>
                               </button>
                             </div>
-                          )}
-
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              title="Resend Pass & Tax Invoice Email"
-                              disabled={resendingEmailId === reg.id}
-                              onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
-                              className="inline-flex items-center justify-center h-8.5 w-8.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-cyan-950/60 hover:text-cyan-700 dark:hover:text-cyan-300 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
-                            >
-                              {resendingEmailId === reg.id ? (
-                                <RefreshCw className="h-3.5 w-3.5 text-cyan-600 animate-spin" />
-                              ) : (
-                                <Mail className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setSelectedRegDetail(reg)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-950/60 px-3 py-1.5 text-xs font-black text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 hover:scale-105 transition-all shadow-xs cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-400" />
-                              <span>View</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
 
                     {filteredRegistrations.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-16 text-center space-y-3">
+                        <td colSpan={6} className="py-16 text-center space-y-3">
                           <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                             <Search className="h-6 w-6" />
                           </div>
@@ -6253,6 +6377,7 @@ export default function AdminDashboardPage() {
                               setRegFilterEvent("all");
                               setRegFilterDate("all");
                               setRegFilterStatus("all");
+                              setSelectedRegIds([]);
                             }}
                             className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer shadow-sm"
                           >

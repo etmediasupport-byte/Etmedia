@@ -2855,6 +2855,91 @@ app.post("/api/admin/registrations/:id/reject", authenticateAdmin, async (req, r
   }
 });
 
+// Admin Bulk Grant Free Pass & Automatically Send Ticket Emails to All Selected Delegates
+app.post("/api/admin/registrations/bulk-grant-free", authenticateAdmin, async (req, res) => {
+  const { ids, category } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: "Please select at least one delegate." });
+  }
+
+  try {
+    let records: any[] = [];
+    if (pool) {
+      const placeholders = ids.map(() => "?").join(",");
+      const [rows]: any = await pool.query(`SELECT * FROM registrations WHERE id IN (${placeholders})`, ids);
+      if (rows && rows.length > 0) {
+        records = rows;
+      }
+    }
+
+    if (records.length === 0) {
+      return res.status(404).json({ success: false, message: "No matching delegate records found." });
+    }
+
+    const passCategory = category || "Complimentary VIP Pass";
+
+    // Update status in MySQL database
+    if (pool) {
+      const placeholders = ids.map(() => "?").join(",");
+      await pool.query(
+        `UPDATE registrations SET payment_status = 'Approved (Free Pass)', registration_category = ?, pass_name = ?, payment_id = 'ADMIN-BULK-FREE-GRANT' WHERE id IN (${placeholders})`,
+        [passCategory, passCategory, ...ids]
+      );
+    }
+
+    // Send confirmation emails with QR code tickets to each selected delegate
+    const emailPromises = records.map((reg) =>
+      sendRegistrationConfirmationEmail({
+        registrationId: reg.id,
+        firstName: reg.first_name || (reg.name ? reg.name.split(" ")[0] : "Delegate"),
+        lastName: reg.last_name || "",
+        fullName: reg.name,
+        email: reg.email,
+        phone: reg.phone || "N/A",
+        organization: reg.organization || "Corporate Delegate",
+        designation: reg.designation || "Executive Leader",
+        city: reg.city || "Mumbai",
+        country: reg.country || "India",
+        registrationCategory: passCategory,
+        registeringCity: reg.registering_city || reg.city || "Mumbai",
+        referralSource: "Admin Bulk Free Pass Grant",
+        eventId: reg.event_id,
+        eventTitle: reg.event_title,
+        paymentStatus: "Approved (Free Pass)",
+        paymentId: "ADMIN-BULK-FREE-GRANT",
+        paymentAmount: 0,
+        couponApplied: "Admin Free Pass",
+        createdAt: reg.created_at,
+      }).catch((err) => {
+        console.error(`[Nodemailer] Bulk email failed for ${reg.email}:`, err.message);
+        return { success: false };
+      })
+    );
+
+    const emailResults = await Promise.allSettled(emailPromises);
+    const sentCount = emailResults.filter((r) => r.status === "fulfilled").length;
+
+    // Emit live socket event for real-time dashboard updates
+    if (io) {
+      io.emit("admin_activity", {
+        type: "bulk_free_pass_granted",
+        count: records.length,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      count: records.length,
+      sentEmailsCount: sentCount,
+      message: `🎉 Free Passes granted to ${records.length} delegates and confirmation ticket emails dispatched!`,
+    });
+  } catch (err: any) {
+    console.error("[API] Error in bulk free pass grant:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to grant bulk free passes." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {
