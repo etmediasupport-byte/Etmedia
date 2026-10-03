@@ -361,42 +361,81 @@ export const parseOfficeHoursToClocks = (str: string) => {
 
 export const isDelegatePaid = (r: any): boolean => {
   if (!r) return false;
-  const pStatus = (r.payment_status || "").toString().toLowerCase();
+  const pStatus = (r.payment_status || "").toString().toLowerCase().trim();
+  const payId = (r.payment_id || "").toString().toLowerCase().trim();
+  const amount = Number(r.payment_amount) || 0;
+
+  if (pStatus.includes("dropped") || pStatus.includes("incomplete") || pStatus.includes("rejected") || pStatus.includes("pending")) {
+    return false;
+  }
   return (
-    pStatus.includes("paid") &&
-    !pStatus.includes("dropped") &&
-    !pStatus.includes("incomplete") &&
-    !pStatus.includes("rejected")
+    pStatus === "paid" ||
+    pStatus === "paid (confirmed)" ||
+    pStatus === "completed" ||
+    pStatus === "success" ||
+    pStatus === "captured" ||
+    payId.startsWith("pay_") ||
+    (amount > 0 && pStatus.includes("paid"))
   );
 };
 
 export const isDelegateGrantedFree = (r: any): boolean => {
   if (!r || isDelegatePaid(r)) return false;
-  const pStatus = (r.payment_status || "").toString().toLowerCase();
-  const passName = (r.pass_name || "").toString().toLowerCase();
-  const payId = (r.payment_id || "").toString().toLowerCase();
-  const category = (r.registration_category || "").toString().toLowerCase();
-  const price = Number(r.pass_price) || Number(r.payment_amount) || 0;
+  const pStatus = (r.payment_status || "").toString().toLowerCase().trim();
+  const payId = (r.payment_id || "").toString().toLowerCase().trim();
 
+  // MUST NOT be pending approval or dropped or rejected or pending
+  if (
+    pStatus === "pending approval" ||
+    pStatus.includes("pending approval") ||
+    pStatus === "pending" ||
+    pStatus.includes("dropped") ||
+    pStatus.includes("incomplete") ||
+    pStatus.includes("rejected")
+  ) {
+    return false;
+  }
+
+  // Granted is when Admin has officially approved / granted the free pass:
   return (
     pStatus === "approved (free pass)" ||
     pStatus === "free" ||
     pStatus === "approved" ||
-    pStatus.includes("approved (free") ||
-    passName.includes("complimentary") ||
-    passName.includes("free") ||
-    category.includes("complimentary") ||
-    category.includes("free") ||
-    payId.includes("admin-") ||
-    payId.includes("free") ||
-    (price === 0 && (pStatus === "approved" || pStatus === "confirmed" || pStatus === "free"))
+    pStatus === "free (granted)" ||
+    pStatus === "complimentary pass" ||
+    payId.includes("admin-bulk-free-grant") ||
+    payId.includes("admin-approved-free") ||
+    payId.includes("admin-free") ||
+    (pStatus.includes("approved") && !pStatus.includes("pending"))
   );
 };
 
 export const isDelegatePendingReview = (r: any): boolean => {
   if (!r || isDelegatePaid(r) || isDelegateGrantedFree(r)) return false;
-  const pStatus = (r.payment_status || "").toString().toLowerCase();
-  return pStatus === "pending approval" || pStatus.includes("pending approval");
+  const pStatus = (r.payment_status || "").toString().toLowerCase().trim();
+  const passName = (r.pass_name || "").toString().toLowerCase().trim();
+  const cat = (r.registration_category || "").toString().toLowerCase().trim();
+  const coupon = (r.coupon_applied || "").toString().toLowerCase().trim();
+  const amount = Number(r.payment_amount) || 0;
+
+  if (pStatus.includes("rejected") || pStatus.includes("dropped") || pStatus.includes("incomplete")) {
+    return false;
+  }
+
+  // Free registrations awaiting approval / grant
+  return (
+    pStatus === "pending approval" ||
+    pStatus.includes("pending approval") ||
+    (pStatus === "pending" && (
+      passName.includes("complimentary") ||
+      passName.includes("free") ||
+      cat.includes("free") ||
+      cat.includes("complimentary") ||
+      coupon.includes("free") ||
+      coupon.includes("motivation") ||
+      amount === 0
+    ))
+  );
 };
 
 export const isDelegateDropped = (r: any): boolean => {
@@ -6006,7 +6045,35 @@ export default function AdminDashboardPage() {
                   </div>
                 </button>
 
-                {/* Card 3: Granted Free Passes (Free to Grant Done) */}
+                {/* Card 3: Free Applications (Awaiting Admin Grant) */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                      ? "bg-amber-600 text-white shadow-xs scale-105"
+                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                  }`}>
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                      Free Applications
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.pendingReview}</span>
+                      <span className="text-[10px] text-amber-600 font-bold">Awaiting ⏳</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 4: Granted Free Passes (Passes Issued) */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "free_granted" || regFilterStatus === "free" ? "all" : "free_granted")}
@@ -6030,34 +6097,6 @@ export default function AdminDashboardPage() {
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.freeGranted}</span>
                       <span className="text-[10px] text-purple-600 font-bold">Granted ✅</span>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Card 4: Pending Free Review */}
-                <button
-                  type="button"
-                  onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
-                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
-                  }`}
-                >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
-                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
-                      ? "bg-amber-600 text-white shadow-xs scale-105"
-                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
-                  }`}>
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
-                      Pending Review
-                    </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.pendingReview}</span>
-                      <span className="text-[10px] text-amber-600 font-bold">Awaiting ⏳</span>
                     </div>
                   </div>
                 </button>
@@ -6161,8 +6200,8 @@ export default function AdminDashboardPage() {
                     >
                       <option value="all">💳 All Statuses</option>
                       <option value="paid">💳 Paid Passes (Confirmed)</option>
-                      <option value="free_granted">🎟️ Granted Free Passes (Free to Grant)</option>
-                      <option value="pending_review">⏳ Pending Free Review (Awaiting Grant)</option>
+                      <option value="pending_review">⏳ Free Applications (Awaiting Grant)</option>
+                      <option value="free_granted">🎟️ Granted Free Passes (Passes Issued ✅)</option>
                       <option value="dropped">⚠️ Dropped / Incomplete Leads</option>
                       <option value="rejected">❌ Rejected</option>
                     </select>
@@ -6434,7 +6473,7 @@ export default function AdminDashboardPage() {
 
                           {/* 5. Actions */}
                           <td className="py-3.5 px-4 align-middle text-right space-y-1.5">
-                            {reg.payment_status === "Pending Approval" && (
+                            {isDelegatePendingReview(reg) && (
                               <div className="flex items-center justify-end gap-1 mb-1">
                                 <button
                                   type="button"
