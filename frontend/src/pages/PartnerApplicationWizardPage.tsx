@@ -548,103 +548,105 @@ export default function PartnerApplicationWizardPage() {
             </div>
           </div>
 
-          {/* STEPPER PROGRESS BAR */}
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              
-              {/* Step 1 Pill */}
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
-                  currentStep === 1
-                    ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
-                    : currentStep > 1
-                    ? "border-emerald-300 bg-emerald-50/70 text-emerald-900"
-                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+          {/* STEPPER PROGRESS BAR - Temporarily hidden as requested */}
+          {false && (
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                
+                {/* Step 1 Pill */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
                     currentStep === 1
-                      ? "bg-cyan-600 text-white"
+                      ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
                       : currentStep > 1
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 text-slate-600"
+                      ? "border-emerald-300 bg-emerald-50/70 text-emerald-900"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      currentStep === 1
+                        ? "bg-cyan-600 text-white"
+                        : currentStep > 1
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-200 text-slate-600"
+                    }`}>
+                      {currentStep > 1 ? "✓" : "1"}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 1</span>
+                  </div>
+                  <div className={`text-xs sm:text-sm font-bold font-display truncate ${
+                    currentStep === 1 ? "text-cyan-950" : currentStep > 1 ? "text-emerald-900" : "text-slate-600"
                   }`}>
-                    {currentStep > 1 ? "✓" : "1"}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 1</span>
-                </div>
-                <div className={`text-xs sm:text-sm font-bold font-display truncate ${
-                  currentStep === 1 ? "text-cyan-950" : currentStep > 1 ? "text-emerald-900" : "text-slate-600"
-                }`}>
-                  Organization Profile
-                </div>
-              </button>
+                    Organization Profile
+                  </div>
+                </button>
 
-              {/* Step 2 Pill */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (validateStep1()) setCurrentStep(2);
-                }}
-                className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
-                  currentStep === 2
-                    ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
-                    : currentStep > 2
-                    ? "border-emerald-300 bg-emerald-50/70 text-emerald-900"
-                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                {/* Step 2 Pill */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (validateStep1()) setCurrentStep(2);
+                  }}
+                  className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
                     currentStep === 2
-                      ? "bg-cyan-600 text-white"
+                      ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
                       : currentStep > 2
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 text-slate-600"
+                      ? "border-emerald-300 bg-emerald-50/70 text-emerald-900"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      currentStep === 2
+                        ? "bg-cyan-600 text-white"
+                        : currentStep > 2
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-200 text-slate-600"
+                    }`}>
+                      {currentStep > 2 ? "✓" : "2"}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 2</span>
+                  </div>
+                  <div className={`text-xs sm:text-sm font-bold font-display truncate ${
+                    currentStep === 2 ? "text-cyan-950" : currentStep > 2 ? "text-emerald-900" : "text-slate-600"
                   }`}>
-                    {currentStep > 2 ? "✓" : "2"}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 2</span>
-                </div>
-                <div className={`text-xs sm:text-sm font-bold font-display truncate ${
-                  currentStep === 2 ? "text-cyan-950" : currentStep > 2 ? "text-emerald-900" : "text-slate-600"
-                }`}>
-                  Executive Contact
-                </div>
-              </button>
+                    Executive Contact
+                  </div>
+                </button>
 
-              {/* Step 3 Pill */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (validateStep1() && validateStep2()) setCurrentStep(3);
-                }}
-                className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
-                  currentStep === 3
-                    ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
-                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                    currentStep === 3 ? "bg-cyan-600 text-white" : "bg-slate-200 text-slate-600"
+                {/* Step 3 Pill */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (validateStep1() && validateStep2()) setCurrentStep(3);
+                  }}
+                  className={`text-left p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
+                    currentStep === 3
+                      ? "border-cyan-500 bg-cyan-50/90 shadow-md shadow-cyan-500/10 ring-2 ring-cyan-500/20"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      currentStep === 3 ? "bg-cyan-600 text-white" : "bg-slate-200 text-slate-600"
+                    }`}>
+                      3
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 3</span>
+                  </div>
+                  <div className={`text-xs sm:text-sm font-bold font-display truncate ${
+                    currentStep === 3 ? "text-cyan-950" : "text-slate-600"
                   }`}>
-                    3
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Step 3</span>
-                </div>
-                <div className={`text-xs sm:text-sm font-bold font-display truncate ${
-                  currentStep === 3 ? "text-cyan-950" : "text-slate-600"
-                }`}>
-                  Alliance Scope
-                </div>
-              </button>
+                    Alliance Scope
+                  </div>
+                </button>
 
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

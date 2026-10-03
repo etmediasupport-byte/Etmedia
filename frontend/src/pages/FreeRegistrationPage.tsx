@@ -435,34 +435,36 @@ export default function FreeRegistrationPage() {
       {/* ================= MAIN CONTENT CONTAINER ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         
-        {/* Step Progress Navigation Bar (3 Steps) */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mb-8">
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            {stepsList.map((step) => {
-              const isCompleted = currentStep > step.number;
-              const isActive = currentStep === step.number;
-              return (
-                <div key={step.number} className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
-                  <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-all ${
-                    isCompleted
-                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                      : isActive
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-500/30"
-                      : "bg-slate-100 text-slate-400"
-                  }`}>
-                    {isCompleted ? <Check className="w-4 h-4" /> : step.number}
-                  </div>
-                  <div className="hidden sm:block min-w-0">
-                    <div className={`text-xs font-black truncate ${isActive ? "text-slate-900" : isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
-                      {step.title}
+        {/* Step Progress Navigation Bar (3 Steps) - Temporarily hidden as requested */}
+        {false && (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mb-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              {stepsList.map((step) => {
+                const isCompleted = currentStep > step.number;
+                const isActive = currentStep === step.number;
+                return (
+                  <div key={step.number} className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+                    <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-all ${
+                      isCompleted
+                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        : isActive
+                        ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-500/30"
+                        : "bg-slate-100 text-slate-400"
+                    }`}>
+                      {isCompleted ? <Check className="w-4 h-4" /> : step.number}
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate">{step.subtitle}</div>
+                    <div className="hidden sm:block min-w-0">
+                      <div className={`text-xs font-black truncate ${isActive ? "text-slate-900" : isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
+                        {step.title}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">{step.subtitle}</div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           

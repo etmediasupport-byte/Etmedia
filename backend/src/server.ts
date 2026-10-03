@@ -259,37 +259,22 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
     replyTo: smtpUser,
     to: userEmail,
-    subject: `🎉 Official Delegate Pass & Tax Invoice: ${eventName} (${regId})`,
+    subject: `🎉 Official Delegate Pass: ${eventName} (${regId})`,
     text: `
 Dear ${effectiveFullName},
 
-Thank you for registering for ${eventName} with Executive Talks Media Business Intelligence.
+Thank you for registering for ${eventName} with Executive Talks Media Business Intelligence. Your entry pass and scannable QR ticket have been confirmed.
 
-YOUR REGISTRATION & TICKET DETAILS:
-- Registration ID: ${regId}
-- Invoice / Receipt No: ${invoiceNo}
-- Event Title: ${eventName}
-- Pass Category: ${regCategory}
+DELEGATE PASS DETAILS:
 - Full Name: ${effectiveFullName}
 - Email: ${userEmail}
-- Phone: ${regPhone}
-- Designation: ${regDesig}
-- Organization: ${regOrg}
-- Location: ${regCity}, ${regCountry}
-- Registering City: ${regTargetCity}
-- Referral Source: ${regReferral}
+- Pass Category: ${regCategory}
+- Event / Summit: ${eventName}
+- Registration / Pass ID: ${regId}
 
-TAX INVOICE & PAYMENT DETAILS:
-- Payment Status: ${payStatus}
-- Payment ID: ${payId}
-- Razorpay Order ID: ${razorpayOrderId}
-- Base Taxable Amount: ₹${taxableBase.toLocaleString("en-IN")}
-- CGST (9%): ₹${cgst.toLocaleString("en-IN")}
-- SGST (9%): ₹${sgst.toLocaleString("en-IN")}
-- Total 18% GST: ₹${gstTotal.toLocaleString("en-IN")}
-- Total Amount Paid: ₹${payAmount.toLocaleString("en-IN")}
-- Coupon Applied: ${coupon}
-- Service SAC Code: 998397 (Event & Business Intelligence Exhibition Services)
+SCAN YOUR QR CODE FOR ENTRY:
+Scan the attached QR code or use your Pass ID for fast-track entry at the venue reception:
+${verifyPassUrl}
 
 EVENT REGISTRATION – TERMS & CONDITIONS:
 1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
@@ -303,188 +288,105 @@ EVENT REGISTRATION – TERMS & CONDITIONS:
 9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
 10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
 
-Scan the attached QR code or click the live pass link to fast-track your entry:
-${verifyPassUrl}
-
 Regards,
 Executive Talks Media Business Intelligence
 registration@executivetalksmedia.in
 www.executivetalksmedia.in
 `,
     html: `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
         
         <!-- HEADER BANNER -->
-        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 30px 25px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
-          <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass & Tax Invoice</p>
+        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 28px 20px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass</p>
         </div>
 
-        <div style="padding: 28px 25px; color: #1e293b; font-size: 14px; line-height: 1.6;">
-          <p style="margin-top: 0; font-size: 16px;">Dear <strong>${effectiveFullName}</strong>,</p>
-          <p style="margin-bottom: 20px;">Thank you for registering for <strong>${eventName}</strong>. Your registration details, scannable QR ticket pass, and official payment tax invoice have been confirmed successfully.</p>
+        <div style="padding: 26px 22px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p style="margin-top: 0; font-size: 15px;">Dear <strong>${effectiveFullName}</strong>,</p>
+          <p style="margin-bottom: 20px;">Thank you for registering for <strong>${eventName}</strong>. Your executive pass has been confirmed. Please find your pass details, scannable QR ticket, and event terms below.</p>
 
-          <!-- CONFIRMATION STATUS BADGE -->
-          <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-left: 5px solid #10b981; padding: 14px 18px; border-radius: 12px; margin-bottom: 25px;">
-            <p style="margin: 0; color: #065f46; font-weight: 700; font-size: 15px;">
-              ✅ Registration Status: <span style="text-transform: uppercase;">CONFIRMED & VERIFIED</span>
-            </p>
-            <p style="margin: 4px 0 0 0; color: #047857; font-size: 13px;">
-              Pass Category: <strong>${regCategory}</strong> | Reg ID: <strong>${regId}</strong> | Invoice No: <strong>${invoiceNo}</strong>
-            </p>
-          </div>
-
-          <!-- DELEGATE DETAILS TABLE -->
+          <!-- DELEGATE PASS DETAILS CARD -->
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
             <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
-              👤 Delegate & Executive Details
+              👤 Delegate Pass Details
             </h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
               <tr>
-                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Full Name:</td>
+                <td style="padding: 6px 0; font-weight: 600; width: 38%;">Full Name:</td>
                 <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${effectiveFullName}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Work Email:</td>
+                <td style="padding: 6px 0; font-weight: 600;">Email:</td>
                 <td style="padding: 6px 0; color: #0891b2; font-weight: 600;"><a href="mailto:${userEmail}" style="color: #0891b2; text-decoration: none;">${userEmail}</a></td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Contact Phone:</td>
-                <td style="padding: 6px 0;">${regPhone}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Designation:</td>
-                <td style="padding: 6px 0; font-weight: 600;">${regDesig}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Organization / Company:</td>
-                <td style="padding: 6px 0; font-weight: 600;">${regOrg}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">City & Country:</td>
-                <td style="padding: 6px 0;">${regCity}, ${regCountry}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Registering City:</td>
-                <td style="padding: 6px 0;">${regTargetCity}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Referral Source:</td>
-                <td style="padding: 6px 0;">${regReferral}</td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- TAX INVOICE & PAYMENT SUMMARY TABLE -->
-          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 25px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px;">
-              <h3 style="margin: 0; color: #4b1fa7; font-size: 15px; font-weight: 700;">
-                🧾 Official Tax Invoice & Payment Receipt
-              </h3>
-              <span style="font-size: 11px; font-weight: 700; color: #64748b; font-family: monospace;">SAC: 998397</span>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600; width: 40%;">Invoice Number:</td>
-                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${invoiceNo}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Payment Status:</td>
+                <td style="padding: 6px 0; font-weight: 600;">Pass Category:</td>
                 <td style="padding: 6px 0;">
-                  <span style="display: inline-block; background-color: ${payStatus.toLowerCase() === "paid" ? "#10b981" : "#3b82f6"}; color: #ffffff; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-                    ${payStatus}
+                  <span style="display: inline-block; background-color: #0891b2; color: #ffffff; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700;">
+                    ${regCategory}
                   </span>
                 </td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Payment ID:</td>
-                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${payId}</td>
-              </tr>
-              ${razorpayOrderId !== "N/A" ? `
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Razorpay Order ID:</td>
-                <td style="padding: 6px 0; font-family: monospace;">${razorpayOrderId}</td>
-              </tr>
-              ` : ""}
-              ${payAmount > 0 ? `
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Taxable Base Amount:</td>
-                <td style="padding: 6px 0; font-weight: 600;">₹${taxableBase.toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 600;">Event / Summit:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${eventName}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">CGST (9%):</td>
-                <td style="padding: 6px 0;">₹${cgst.toLocaleString("en-IN")}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">SGST (9%):</td>
-                <td style="padding: 6px 0;">₹${sgst.toLocaleString("en-IN")}</td>
-              </tr>
-              ` : ""}
-              <tr>
-                <td style="padding: 6px 0; font-weight: 700; border-top: 1px dashed #cbd5e1; color: #0f172a;">Total Amount Paid:</td>
-                <td style="padding: 6px 0; font-size: 16px; font-weight: 800; color: #047857; border-top: 1px dashed #cbd5e1;">₹${payAmount.toLocaleString("en-IN")}</td>
-              </tr>
-              ${coupon !== "None" ? `
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Coupon / Discount:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #d97706;">${coupon}</td>
-              </tr>
-              ` : ""}
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Timestamp:</td>
-                <td style="padding: 6px 0; color: #64748b;">${regDate}</td>
+                <td style="padding: 6px 0; font-weight: 600;">Pass ID:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #4b1fa7;">${regId}</td>
               </tr>
             </table>
           </div>
 
           <!-- SCANNABLE QR CODE SECTION -->
           ${qrCodeBuffer ? `
-          <div style="text-align: center; border: 2px dashed #0891b2; border-radius: 16px; padding: 22px; background-color: #f0fdf4; margin-bottom: 25px;">
-            <h4 style="margin: 0 0 6px 0; color: #0f172a; font-size: 15px; font-weight: 800;">📱 SCANNABLE DELEGATE PASS QR CODE</h4>
-            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 12px;">Scan this QR code using any smartphone camera or QR scanner app to view all submitted registration details and fast-track venue entry.</p>
-            <img src="cid:delegate-qrcode" alt="Registration QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto; border: 3px solid #0891b2; border-radius: 12px; padding: 8px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
-            <p style="margin: 12px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
+          <div style="text-align: center; border: 2px dashed #0891b2; border-radius: 16px; padding: 20px; background-color: #f0fdf4; margin-bottom: 25px;">
+            <h4 style="margin: 0 0 6px 0; color: #0f172a; font-size: 15px; font-weight: 800;">📱 SCANNABLE ENTRY PASS QR CODE</h4>
+            <p style="margin: 0 0 14px 0; color: #64748b; font-size: 12px;">Present this QR code or Pass ID at the summit registration desk for fast-track badge collection and venue entry.</p>
+            <img src="cid:delegate-qrcode" alt="Registration QR Code" style="width: 170px; height: 170px; display: block; margin: 0 auto; border: 3px solid #0891b2; border-radius: 12px; padding: 8px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" />
+            <p style="margin: 10px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
           </div>
           ` : ""}
 
           <!-- TERMS & CONDITIONS SECTION -->
-          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; background-color: #f8fafc; margin-bottom: 25px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #0891b2; padding-bottom: 10px; margin-bottom: 14px;">
-              <h3 style="margin: 0; color: #0f172a; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
+            <div style="border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                 📋 EVENT REGISTRATION – TERMS & CONDITIONS
               </h3>
             </div>
-            <p style="margin: 0 0 14px 0; font-size: 12px; color: #64748b; font-style: italic;">
+            <p style="margin: 0 0 12px 0; font-size: 11px; color: #64748b; font-style: italic;">
               By submitting the registration form, you confirmed and agreed to the following terms and conditions:
             </p>
             
-            <ol style="margin: 0; padding-left: 20px; font-size: 12px; color: #334155; line-height: 1.75;">
-              <li style="margin-bottom: 10px;">
+            <ol style="margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.7;">
+              <li style="margin-bottom: 8px;">
                 <strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.
               </li>
-              <li style="margin-bottom: 10px;">
-                <strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
+              <li style="margin-bottom: 8px;">
+                <strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.
               </li>
-              <li style="margin-bottom: 10px;">
+              <li style="margin-bottom: 8px;">
                 <strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
               </li>
-              <li style="margin-bottom: 10px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 10px 12px; list-style-position: inside;">
-                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+              <li style="margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;">
+                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
               </li>
               <li style="margin-bottom: 0px;">
                 <strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
@@ -492,11 +394,11 @@ www.executivetalksmedia.in
             </ol>
           </div>
 
-          <p style="margin-bottom: 0;">Our executive team will contact you shortly with agenda updates, venue access details, and networking session schedules.</p>
+          <p style="margin-bottom: 0; font-size: 13px; color: #475569;">Our executive delegate team will reach out with final venue timing, access badges, and summit schedule details.</p>
         </div>
 
         <!-- FOOTER -->
-        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 25px; text-align: center; color: #64748b; font-size: 12px;">
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 20px; text-align: center; color: #64748b; font-size: 12px;">
           <p style="margin: 0; font-weight: 700; color: #1e293b;">Executive Talks Media Business Intelligence</p>
           <p style="margin: 4px 0 0 0;">Official Support Email: <a href="mailto:${smtpUser.trim()}" style="color: #0891b2; text-decoration: none; font-weight: 700;">${smtpUser.trim()}</a></p>
           <p style="margin: 4px 0 0 0;">Website: <a href="https://www.executivetalksmedia.in" style="color: #0891b2; text-decoration: none;">www.executivetalksmedia.in</a></p>
@@ -684,22 +586,22 @@ async function sendFreeApplicationNotificationEmails(data: {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
     replyTo: smtpUser,
     to: userEmail,
-    subject: `📋 Complimentary Pass Application Received: ${eventName} (${regId})`,
+    subject: `📋 Free Pass Application (Under Review): ${eventName} (${regId})`,
     text: `
 Dear ${data.fullName},
 
 Thank you for submitting your complimentary delegate pass application for ${eventName} with Executive Talks Media Business Intelligence.
 
 APPLICATION DETAILS:
-- Application Ref ID: ${regId}
-- Event Title: ${eventName}
-- Pass Category: ${data.category || "Complimentary Pass (Pending Approval)"}
 - Full Name: ${data.fullName}
-- Designation: ${data.designation}
-- Company / Organization: ${data.organization}
-- Status: Under Review by Screening Committee
+- Email: ${userEmail}
+- Pass Category: ${data.category || "Complimentary VIP Pass"}
+- Event / Summit: ${eventName}
+- Application Ref ID: ${regId}
+- Status: Under Review
 
-Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and credentials are authenticated, you will receive an official confirmation email along with your Scannable QR Ticket Pass for venue access.
+APPLICATION NOTICE:
+Your application is currently under review by our screening committee. Once management approves your application, you will receive your official confirmation email along with your entry QR code for fast-track venue access.
 
 EVENT REGISTRATION – TERMS & CONDITIONS:
 1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
@@ -710,62 +612,97 @@ EVENT REGISTRATION – TERMS & CONDITIONS:
 6. Data Usage: I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.
 7. Third-Party Communication: I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.
 8. Event Updates: I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
-9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
 10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
 
-For urgent executive assistance:
+For assistance:
 registration@executivetalksmedia.in
 www.executivetalksmedia.in
 `,
     html: `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
-        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 25px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
-          <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 600; opacity: 0.95;">Complimentary Delegate Pass Application</p>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 20px; background-color: #ffffff; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
+        <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 26px 20px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 19px; font-weight: 800; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
+          <p style="margin: 6px 0 0 0; font-size: 12px; font-weight: 600; opacity: 0.95;">Complimentary Delegate Pass Application</p>
         </div>
 
-        <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
-          <p>Dear <strong>${data.fullName}</strong>,</p>
-          <p>Thank you for submitting your complimentary delegate pass application for <strong>${eventName}</strong>.</p>
+        <div style="padding: 26px 22px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p style="margin-top: 0; font-size: 15px;">Dear <strong>${data.fullName}</strong>,</p>
+          <p style="margin-bottom: 20px;">Thank you for submitting your complimentary delegate pass application for <strong>${eventName}</strong>.</p>
           
-          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; padding: 14px; border-radius: 10px; margin: 18px 0;">
-            <p style="margin: 0; color: #166534; font-weight: 700; font-size: 14px;">
+          <!-- APPLICATION DETAILS CARD -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              📋 Application Details
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; width: 38%;">Full Name:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${data.fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Email:</td>
+                <td style="padding: 6px 0; color: #0891b2; font-weight: 600;"><a href="mailto:${userEmail}" style="color: #0891b2; text-decoration: none;">${userEmail}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Pass Category:</td>
+                <td style="padding: 6px 0;">
+                  <span style="display: inline-block; background-color: #e0f2fe; color: #0369a1; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700;">
+                    ${data.category || "Complimentary VIP Pass"}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Event / Summit:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${eventName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Application ID:</td>
+                <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #4b1fa7;">${regId}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- STATUS NOTICE BOX -->
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #22c55e; padding: 16px; border-radius: 12px; margin-bottom: 22px;">
+            <p style="margin: 0; color: #166534; font-weight: 800; font-size: 14px;">
               ⏳ Status: Application Under Executive Review
             </p>
-            <p style="margin: 4px 0 0 0; color: #15803d; font-size: 12px;">
-              Application Ref ID: <strong>${regId}</strong> | Category: <strong>${data.category || "Complimentary VIP Pass"}</strong>
+            <p style="margin: 6px 0 0 0; color: #15803d; font-size: 13px; line-height: 1.5;">
+              Your application is currently under review by our screening committee. Once management approves your application, you will receive your official confirmation email along with your entry QR code for venue access.
             </p>
           </div>
 
-          <p>Our Executive Screening Committee reviews applications on a rolling basis. Once your profile and executive credentials are authenticated, you will receive an official confirmation email along with your <strong>Scannable QR Ticket Pass</strong> for fast-track venue access.</p>
-
           <!-- TERMS & CONDITIONS SECTION -->
-          <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; background-color: #f8fafc; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #0f172a; font-size: 14px; font-weight: 800; border-bottom: 2px solid #0891b2; padding-bottom: 6px;">
-              📋 EVENT REGISTRATION – TERMS & CONDITIONS
-            </h3>
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
+            <div style="border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 12px;">
+              <h3 style="margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                📋 EVENT REGISTRATION – TERMS & CONDITIONS
+              </h3>
+            </div>
             <ol style="margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.7;">
-              <li style="margin-bottom: 6px;"><strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.</li>
-              <li style="margin-bottom: 6px;"><strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.</li>
-              <li style="margin-bottom: 6px;"><strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.</li>
-              <li style="margin-bottom: 6px;"><strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.</li>
-              <li style="margin-bottom: 6px;"><strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.</li>
-              <li style="margin-bottom: 6px;"><strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.</li>
-              <li style="margin-bottom: 6px;"><strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.</li>
-              <li style="margin-bottom: 6px;"><strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.</li>
-              <li style="margin-bottom: 6px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #ef4444; border-radius: 6px; padding: 6px 8px; list-style-position: inside;">
-                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
+              <li style="margin-bottom: 8px;"><strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.</li>
+              <li style="margin-bottom: 8px;"><strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.</li>
+              <li style="margin-bottom: 8px;"><strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.</li>
+              <li style="margin-bottom: 8px;"><strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.</li>
+              <li style="margin-bottom: 8px;"><strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.</li>
+              <li style="margin-bottom: 8px;"><strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.</li>
+              <li style="margin-bottom: 8px;"><strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.</li>
+              <li style="margin-bottom: 8px;"><strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.</li>
+              <li style="margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;">
+                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
               </li>
               <li style="margin-bottom: 0px;"><strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.</li>
             </ol>
           </div>
 
-          <p style="margin-bottom: 0;">If you have any questions or require urgent executive assistance, please feel free to reach us at <a href="mailto:${smtpUser}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${smtpUser}</a>.</p>
+          <p style="margin-bottom: 0; font-size: 13px; color: #475569;">If you have any questions or require executive assistance, please feel free to reach us at <a href="mailto:${smtpUser}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${smtpUser}</a>.</p>
         </div>
 
-        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 20px; text-align: center; color: #64748b; font-size: 12px;">
           <p style="margin: 0; font-weight: 700; color: #1e293b;">Executive Talks Media Business Intelligence</p>
-          <p style="margin: 2px 0 0 0;">www.executivetalksmedia.in</p>
+          <p style="margin: 4px 0 0 0;">Official Support Email: <a href="mailto:${smtpUser.trim()}" style="color: #0891b2; text-decoration: none; font-weight: 700;">${smtpUser.trim()}</a></p>
+          <p style="margin: 4px 0 0 0;">Website: <a href="https://www.executivetalksmedia.in" style="color: #0891b2; text-decoration: none;">www.executivetalksmedia.in</a></p>
         </div>
       </div>
     `,

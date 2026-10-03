@@ -818,41 +818,43 @@ export default function EventRegistrationWizardPage() {
       {/* ================= MAIN CONTENT CONTAINER ================= */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         
-        {/* Step Progress Navigation Bar (7 Steps) */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mb-8 overflow-x-auto">
-          <div className="grid grid-cols-7 gap-1 sm:gap-3 min-w-[620px] sm:min-w-0">
-            {stepsList.map((step) => {
-              const isCompleted = currentStep > step.number;
-              const isActive = currentStep === step.number;
-              return (
-                <div key={step.number} className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-all ${
-                      isCompleted
-                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                        : isActive
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/30"
-                        : "bg-slate-100 text-slate-400"
-                    }`}>
-                      {isCompleted ? <Check className="w-4 h-4" /> : step.number}
-                    </div>
-                    <div className="hidden lg:block min-w-0 flex-1">
-                      <div className={`text-[11px] font-black truncate ${isActive ? "text-cyan-900" : isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
-                        {step.title}
+        {/* Step Progress Navigation Bar (7 Steps) - Temporarily hidden as requested */}
+        {false && (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-sm mb-8 overflow-x-auto">
+            <div className="grid grid-cols-7 gap-1 sm:gap-3 min-w-[620px] sm:min-w-0">
+              {stepsList.map((step) => {
+                const isCompleted = currentStep > step.number;
+                const isActive = currentStep === step.number;
+                return (
+                  <div key={step.number} className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                    <div className="flex items-center gap-2 w-full">
+                      <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-all ${
+                        isCompleted
+                          ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                          : isActive
+                          ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 ring-2 ring-cyan-500/30"
+                          : "bg-slate-100 text-slate-400"
+                      }`}>
+                        {isCompleted ? <Check className="w-4 h-4" /> : step.number}
                       </div>
-                      <div className="text-[9px] text-slate-400 truncate">{step.subtitle}</div>
+                      <div className="hidden lg:block min-w-0 flex-1">
+                        <div className={`text-[11px] font-black truncate ${isActive ? "text-cyan-900" : isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
+                          {step.title}
+                        </div>
+                        <div className="text-[9px] text-slate-400 truncate">{step.subtitle}</div>
+                      </div>
+                    </div>
+                    <div className="block lg:hidden text-[10px] font-bold mt-1 text-center w-full truncate">
+                      <span className={isActive ? "text-cyan-700" : isCompleted ? "text-emerald-600" : "text-slate-400"}>
+                        {step.title}
+                      </span>
                     </div>
                   </div>
-                  <div className="block lg:hidden text-[10px] font-bold mt-1 text-center w-full truncate">
-                    <span className={isActive ? "text-cyan-700" : isCompleted ? "text-emerald-600" : "text-slate-400"}>
-                      {step.title}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Responsive Grid Layout */}
         <div className={`grid gap-8 items-start ${currentStep === 4 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"}`}>
