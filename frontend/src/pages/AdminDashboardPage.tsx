@@ -1040,6 +1040,11 @@ export default function AdminDashboardPage() {
   const [attendanceEndDate, setAttendanceEndDate] = useState<string>("");
   const [attendanceDateType, setAttendanceDateType] = useState<"created" | "checked_in">("created");
   const [attendanceCategoryFilter, setAttendanceCategoryFilter] = useState<string>("all");
+  // --- ATTENDANCE DETAIL ROSTER MODAL STATE ("VERE SCREEN") ---
+  const [attendanceRosterModalOpen, setAttendanceRosterModalOpen] = useState(false);
+  const [attendanceRosterTab, setAttendanceRosterTab] = useState<"present" | "absent" | "all">("present");
+  const [attendanceRosterSearch, setAttendanceRosterSearch] = useState("");
+  const [attendanceRosterCategory, setAttendanceRosterCategory] = useState("all");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2709,6 +2714,133 @@ export default function AdminDashboardPage() {
       turnout,
     };
   }, [registrations, attendanceEventFilter, cmsEvents]);
+
+  // Dedicated Roster Lists for the Selected Event ("Vere Screen" / Attendance Modal)
+  const eventScopedDelegates = useMemo(() => {
+    if (attendanceEventFilter === "all") {
+      return registrations;
+    }
+    const selectedEvt = (cmsEvents || []).find(
+      (e) =>
+        e.id === attendanceEventFilter ||
+        e.slug === attendanceEventFilter ||
+        e.title === attendanceEventFilter
+    );
+    if (selectedEvt) {
+      return registrations.filter((r) => doesRegistrationMatchEvent(r, selectedEvt));
+    }
+    return registrations.filter(
+      (r) =>
+        r.event_id === attendanceEventFilter ||
+        r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
+    );
+  }, [registrations, attendanceEventFilter, cmsEvents]);
+
+  const modalAttendeesList = useMemo(() => {
+    let list = [...eventScopedDelegates];
+
+    if (attendanceRosterTab === "present") {
+      list = list.filter((r) => r.checkin_status?.toLowerCase() === "present");
+    } else if (attendanceRosterTab === "absent") {
+      list = list.filter((r) => r.checkin_status?.toLowerCase() !== "present");
+    }
+
+    if (attendanceRosterCategory !== "all") {
+      list = list.filter((r) => {
+        const cat = (r.pass_name || r.registration_category || "").toLowerCase();
+        return cat.includes(attendanceRosterCategory.toLowerCase());
+      });
+    }
+
+    if (attendanceRosterSearch.trim()) {
+      const q = attendanceRosterSearch.toLowerCase().trim();
+      list = list.filter((r) => {
+        const combined = [
+          r.name,
+          r.first_name,
+          r.last_name,
+          r.email,
+          r.phone,
+          r.organization,
+          r.designation,
+          r.city,
+          r.country,
+          r.id,
+          r.pass_name,
+          r.registration_category,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return combined.includes(q);
+      });
+    }
+
+    return list;
+  }, [eventScopedDelegates, attendanceRosterTab, attendanceRosterCategory, attendanceRosterSearch]);
+
+  const exportModalAttendanceExcel = () => {
+    const tabName =
+      attendanceRosterTab === "present"
+        ? "Present_CheckedIn"
+        : attendanceRosterTab === "absent"
+        ? "Absent_AwaitingArrival"
+        : "All_Registered";
+    const eventName = selectedEventAttendanceSummary.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+    const dateStamp = new Date().toISOString().split("T")[0];
+    const filename = `ET_Media_${tabName}_${eventName}_${dateStamp}.xlsx`;
+
+    const dataToExport = modalAttendeesList.map((del, index) => {
+      const isPresent = del.checkin_status?.toLowerCase() === "present";
+      return {
+        "S.No": index + 1,
+        "Pass Token ID": del.id,
+        "Delegate Name": del.name || `${del.first_name || ""} ${del.last_name || ""}`.trim() || "Delegate",
+        "Official Email": del.email || "N/A",
+        "Contact Number": del.phone || "N/A",
+        "Organization / Company": del.organization || "N/A",
+        "Designation": del.designation || "Executive Delegate",
+        "City": del.city || "N/A",
+        "Event Title": del.event_title || selectedEventAttendanceSummary.title,
+        "Pass Category": del.pass_name || del.registration_category || "Delegate Pass",
+        "Gate Attendance Status": isPresent ? "PRESENT (CHECKED-IN)" : "ABSENT (AWAITING ARRIVAL)",
+        "Gate Check-In Time": del.checked_in_at
+          ? new Date(del.checked_in_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+          : "N/A",
+        "Checked-In By": del.checked_in_by || (isPresent ? "Gate Coordinator" : "N/A"),
+      };
+    });
+
+    if (dataToExport.length === 0) {
+      toast.warning("No attendee records to export.");
+      return;
+    }
+
+    try {
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      ws["!cols"] = [
+        { wch: 6 },
+        { wch: 22 },
+        { wch: 26 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 22 },
+        { wch: 14 },
+        { wch: 32 },
+        { wch: 20 },
+        { wch: 26 },
+        { wch: 24 },
+        { wch: 20 },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Attendance Details");
+      XLSX.writeFile(wb, filename);
+      toast.success(`📥 Exported ${dataToExport.length} attendance records to Excel!`);
+    } catch (err) {
+      toast.error("Failed to generate Excel file.");
+    }
+  };
 
   // Dedicated Premium Excel Export for Attendance
   const exportAttendanceSheet = () => {
@@ -7932,16 +8064,31 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {attendanceEventFilter !== "all" && (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setAttendanceEventFilter("all")}
-                      className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      onClick={() => {
+                        setAttendanceRosterTab("present");
+                        setAttendanceRosterModalOpen(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      title="Open dedicated attendance roster screen"
                     >
-                      <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
-                      <span>View All Summits</span>
+                      <Users className="h-3.5 w-3.5" />
+                      <span>View Attendees Screen ↗</span>
                     </button>
-                  )}
+
+                    {attendanceEventFilter !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setAttendanceEventFilter("all")}
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>All Summits</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -7950,49 +8097,80 @@ export default function AdminDashboardPage() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                   {/* Card 1: Total Registered */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1 shadow-xs">
+                  <div
+                    onClick={() => {
+                      setAttendanceRosterTab("all");
+                      setAttendanceRosterModalOpen(true);
+                    }}
+                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
+                    title="Click to view all registered attendees in dedicated screen"
+                  >
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block flex items-center justify-between">
                       <span>Total Registered</span>
-                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      <Users className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
                     </span>
-                    <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100">
-                      {selectedEventAttendanceSummary.total.toLocaleString()}
+                    <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                      <span>{selectedEventAttendanceSummary.total.toLocaleString()}</span>
+                      <ArrowUpRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-cyan-600 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium block">
-                      100% of event roster
+                    <span className="text-[11px] text-slate-400 font-medium block flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                      <span>View All Roster</span> <span>↗</span>
                     </span>
                   </div>
 
                   {/* Card 2: Checked In (Present) */}
-                  <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1 shadow-xs">
+                  <div
+                    onClick={() => {
+                      setAttendanceRosterTab("present");
+                      setAttendanceRosterModalOpen(true);
+                    }}
+                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    title="Click to view who checked in (Present) in dedicated screen"
+                  >
                     <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
                       <span>Checked-In (Present)</span>
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400">
-                      {selectedEventAttendanceSummary.present.toLocaleString()}
+                    <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                      <span>{selectedEventAttendanceSummary.present.toLocaleString()}</span>
+                      <ArrowUpRight className="h-4 w-4 text-emerald-400/60 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block">
-                      {selectedEventAttendanceSummary.turnout}% turn-out verified
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block flex items-center gap-1 group-hover:underline">
+                      <span>{selectedEventAttendanceSummary.turnout}% turn-out • View Present</span> <span>↗</span>
                     </span>
                   </div>
 
                   {/* Card 3: Absent / Pending Scan */}
-                  <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1 shadow-xs">
+                  <div
+                    onClick={() => {
+                      setAttendanceRosterTab("absent");
+                      setAttendanceRosterModalOpen(true);
+                    }}
+                    className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    title="Click to view who is absent / awaiting arrival in dedicated screen"
+                  >
                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
                       <span>Awaiting Arrival (Absent)</span>
                       <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400">
-                      {selectedEventAttendanceSummary.absent.toLocaleString()}
+                    <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                      <span>{selectedEventAttendanceSummary.absent.toLocaleString()}</span>
+                      <ArrowUpRight className="h-4 w-4 text-amber-400/60 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium block">
-                      Pending gate check-in scan
+                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium block flex items-center gap-1 group-hover:underline">
+                      <span>Pending scan • View Absent</span> <span>↗</span>
                     </span>
                   </div>
 
                   {/* Card 4: Turnout Progress */}
-                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs">
+                  <div
+                    onClick={() => {
+                      setAttendanceRosterTab("present");
+                      setAttendanceRosterModalOpen(true);
+                    }}
+                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    title="Click to view turnout breakdown in dedicated screen"
+                  >
                     <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block flex items-center justify-between">
                       <span>Venue Turnout Rate</span>
                       <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
@@ -8006,8 +8184,9 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
                         <span>Attendance:</span>
-                        <span className="text-cyan-700 dark:text-cyan-300 font-black">
+                        <span className="text-cyan-700 dark:text-cyan-300 font-black flex items-center gap-1 group-hover:underline">
                           {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
+                          <ArrowUpRight className="h-3 w-3" />
                         </span>
                       </div>
                     </div>
@@ -8455,6 +8634,384 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* ========================================================================= */}
+              {/* ATTENDANCE DETAIL ROSTER MODAL ("VERE SCREEN" FOR PRESENT & ABSENT ROSTER) */}
+              {/* ========================================================================= */}
+              {attendanceRosterModalOpen && (
+                <div
+                  className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+                  onClick={() => setAttendanceRosterModalOpen(false)}
+                >
+                  <div
+                    className="w-full max-w-5xl max-h-[92vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* 1. MODAL HEADER */}
+                    <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-850 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="h-9 w-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                            <Users className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+                                Attendance Roster Intelligence
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+                                Live Database Records
+                              </span>
+                            </div>
+                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 truncate">
+                              {selectedEventAttendanceSummary.title}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pl-11 flex-wrap">
+                          {selectedEventAttendanceSummary.date && (
+                            <span className="flex items-center gap-1 font-mono font-bold">
+                              <Clock className="h-3.5 w-3.5 text-slate-400" />
+                              {selectedEventAttendanceSummary.date}
+                            </span>
+                          )}
+                          {selectedEventAttendanceSummary.city && (
+                            <span className="flex items-center gap-1 font-semibold">
+                              <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                              {selectedEventAttendanceSummary.city}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Top Action Buttons */}
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={exportModalAttendanceExcel}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                          title="Export this active roster to Excel"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Export Excel (.xlsx)</span>
+                          <span className="sm:hidden">Excel</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceRosterModalOpen(false)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Close screen"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/50 space-y-3">
+                      {/* Tab Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700/60">
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceRosterTab("present")}
+                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                              attendanceRosterTab === "present"
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>Checked-In (Present)</span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                attendanceRosterTab === "present"
+                                  ? "bg-white/20 text-white"
+                                  : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                              }`}
+                            >
+                              {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceRosterTab("absent")}
+                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                              attendanceRosterTab === "absent"
+                                ? "bg-amber-600 text-white shadow-xs"
+                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>Awaiting Arrival (Absent)</span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                attendanceRosterTab === "absent"
+                                  ? "bg-white/20 text-white"
+                                  : "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+                              }`}
+                            >
+                              {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceRosterTab("all")}
+                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                              attendanceRosterTab === "all"
+                                ? "bg-slate-900 dark:bg-white dark:text-slate-900 text-white shadow-xs"
+                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            <span>All Registered</span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                attendanceRosterTab === "all"
+                                  ? "bg-white/20 dark:bg-slate-900/20"
+                                  : "bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                              }`}
+                            >
+                              {eventScopedDelegates.length}
+                            </span>
+                          </button>
+                        </div>
+
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+                          Showing <span className="text-slate-900 dark:text-white font-black">{modalAttendeesList.length}</span> attendees
+                        </div>
+                      </div>
+
+                      {/* Search & Category Filter */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative flex-1 min-w-[240px]">
+                          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                          <input
+                            type="text"
+                            value={attendanceRosterSearch}
+                            onChange={(e) => setAttendanceRosterSearch(e.target.value)}
+                            placeholder="Search attendee by name, email, phone, company, pass ID..."
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-2xs"
+                          />
+                          {attendanceRosterSearch && (
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceRosterSearch("")}
+                              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {attendanceCategoriesList.length > 0 && (
+                          <div className="w-auto min-w-[180px]">
+                            <select
+                              value={attendanceRosterCategory}
+                              onChange={(e) => setAttendanceRosterCategory(e.target.value)}
+                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 cursor-pointer shadow-2xs"
+                            >
+                              <option value="all">All Pass Categories</option>
+                              {attendanceCategoriesList.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 3. ATTENDEE ROSTER SCROLLABLE TABLE */}
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar min-h-[320px]">
+                      {modalAttendeesList.length === 0 ? (
+                        <div className="py-16 text-center space-y-3">
+                          <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                            <Search className="h-6 w-6" />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                              No Attendees Found
+                            </h4>
+                            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                              No attendee records matched your search query or active filter in this roster.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {modalAttendeesList.map((attendee, index) => {
+                            const isPresent = attendee.checkin_status?.toLowerCase() === "present";
+                            const attendeeName =
+                              attendee.name ||
+                              `${attendee.first_name || ""} ${attendee.last_name || ""}`.trim() ||
+                              "Delegate";
+
+                            return (
+                              <div
+                                key={attendee.id || index}
+                                className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                                  isPresent
+                                    ? "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10"
+                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  {/* Attendee Info */}
+                                  <div className="flex items-start gap-3 min-w-0">
+                                    <div
+                                      className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs ${
+                                        isPresent
+                                          ? "bg-emerald-600 text-white"
+                                          : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                      }`}
+                                    >
+                                      {attendeeName.charAt(0).toUpperCase()}
+                                    </div>
+
+                                    <div className="min-w-0 space-y-0.5">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-mono text-[10px] text-slate-400">
+                                          #{index + 1}
+                                        </span>
+                                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                                          {attendeeName}
+                                        </h4>
+                                        <span
+                                          className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                            isPresent
+                                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40"
+                                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40"
+                                          }`}
+                                        >
+                                          {isPresent ? "✓ PRESENT" : "⏳ ABSENT"}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                                        {attendee.designation && (
+                                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                                            {attendee.designation}
+                                          </span>
+                                        )}
+                                        {attendee.organization && (
+                                          <span>• {attendee.organization}</span>
+                                        )}
+                                        {attendee.city && <span>• {attendee.city}</span>}
+                                      </div>
+
+                                      <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap font-mono pt-1">
+                                        {attendee.email && (
+                                          <span className="flex items-center gap-1">
+                                            <Mail className="h-3 w-3 text-slate-400" />
+                                            {attendee.email}
+                                          </span>
+                                        )}
+                                        {attendee.phone && (
+                                          <span className="flex items-center gap-1">
+                                            <Phone className="h-3 w-3 text-slate-400" />
+                                            {attendee.phone}
+                                          </span>
+                                        )}
+                                        <span className="px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+                                          {attendee.id}
+                                        </span>
+                                        {(attendee.pass_name || attendee.registration_category) && (
+                                          <span className="text-cyan-600 font-bold">
+                                            {attendee.pass_name || attendee.registration_category}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right: Check-In Details & Instant Action */}
+                                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                    {isPresent ? (
+                                      <div className="flex items-center gap-2 text-right">
+                                        <div className="text-[11px] text-right font-mono hidden sm:block">
+                                          <div className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 justify-end">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            <span>Checked-In</span>
+                                          </div>
+                                          <div className="text-slate-400 text-[10px]">
+                                            {attendee.checked_in_at
+                                              ? new Date(attendee.checked_in_at).toLocaleTimeString("en-IN", {
+                                                  hour: "2-digit",
+                                                  minute: "2-digit",
+                                                })
+                                              : "Recorded"}
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUndoAttendance(attendee.id)}
+                                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-300 dark:hover:bg-rose-950/30 text-slate-500 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
+                                          title="Revert check-in to absent"
+                                        >
+                                          Undo
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleQuickCheckin(attendee.id)}
+                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                                      >
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        <span>Admit / Check In</span>
+                                      </button>
+                                    )}
+
+                                    <a
+                                      href={`/verify-pass/${attendee.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 rounded-xl text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                      title="View official digital pass"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. MODAL FOOTER */}
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold flex-wrap">
+                        <span>
+                          Total Roster: <strong className="text-slate-900 dark:text-white font-black">{eventScopedDelegates.length}</strong>
+                        </span>
+                        <span className="text-emerald-600">
+                          Checked-In: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}</strong>
+                        </span>
+                        <span className="text-amber-600">
+                          Awaiting: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}</strong>
+                        </span>
+                        <span className="text-cyan-600">
+                          Turnout: <strong className="font-black">{selectedEventAttendanceSummary.turnout}%</strong>
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setAttendanceRosterModalOpen(false)}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      >
+                        Close Screen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
