@@ -755,23 +755,46 @@ export default function EventDetailPage() {
                   <AlertCircle className="h-3.5 w-3.5 text-slate-400" />
                 </button>
               ) : liveEventStatus === "live" ? (
-                <button
-                  type="button"
-                  onClick={() => handleOpenRegister("paid")}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 py-2.5 px-4 text-xs font-black text-white hover:opacity-95 shadow-md shadow-indigo-500/25 transition-all cursor-pointer"
-                >
-                  <Radio className="h-3.5 w-3.5 animate-pulse text-white" />
-                  <span>Join Event Live</span>
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRegister("paid")}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-indigo-500/25 transition-all cursor-pointer truncate"
+                  >
+                    <Radio className="h-3.5 w-3.5 animate-pulse text-white shrink-0" />
+                    <span className="truncate">Join Live</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRegister("free")}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-emerald-500/25 transition-all cursor-pointer truncate"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+                    <span className="truncate">Register Free</span>
+                  </button>
+                </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => handleOpenRegister("paid")}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 py-2.5 px-4 text-xs font-black text-white hover:opacity-95 shadow-md shadow-indigo-500/25 transition-all cursor-pointer group"
-                >
-                  <span>Register Now</span>
-                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Button 1: Paid Registration (Register Now) */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRegister("paid")}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-purple-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
+                  >
+                    <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+                    <span className="truncate">Register Now</span>
+                  </button>
+
+                  {/* Button 2: Free Pass Application (Register Free) */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRegister("free")}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-cyan-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+                    <span className="truncate">Register Free</span>
+                  </button>
+                </div>
               )}
 
               <button
