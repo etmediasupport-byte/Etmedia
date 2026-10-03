@@ -2477,28 +2477,40 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleBulkSendCertificates = async () => {
+  const handleBulkSendCertificates = async (onlyUnsent: boolean = false) => {
     const presentAttendees = eventScopedDelegates.filter(
       (r) => r.checkin_status?.toLowerCase() === "present" && (r.email || r.official_email)
     );
-    if (presentAttendees.length === 0) {
-      toast.warning("No checked-in attendees with valid email addresses found.");
+    const targetAttendees = onlyUnsent
+      ? presentAttendees.filter((r) => !r.certificate_sent_at)
+      : presentAttendees;
+
+    if (targetAttendees.length === 0) {
+      toast.warning(
+        onlyUnsent
+          ? "All checked-in attendees have already received their E-Certificates!"
+          : "No checked-in attendees with valid email addresses found."
+      );
       return;
     }
 
+    const actionText = onlyUnsent
+      ? `dispatch official E-Certificates to ${targetAttendees.length} unsent attendees`
+      : `resend official E-Certificates to all ${targetAttendees.length} attendees`;
+
     if (
       !window.confirm(
-        `Are you sure you want to dispatch official E-Certificates to all ${presentAttendees.length} checked-in attendees for "${selectedEventAttendanceSummary.title}"?`
+        `Are you sure you want to ${actionText} for "${selectedEventAttendanceSummary.title}"?`
       )
     ) {
       return;
     }
 
     setBulkSendingCerts(true);
-    toast.info(`Dispatching ${presentAttendees.length} E-Certificates via Hostinger SMTP...`);
+    toast.info(`Dispatching ${targetAttendees.length} E-Certificates via Hostinger SMTP...`);
 
     try {
-      const regIds = presentAttendees.map((r) => r.id);
+      const regIds = targetAttendees.map((r) => r.id);
       const res = await fetch("/api/admin/certificate/bulk-send", {
         method: "POST",
         headers: {
@@ -8653,9 +8665,9 @@ export default function AdminDashboardPage() {
                                       type="button"
                                       onClick={() => handleSendCertificate(del.id, del.name)}
                                       disabled={sendingCertId === del.id}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
+                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
                                         del.certificate_sent_at
-                                          ? "bg-slate-100 dark:bg-slate-800 border border-emerald-400 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                                          ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
                                           : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
                                       }`}
                                       title={
@@ -8667,11 +8679,11 @@ export default function AdminDashboardPage() {
                                       {sendingCertId === del.id ? (
                                         <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                       ) : del.certificate_sent_at ? (
-                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                        <RefreshCw className="h-3 w-3 text-amber-600" />
                                       ) : (
                                         <Mail className="h-3 w-3" />
                                       )}
-                                      <span>{del.certificate_sent_at ? "Resend" : "Cert"}</span>
+                                      <span>{del.certificate_sent_at ? "Resend" : "Send Cert"}</span>
                                     </button>
 
                                     <button
@@ -8794,8 +8806,24 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Top Action Buttons */}
-                      <div className="flex items-center gap-2.5">
+                      {/* Top Action Buttons & Event Selector */}
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {/* EVENT SELECTOR DROPDOWN INSIDE POPUP */}
+                        <div className="relative min-w-[220px] sm:min-w-[280px]">
+                          <select
+                            value={attendanceEventFilter}
+                            onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                            className="w-full rounded-xl border-2 border-cyan-500/70 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-black text-slate-900 dark:text-cyan-200 focus:outline-none focus:border-cyan-600 shadow-2xs cursor-pointer"
+                          >
+                            <option value="all">🌐 All Summits & Events Combined ({registrations.length})</option>
+                            {eventAttendanceStats.map((st) => (
+                              <option key={st.id} value={st.id}>
+                                🏆 {st.title} ({st.totalRegistered})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
                         <button
                           type="button"
                           onClick={exportModalAttendanceExcel}
@@ -8895,47 +8923,98 @@ export default function AdminDashboardPage() {
                       </div>
 
                       {/* E-CERTIFICATE DISPATCH BANNER FOR PRESENT ATTENDEES */}
-                      {attendanceRosterTab === "present" && (
-                        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-cyan-500/10 border border-amber-500/30">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shrink-0 shadow-2xs">
-                              <Award className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                                <span>Official Letterhead E-Certificate Automation</span>
-                                <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                  Hostinger SMTP
-                                </span>
+                      {attendanceRosterTab === "present" && (() => {
+                        const presentList = eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present");
+                        const unsentList = presentList.filter((r) => !r.certificate_sent_at);
+                        const sentList = presentList.filter((r) => !!r.certificate_sent_at);
+
+                        if (presentList.length === 0) return null;
+
+                        const allSent = unsentList.length === 0 && presentList.length > 0;
+
+                        return (
+                          <div
+                            className={`flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all ${
+                              allSent
+                                ? "bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-cyan-500/10 border-emerald-500/30"
+                                : "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-cyan-500/10 border-amber-500/30"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
+                                  allSent
+                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                }`}
+                              >
+                                {allSent ? <CheckCircle2 className="h-5 w-5" /> : <Award className="h-5 w-5" />}
                               </div>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                Single-click sends official prestigious E-Certificates directly to attendees' registered emails with their proper name and certificate ID.
-                              </p>
+                              <div>
+                                <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
+                                  <span>
+                                    {allSent
+                                      ? `All ${presentList.length} Checked-In Attendees Have Received E-Certificates`
+                                      : `Official Letterhead E-Certificate Automation (${unsentList.length} Pending)`}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.2 rounded-full text-[9px] font-black uppercase ${
+                                      allSent
+                                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                    }`}
+                                  >
+                                    Hostinger SMTP
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  {allSent
+                                    ? "Every checked-in attendee has received their official certificate. You can resend individually or to all."
+                                    : "Single-click sends official prestigious E-Certificates directly to attendees' registered emails with their proper name and certificate ID."}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {!allSent && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleBulkSendCertificates(true)}
+                                  disabled={bulkSendingCerts}
+                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                                >
+                                  {bulkSendingCerts ? (
+                                    <>
+                                      <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
+                                      <span>Sending Emails...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Award className="h-4 w-4" />
+                                      <span>Send E-Certificates to Unsent ({unsentList.length})</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handleBulkSendCertificates(false)}
+                                disabled={bulkSendingCerts}
+                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50 ${
+                                  allSent
+                                    ? "bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-wider shadow-emerald-500/20"
+                                    : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                                }`}
+                                title="Resend certificates to all present attendees"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                <span>{allSent ? `Resend to All (${presentList.length})` : "Resend All"}</span>
+                              </button>
                             </div>
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={handleBulkSendCertificates}
-                            disabled={bulkSendingCerts}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
-                          >
-                            {bulkSendingCerts ? (
-                              <>
-                                <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
-                                <span>Sending Emails...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Award className="h-4 w-4" />
-                                <span>
-                                  Send E-Certificates to All ({eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length})
-                                </span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Search & Category Filter */}
                       <div className="flex flex-wrap items-center gap-3">
@@ -9118,14 +9197,14 @@ export default function AdminDashboardPage() {
                                           <span className="hidden sm:inline">Preview</span>
                                         </button>
 
-                                        {/* Single-Click Send E-Certificate */}
+                                        {/* Single-Click Send / Resend E-Certificate */}
                                         <button
                                           type="button"
                                           onClick={() => handleSendCertificate(attendee.id, attendeeName)}
                                           disabled={sendingCertId === attendee.id}
-                                          className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+                                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
                                             attendee.certificate_sent_at
-                                              ? "bg-slate-100 dark:bg-slate-800 border border-emerald-400 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                                              ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
                                               : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
                                           }`}
                                           title={
@@ -9137,12 +9216,12 @@ export default function AdminDashboardPage() {
                                           {sendingCertId === attendee.id ? (
                                             <>
                                               <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                              <span>Sending...</span>
+                                              <span>{attendee.certificate_sent_at ? "Resending..." : "Sending..."}</span>
                                             </>
                                           ) : attendee.certificate_sent_at ? (
                                             <>
-                                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                                              <span>✓ Sent • Resend</span>
+                                              <RefreshCw className="h-3.5 w-3.5 text-amber-600" />
+                                              <span>Resend</span>
                                             </>
                                           ) : (
                                             <>
