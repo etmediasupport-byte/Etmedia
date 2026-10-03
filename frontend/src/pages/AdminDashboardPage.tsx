@@ -424,6 +424,82 @@ export default function AdminDashboardPage() {
     return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
+  // Time conversion & Clock picker helpers
+  const formatTimeTo12Hour = (time24: string): string => {
+    if (!time24) return "";
+    const parts = time24.split(":");
+    if (parts.length < 2) return time24;
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1].padStart(2, "0");
+    if (isNaN(hours)) return time24;
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const formattedHours = String(hours).padStart(2, "0");
+    return `${formattedHours}:${minutes} ${ampm}`;
+  };
+
+  const parse12HourTo24 = (time12: string): string => {
+    if (!time12) return "";
+    const clean = time12.trim();
+    if (/^\d{1,2}:\d{2}$/.test(clean)) {
+      const [h, m] = clean.split(":");
+      return `${String(parseInt(h, 10)).padStart(2, "0")}:${m}`;
+    }
+    const match = clean.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) return "";
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const ampm = (match[3] || "").toUpperCase();
+
+    if (ampm === "PM" && hours < 12) {
+      hours += 12;
+    } else if (ampm === "AM" && hours === 12) {
+      hours = 0;
+    }
+    return `${String(hours).padStart(2, "0")}:${minutes}`;
+  };
+
+  const parseTimeRangeToClocks = (rangeStr: string): { start: string; end: string } => {
+    if (!rangeStr) return { start: "09:00", end: "18:00" };
+    const splitters = ["—", "–", " to ", " - ", "-"];
+    let startPart = "";
+    let endPart = "";
+    for (const s of splitters) {
+      if (rangeStr.includes(s)) {
+        const parts = rangeStr.split(s);
+        startPart = parts[0]?.trim() || "";
+        endPart = parts[1]?.trim() || "";
+        break;
+      }
+    }
+    if (!startPart && !endPart) {
+      startPart = rangeStr.trim();
+    }
+    return {
+      start: parse12HourTo24(startPart) || "09:00",
+      end: parse12HourTo24(endPart) || "18:00",
+    };
+  };
+
+  const parseOfficeHoursToClocks = (str: string) => {
+    if (!str) return { days: "Mon - Fri", start: "09:00", end: "18:00", tz: "IST" };
+    let days = "Mon - Fri";
+    let rangePart = str;
+    let tz = "IST";
+    if (str.includes(":")) {
+      const idx = str.indexOf(":");
+      days = str.substring(0, idx).trim();
+      rangePart = str.substring(idx + 1).trim();
+    }
+    if (/IST$/i.test(rangePart)) {
+      tz = "IST";
+      rangePart = rangePart.replace(/IST$/i, "").trim();
+    }
+    const { start, end } = parseTimeRangeToClocks(rangePart);
+    return { days: days || "Mon - Fri", start, end, tz };
+  };
+
   const [newMagForm, setNewMagForm] = useState({
     issue: "",
     title: "",
@@ -2537,7 +2613,7 @@ export default function AdminDashboardPage() {
       ...prev,
       locations: [
         ...prev.locations,
-        { city: "", venue: "", date: "", time: "", address: "", map_url: "" },
+        { city: "", venue: "", date: "", time: "09:00 AM — 06:00 PM", address: "", map_url: "" },
       ],
     }));
     setOpenLocationSlots((prev) => [...prev, newIdx]);
@@ -3979,6 +4055,18 @@ export default function AdminDashboardPage() {
       .sort((a, b) => b.count - a.count);
   }, [registrations, cmsEvents]);
 
+  // Total Paid Revenue computed from verified delegate registrations
+  const totalPaidRevenue = useMemo(() => {
+    return (registrations || []).reduce((sum, reg) => {
+      const pStatus = (reg.payment_status || "").toLowerCase();
+      if ((pStatus.includes("paid") || reg.payment_id) && !pStatus.includes("dropped") && !pStatus.includes("rejected")) {
+        const amt = Number(reg.payment_amount) || (Number(reg.pass_price) ? Math.round(Number(reg.pass_price) * 1.18) : 0);
+        return sum + amt;
+      }
+      return sum;
+    }, 0);
+  }, [registrations]);
+
   const filteredRegistrations = useMemo(() => {
     return eventRegistrationsList.filter((r) => {
       // 1. Search Query
@@ -4431,25 +4519,25 @@ export default function AdminDashboardPage() {
                     <p className="mt-2 text-xs text-slate-500 font-medium">Media assets stored in CMS</p>
                   </div>
 
-                  {/* Widget 8: Visitors Traffic Counter */}
-                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-teal-400 hover:shadow-md">
+                  {/* Widget 8: Total Revenue / Paid Collections Counter */}
+                  <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        Weekly Visitors
+                        Total Revenue
                       </span>
-                      <div className="rounded-2xl bg-teal-50 p-3 text-teal-600 group-hover:scale-110 transition-transform">
-                        <TrendingUp className="h-5 w-5" />
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 group-hover:scale-110 transition-transform">
+                        <IndianRupee className="h-5 w-5" />
                       </div>
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
-                        {(weeklyVisitors || 0).toLocaleString()}
+                      <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
+                        ₹{totalPaidRevenue.toLocaleString("en-IN")}
                       </div>
-                      <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-bold text-teal-700 border border-teal-200">
-                        Live Analytics
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                        Paid Collections
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Pageviews logged this week</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium">Gross delegate pass collections (incl. GST)</p>
                   </div>
                 </div>
               </div>
@@ -6664,7 +6752,7 @@ export default function AdminDashboardPage() {
                             {isOpen && (
                               <div className="space-y-4 pt-2">
                                 {/* Schedule Inputs */}
-                                <div className="grid gap-3.5 sm:grid-cols-3">
+                                <div className="grid gap-3.5 sm:grid-cols-2">
                                   <div>
                                     <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
                                       <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
@@ -6690,18 +6778,91 @@ export default function AdminDashboardPage() {
                                       className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
                                     />
                                   </div>
-                                  <div>
-                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                      <Clock className="h-3.5 w-3.5 text-cyan-600" /> Timing *
+                                </div>
+
+                                {/* Interactive Timing Clock Pickers & Quick Presets */}
+                                <div className="rounded-xl border border-cyan-200/90 bg-gradient-to-r from-cyan-50/70 via-blue-50/50 to-emerald-50/40 p-3.5 space-y-3 shadow-2xs">
+                                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-200/70 pb-2">
+                                    <label className="text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
+                                      <Clock className="h-4 w-4 text-cyan-700" />
+                                      <span>Event Timing Clock Pickers *</span>
                                     </label>
-                                    <input
-                                      type="text"
-                                      required
-                                      value={loc.time}
-                                      onChange={(e) => handleUpdateLocationSlot(idx, "time", e.target.value)}
-                                      placeholder="e.g. 09:00 AM — 06:00 PM"
-                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[11px] text-slate-500 font-medium">Configured Time:</span>
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-700 text-white font-mono text-xs font-extrabold shadow-2xs">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        {loc.time || "09:00 AM — 06:00 PM"}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                      <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                        <span className="flex items-center gap-1">⏰ Start / From Time</span>
+                                        <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
+                                          {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start)}
+                                        </span>
+                                      </label>
+                                      <input
+                                        type="time"
+                                        value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start}
+                                        onChange={(e) => {
+                                          const newStart = e.target.value;
+                                          const currentEnd = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end;
+                                          const formatted = `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`;
+                                          handleUpdateLocationSlot(idx, "time", formatted);
+                                        }}
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                        <span className="flex items-center gap-1">⏰ End / To Time</span>
+                                        <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
+                                          {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end)}
+                                        </span>
+                                      </label>
+                                      <input
+                                        type="time"
+                                        value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end}
+                                        onChange={(e) => {
+                                          const newEnd = e.target.value;
+                                          const currentStart = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start;
+                                          const formatted = `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`;
+                                          handleUpdateLocationSlot(idx, "time", formatted);
+                                        }}
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Quick Presets */}
+                                  <div className="pt-2 border-t border-cyan-100/80 flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[11px] font-bold text-slate-600 mr-1 flex items-center gap-1">
+                                      ⚡ Quick Presets:
+                                    </span>
+                                    {[
+                                      { label: "09:00 AM — 06:00 PM (Full Day)", val: "09:00 AM — 06:00 PM" },
+                                      { label: "09:30 AM — 05:30 PM", val: "09:30 AM — 05:30 PM" },
+                                      { label: "10:00 AM — 05:00 PM", val: "10:00 AM — 05:00 PM" },
+                                      { label: "02:00 PM — 07:00 PM (Afternoon)", val: "02:00 PM — 07:00 PM" },
+                                      { label: "05:00 PM — 10:00 PM (Evening Gala)", val: "05:00 PM — 10:00 PM" },
+                                    ].map((preset) => (
+                                      <button
+                                        key={preset.val}
+                                        type="button"
+                                        onClick={() => handleUpdateLocationSlot(idx, "time", preset.val)}
+                                        className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${
+                                          loc.time === preset.val
+                                            ? "bg-cyan-700 text-white border-cyan-700 shadow-2xs"
+                                            : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900 hover:border-cyan-300"
+                                        }`}
+                                      >
+                                        {preset.label}
+                                      </button>
+                                    ))}
                                   </div>
                                 </div>
 
@@ -7528,16 +7689,74 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleSaveAgendaModal} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Time Slot *</label>
-                <input
-                  type="text"
-                  required
-                  value={agendaForm.time}
-                  onChange={(e) => setAgendaForm({ ...agendaForm, time: e.target.value })}
-                  placeholder="e.g. 09:30 AM — 10:30 AM"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
+              <div className="rounded-xl border border-cyan-200 bg-gradient-to-r from-cyan-50/70 to-blue-50/60 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Session Time Slot *</span>
+                  </label>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-700 text-white font-mono text-[11px] font-bold">
+                    {agendaForm.time || "09:30 AM — 10:30 AM"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">From Clock</label>
+                    <input
+                      type="time"
+                      value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start}
+                      onChange={(e) => {
+                        const newStart = e.target.value;
+                        const currentEnd = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end;
+                        setAgendaForm({
+                          ...agendaForm,
+                          time: `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`
+                        });
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">To Clock</label>
+                    <input
+                      type="time"
+                      value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end}
+                      onChange={(e) => {
+                        const newEnd = e.target.value;
+                        const currentStart = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start;
+                        setAgendaForm({
+                          ...agendaForm,
+                          time: `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`
+                        });
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-1.5 border-t border-cyan-100 flex flex-wrap gap-1">
+                  {[
+                    "09:30 AM — 10:30 AM",
+                    "10:30 AM — 11:30 AM",
+                    "11:30 AM — 01:00 PM",
+                    "02:00 PM — 03:30 PM",
+                    "03:30 PM — 05:00 PM",
+                  ].map((tPreset) => (
+                    <button
+                      key={tPreset}
+                      type="button"
+                      onClick={() => setAgendaForm({ ...agendaForm, time: tPreset })}
+                      className={`px-2 py-0.5 rounded-lg border text-[10px] font-semibold cursor-pointer transition-colors ${
+                        agendaForm.time === tPreset
+                          ? "bg-cyan-700 text-white border-cyan-700"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900"
+                      }`}
+                    >
+                      {tPreset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -11847,16 +12066,103 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Office Working Hours
-                      </label>
-                      <input
-                        type="text"
-                        value={siteSettings.office_hours}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, office_hours: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                      />
+                    <div className="sm:col-span-2 rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50/60 via-blue-50/40 to-slate-50 p-4 space-y-3 shadow-2xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-200/70 pb-2">
+                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <Clock className="h-4 w-4 text-cyan-600" />
+                          <span>Office Working Hours (Clock & Schedule Picker)</span>
+                        </label>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-700 text-white font-mono text-xs font-extrabold shadow-2xs">
+                          <Clock className="h-3.5 w-3.5" />
+                          {siteSettings.office_hours || "Mon - Fri: 09:00 AM - 06:00 PM IST"}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-bold text-slate-600">Working Days</label>
+                          <select
+                            value={parseOfficeHoursToClocks(siteSettings.office_hours).days}
+                            onChange={(e) => {
+                              const newDays = e.target.value;
+                              const parsed = parseOfficeHoursToClocks(siteSettings.office_hours);
+                              const formatted = `${newDays}: ${convert24To12Hour(parsed.start)} - ${convert24To12Hour(parsed.end)} ${parsed.tz}`;
+                              setSiteSettings({ ...siteSettings, office_hours: formatted });
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                          >
+                            <option value="Mon - Fri">Mon - Fri (Standard Weekdays)</option>
+                            <option value="Mon - Sat">Mon - Sat (6-Day Working)</option>
+                            <option value="Mon - Thu">Mon - Thu (4-Day Working)</option>
+                            <option value="All Days (Mon - Sun)">All Days (Mon - Sun)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                            <span>⏰ Office Opening Clock</span>
+                            <span className="text-[10px] text-cyan-700 font-bold font-mono">
+                              {convert24To12Hour(parseOfficeHoursToClocks(siteSettings.office_hours).start)}
+                            </span>
+                          </label>
+                          <input
+                            type="time"
+                            value={parseOfficeHoursToClocks(siteSettings.office_hours).start}
+                            onChange={(e) => {
+                              const newStart = e.target.value;
+                              const parsed = parseOfficeHoursToClocks(siteSettings.office_hours);
+                              const formatted = `${parsed.days}: ${convert24To12Hour(newStart)} - ${convert24To12Hour(parsed.end)} ${parsed.tz}`;
+                              setSiteSettings({ ...siteSettings, office_hours: formatted });
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                            <span>⏰ Office Closing Clock</span>
+                            <span className="text-[10px] text-cyan-700 font-bold font-mono">
+                              {convert24To12Hour(parseOfficeHoursToClocks(siteSettings.office_hours).end)}
+                            </span>
+                          </label>
+                          <input
+                            type="time"
+                            value={parseOfficeHoursToClocks(siteSettings.office_hours).end}
+                            onChange={(e) => {
+                              const newEnd = e.target.value;
+                              const parsed = parseOfficeHoursToClocks(siteSettings.office_hours);
+                              const formatted = `${parsed.days}: ${convert24To12Hour(parsed.start)} - ${convert24To12Hour(newEnd)} ${parsed.tz}`;
+                              setSiteSettings({ ...siteSettings, office_hours: formatted });
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="pt-2 border-t border-cyan-100 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-slate-500 mr-1">⚡ Popular Presets:</span>
+                        {[
+                          "Mon - Fri: 09:00 AM - 06:00 PM IST",
+                          "Mon - Fri: 09:30 AM - 06:30 PM IST",
+                          "Mon - Fri: 10:00 AM - 05:00 PM IST",
+                          "Mon - Sat: 09:00 AM - 06:00 PM IST",
+                          "Mon - Sat: 09:30 AM - 07:00 PM IST",
+                        ].map((pVal) => (
+                          <button
+                            key={pVal}
+                            type="button"
+                            onClick={() => setSiteSettings({ ...siteSettings, office_hours: pVal })}
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${
+                              siteSettings.office_hours === pVal
+                                ? "bg-cyan-700 text-white border-cyan-700 shadow-2xs"
+                                : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900"
+                            }`}
+                          >
+                            {pVal}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="space-y-1">
