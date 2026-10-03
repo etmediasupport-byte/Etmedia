@@ -135,6 +135,9 @@ interface Registration {
   payment_status?: string;
   payment_id?: string;
   razorpay_order_id?: string;
+  pass_name?: string;
+  pass_price?: number;
+  gst_amount?: number;
   payment_amount?: number;
   coupon_applied?: string;
 }
@@ -2005,22 +2008,38 @@ export default function AdminDashboardPage() {
         "Phone",
         "Event",
         "City",
-        "Registration Type",
-        "Status",
+        "Pass Tier",
+        "Base Price (INR)",
+        "GST 18% (INR)",
+        "Total Paid (INR)",
+        "Payment Status",
+        "Payment ID",
         "Registered Date",
       ];
-      rows = filteredRegistrations.map((r) => [
-        r.id,
-        r.name,
-        r.organization || "N/A",
-        r.email,
-        r.phone,
-        r.event_title || r.event_id,
-        r.city || r.registering_city || "N/A",
-        r.registration_category || "Executive Delegate",
-        getRegistrationStatus(r),
-        new Date(r.created_at).toLocaleString(),
-      ]);
+      rows = filteredRegistrations.map((r) => {
+        const payAmount = Number(r.payment_amount) || 0;
+        const rawPassPrice = Number(r.pass_price) || 0;
+        const rawGst = Number(r.gst_amount) || 0;
+        const basePrice = rawPassPrice > 0 ? rawPassPrice : payAmount;
+        const gst = rawGst > 0 ? rawGst : (basePrice > 0 ? Math.round(basePrice * 0.18) : 0);
+        const total = payAmount > 0 ? payAmount : (basePrice + gst);
+        return [
+          r.id,
+          r.name,
+          r.organization || "N/A",
+          r.email,
+          r.phone,
+          r.event_title || r.event_id,
+          r.city || r.registering_city || "N/A",
+          r.pass_name || r.registration_category || "Executive Delegate",
+          basePrice,
+          gst,
+          total,
+          getRegistrationStatus(r),
+          r.payment_id || "N/A",
+          new Date(r.created_at).toLocaleString(),
+        ];
+      });
     } else if (type === "cms-delegates") {
       filename = `et_media_corporate_delegates_${Date.now()}.xls`;
       headers = [
@@ -12740,14 +12759,39 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Tax Breakdown math */}
-                {Number(selectedRegDetail.payment_amount) > 0 && (
-                  <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono">
-                    <span>Taxable Base: ₹{Math.round(Number(selectedRegDetail.payment_amount) / 1.18).toLocaleString("en-IN")}</span>
-                    <span>CGST (9%): ₹{Math.round((Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)) / 2).toLocaleString("en-IN")}</span>
-                    <span>SGST (9%): ₹{Math.round((Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)) / 2).toLocaleString("en-IN")}</span>
-                    <span className="font-bold text-slate-900">Total GST (18%): ₹{(Number(selectedRegDetail.payment_amount) - Math.round(Number(selectedRegDetail.payment_amount) / 1.18)).toLocaleString("en-IN")}</span>
-                  </div>
-                )}
+                {(() => {
+                  const payAmount = Number(selectedRegDetail.payment_amount) || 0;
+                  const rawPassPrice = Number(selectedRegDetail.pass_price) || 0;
+                  const rawGst = Number(selectedRegDetail.gst_amount) || 0;
+
+                  let taxableBase = 0;
+                  let totalGst = 0;
+                  let grandTotal = payAmount;
+
+                  if (rawPassPrice > 0) {
+                    taxableBase = rawPassPrice;
+                    totalGst = rawGst > 0 ? rawGst : Math.round(rawPassPrice * 0.18);
+                    grandTotal = payAmount > 0 ? payAmount : taxableBase + totalGst;
+                  } else if (payAmount > 0) {
+                    taxableBase = payAmount;
+                    totalGst = Math.round(taxableBase * 0.18);
+                    grandTotal = taxableBase + totalGst;
+                  }
+
+                  const cgst = Math.round(totalGst / 2);
+                  const sgst = totalGst - cgst;
+
+                  if (grandTotal <= 0) return null;
+
+                  return (
+                    <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono gap-2">
+                      <span>Base Pass Price: <strong className="text-slate-900">₹{taxableBase.toLocaleString("en-IN")}</strong></span>
+                      <span>CGST (9%): <strong className="text-slate-900">₹{cgst.toLocaleString("en-IN")}</strong></span>
+                      <span>SGST (9%): <strong className="text-slate-900">₹{sgst.toLocaleString("en-IN")}</strong></span>
+                      <span className="font-bold text-slate-900">Total 18% GST: ₹{totalGst.toLocaleString("en-IN")}</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
