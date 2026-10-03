@@ -285,6 +285,7 @@ type TabType =
   | "careers"
   | "popup"
   | "qr-scanner"
+  | "attendance"
   | "database";
 
 // ==========================================
@@ -1033,6 +1034,11 @@ export default function AdminDashboardPage() {
   const [attendanceSearchQuery, setAttendanceSearchQuery] = useState("");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState<"all" | "present" | "absent">("all");
   const [attendanceEventFilter, setAttendanceEventFilter] = useState<string>("all");
+  const [attendanceDateFilter, setAttendanceDateFilter] = useState<"all" | "today" | "yesterday" | "7days" | "30days" | "this_month" | "custom">("all");
+  const [attendanceStartDate, setAttendanceStartDate] = useState<string>("");
+  const [attendanceEndDate, setAttendanceEndDate] = useState<string>("");
+  const [attendanceDateType, setAttendanceDateType] = useState<"created" | "checked_in">("created");
+  const [attendanceCategoryFilter, setAttendanceCategoryFilter] = useState<string>("all");
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2435,8 +2441,54 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const isAttendanceDateInRange = (dateInput: string | number | undefined | null): boolean => {
+    if (attendanceDateFilter === "all" || !dateInput) return true;
+    const ts = typeof dateInput === "number" ? dateInput : new Date(dateInput).getTime();
+    if (isNaN(ts) || ts <= 0) return true;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+
+    if (attendanceDateFilter === "today") {
+      return ts >= startOfToday && ts <= endOfToday;
+    }
+    if (attendanceDateFilter === "yesterday") {
+      const startOfYesterday = startOfToday - 86400000;
+      const endOfYesterday = startOfToday - 1;
+      return ts >= startOfYesterday && ts <= endOfYesterday;
+    }
+    if (attendanceDateFilter === "7days") {
+      const sevenDaysAgo = startOfToday - 6 * 86400000;
+      return ts >= sevenDaysAgo && ts <= endOfToday;
+    }
+    if (attendanceDateFilter === "30days") {
+      const thirtyDaysAgo = startOfToday - 29 * 86400000;
+      return ts >= thirtyDaysAgo && ts <= endOfToday;
+    }
+    if (attendanceDateFilter === "this_month") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+      return ts >= startOfMonth && ts <= endOfToday;
+    }
+    if (attendanceDateFilter === "custom") {
+      let valid = true;
+      if (attendanceStartDate) {
+        const s = new Date(attendanceStartDate + "T00:00:00").getTime();
+        if (!isNaN(s) && ts < s) valid = false;
+      }
+      if (attendanceEndDate) {
+        const e = new Date(attendanceEndDate + "T23:59:59.999").getTime();
+        if (!isNaN(e) && ts > e) valid = false;
+      }
+      return valid;
+    }
+    return true;
+  };
+
   const attendanceDelegatesList = useMemo(() => {
     let list = [...registrations];
+
+    // 1. Event Filter
     if (attendanceEventFilter !== "all") {
       list = list.filter(
         (r) =>
@@ -2444,28 +2496,264 @@ export default function AdminDashboardPage() {
           r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
       );
     }
+
+    // 2. Attendance Status Filter
     if (attendanceStatusFilter === "present") {
       list = list.filter((r) => r.checkin_status?.toLowerCase() === "present");
     } else if (attendanceStatusFilter === "absent") {
       list = list.filter((r) => r.checkin_status?.toLowerCase() !== "present");
     }
-    if (attendanceSearchQuery.trim()) {
-      const q = attendanceSearchQuery.toLowerCase();
-      list = list.filter(
-        (r) =>
-          r.name?.toLowerCase().includes(q) ||
-          r.email?.toLowerCase().includes(q) ||
-          r.phone?.toLowerCase().includes(q) ||
-          r.organization?.toLowerCase().includes(q) ||
-          r.id?.toLowerCase().includes(q)
-      );
+
+    // 3. Pass Category Filter
+    if (attendanceCategoryFilter !== "all") {
+      list = list.filter((r) => {
+        const cat = (r.pass_name || r.registration_category || "").toLowerCase();
+        return cat.includes(attendanceCategoryFilter.toLowerCase());
+      });
     }
+
+    // 4. Date Filter (Registration date or Check-in date)
+    if (attendanceDateFilter !== "all") {
+      list = list.filter((r) => {
+        const d = attendanceDateType === "checked_in" ? r.checked_in_at : r.created_at;
+        return isAttendanceDateInRange(d);
+      });
+    }
+
+    // 5. Multi-field Universal Any-Word Search
+    if (attendanceSearchQuery.trim()) {
+      const q = attendanceSearchQuery.toLowerCase().trim();
+      list = list.filter((r) => {
+        const combined = [
+          r.name,
+          r.first_name,
+          r.last_name,
+          r.email,
+          r.phone,
+          r.organization,
+          r.designation,
+          r.city,
+          r.country,
+          r.id,
+          r.pass_name,
+          r.registration_category,
+          r.event_title,
+          r.event_id,
+          r.payment_id,
+          r.razorpay_order_id,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return combined.includes(q);
+      });
+    }
+
     return list;
-  }, [registrations, attendanceEventFilter, attendanceStatusFilter, attendanceSearchQuery]);
+  }, [
+    registrations,
+    attendanceEventFilter,
+    attendanceStatusFilter,
+    attendanceCategoryFilter,
+    attendanceDateFilter,
+    attendanceDateType,
+    attendanceStartDate,
+    attendanceEndDate,
+    attendanceSearchQuery,
+  ]);
 
   const attendancePresentCount = useMemo(() => {
     return registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
   }, [registrations]);
+
+  // Unique categories for attendance filter
+  const attendanceCategoriesList = useMemo(() => {
+    const set = new Set<string>();
+    registrations.forEach((r) => {
+      const c = r.pass_name || r.registration_category;
+      if (c && c.trim()) set.add(c.trim());
+    });
+    return Array.from(set);
+  }, [registrations]);
+
+  // Event-Wise Attendance Breakdown Stats
+  const eventAttendanceStats = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        date: string;
+        city: string;
+        totalRegistered: number;
+        presentCount: number;
+        absentCount: number;
+        turnoutRate: number;
+      }
+    >();
+
+    // Seed from CMS events
+    (cmsEvents || []).forEach((evt) => {
+      const key = evt.id || evt.slug || evt.title;
+      map.set(key, {
+        id: key,
+        title: evt.title,
+        date: evt.date || "",
+        city: evt.city || (evt.locations && evt.locations[0]?.city) || "",
+        totalRegistered: 0,
+        presentCount: 0,
+        absentCount: 0,
+        turnoutRate: 0,
+      });
+    });
+
+    // Count from registrations
+    registrations.forEach((r) => {
+      const key = r.event_id || r.event_title || "other";
+      let stat = map.get(key);
+      if (!stat) {
+        for (const [k, v] of map.entries()) {
+          if (v.title.toLowerCase() === (r.event_title || "").toLowerCase()) {
+            stat = v;
+            break;
+          }
+        }
+      }
+      if (!stat) {
+        stat = {
+          id: key,
+          title: r.event_title || "Special Summit",
+          date: "",
+          city: r.city || "",
+          totalRegistered: 0,
+          presentCount: 0,
+          absentCount: 0,
+          turnoutRate: 0,
+        };
+        map.set(key, stat);
+      }
+      stat.totalRegistered++;
+      if (r.checkin_status?.toLowerCase() === "present") {
+        stat.presentCount++;
+      }
+    });
+
+    map.forEach((stat) => {
+      stat.absentCount = Math.max(0, stat.totalRegistered - stat.presentCount);
+      stat.turnoutRate =
+        stat.totalRegistered > 0
+          ? Math.round((stat.presentCount / stat.totalRegistered) * 100)
+          : 0;
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.totalRegistered - a.totalRegistered);
+  }, [cmsEvents, registrations]);
+
+  // Selected Active Event Attendance Summary
+  const selectedEventAttendanceSummary = useMemo(() => {
+    let pool = registrations;
+    let eventTitle = "All Summits & Conferences";
+    if (attendanceEventFilter !== "all") {
+      pool = pool.filter(
+        (r) =>
+          r.event_id === attendanceEventFilter ||
+          r.event_title?.toLowerCase().includes(attendanceEventFilter.toLowerCase())
+      );
+      const matched = cmsEvents.find(
+        (e) =>
+          e.id === attendanceEventFilter ||
+          e.slug === attendanceEventFilter ||
+          e.title === attendanceEventFilter
+      );
+      if (matched) {
+        eventTitle = matched.title;
+      } else {
+        eventTitle = attendanceEventFilter;
+      }
+    }
+    const total = pool.length;
+    const present = pool.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+    const absent = Math.max(0, total - present);
+    const turnout = total > 0 ? Math.round((present / total) * 100) : 0;
+    return {
+      title: eventTitle,
+      total,
+      present,
+      absent,
+      turnout,
+    };
+  }, [registrations, attendanceEventFilter, cmsEvents]);
+
+  // Dedicated Premium Excel Export for Attendance
+  const exportAttendanceSheet = () => {
+    const eventName = selectedEventAttendanceSummary.title;
+    const dateStamp = new Date().toISOString().split("T")[0];
+    const filename = `ET_Media_Attendance_${eventName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30)}_${dateStamp}.xlsx`;
+
+    const dataToExport = attendanceDelegatesList.map((del, index) => {
+      const isPresent = del.checkin_status?.toLowerCase() === "present";
+      return {
+        "S.No": index + 1,
+        "Pass Token ID": del.id,
+        "Delegate Name": del.name || `${del.first_name || ""} ${del.last_name || ""}`.trim() || "Delegate",
+        "Official Email": del.email || "N/A",
+        "Contact Number": del.phone || "N/A",
+        "Organization / Company": del.organization || "N/A",
+        "Designation": del.designation || "Executive Delegate",
+        "City": del.city || "N/A",
+        "Event Title": del.event_title || del.event_id || "Executive Conclave",
+        "Pass Category": del.pass_name || del.registration_category || "Delegate Pass",
+        "Payment Status": del.payment_status || "Approved",
+        "Payment Amount (INR)": Number(del.payment_amount) || 0,
+        "Gate Attendance Status": isPresent ? "PRESENT (CHECKED-IN)" : "ABSENT (PENDING SCAN)",
+        "Gate Check-In Time": del.checked_in_at
+          ? new Date(del.checked_in_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+          : "N/A",
+        "Checked-In By": del.checked_in_by || (isPresent ? "Gate Coordinator" : "N/A"),
+        "Registration Date": del.created_at
+          ? new Date(del.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+          : "N/A",
+      };
+    });
+
+    if (dataToExport.length === 0) {
+      toast.warning("No attendee records to export for the current filters.");
+      return;
+    }
+
+    try {
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      // Auto-fit column widths
+      ws["!cols"] = [
+        { wch: 6 },  // S.No
+        { wch: 22 }, // Pass Token ID
+        { wch: 26 }, // Delegate Name
+        { wch: 28 }, // Official Email
+        { wch: 16 }, // Contact Number
+        { wch: 28 }, // Organization
+        { wch: 22 }, // Designation
+        { wch: 14 }, // City
+        { wch: 32 }, // Event Title
+        { wch: 20 }, // Pass Category
+        { wch: 16 }, // Payment Status
+        { wch: 14 }, // Payment Amount
+        { wch: 24 }, // Gate Attendance Status
+        { wch: 24 }, // Gate Check-In Time
+        { wch: 20 }, // Checked-In By
+        { wch: 24 }, // Registration Date
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Gate Attendance");
+      XLSX.writeFile(wb, filename);
+      toast.success(`📥 Successfully exported ${dataToExport.length} attendance records to Excel!`);
+    } catch (err) {
+      console.error("Attendance export error:", err);
+      toast.error("Failed to generate Excel file.");
+    }
+  };
 
   // --- OFFLINE EXCEL IMPORT HANDLERS ---
   const generateSampleExcelTemplate = () => {
@@ -5027,9 +5315,10 @@ export default function AdminDashboardPage() {
       title: "DELEGATES & PARTNERS",
       items: [
         { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+        { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
+        { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
         { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
         { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-        { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
         { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
         { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
       ],
@@ -7482,36 +7771,36 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 1C: GATE QR SCANNER & ATTENDANCE CONTROL */}
-          {activeTab === "qr-scanner" && (
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
+          {/* TAB 1C: EVENT ATTENDANCE & GATE QR SCANNER CONTROL */}
+          {(activeTab === "attendance" || activeTab === "qr-scanner") && (
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-6">
               {/* Header Title & Top Actions */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-600 dark:text-cyan-400 font-bold shadow-xs">
-                    <QrCode className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs">
+                    <UserCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 font-display">
-                        Gate QR Scanner & Attendance Control
+                      <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 font-display">
+                        Executive Gate Attendance & Summit Intelligence
                       </h2>
-                      <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        LIVE GATE DESK
+                      <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 px-2.5 py-0.5 text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 shadow-xs">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        REALTIME GATE MONITOR
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Fast-track delegate badge check-in, live QR ticket verification, and event attendance tracking.
+                      Fast-track badge check-in, event-wise attendee tracking, multi-word universal search, and instant Excel export.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <button
                     type="button"
                     onClick={() => navigate("/admin/scanner")}
-                    className="flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2.5 text-xs font-black shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-cyan-600/25 transition-all cursor-pointer"
                   >
                     <Camera className="h-4 w-4" />
                     <span>Launch Camera Scanner 🚀</span>
@@ -7519,36 +7808,255 @@ export default function AdminDashboardPage() {
 
                   <button
                     type="button"
-                    onClick={() => window.open("/admin/scanner", "_blank")}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
-                    title="Open scanner in separate full-screen browser window"
+                    onClick={exportAttendanceSheet}
+                    className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-emerald-600/25 transition-all cursor-pointer"
+                    title="Export all filtered attendee records to Excel (.xlsx)"
                   >
-                    <ExternalLink className="h-4 w-4 text-slate-500" />
-                    <span>Separate Window</span>
+                    <Download className="h-4 w-4" />
+                    <span>Download Attendance Excel (.xlsx)</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => exportToExcel("event-registrations")}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    onClick={() => fetchDashboardData()}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    title="Refresh data from server"
                   >
-                    <Download className="h-4 w-4 text-emerald-600" />
-                    <span>Export Attendance Sheet</span>
+                    <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
+                    <span>Sync</span>
                   </button>
                 </div>
               </div>
 
-              {/* QUICK SCAN & USB SCANNER INPUT FORM */}
-              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-r from-cyan-50/50 via-white to-slate-50 dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-xs space-y-3">
+              {/* EVENT-WISE SELECTION & CAROUSEL */}
+              <div className="space-y-3 p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200/80 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      Summit & Event Selection ({eventAttendanceStats.length} Events)
+                    </span>
+                  </div>
+
+                  {/* Dropdown for quick access */}
+                  <div className="relative min-w-[260px] max-w-sm">
+                    <select
+                      value={attendanceEventFilter}
+                      onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                    >
+                      <option value="all">
+                        🌐 All Summits & Conferences ({registrations.length} Total Registered)
+                      </option>
+                      {eventAttendanceStats.map((evt) => (
+                        <option key={evt.id} value={evt.id}>
+                          {evt.title} ({evt.totalRegistered} Registered • {evt.presentCount} In • {evt.turnoutRate}%)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Horizontal Scrollable Event Cards */}
+                <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar">
+                  {/* "All Events" Card */}
+                  <div
+                    onClick={() => setAttendanceEventFilter("all")}
+                    className={`shrink-0 w-64 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                      attendanceEventFilter === "all"
+                        ? "border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/40 ring-2 ring-cyan-500/50 shadow-md shadow-cyan-500/10"
+                        : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                        Global Overview
+                      </span>
+                      {attendanceEventFilter === "all" && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-600 text-white">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate mb-2">
+                      All Summits Combined
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold">
+                      <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
+                        <span className="text-slate-400 block text-[9px]">TOTAL</span>
+                        <span className="text-slate-800 dark:text-slate-200 font-black">
+                          {registrations.length}
+                        </span>
+                      </div>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded-lg text-emerald-700 dark:text-emerald-300">
+                        <span className="text-emerald-600/70 block text-[9px]">PRESENT</span>
+                        <span className="font-black">{attendancePresentCount}</span>
+                      </div>
+                      <div className="bg-amber-50 dark:bg-amber-950/60 p-1.5 rounded-lg text-amber-700 dark:text-amber-300">
+                        <span className="text-amber-600/70 block text-[9px]">ABSENT</span>
+                        <span className="font-black">
+                          {Math.max(0, registrations.length - attendancePresentCount)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual Event Cards */}
+                  {eventAttendanceStats.map((evt) => {
+                    const isSelected =
+                      attendanceEventFilter === evt.id || attendanceEventFilter === evt.title;
+                    return (
+                      <div
+                        key={evt.id}
+                        onClick={() => setAttendanceEventFilter(evt.id)}
+                        className={`shrink-0 w-64 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? "border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/40 ring-2 ring-cyan-500/50 shadow-md shadow-cyan-500/10"
+                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[10px] font-mono font-bold text-slate-400 truncate">
+                            {evt.date || "Upcoming Summit"}
+                          </span>
+                          {isSelected && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-600 text-white">
+                              SELECTED
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1 mb-2"
+                          title={evt.title}
+                        >
+                          {evt.title}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold">
+                          <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
+                            <span className="text-slate-400 block text-[9px]">TOTAL</span>
+                            <span className="text-slate-800 dark:text-slate-200 font-black">
+                              {evt.totalRegistered}
+                            </span>
+                          </div>
+                          <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded-lg text-emerald-700 dark:text-emerald-300">
+                            <span className="text-emerald-600/70 block text-[9px]">PRESENT</span>
+                            <span className="font-black">{evt.presentCount}</span>
+                          </div>
+                          <div className="bg-amber-50 dark:bg-amber-950/60 p-1.5 rounded-lg text-amber-700 dark:text-amber-300">
+                            <span className="text-amber-600/70 block text-[9px]">ABSENT</span>
+                            <span className="font-black">{evt.absentCount}</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-1.5 rounded-full"
+                            style={{ width: `${evt.turnoutRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
+                  <span>
+                    Active Event Scope:{" "}
+                    <strong className="text-slate-900 dark:text-slate-100 font-black">
+                      {selectedEventAttendanceSummary.title}
+                    </strong>
+                  </span>
+                  {attendanceEventFilter !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceEventFilter("all")}
+                      className="text-cyan-600 hover:underline font-bold text-[11px] cursor-pointer"
+                    >
+                      ← Reset to All Summits
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                  {/* Card 1: Total Registered */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1 shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block flex items-center justify-between">
+                      <span>Total Registered</span>
+                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                    </span>
+                    <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100">
+                      {selectedEventAttendanceSummary.total.toLocaleString()}
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      100% of event roster
+                    </span>
+                  </div>
+
+                  {/* Card 2: Checked In (Present) */}
+                  <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1 shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
+                      <span>Checked-In (Present)</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </span>
+                    <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400">
+                      {selectedEventAttendanceSummary.present.toLocaleString()}
+                    </div>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block">
+                      {selectedEventAttendanceSummary.turnout}% turn-out verified
+                    </span>
+                  </div>
+
+                  {/* Card 3: Absent / Pending Scan */}
+                  <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1 shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
+                      <span>Awaiting Arrival (Absent)</span>
+                      <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </span>
+                    <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400">
+                      {selectedEventAttendanceSummary.absent.toLocaleString()}
+                    </div>
+                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium block">
+                      Pending gate check-in scan
+                    </span>
+                  </div>
+
+                  {/* Card 4: Turnout Progress */}
+                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block flex items-center justify-between">
+                      <span>Venue Turnout Rate</span>
+                      <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                    </span>
+                    <div className="space-y-1.5">
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${selectedEventAttendanceSummary.turnout}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <span>Attendance:</span>
+                        <span className="text-cyan-700 dark:text-cyan-300 font-black">
+                          {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* QUICK GATE CHECK-IN FORM */}
+              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-r from-cyan-50/60 via-white to-slate-50 dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                      Quick Gate Check-In (Scanner or Manual Pass ID)
+                      Quick Gate Check-In (Scanner Gun or Manual Pass ID)
                     </h3>
                   </div>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Works seamlessly with USB barcode guns or typed Pass IDs
+                    Works seamlessly with USB/Bluetooth scanners or typed Pass IDs
                   </span>
                 </div>
 
@@ -7564,7 +8072,7 @@ export default function AdminDashboardPage() {
                       type="text"
                       value={quickScanInput}
                       onChange={(e) => setQuickScanInput(e.target.value)}
-                      placeholder="Scan badge or enter Pass ID (e.g. ETM-REG-12345 or full URL)..."
+                      placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
                       className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
                       autoFocus
                     />
@@ -7579,196 +8087,297 @@ export default function AdminDashboardPage() {
                     ) : (
                       <CheckCircle2 className="h-4 w-4" />
                     )}
-                    <span>Record Admission</span>
+                    <span>Record Gate Admission</span>
                   </button>
                 </form>
               </div>
 
-              {/* ATTENDANCE KPI METRICS */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                    Total Registered
-                  </span>
-                  <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100">
-                    {registrations.length.toLocaleString()}
-                  </div>
-                  <span className="text-[11px] text-slate-400 font-medium">100% of event roster</span>
-                </div>
-
-                <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/20 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
-                    <span>Checked-In (Present)</span>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  </span>
-                  <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400">
-                    {attendancePresentCount.toLocaleString()}
-                  </div>
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-                    {registrations.length > 0
-                      ? Math.round((attendancePresentCount / registrations.length) * 100)
-                      : 0}
-                    % Turn-out recorded
-                  </span>
-                </div>
-
-                <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
-                    <span>Awaiting Arrival</span>
-                    <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  </span>
-                  <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400">
-                    {Math.max(0, registrations.length - attendancePresentCount).toLocaleString()}
-                  </div>
-                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                    Pending gate check-in
-                  </span>
-                </div>
-
-                <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block">
-                    Venue Admission Rate
-                  </span>
-                  <div className="space-y-1.5">
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${
-                            registrations.length > 0
-                              ? Math.round((attendancePresentCount / registrations.length) * 100)
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                      <span>Rate:</span>
-                      <span className="text-cyan-700 dark:text-cyan-300 font-black">
-                        {registrations.length > 0
-                          ? Math.round((attendancePresentCount / registrations.length) * 100)
-                          : 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SEARCH & FILTER CONTROLS */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex flex-wrap items-center gap-2 flex-1">
-                  <div className="relative min-w-[240px] flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              {/* UNIVERSAL SEARCH & MULTI-FILTER SUITE */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 p-4 space-y-3.5">
+                {/* Row 1: Universal Search & Attendance Status Tabs */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="relative min-w-[280px] flex-1 max-w-lg">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
                       value={attendanceSearchQuery}
                       onChange={(e) => setAttendanceSearchQuery(e.target.value)}
-                      placeholder="Search attendee by name, company, email, ID..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500"
+                      placeholder="Search attendee by Name, Mobile Number, Email, Pass ID, Company, Role, City..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
                     />
+                    {attendanceSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setAttendanceSearchQuery("")}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
 
-                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-bold">
+                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-xs">
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("all")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                         attendanceStatusFilter === "all"
-                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                          ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                       }`}
                     >
-                      All ({registrations.length})
+                      All ({selectedEventAttendanceSummary.total})
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("present")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                         attendanceStatusFilter === "present"
                           ? "bg-emerald-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
                       }`}
                     >
-                      Present ({attendancePresentCount})
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      <span>Checked-In ({selectedEventAttendanceSummary.present})</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("absent")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                         attendanceStatusFilter === "absent"
-                          ? "bg-slate-800 text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-amber-600"
                       }`}
                     >
-                      Absent ({Math.max(0, registrations.length - attendancePresentCount)})
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span>Absent ({selectedEventAttendanceSummary.absent})</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Showing <strong>{attendanceDelegatesList.length}</strong> attendees
+                {/* Row 2: Secondary Filter Controls (Category, Date Range, Date Basis, Reset) */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Pass Category Filter */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <Tag className="h-3.5 w-3.5 text-slate-400" />
+                      <select
+                        value={attendanceCategoryFilter}
+                        onChange={(e) => setAttendanceCategoryFilter(e.target.value)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                      >
+                        <option value="all">All Pass Tiers</option>
+                        {attendanceCategoriesList.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Date Preset Filter */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                      <select
+                        value={attendanceDateFilter}
+                        onChange={(e) => setAttendanceDateFilter(e.target.value as any)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                      >
+                        <option value="all">All Time / Any Date</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                        <option value="this_month">This Month</option>
+                        <option value="custom">Custom Date Range...</option>
+                      </select>
+                    </div>
+
+                    {/* Date Type Selector (Registered vs Check-in) */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-400">By:</span>
+                      <select
+                        value={attendanceDateType}
+                        onChange={(e) => setAttendanceDateType(e.target.value as any)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                      >
+                        <option value="created">Registration Date</option>
+                        <option value="checked_in">Gate Check-In Date</option>
+                      </select>
+                    </div>
+
+                    {/* Custom Date Pickers */}
+                    {attendanceDateFilter === "custom" && (
+                      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs">
+                        <input
+                          type="date"
+                          value={attendanceStartDate}
+                          onChange={(e) => setAttendanceStartDate(e.target.value)}
+                          className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
+                        />
+                        <span className="text-slate-400">to</span>
+                        <input
+                          type="date"
+                          value={attendanceEndDate}
+                          onChange={(e) => setAttendanceEndDate(e.target.value)}
+                          className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Clear Filters Button */}
+                    {(attendanceSearchQuery ||
+                      attendanceStatusFilter !== "all" ||
+                      attendanceCategoryFilter !== "all" ||
+                      attendanceDateFilter !== "all" ||
+                      attendanceEventFilter !== "all") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttendanceSearchQuery("");
+                          setAttendanceStatusFilter("all");
+                          setAttendanceCategoryFilter("all");
+                          setAttendanceDateFilter("all");
+                          setAttendanceStartDate("");
+                          setAttendanceEndDate("");
+                          setAttendanceEventFilter("all");
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span>Clear All Filters</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Showing <strong className="text-slate-900 dark:text-slate-100 font-bold">{attendanceDelegatesList.length}</strong> of{" "}
+                    <strong>{selectedEventAttendanceSummary.total}</strong> attendees
+                  </div>
                 </div>
               </div>
 
               {/* ATTENDANCE DELEGATE TABLE */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850/80 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th className="py-3 px-3">#</th>
-                      <th className="py-3 px-3">Attendee Profile</th>
-                      <th className="py-3 px-3">Company & Role</th>
-                      <th className="py-3 px-3">Pass Tier</th>
-                      <th className="py-3 px-3 text-center">Gate Status</th>
-                      <th className="py-3 px-3">Check-in Time</th>
-                      <th className="py-3 px-3 text-right">Actions</th>
+                      <th className="py-3.5 px-3">#</th>
+                      <th className="py-3.5 px-3">Attendee Profile</th>
+                      <th className="py-3.5 px-3">Company & Role</th>
+                      <th className="py-3.5 px-3">Summit / Event</th>
+                      <th className="py-3.5 px-3">Pass Tier</th>
+                      <th className="py-3.5 px-3 text-center">Gate Status</th>
+                      <th className="py-3.5 px-3">Check-In Details</th>
+                      <th className="py-3.5 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
                     {attendanceDelegatesList.length > 0 ? (
                       attendanceDelegatesList.map((del, idx) => {
                         const isPresent = del.checkin_status?.toLowerCase() === "present";
+                        const attendeeName =
+                          del.name ||
+                          `${del.first_name || ""} ${del.last_name || ""}`.trim() ||
+                          "Delegate";
                         return (
                           <tr
                             key={del.id}
-                            className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
-                              isPresent ? "bg-emerald-50/20 dark:bg-emerald-950/10" : ""
+                            className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${
+                              isPresent ? "bg-emerald-50/30 dark:bg-emerald-950/10" : ""
                             }`}
                           >
-                            <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">
+                            <td className="py-3.5 px-3 text-slate-400 font-mono text-[11px]">
                               {idx + 1}
                             </td>
 
-                            <td className="py-3 px-3">
-                              <div className="space-y-0.5">
-                                <strong className="font-bold text-slate-900 dark:text-white capitalize block">
-                                  {del.name || `${del.first_name || ""} ${del.last_name || ""}`.trim() || "Delegate"}
-                                </strong>
-                                <span className="text-[11px] text-slate-400 font-mono block">
-                                  {del.id}
-                                </span>
+                            {/* Profile (Name, Pass ID, Email, Phone) */}
+                            <td className="py-3.5 px-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5">
+                                  <strong className="font-bold text-slate-900 dark:text-white capitalize text-sm">
+                                    {attendeeName}
+                                  </strong>
+                                </div>
+                                <div className="flex items-center gap-1 text-[11px] font-mono text-cyan-700 dark:text-cyan-400">
+                                  <span>{del.id}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(del.id);
+                                      toast.success(`Copied Pass ID: ${del.id}`);
+                                    }}
+                                    className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                    title="Copy Pass ID"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                  {del.email && (
+                                    <a
+                                      href={`mailto:${del.email}`}
+                                      className="hover:text-cyan-600 underline-offset-2 hover:underline truncate max-w-[180px]"
+                                    >
+                                      {del.email}
+                                    </a>
+                                  )}
+                                  {del.phone && (
+                                    <a
+                                      href={`tel:${del.phone}`}
+                                      className="hover:text-cyan-600 truncate font-mono"
+                                    >
+                                      {del.phone}
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             </td>
 
-                            <td className="py-3 px-3">
+                            {/* Company & Role */}
+                            <td className="py-3.5 px-3">
                               <div className="space-y-0.5">
-                                <span className="font-semibold text-slate-900 dark:text-slate-100 block">
-                                  {del.organization || "Independent Leader"}
+                                <span className="font-bold text-slate-900 dark:text-slate-100 block">
+                                  {del.organization || "Enterprise Delegate"}
                                 </span>
                                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                                   {del.designation || "Executive"}
                                 </span>
+                                {del.city && (
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                    <MapPin className="h-2.5 w-2.5" />
+                                    {del.city}
+                                  </span>
+                                )}
                               </div>
                             </td>
 
-                            <td className="py-3 px-3">
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                                {del.pass_name || del.registration_category || "Delegate"}
+                            {/* Summit / Event */}
+                            <td className="py-3.5 px-3">
+                              <div className="space-y-0.5 max-w-[200px]">
+                                <span
+                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs"
+                                  title={del.event_title || del.event_id}
+                                >
+                                  {del.event_title || del.event_id || "Executive Conclave"}
+                                </span>
+                                {del.created_at && (
+                                  <span className="text-[10px] font-mono text-slate-400 block">
+                                    Reg: {new Date(del.created_at).toLocaleDateString("en-IN")}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Pass Tier */}
+                            <td className="py-3.5 px-3">
+                              <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shadow-2xs">
+                                {del.pass_name || del.registration_category || "Delegate Pass"}
                               </span>
                             </td>
 
-                            <td className="py-3 px-3 text-center">
+                            {/* Gate Status */}
+                            <td className="py-3.5 px-3 text-center">
                               {isPresent ? (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
                                   <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
@@ -7782,9 +8391,10 @@ export default function AdminDashboardPage() {
                               )}
                             </td>
 
-                            <td className="py-3 px-3 text-xs font-mono text-slate-600 dark:text-slate-400">
+                            {/* Check-In Details */}
+                            <td className="py-3.5 px-3 text-xs font-mono text-slate-600 dark:text-slate-400">
                               {del.checked_in_at ? (
-                                <div>
+                                <div className="space-y-0.5">
                                   <span className="font-bold text-emerald-700 dark:text-emerald-400 block">
                                     {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
                                       hour: "2-digit",
@@ -7792,22 +8402,26 @@ export default function AdminDashboardPage() {
                                     })}
                                   </span>
                                   <span className="text-[10px] text-slate-400 block">
-                                    by {del.checked_in_by || "Admin"}
+                                    {new Date(del.checked_in_at).toLocaleDateString("en-IN")}
+                                  </span>
+                                  <span className="text-[9px] text-slate-400 block">
+                                    by {del.checked_in_by || "Gate Coordinator"}
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-slate-400 italic">Awaiting scan</span>
                               )}
                             </td>
 
-                            <td className="py-3 px-3 text-right">
+                            {/* Actions */}
+                            <td className="py-3.5 px-3 text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 {isPresent ? (
                                   <button
                                     type="button"
                                     onClick={() => handleUndoAttendance(del.id)}
-                                    className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-red-600 hover:border-red-300 transition-colors cursor-pointer"
-                                    title="Undo check-in (revert to Absent)"
+                                    className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
+                                    title="Undo check-in (revert attendee back to Absent status)"
                                   >
                                     Undo
                                   </button>
@@ -7825,8 +8439,8 @@ export default function AdminDashboardPage() {
                                   href={`/verify-pass/${del.id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1 rounded-lg text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                  title="View official digital pass & QR badge"
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                  title="View official delegate pass token"
                                 >
                                   <ExternalLink className="h-3.5 w-3.5" />
                                 </a>
@@ -7837,8 +8451,35 @@ export default function AdminDashboardPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={7} className="py-10 text-center text-slate-500">
-                          No attendees matching the selected filters.
+                        <td colSpan={8} className="py-12 text-center">
+                          <div className="max-w-md mx-auto space-y-3">
+                            <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                              <Search className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                                No Attendees Found
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                No delegate records matched your search query or filter criteria.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAttendanceSearchQuery("");
+                                setAttendanceStatusFilter("all");
+                                setAttendanceCategoryFilter("all");
+                                setAttendanceDateFilter("all");
+                                setAttendanceStartDate("");
+                                setAttendanceEndDate("");
+                                setAttendanceEventFilter("all");
+                              }}
+                              className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
+                            >
+                              Reset All Filters
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
