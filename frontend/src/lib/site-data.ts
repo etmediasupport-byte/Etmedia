@@ -91,9 +91,9 @@ export function parseEventTimestamp(evt: any): number {
   // Handle "DD-MM-YYYY" or "DD/MM/YYYY" (e.g. 14-10-2026 or 14/10/2026)
   const dmySlashMatch = cleanStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
   if (dmySlashMatch) {
-    const day = parseInt(dmySlashMatch[1], 10);
-    const month = parseInt(dmySlashMatch[2], 10) - 1;
-    const year = parseInt(dmySlashMatch[3], 10);
+    const day = parseInt(dmySlashMatch[1]!, 10);
+    const month = parseInt(dmySlashMatch[2]!, 10) - 1;
+    const year = parseInt(dmySlashMatch[3]!, 10);
     const d = new Date(year, month, day);
     if (!isNaN(d.getTime())) return d.getTime();
   }

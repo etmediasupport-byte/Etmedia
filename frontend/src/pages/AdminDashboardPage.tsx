@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/UPDATED LOGO.jpeg";
+import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { socket } from "@/lib/socket";
 import {
   validateEmail,
@@ -154,6 +155,9 @@ interface Registration {
   checkin_status?: string;
   checked_in_at?: string;
   checked_in_by?: string;
+  official_email?: string;
+  certificate_sent_at?: string;
+  certificate_id?: string;
 }
 
 interface ContactSubmission {
@@ -296,7 +300,7 @@ type TabType =
 export const convert24To12Hour = (time24: string): string => {
   if (!time24) return "";
   const parts = time24.split(":");
-  if (parts.length < 2) return time24;
+  if (parts.length < 2 || !parts[0] || !parts[1]) return time24;
   let hours = parseInt(parts[0], 10);
   const minutes = parts[1].padStart(2, "0");
   if (isNaN(hours)) return time24;
@@ -314,10 +318,10 @@ export const parse12HourTo24 = (time12: string): string => {
   const clean = time12.trim();
   if (/^\d{1,2}:\d{2}$/.test(clean)) {
     const [h, m] = clean.split(":");
-    return `${String(parseInt(h, 10)).padStart(2, "0")}:${m}`;
+    return `${String(parseInt(h || "0", 10)).padStart(2, "0")}:${m || "00"}`;
   }
   const match = clean.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-  if (!match) return "";
+  if (!match || !match[1] || !match[2]) return "";
   let hours = parseInt(match[1], 10);
   const minutes = match[2];
   const ampm = (match[3] || "").toUpperCase();
@@ -3061,6 +3065,11 @@ export default function AdminDashboardPage() {
         const buffer = e.target?.result;
         const wb = XLSX.read(buffer, { type: "binary" });
         const firstSheetName = wb.SheetNames[0];
+        if (!firstSheetName || !wb.Sheets[firstSheetName]) {
+          toast.error("The uploaded Excel sheet contains no readable sheets.");
+          setOfflineParsedData([]);
+          return;
+        }
         const ws = wb.Sheets[firstSheetName];
         const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
 

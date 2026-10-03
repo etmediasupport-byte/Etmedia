@@ -218,7 +218,7 @@ export default function AdminQrScannerPage() {
       // Extract Pass ID if full URL was scanned
       let cleanId = rawCode.trim();
       const match = cleanId.match(/verify-pass\/([^/?#]+)/i) || cleanId.match(/verify\/([^/?#]+)/i);
-      if (match) {
+      if (match && match[1]) {
         cleanId = decodeURIComponent(match[1]).trim();
       }
       cleanId = cleanId.replace(/^ETM-GATE[-:]/i, "").replace(/^ETM-PASS[-:#]/i, "").trim();
@@ -309,7 +309,7 @@ export default function AdminQrScannerPage() {
               c.label.toLowerCase().includes("environment") ||
               c.label.toLowerCase().includes("rear")
           );
-          setSelectedCameraId(backCam ? backCam.id : devices[0].id);
+          setSelectedCameraId(backCam ? backCam.id : (devices[0]?.id || ""));
           setCameraPermission("granted");
         } else {
           setCameraPermission("denied");
@@ -395,7 +395,9 @@ export default function AdminQrScannerPage() {
     }
     const currentIndex = cameras.findIndex((c) => c.id === selectedCameraId);
     const nextIndex = (currentIndex + 1) % cameras.length;
-    const nextCamId = cameras[nextIndex].id;
+    const targetCam = cameras[nextIndex];
+    if (!targetCam) return;
+    const nextCamId = targetCam.id;
     setSelectedCameraId(nextCamId);
 
     if (isScanning && scannerRef.current) {
@@ -406,7 +408,7 @@ export default function AdminQrScannerPage() {
         (decodedText) => processCheckin(decodedText),
         () => {}
       );
-      toast.success(`Switched to: ${cameras[nextIndex].label || `Camera ${nextIndex + 1}`}`);
+      toast.success(`Switched to: ${targetCam.label || `Camera ${nextIndex + 1}`}`);
     }
   };
 

@@ -87,7 +87,7 @@ export default function EventsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>(urlCategory);
   const [cityFilter, setCityFilter] = useState<string>(urlCity);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
-  const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => e.status !== "archived")));
+  const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => (e.status as any) !== "archived")));
 
   // Sync URL search params if changed externally
   useEffect(() => {

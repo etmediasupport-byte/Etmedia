@@ -297,7 +297,7 @@ function AboutSnapshot() {
 }
 
 function UpcomingEvents() {
-  const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => e.status !== "archived")));
+  const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => (e.status as any) !== "archived")));
 
   const fetchUpcoming = () => {
     fetch("/api/events")
