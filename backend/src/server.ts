@@ -2239,9 +2239,10 @@ app.post("/api/payments/verify-payment", async (req, res) => {
       let reg: any = null;
 
       if (pool && registrationId) {
+        const finalPaid = Number(paymentAmount) || 0;
         await pool.query(
-          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
-          [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
+          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ?, payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END WHERE id = ?",
+          [razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid, registrationId]
         );
 
         const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
@@ -2321,9 +2322,10 @@ app.post("/api/payments/verify", async (req, res) => {
       let reg: any = null;
 
       if (pool && registrationId) {
+        const finalPaid = Number(paymentAmount) || 0;
         await pool.query(
-          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
-          [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
+          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ?, payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END WHERE id = ?",
+          [razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid, registrationId]
         );
 
         const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
@@ -2471,12 +2473,15 @@ app.post("/api/registrations/start", async (req, res) => {
 app.put("/api/registrations/:registrationId/pass", async (req, res) => {
   try {
     const { registrationId } = req.params;
-    const { passName, passPrice } = req.body;
+    const { passName, passPrice, paymentAmount, gstAmount, couponApplied } = req.body;
+    const numPassPrice = Number(passPrice) || 0;
+    const numPaymentAmount = Number(paymentAmount) || (numPassPrice > 0 ? Math.round(numPassPrice * 1.18) : 0);
+    const numGstAmount = Number(gstAmount) || (numPaymentAmount - numPassPrice);
 
     if (pool && registrationId) {
       await pool.query(
-        "UPDATE registrations SET pass_name = ?, payment_amount = ? WHERE id = ?",
-        [passName || "Delegate Pass", Number(passPrice) || 0, registrationId]
+        "UPDATE registrations SET pass_name = ?, pass_price = ?, payment_amount = ?, gst_amount = ?, coupon_applied = COALESCE(?, coupon_applied) WHERE id = ?",
+        [passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null, registrationId]
       );
     }
 

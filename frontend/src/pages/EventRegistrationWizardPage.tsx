@@ -495,6 +495,8 @@ export default function EventRegistrationWizardPage() {
           body: JSON.stringify({
             passName: selectedPlan.name,
             passPrice: paymentBreakdown.basePrice,
+            paymentAmount: paymentBreakdown.finalAmount,
+            gstAmount: paymentBreakdown.gstAmount,
           }),
         });
       }
@@ -562,6 +564,7 @@ export default function EventRegistrationWizardPage() {
             passName: selectedPlan?.name || "Delegate Pass",
             passPrice: paymentBreakdown.basePrice,
             paymentAmount: paymentBreakdown.finalAmount,
+            gstAmount: paymentBreakdown.gstAmount,
             couponApplied: appliedCoupon || undefined,
           }),
         }).catch(() => {});

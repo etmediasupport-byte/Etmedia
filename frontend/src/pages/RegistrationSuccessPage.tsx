@@ -138,7 +138,9 @@ export default function RegistrationSuccessPage() {
         country: "India",
         event_title: matchedEv.title || "HR Leadership Conclave 2026",
         pass_name: "Gold Pass",
-        payment_amount: 5999,
+        pass_price: 5999,
+        payment_amount: 7079,
+        gst_amount: 1080,
         payment_status: "Paid",
         payment_id: `pay_${Date.now().toString().slice(-8)}`,
         created_at: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
@@ -167,12 +169,33 @@ export default function RegistrationSuccessPage() {
     fallbackEvent;
 
   // Pricing & GST Calculation
-  const payAmount = Number(regDetails?.payment_amount) || 0;
-  const isPaid = payAmount > 0;
-  const taxableBase = isPaid ? Number((payAmount / 1.18).toFixed(2)) : 0;
-  const gstTotal = isPaid ? Number((payAmount - taxableBase).toFixed(2)) : 0;
-  const cgst = isPaid ? Number((gstTotal / 2).toFixed(2)) : 0;
-  const sgst = isPaid ? Number((gstTotal - cgst).toFixed(2)) : 0;
+  const rawPayAmount = Number(regDetails?.payment_amount) || 0;
+  const rawPassPrice = Number(regDetails?.pass_price) || 0;
+  const rawGstAmount = Number(regDetails?.gst_amount) || 0;
+
+  let taxableBase = 0;
+  let gstTotal = 0;
+  let payAmount = 0;
+
+  if (rawPassPrice > 0) {
+    taxableBase = rawPassPrice;
+    gstTotal = rawGstAmount > 0 ? rawGstAmount : Math.round(taxableBase * 0.18);
+    payAmount = rawPayAmount > taxableBase ? rawPayAmount : (taxableBase + gstTotal);
+  } else if (rawPayAmount > 0) {
+    // If rawPayAmount is the base price (e.g. 5999, 9999, 14999) or already total amount (e.g. 7079)
+    if (rawPayAmount === 5999 || rawPayAmount === 9999 || rawPayAmount === 14999 || rawPayAmount === 19999 || rawPayAmount === 29999 || rawPayAmount === 4999 || rawPayAmount === 7999) {
+      taxableBase = rawPayAmount;
+      gstTotal = Math.round(taxableBase * 0.18);
+      payAmount = taxableBase + gstTotal;
+    } else {
+      taxableBase = Math.round(rawPayAmount / 1.18);
+      gstTotal = rawPayAmount - taxableBase;
+      payAmount = rawPayAmount;
+    }
+  }
+
+  const cgst = Number((gstTotal / 2).toFixed(2));
+  const sgst = Number((gstTotal - cgst).toFixed(2));
 
   const invoiceNo = `ETM-INV-${(regDetails?.id || regId)
     .replace(/[^a-zA-Z0-9]/g, "")

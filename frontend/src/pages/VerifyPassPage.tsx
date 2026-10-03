@@ -97,7 +97,8 @@ export default function VerifyPassPage() {
   const payStatus = passData?.payment_status || "Paid";
   const payId = passData?.payment_id || `pay_${Date.now().toString().slice(-8)}`;
   const rzpOrder = passData?.razorpay_order_id || "N/A";
-  const amountPaid = passData?.payment_amount !== undefined ? passData?.payment_amount : 5999;
+  const rawAmount = passData?.payment_amount !== undefined ? Number(passData?.payment_amount) : 7079;
+  const amountPaid = rawAmount === 5999 ? 7079 : (rawAmount === 9999 ? 11799 : (rawAmount === 14999 ? 17699 : rawAmount));
   const coupon = passData?.coupon_applied || "None";
   const timestamp = passData?.created_at
     ? new Date(passData.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })

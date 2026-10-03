@@ -128,6 +128,8 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN participation_preference VARCHAR(255);"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN interest_tracks TEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN pass_name VARCHAR(255);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN pass_price DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN gst_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN status VARCHAR(50) DEFAULT 'Pending';"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN status VARCHAR(50) DEFAULT 'Pending';"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
