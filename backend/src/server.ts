@@ -3298,6 +3298,380 @@ app.get("/api/admin/checkin/search", authenticateAdmin, async (req, res) => {
   }
 });
 
+// ============================================================================
+// E-CERTIFICATE DISPATCH & VERIFICATION SERVICES
+// ============================================================================
+
+// Helper to generate rich Letterhead E-Certificate HTML Email
+function buildECertificateEmailHtml(candidate: {
+  name: string;
+  designation?: string;
+  organization?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventCity?: string;
+  certId: string;
+  certUrl: string;
+}) {
+  const { name, designation, organization, eventTitle, eventDate, eventCity, certId, certUrl } = candidate;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Official Certificate of Attendance</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <div style="background-color: #f1f5f9; padding: 30px 12px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="max-width: 660px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.12); border: 1px solid #e2e8f0;">
+      
+      <!-- LETTERHEAD TOP BANNER -->
+      <div style="background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 55%, #0891b2 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
+        <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #fbbf24; font-weight: 800; margin-bottom: 6px;">
+          EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
+        </div>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">
+          CERTIFICATE OF PARTICIPATION & EXCELLENCE
+        </h1>
+        <p style="margin: 6px 0 0 0; font-size: 12px; color: #cbd5e1; letter-spacing: 1px; text-transform: uppercase;">
+          Accredited Executive Leadership & Industry Contribution
+        </p>
+      </div>
+
+      <!-- LETTERHEAD BODY -->
+      <div style="padding: 32px 24px; background: #ffffff;">
+        <!-- CERTIFICATE FRAME WITH ROYAL GOLD ACCENTS -->
+        <div style="border: 2px solid #d97706; padding: 28px 18px; border-radius: 14px; background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%); text-align: center;">
+          
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #64748b; margin-bottom: 12px;">
+            THIS IS TO PROUDLY CERTIFY THAT
+          </div>
+
+          <!-- CANDIDATE PROPER NAME -->
+          <h2 style="margin: 12px 0 6px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #fbbf24; display: inline-block; padding-bottom: 6px;">
+            ${name}
+          </h2>
+
+          <!-- CANDIDATE TITLE & COMPANY -->
+          <p style="margin: 6px 0 18px 0; font-size: 14px; font-weight: 700; color: #334155;">
+            ${designation ? `${designation}, ` : ""}${organization || "Executive Delegate"}
+          </p>
+
+          <p style="margin: 0 auto 16px auto; font-size: 13px; color: #475569; max-width: 480px; line-height: 1.6;">
+            has actively participated and contributed as an Executive Delegate in the prestigious
+          </p>
+
+          <!-- EVENT TITLE -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin: 0 auto 20px auto; max-width: 500px;">
+            <h3 style="margin: 0; font-size: 17px; font-weight: 900; color: #0891b2; text-transform: uppercase; letter-spacing: 0.5px;">
+              ${eventTitle}
+            </h3>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-weight: 600;">
+              ${eventDate ? `Conducted on ${eventDate}` : "Executive Summit"} • ${eventCity || "India"}
+            </p>
+          </div>
+
+          <!-- VERIFICATION SEAL & SIGNATORIES -->
+          <table style="width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 12px;">
+            <tr>
+              <td style="width: 35%; text-align: center; vertical-align: bottom;">
+                <div style="font-family: Georgia, serif; font-size: 15px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #94a3b8; padding-bottom: 4px; display: inline-block;">
+                  Srikanth
+                </div>
+                <div style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 4px;">Founder & Managing Director</div>
+                <div style="font-size: 10px; color: #64748b;">Executive Talks Media</div>
+              </td>
+              <td style="width: 30%; text-align: center; vertical-align: middle;">
+                <div style="display: inline-block; border: 2px dashed #d97706; border-radius: 50%; width: 72px; height: 72px; padding-top: 14px; box-sizing: border-box; background-color: #fffbeb;">
+                  <span style="font-size: 8px; font-weight: 900; color: #b45309; text-transform: uppercase; display: block; letter-spacing: 0.5px;">OFFICIAL</span>
+                  <span style="font-size: 10px; font-weight: 900; color: #92400e; display: block;">VERIFIED</span>
+                  <span style="font-size: 8px; font-weight: 700; color: #b45309; display: block;">ATTENDANCE</span>
+                </div>
+              </td>
+              <td style="width: 35%; text-align: center; vertical-align: bottom;">
+                <div style="font-family: Georgia, serif; font-size: 15px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #94a3b8; padding-bottom: 4px; display: inline-block;">
+                  Executive Council
+                </div>
+                <div style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 4px;">Conference Convenor</div>
+                <div style="font-size: 10px; color: #64748b;">Summit & Awards Board</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- CERTIFICATE METADATA FOOTER -->
+          <div style="margin-top: 22px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 11px; color: #94a3b8;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="text-align: left; color: #64748b;">Certificate ID: <strong style="color: #0f172a; font-family: monospace;">${certId}</strong></td>
+                <td style="text-align: right; color: #059669; font-weight: bold;">✓ Verified Gate Admission</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTON -->
+        <div style="text-align: center; margin-top: 28px;">
+          <a href="${certUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 14px 30px; border-radius: 12px; box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+            🎓 View & Download Official Certificate (HD / PDF)
+          </a>
+          <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748b;">
+            This credential can be verified directly at <a href="${certUrl}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${certUrl}</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
+        <p style="margin: 0;">© 2026 Executive Talks Media Business Intelligence. All rights reserved.</p>
+        <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://executivetalksmedia.in" style="color: #0891b2; text-decoration: none;">www.executivetalksmedia.in</a></p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+// 1. Single-Click E-Certificate Send Endpoint
+app.post("/api/admin/certificate/send", authenticateAdmin, async (req, res) => {
+  const { regId } = req.body;
+  if (!regId) {
+    return res.status(400).json({ success: false, message: "Registration ID is required." });
+  }
+
+  try {
+    let reg: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [regId]);
+      if (rows && rows.length > 0) {
+        reg = rows[0];
+      } else {
+        const [delRows]: any = await pool.query("SELECT * FROM delegate_registrations WHERE id = ? LIMIT 1", [regId]);
+        if (delRows && delRows.length > 0) {
+          reg = delRows[0];
+        }
+      }
+    }
+
+    if (!reg) {
+      return res.status(404).json({ success: false, message: "Attendee registration record not found." });
+    }
+
+    const candidateEmail = (reg.email || reg.official_email || "").trim();
+    if (!candidateEmail) {
+      return res.status(400).json({ success: false, message: "Attendee does not have a valid registered email address." });
+    }
+
+    const candidateName = reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate";
+    const designation = reg.designation || "";
+    const organization = reg.organization || reg.company_name || "";
+    const eventTitle = reg.event_title || "Executive Leadership Summit 2026";
+    const eventDate = reg.checked_in_at
+      ? new Date(reg.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    const eventCity = reg.city || "Hyderabad, India";
+
+    // Certificate ID
+    const certNum = reg.id.replace(/[^0-9]/g, "").slice(-6) || Math.floor(100000 + Math.random() * 900000);
+    const certId = reg.certificate_id || `ETM-CERT-2026-${certNum}`;
+    const certUrl = `https://executivetalksmedia.in/certificate/${encodeURIComponent(reg.id)}`;
+
+    // Build Email
+    const emailHtml = buildECertificateEmailHtml({
+      name: candidateName,
+      designation,
+      organization,
+      eventTitle,
+      eventDate,
+      eventCity,
+      certId,
+      certUrl,
+    });
+
+    const mailOptions = {
+      from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+      replyTo: smtpUser,
+      to: candidateEmail,
+      subject: `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`,
+      html: emailHtml,
+    };
+
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Certificate] E-Certificate emailed successfully to ${candidateEmail} (${info.messageId})`);
+
+    // Update database
+    if (pool) {
+      await pool.query(
+        "UPDATE registrations SET certificate_sent_at = NOW(), certificate_id = ? WHERE id = ?",
+        [certId, reg.id]
+      );
+      await pool.query(
+        "UPDATE delegate_registrations SET certificate_sent_at = NOW(), certificate_id = ? WHERE id = ?",
+        [certId, reg.id]
+      );
+    }
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "certificate_sent",
+        regId: reg.id,
+        email: candidateEmail,
+        certificateId: certId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Official E-Certificate successfully emailed to ${candidateEmail}!`,
+      certificateId: certId,
+      sentAt: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error("[API] Certificate Send Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to dispatch E-Certificate email." });
+  }
+});
+
+// 2. Bulk E-Certificate Send Endpoint
+app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res) => {
+  const { regIds } = req.body;
+  if (!Array.isArray(regIds) || regIds.length === 0) {
+    return res.status(400).json({ success: false, message: "List of registration IDs is required." });
+  }
+
+  try {
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const id of regIds) {
+      try {
+        let reg: any = null;
+        if (pool) {
+          const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [id]);
+          if (rows && rows.length > 0) reg = rows[0];
+        }
+
+        if (!reg) continue;
+        const candidateEmail = (reg.email || reg.official_email || "").trim();
+        if (!candidateEmail) continue;
+
+        const candidateName = reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate";
+        const designation = reg.designation || "";
+        const organization = reg.organization || reg.company_name || "";
+        const eventTitle = reg.event_title || "Executive Leadership Summit 2026";
+        const eventDate = reg.checked_in_at
+          ? new Date(reg.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+          : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+        const eventCity = reg.city || "Hyderabad, India";
+
+        const certNum = reg.id.replace(/[^0-9]/g, "").slice(-6) || Math.floor(100000 + Math.random() * 900000);
+        const certId = reg.certificate_id || `ETM-CERT-2026-${certNum}`;
+        const certUrl = `https://executivetalksmedia.in/certificate/${encodeURIComponent(reg.id)}`;
+
+        const emailHtml = buildECertificateEmailHtml({
+          name: candidateName,
+          designation,
+          organization,
+          eventTitle,
+          eventDate,
+          eventCity,
+          certId,
+          certUrl,
+        });
+
+        await mailTransporter.sendMail({
+          from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+          replyTo: smtpUser,
+          to: candidateEmail,
+          subject: `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`,
+          html: emailHtml,
+        });
+
+        if (pool) {
+          await pool.query(
+            "UPDATE registrations SET certificate_sent_at = NOW(), certificate_id = ? WHERE id = ?",
+            [certId, reg.id]
+          );
+        }
+        sentCount++;
+      } catch (e) {
+        console.error(`[Bulk Certificate] Failed for ID ${id}:`, e);
+        failedCount++;
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `🎉 Dispatched ${sentCount} E-Certificates successfully! (${failedCount} failed)`,
+      sentCount,
+      failedCount,
+    });
+  } catch (err: any) {
+    console.error("[API] Bulk Certificate Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to process bulk certificates." });
+  }
+});
+
+// 3. Public Verifiable Certificate Data Endpoint
+app.get("/api/certificate/:regId", async (req, res) => {
+  const { regId } = req.params;
+  if (!regId) {
+    return res.status(400).json({ success: false, message: "Registration ID is required." });
+  }
+
+  try {
+    let reg: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query(
+        "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM registrations WHERE id = ? LIMIT 1",
+        [regId]
+      );
+      if (rows && rows.length > 0) {
+        reg = rows[0];
+      } else {
+        const [delRows]: any = await pool.query(
+          "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM delegate_registrations WHERE id = ? LIMIT 1",
+          [regId]
+        );
+        if (delRows && delRows.length > 0) {
+          reg = delRows[0];
+        }
+      }
+    }
+
+    if (!reg) {
+      return res.status(404).json({ success: false, message: "Certificate credential not found." });
+    }
+
+    const candidateName = reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate";
+    const certNum = reg.id.replace(/[^0-9]/g, "").slice(-6) || "202601";
+    const certId = reg.certificate_id || `ETM-CERT-2026-${certNum}`;
+
+    return res.json({
+      success: true,
+      certificate: {
+        id: reg.id,
+        certId,
+        candidateName,
+        designation: reg.designation || "",
+        organization: reg.organization || "",
+        eventTitle: reg.event_title || "Executive Leadership Summit 2026",
+        city: reg.city || "Hyderabad, India",
+        checkinStatus: reg.checkin_status || "Present",
+        checkedInAt: reg.checked_in_at || new Date().toISOString(),
+        issueDate: reg.certificate_sent_at || reg.checked_in_at || new Date().toISOString(),
+        verified: true,
+      },
+    });
+  } catch (err: any) {
+    console.error("[API] Fetch Certificate Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to fetch certificate." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {

@@ -18,6 +18,7 @@ import AdminQrScannerPage from "@/pages/AdminQrScannerPage";
 import { HelmetProvider } from "react-helmet-async";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import VerifyPassPage from "@/pages/VerifyPassPage";
+import CertificatePage from "@/pages/CertificatePage";
 import EventRegistrationWizardPage from "@/pages/EventRegistrationWizardPage";
 import RegistrationSuccessPage from "@/pages/RegistrationSuccessPage";
 import FreeRegistrationPage from "@/pages/FreeRegistrationPage";
@@ -175,6 +176,9 @@ export default function App() {
             <Route path="/verify-pass" element={<VerifyPassPage />} />
             <Route path="/verify/:regId" element={<VerifyPassPage />} />
             <Route path="/verify" element={<VerifyPassPage />} />
+            <Route path="/certificate/:regId" element={<CertificatePage />} />
+            <Route path="/certificate" element={<CertificatePage />} />
+            <Route path="/verify-certificate/:regId" element={<CertificatePage />} />
 
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />

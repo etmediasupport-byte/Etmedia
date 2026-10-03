@@ -1045,6 +1045,10 @@ export default function AdminDashboardPage() {
   const [attendanceRosterTab, setAttendanceRosterTab] = useState<"present" | "absent" | "all">("present");
   const [attendanceRosterSearch, setAttendanceRosterSearch] = useState("");
   const [attendanceRosterCategory, setAttendanceRosterCategory] = useState("all");
+  // --- E-CERTIFICATE DISPATCH & PREVIEW STATE ---
+  const [previewCertAttendee, setPreviewCertAttendee] = useState<any | null>(null);
+  const [sendingCertId, setSendingCertId] = useState<string | null>(null);
+  const [bulkSendingCerts, setBulkSendingCerts] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2444,6 +2448,76 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error undoing check-in.");
+    }
+  };
+
+  // --- E-CERTIFICATE DISPATCH HANDLERS ---
+  const handleSendCertificate = async (regId: string, attendeeName?: string) => {
+    setSendingCertId(regId);
+    try {
+      const res = await fetch("/api/admin/certificate/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ regId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `🎓 Official E-Certificate successfully emailed to ${attendeeName || "attendee"}!`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to send E-Certificate email.");
+      }
+    } catch (err) {
+      toast.error("Network error while dispatching E-Certificate email.");
+    } finally {
+      setSendingCertId(null);
+    }
+  };
+
+  const handleBulkSendCertificates = async () => {
+    const presentAttendees = eventScopedDelegates.filter(
+      (r) => r.checkin_status?.toLowerCase() === "present" && (r.email || r.official_email)
+    );
+    if (presentAttendees.length === 0) {
+      toast.warning("No checked-in attendees with valid email addresses found.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Are you sure you want to dispatch official E-Certificates to all ${presentAttendees.length} checked-in attendees for "${selectedEventAttendanceSummary.title}"?`
+      )
+    ) {
+      return;
+    }
+
+    setBulkSendingCerts(true);
+    toast.info(`Dispatching ${presentAttendees.length} E-Certificates via Hostinger SMTP...`);
+
+    try {
+      const regIds = presentAttendees.map((r) => r.id);
+      const res = await fetch("/api/admin/certificate/bulk-send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ regIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `🎉 ${data.sentCount} E-Certificates dispatched successfully!`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to dispatch bulk certificates.");
+      }
+    } catch (err) {
+      toast.error("Network error during bulk certificate dispatch.");
+    } finally {
+      setBulkSendingCerts(false);
     }
   };
 
@@ -8565,14 +8639,50 @@ export default function AdminDashboardPage() {
                             <td className="py-3.5 px-3 text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 {isPresent ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUndoAttendance(del.id)}
-                                    className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
-                                    title="Undo check-in (revert attendee back to Absent status)"
-                                  >
-                                    Undo
-                                  </button>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewCertAttendee(del)}
+                                      className="p-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
+                                      title="Preview Letterhead E-Certificate"
+                                    >
+                                      <Award className="h-3.5 w-3.5 text-amber-600" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendCertificate(del.id, del.name)}
+                                      disabled={sendingCertId === del.id}
+                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
+                                        del.certificate_sent_at
+                                          ? "bg-slate-100 dark:bg-slate-800 border border-emerald-400 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                                          : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
+                                      }`}
+                                      title={
+                                        del.certificate_sent_at
+                                          ? `Certificate sent on ${new Date(del.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
+                                          : `Send E-Certificate email to ${del.email}`
+                                      }
+                                    >
+                                      {sendingCertId === del.id ? (
+                                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                      ) : del.certificate_sent_at ? (
+                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                      ) : (
+                                        <Mail className="h-3 w-3" />
+                                      )}
+                                      <span>{del.certificate_sent_at ? "Resend" : "Cert"}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUndoAttendance(del.id)}
+                                      className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
+                                      title="Undo check-in (revert attendee back to Absent status)"
+                                    >
+                                      Undo
+                                    </button>
+                                  </div>
                                 ) : (
                                   <button
                                     type="button"
@@ -8784,6 +8894,49 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
+                      {/* E-CERTIFICATE DISPATCH BANNER FOR PRESENT ATTENDEES */}
+                      {attendanceRosterTab === "present" && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-cyan-500/10 border border-amber-500/30">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                              <Award className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <span>Official Letterhead E-Certificate Automation</span>
+                                <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                  Hostinger SMTP
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                Single-click sends official prestigious E-Certificates directly to attendees' registered emails with their proper name and certificate ID.
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleBulkSendCertificates}
+                            disabled={bulkSendingCerts}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                          >
+                            {bulkSendingCerts ? (
+                              <>
+                                <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
+                                <span>Sending Emails...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Award className="h-4 w-4" />
+                                <span>
+                                  Send E-Certificates to All ({eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length})
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
                       {/* Search & Category Filter */}
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="relative flex-1 min-w-[240px]">
@@ -8889,6 +9042,13 @@ export default function AdminDashboardPage() {
                                         >
                                           {isPresent ? "✓ PRESENT" : "⏳ ABSENT"}
                                         </span>
+
+                                        {attendee.certificate_sent_at && (
+                                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300/40 flex items-center gap-1">
+                                            <Award className="h-3 w-3 text-cyan-600" />
+                                            <span>Cert Sent</span>
+                                          </span>
+                                        )}
                                       </div>
 
                                       <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
@@ -8931,8 +9091,8 @@ export default function AdminDashboardPage() {
                                   {/* Right: Check-In Details & Instant Action */}
                                   <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                                     {isPresent ? (
-                                      <div className="flex items-center gap-2 text-right">
-                                        <div className="text-[11px] text-right font-mono hidden sm:block">
+                                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        <div className="text-[11px] text-right font-mono hidden md:block">
                                           <div className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 justify-end">
                                             <CheckCircle2 className="h-3 w-3" />
                                             <span>Checked-In</span>
@@ -8946,10 +9106,56 @@ export default function AdminDashboardPage() {
                                               : "Recorded"}
                                           </div>
                                         </div>
+
+                                        {/* Preview Certificate Button */}
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewCertAttendee(attendee)}
+                                          className="px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                          title="Preview Letterhead Certificate"
+                                        >
+                                          <Award className="h-3.5 w-3.5 text-amber-600" />
+                                          <span className="hidden sm:inline">Preview</span>
+                                        </button>
+
+                                        {/* Single-Click Send E-Certificate */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSendCertificate(attendee.id, attendeeName)}
+                                          disabled={sendingCertId === attendee.id}
+                                          className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+                                            attendee.certificate_sent_at
+                                              ? "bg-slate-100 dark:bg-slate-800 border border-emerald-400 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                                              : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
+                                          }`}
+                                          title={
+                                            attendee.certificate_sent_at
+                                              ? `E-Certificate was emailed on ${new Date(attendee.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
+                                              : `Click to dispatch E-Certificate directly to registered email (${attendee.email})`
+                                          }
+                                        >
+                                          {sendingCertId === attendee.id ? (
+                                            <>
+                                              <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                              <span>Sending...</span>
+                                            </>
+                                          ) : attendee.certificate_sent_at ? (
+                                            <>
+                                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                              <span>✓ Sent • Resend</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Mail className="h-3.5 w-3.5" />
+                                              <span>Send E-Cert</span>
+                                            </>
+                                          )}
+                                        </button>
+
                                         <button
                                           type="button"
                                           onClick={() => handleUndoAttendance(attendee.id)}
-                                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-300 dark:hover:bg-rose-950/30 text-slate-500 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
+                                          className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-300 dark:hover:bg-rose-950/30 text-slate-500 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
                                           title="Revert check-in to absent"
                                         >
                                           Undo
@@ -9008,6 +9214,205 @@ export default function AdminDashboardPage() {
                       >
                         Close Screen
                       </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================================= */}
+              {/* OFFICIAL E-CERTIFICATE PREVIEW & SINGLE-CLICK DISPATCH MODAL */}
+              {/* ========================================================================= */}
+              {previewCertAttendee && (
+                <div
+                  className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+                  onClick={() => setPreviewCertAttendee(null)}
+                >
+                  <div
+                    className="w-full max-w-4xl max-h-[94vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Modal Top Bar */}
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold shadow-2xs">
+                          <Award className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                            Official Accredited E-Certificate Preview
+                          </h3>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Candidate: <strong>{previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`/certificate/${previewCertAttendee.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Open Public Page</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => setPreviewCertAttendee(null)}
+                          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Certificate Frame Preview */}
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
+                      <div
+                        className="w-full bg-[#fdfbf7] text-slate-900 rounded-3xl shadow-xl border-4 border-amber-600/40 p-6 sm:p-10 relative overflow-hidden flex flex-col justify-between"
+                        style={{
+                          backgroundImage:
+                            "radial-gradient(#e5e7eb 0.75px, transparent 0.75px), radial-gradient(#f3f4f6 0.75px, #fdfbf7 0.75px)",
+                          backgroundSize: "24px 24px",
+                          backgroundPosition: "0 0, 12px 12px",
+                        }}
+                      >
+                        {/* Corner Flourishes */}
+                        <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-amber-600 pointer-events-none" />
+                        <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-amber-600 pointer-events-none" />
+                        <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-amber-600 pointer-events-none" />
+                        <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-amber-600 pointer-events-none" />
+
+                        {/* Letterhead Header */}
+                        <div className="text-center space-y-2 pb-4 border-b border-amber-500/20">
+                          <div className="flex items-center justify-center gap-2.5">
+                            <img
+                              src={executivetalksLogo}
+                              alt="Executive Talks Media Logo"
+                              className="h-10 w-auto object-contain rounded-md"
+                            />
+                            <div className="text-left">
+                              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 leading-none">
+                                Executive Talks Media
+                              </h4>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-amber-700 block mt-0.5">
+                                Business Intelligence & Conclaves
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-[9px] uppercase font-bold tracking-widest text-slate-500">
+                            Global Leadership Conclaves • C-Suite Summits • Excellence Awards
+                          </div>
+                        </div>
+
+                        {/* Core Content */}
+                        <div className="text-center py-6 space-y-3">
+                          <span className="inline-block px-3 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black uppercase tracking-widest border border-amber-300">
+                            Certificate of Participation & Leadership
+                          </span>
+                          <p className="text-[11px] font-serif italic text-slate-500">
+                            This official certificate is proudly presented to
+                          </p>
+
+                          <h2 className="text-xl sm:text-3xl font-black font-serif uppercase tracking-wide text-slate-950 border-b-2 border-amber-500 inline-block px-4 pb-1">
+                            {previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
+                          </h2>
+
+                          <p className="text-xs font-bold text-slate-700">
+                            {previewCertAttendee.designation ? `${previewCertAttendee.designation} — ` : ""}
+                            <span className="text-slate-900">{previewCertAttendee.organization || "Distinguished Executive Delegate"}</span>
+                          </p>
+
+                          <p className="text-xs text-slate-600 max-w-lg mx-auto font-serif">
+                            in recognition of active attendance, valuable thought leadership, and executive participation in
+                          </p>
+
+                          <div className="max-w-md mx-auto p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-center space-y-0.5">
+                            <h3 className="text-xs sm:text-sm font-black text-cyan-900 uppercase tracking-wide">
+                              {previewCertAttendee.event_title || selectedEventAttendanceSummary.title}
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              Conducted on {previewCertAttendee.checked_in_at ? new Date(previewCertAttendee.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "Event Date"} • {previewCertAttendee.city || "Hyderabad, India"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Signatures & Seal */}
+                        <div className="pt-4 border-t border-amber-500/20 grid grid-cols-3 items-end text-center gap-2">
+                          <div className="space-y-0.5">
+                            <div className="font-serif italic text-sm font-bold text-slate-900 border-b border-slate-300 pb-0.5 mx-auto max-w-[100px]">
+                              Srikanth
+                            </div>
+                            <div className="text-[9px] font-black uppercase text-slate-900">Founder & MD</div>
+                            <div className="text-[8px] text-slate-500">Executive Talks Media</div>
+                          </div>
+
+                          <div className="flex justify-center">
+                            <div className="w-14 h-14 rounded-full border-2 border-double border-amber-600 bg-gradient-to-br from-amber-400 via-amber-200 to-amber-500 shadow-sm flex flex-col items-center justify-center text-slate-950 p-1 text-center">
+                              <ShieldCheck className="h-3.5 w-3.5 text-amber-900" />
+                              <span className="text-[6px] font-black uppercase leading-tight text-amber-950">OFFICIAL</span>
+                              <span className="text-[7px] font-black uppercase text-amber-950">VERIFIED</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <div className="font-serif italic text-sm font-bold text-slate-900 border-b border-slate-300 pb-0.5 mx-auto max-w-[100px]">
+                              Executive Council
+                            </div>
+                            <div className="text-[9px] font-black uppercase text-slate-900">Conference Convenor</div>
+                            <div className="text-[8px] text-slate-500">Awards Jury Board</div>
+                          </div>
+                        </div>
+
+                        {/* Verification Bar */}
+                        <div className="pt-3 mt-3 border-t border-slate-200 text-[9px] font-mono text-slate-500 flex justify-between">
+                          <span>Certificate ID: <strong className="text-slate-900">{previewCertAttendee.certificate_id || `ETM-CERT-2026-${previewCertAttendee.id.replace(/[^0-9]/g, "").slice(-6) || "202601"}`}</strong></span>
+                          <span className="text-emerald-700 font-bold">✓ Verified Gate Attendance</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Modal Footer with Single Click Send Button */}
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        Registered Email: <strong className="text-slate-900 dark:text-slate-100 font-mono">{previewCertAttendee.email || "No email available"}</strong>
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewCertAttendee(null)}
+                          className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Close
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleSendCertificate(
+                              previewCertAttendee.id,
+                              previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim()
+                            );
+                          }}
+                          disabled={sendingCertId === previewCertAttendee.id || !previewCertAttendee.email}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                        >
+                          {sendingCertId === previewCertAttendee.id ? (
+                            <>
+                              <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
+                              <span>Sending Email...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="h-4 w-4" />
+                              <span>Send E-Certificate Email</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
