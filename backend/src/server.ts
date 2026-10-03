@@ -2940,6 +2940,120 @@ app.post("/api/admin/registrations/bulk-grant-free", authenticateAdmin, async (r
   }
 });
 
+// Admin Bulk Import Offline Delegates from Excel
+app.post("/api/admin/registrations/bulk-import-offline", authenticateAdmin, async (req, res) => {
+  const { delegates, sendEmails = false, defaultEventId, defaultEventTitle, defaultCategory } = req.body;
+  if (!Array.isArray(delegates) || delegates.length === 0) {
+    return res.status(400).json({ success: false, message: "No delegates provided for import." });
+  }
+
+  try {
+    const insertedDelegates: any[] = [];
+    const timestamp = Date.now();
+
+    for (let i = 0; i < delegates.length; i++) {
+      const d = delegates[i];
+      if (!d.name && !d.email) continue;
+
+      const fullName = (d.name || `${d.first_name || ""} ${d.last_name || ""}`).trim();
+      const email = (d.email || d.work_email || "").trim();
+      if (!email) continue;
+
+      const firstName = d.first_name || (fullName.split(" ")[0] || "Delegate");
+      const lastName = d.last_name || (fullName.split(" ").slice(1).join(" ") || "");
+      const phone = d.phone || d.mobile || d.contact_number || "N/A";
+      const organization = d.organization || d.company || d.company_name || "Corporate Enterprise";
+      const designation = d.designation || d.title || d.role || "Executive Delegate";
+      const city = d.city || "Pan-India";
+      const country = d.country || "India";
+      const eventId = d.event_id || d.eventSlug || defaultEventId || "cfo-leadership-summit";
+      const eventTitle = d.event_title || defaultEventTitle || "India CFO Leadership Summit 2026";
+      const passCategory = d.registration_category || d.pass_name || defaultCategory || "Complimentary VIP Pass";
+      const paymentStatus = d.payment_status || "Approved (Free Pass)";
+      const paymentAmount = Number(d.payment_amount) || 0;
+      const paymentId = d.payment_id || `OFFLINE-EXCEL-${timestamp}-${i + 1}`;
+      const regId = `ETM-OFF-${timestamp.toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      if (pool) {
+        await pool.query(
+          `INSERT INTO registrations (
+            id, name, first_name, last_name, email, phone, organization, designation,
+            city, country, registration_category, pass_name, event_id, event_title,
+            payment_status, status, payment_amount, payment_id, referral_source, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Confirmed', ?, ?, 'Offline Excel Import', NOW())
+          ON DUPLICATE KEY UPDATE
+            name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
+            phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
+            city = VALUES(city), country = VALUES(country), registration_category = VALUES(registration_category),
+            pass_name = VALUES(pass_name), event_id = VALUES(event_id), event_title = VALUES(event_title),
+            payment_status = VALUES(payment_status), status = 'Confirmed', referral_source = 'Offline Excel Import';`,
+          [
+            regId, fullName, firstName, lastName, email, phone, organization, designation,
+            city, country, passCategory, passCategory, eventId, eventTitle,
+            paymentStatus, paymentAmount, paymentId
+          ]
+        );
+      }
+
+      insertedDelegates.push({
+        registrationId: regId,
+        firstName,
+        lastName,
+        fullName,
+        email,
+        phone,
+        organization,
+        designation,
+        city,
+        country,
+        registrationCategory: passCategory,
+        registeringCity: city,
+        referralSource: "Offline Excel Import",
+        eventId,
+        eventTitle,
+        paymentStatus,
+        paymentId,
+        paymentAmount,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    if (insertedDelegates.length === 0) {
+      return res.status(400).json({ success: false, message: "No valid delegate records could be imported." });
+    }
+
+    let sentCount = 0;
+    if (sendEmails) {
+      const emailPromises = insertedDelegates.map((reg) =>
+        sendRegistrationConfirmationEmail(reg).catch((err) => {
+          console.error(`[Nodemailer] Offline import email failed for ${reg.email}:`, err.message);
+          return { success: false };
+        })
+      );
+      const emailResults = await Promise.allSettled(emailPromises);
+      sentCount = emailResults.filter((r) => r.status === "fulfilled").length;
+    }
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "offline_delegates_imported",
+        count: insertedDelegates.length,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      count: insertedDelegates.length,
+      sentEmailsCount: sentCount,
+      message: `🎉 Successfully imported ${insertedDelegates.length} offline delegates!${sendEmails ? ` Sent ${sentCount} QR ticket emails.` : ""}`,
+    });
+  } catch (err: any) {
+    console.error("[API] Error in bulk offline import:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to import offline delegates." });
+  }
+});
+
 // 3. Event registration endpoint
 app.post("/api/events/register", async (req, res) => {
   const {

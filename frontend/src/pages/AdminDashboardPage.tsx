@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/UPDATED LOGO.jpeg";
 import { socket } from "@/lib/socket";
@@ -264,6 +265,7 @@ type TabType =
   | "partners"
   | "partner-requests"
   | "event-registrations"
+  | "offline-registrations"
   | "cms-delegates"
   | "career-jobs"
   | "career-applicants"
@@ -445,6 +447,23 @@ export const isDelegateDropped = (r: any): boolean => {
 
 export const isDelegateEligibleForGrant = (r: any): boolean => {
   return !isDelegatePaid(r) && !isDelegateGrantedFree(r);
+};
+
+export const isDelegateOffline = (r: any): boolean => {
+  if (!r) return false;
+  const src = (r.referral_source || "").toString().toLowerCase().trim();
+  const payId = (r.payment_id || "").toString().toLowerCase().trim();
+  const id = (r.id || "").toString().toLowerCase().trim();
+  const cat = (r.registration_category || "").toString().toLowerCase().trim();
+  return (
+    src.includes("offline") ||
+    src.includes("excel") ||
+    payId.includes("offline") ||
+    payId.includes("excel") ||
+    id.includes("etm-off") ||
+    id.includes("offline") ||
+    cat.includes("offline")
+  );
 };
 
 export default function AdminDashboardPage() {
@@ -990,6 +1009,18 @@ export default function AdminDashboardPage() {
   const [bulkPassCategory, setBulkPassCategory] = useState("Complimentary VIP Pass");
   const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
   const [actionLoadingRegId, setActionLoadingRegId] = useState<string | null>(null);
+
+  // --- OFFLINE REGISTRATIONS & EXCEL IMPORT STATE ---
+  const [showOfflineUploadModal, setShowOfflineUploadModal] = useState(false);
+  const [offlineExcelFile, setOfflineExcelFile] = useState<File | null>(null);
+  const [offlineParsedData, setOfflineParsedData] = useState<any[]>([]);
+  const [offlineUploadEventId, setOfflineUploadEventId] = useState<string>("");
+  const [offlineUploadEventTitle, setOfflineUploadEventTitle] = useState<string>("");
+  const [offlineUploadPassCategory, setOfflineUploadPassCategory] = useState<string>("Executive Delegate");
+  const [offlineSendEmails, setOfflineSendEmails] = useState<boolean>(false);
+  const [offlineImporting, setOfflineImporting] = useState<boolean>(false);
+  const [offlineDragOver, setOfflineDragOver] = useState<boolean>(false);
+  const [selectedOfflineRegIds, setSelectedOfflineRegIds] = useState<string[]>([]);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2335,8 +2366,218 @@ export default function AdminDashboardPage() {
     toast.success(`Candidate status updated to ${newStatus}`);
   };
 
+  // --- OFFLINE EXCEL IMPORT HANDLERS ---
+  const generateSampleExcelTemplate = () => {
+    try {
+      const sampleData = [
+        {
+          "Full Name": "Srikanth Verma",
+          "Email": "srikanth.verma@example.com",
+          "Phone": "+91 9876543210",
+          "Company": "Ascend Media Labs",
+          "Designation": "Chief Technology Officer",
+          "City": "Hyderabad",
+          "Event": "India CFO Leadership Summit 2026",
+          "Pass Category": "Executive Delegate",
+          "Payment Status": "Approved (Free Pass)",
+          "Payment Amount": 0,
+        },
+        {
+          "Full Name": "Prasanna Kumar",
+          "Email": "prasanna.kumar@example.com",
+          "Phone": "+91 9848012345",
+          "Company": "ET Media Global",
+          "Designation": "VP Operations",
+          "City": "Visakhapatnam",
+          "Event": "Procurement Leadership Summit & Awards 2026",
+          "Pass Category": "Complimentary VIP Pass",
+          "Payment Status": "Approved (Free Pass)",
+          "Payment Amount": 0,
+        },
+        {
+          "Full Name": "Anita Rao",
+          "Email": "anita.rao@example.com",
+          "Phone": "+91 9123456780",
+          "Company": "Apex Infotech Solutions",
+          "Designation": "Director Finance",
+          "City": "Bengaluru",
+          "Event": "India CFO Leadership Summit 2026",
+          "Pass Category": "VIP Delegate",
+          "Payment Status": "Paid",
+          "Payment Amount": 5999,
+        },
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(sampleData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Offline_Delegates_Template");
+      XLSX.writeFile(wb, "ET_Media_Offline_Delegates_Sample_Template.xlsx");
+      toast.success("📥 Downloaded Sample Excel Template!");
+    } catch (err) {
+      console.error("Error generating sample template:", err);
+      toast.error("Failed to generate sample Excel template.");
+    }
+  };
+
+  const handleOfflineExcelFileChange = (file: File) => {
+    if (!file) return;
+    setOfflineExcelFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buffer = e.target?.result;
+        const wb = XLSX.read(buffer, { type: "binary" });
+        const firstSheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[firstSheetName];
+        const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        if (!rawRows || rawRows.length === 0) {
+          toast.error("The uploaded Excel sheet contains no rows.");
+          setOfflineParsedData([]);
+          return;
+        }
+
+        const mapped = rawRows.map((row: any, idx: number) => {
+          const getVal = (keys: string[]) => {
+            for (const k of keys) {
+              const foundKey = Object.keys(row).find((rk) => rk.trim().toLowerCase() === k.toLowerCase());
+              if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && String(row[foundKey]).trim() !== "") {
+                return String(row[foundKey]).trim();
+              }
+            }
+            return "";
+          };
+
+          const name = getVal(["full name", "name", "delegate name", "candidate name", "first name"]);
+          const email = getVal(["email", "work email", "official email", "email address", "mail"]);
+          const phone = getVal(["phone", "mobile", "contact", "phone number", "mobile number", "contact number"]);
+          const company = getVal(["company", "organization", "company name", "org", "organisation"]);
+          const designation = getVal(["designation", "role", "title", "job title", "position"]);
+          const city = getVal(["city", "location", "registering city"]);
+          const eventName = getVal(["event", "event name", "summit", "event title", "summit name"]);
+          const passTier = getVal(["pass category", "pass", "tier", "category", "pass tier", "pass name"]);
+          const payStatus = getVal(["payment status", "status", "payment"]);
+          const payAmount = getVal(["payment amount", "amount", "fee", "price", "paid amount"]);
+
+          return {
+            id: `temp-${idx}`,
+            name: name || "Delegate",
+            email,
+            phone: phone || "N/A",
+            organization: company || "Corporate Enterprise",
+            company: company || "Corporate Enterprise",
+            designation: designation || "Executive Delegate",
+            city: city || "Pan-India",
+            event_title: eventName,
+            registration_category: passTier,
+            pass_name: passTier,
+            payment_status: payStatus || "Approved (Free Pass)",
+            payment_amount: payAmount ? Number(payAmount) : 0,
+            isValidEmail: validateEmail(email, "Email").isValid,
+          };
+        }).filter((d) => d.name || d.email);
+
+        setOfflineParsedData(mapped);
+        toast.success(`Successfully parsed ${mapped.length} candidate rows from ${file.name}`);
+      } catch (err: any) {
+        console.error("Excel parse error:", err);
+        toast.error("Failed to parse Excel file. Please ensure it is a valid .xlsx, .xls, or .csv file.");
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleConfirmOfflineImport = async () => {
+    if (offlineParsedData.length === 0) {
+      toast.error("Please select an Excel sheet with delegate candidate rows.");
+      return;
+    }
+
+    const invalidEmails = offlineParsedData.filter((d) => !d.isValidEmail);
+    if (invalidEmails.length > 0 && !window.confirm(`${invalidEmails.length} candidates have invalid or empty email addresses. Do you still want to proceed with importing all rows?`)) {
+      return;
+    }
+
+    setOfflineImporting(true);
+    try {
+      const selectedEvt = cmsEvents.find((e) => (e.id || e.slug) === offlineUploadEventId);
+      const res = await fetch("/api/admin/registrations/bulk-import-offline", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          delegates: offlineParsedData,
+          sendEmails: offlineSendEmails,
+          defaultEventId: offlineUploadEventId || (selectedEvt ? (selectedEvt.id || selectedEvt.slug) : "cfo-leadership-summit"),
+          defaultEventTitle: offlineUploadEventTitle || (selectedEvt ? (selectedEvt.title || selectedEvt.name) : "India CFO Leadership Summit 2026"),
+          defaultCategory: offlineUploadPassCategory || "Executive Delegate",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `🎉 Successfully imported ${data.count} offline delegates!`);
+        setShowOfflineUploadModal(false);
+        setOfflineExcelFile(null);
+        setOfflineParsedData([]);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to import offline delegates.");
+      }
+    } catch (err) {
+      toast.error("Network error while importing offline delegates.");
+    } finally {
+      setOfflineImporting(false);
+    }
+  };
+
+  const handleToggleSelectOfflineRegistration = (id: string) => {
+    setSelectedOfflineRegIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAllOfflineRegistrations = (eligibleIds: string[]) => {
+    if (eligibleIds.length === 0) return;
+    const allSelected = eligibleIds.every((id) => selectedOfflineRegIds.includes(id));
+    if (allSelected) {
+      setSelectedOfflineRegIds((prev) => prev.filter((id) => !eligibleIds.includes(id)));
+    } else {
+      setSelectedOfflineRegIds((prev) => Array.from(new Set([...prev, ...eligibleIds])));
+    }
+  };
+
+  const handleBulkResendOfflineTickets = async () => {
+    if (selectedOfflineRegIds.length === 0) {
+      toast.error("Please select at least one offline delegate.");
+      return;
+    }
+    const count = selectedOfflineRegIds.length;
+    toast.info(`Sending tickets to ${count} offline delegates...`);
+    let sent = 0;
+    for (const id of selectedOfflineRegIds) {
+      const reg = registrations.find((r) => r.id === id);
+      if (reg && reg.email) {
+        try {
+          await fetch(`/api/admin/registrations/${encodeURIComponent(id)}/resend-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          sent++;
+        } catch (e) {}
+      }
+    }
+    toast.success(`Dispatched tickets to ${sent} delegates!`);
+    setSelectedOfflineRegIds([]);
+  };
+
   // Excel Export Handler (.xls format opening natively in Microsoft Excel / Sheets)
-  const exportToExcel = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants") => {
+  const exportToExcel = (type: "event-registrations" | "offline-registrations" | "cms-delegates" | "contacts" | "career-applicants") => {
     let filename = "";
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
@@ -2383,6 +2624,38 @@ export default function AdminDashboardPage() {
           new Date(r.created_at).toLocaleString(),
         ];
       });
+    } else if (type === "offline-registrations") {
+      filename = `et_media_offline_delegates_${Date.now()}.xls`;
+      headers = [
+        "ID",
+        "Name",
+        "Company",
+        "Email",
+        "Phone",
+        "Designation",
+        "Event",
+        "City",
+        "Pass Tier",
+        "Payment Status",
+        "Source",
+        "Payment ID",
+        "Registered Date",
+      ];
+      rows = filteredOfflineRegistrations.map((r) => [
+        r.id,
+        r.name,
+        r.organization || "N/A",
+        r.email,
+        r.phone,
+        r.designation || "N/A",
+        r.event_title || r.event_id,
+        r.city || r.registering_city || "N/A",
+        r.pass_name || r.registration_category || "Executive Delegate",
+        r.payment_status || "Approved (Free Pass)",
+        r.referral_source || "Offline Excel Import",
+        r.payment_id || "N/A",
+        new Date(r.created_at).toLocaleString(),
+      ]);
     } else if (type === "cms-delegates") {
       filename = `et_media_corporate_delegates_${Date.now()}.xls`;
       headers = [
@@ -2508,12 +2781,31 @@ export default function AdminDashboardPage() {
   };
 
   // PDF Export Handler
-  const exportToPDF = (type: "event-registrations" | "cms-delegates" | "contacts" | "career-applicants" | "newsletter" | "registrations") => {
+  const exportToPDF = (type: "event-registrations" | "offline-registrations" | "cms-delegates" | "contacts" | "career-applicants" | "newsletter" | "registrations") => {
     let title = "Executive Data Report";
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
 
-    if (type === "event-registrations" || type === "registrations") {
+    if (type === "offline-registrations") {
+      const list = filteredOfflineRegistrations;
+      if (list.length === 0) {
+        toast.error("No offline registrations available to export.");
+        return;
+      }
+      title = "Offline Delegate Registrations Report";
+      headers = ["#", "Name", "Email", "Phone", "Organization", "Designation", "Event", "Tier", "Date"];
+      rows = list.map((r, idx) => [
+        idx + 1,
+        r.name || "N/A",
+        r.email || "N/A",
+        r.phone || "N/A",
+        r.organization || "N/A",
+        r.designation || "N/A",
+        r.event_title || r.event_id || "N/A",
+        r.pass_name || r.registration_category || "Executive Delegate",
+        r.created_at ? new Date(r.created_at).toLocaleDateString() : "N/A",
+      ]);
+    } else if (type === "event-registrations" || type === "registrations") {
       const list = registrations.filter((r) => r.event_id !== "delegate-executive-pass");
       if (list.length === 0) {
         toast.error("No event registrations available to export.");
@@ -4412,6 +4704,7 @@ export default function AdminDashboardPage() {
         if (regFilterStatus === "paid" && !isPaid) return false;
         if ((regFilterStatus === "free_granted" || regFilterStatus === "free") && !isFreeGranted) return false;
         if ((regFilterStatus === "pending_review" || regFilterStatus === "pending") && !isPendingReview) return false;
+        if (regFilterStatus === "offline" && !isDelegateOffline(r)) return false;
         if (regFilterStatus === "dropped" && !isDropped) return false;
         if (regFilterStatus === "rejected" && !pStatus.includes("rejected")) return false;
       }
@@ -4443,8 +4736,12 @@ export default function AdminDashboardPage() {
     let freeGranted = 0;
     let pendingReview = 0;
     let dropped = 0;
+    let offline = 0;
 
     eventRegistrationsList.forEach((r) => {
+      if (isDelegateOffline(r)) {
+        offline++;
+      }
       if (isDelegatePaid(r)) {
         paid++;
       } else if (isDelegateGrantedFree(r)) {
@@ -4462,8 +4759,65 @@ export default function AdminDashboardPage() {
       freeGranted,
       pendingReview,
       dropped,
+      offline,
     };
   }, [eventRegistrationsList]);
+
+  const offlineRegistrationsList = useMemo(() => {
+    return eventRegistrationsList.filter(isDelegateOffline);
+  }, [eventRegistrationsList]);
+
+  const filteredOfflineRegistrations = useMemo(() => {
+    return offlineRegistrationsList.filter((r) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = (r.name || "").toLowerCase().includes(q) || `${r.first_name || ""} ${r.last_name || ""}`.toLowerCase().includes(q);
+        const matchesEmail = (r.email || "").toLowerCase().includes(q);
+        const matchesPhone = (r.phone || "").toLowerCase().includes(q);
+        const matchesOrg = (r.organization || "").toLowerCase().includes(q);
+        const matchesDesig = (r.designation || "").toLowerCase().includes(q);
+        const matchesCity = (r.city || r.registering_city || "").toLowerCase().includes(q);
+        const matchesEvent = (r.event_title || r.event_id || "").toLowerCase().includes(q);
+        const matchesId = (r.id || "").toLowerCase().includes(q);
+        const matchesPayId = (r.payment_id || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesEmail && !matchesPhone && !matchesOrg && !matchesDesig && !matchesCity && !matchesEvent && !matchesId && !matchesPayId) {
+          return false;
+        }
+      }
+
+      if (regFilterEvent !== "all") {
+        const selectedEvt = cmsEvents.find(
+          (e) => (e.title || e.name) === regFilterEvent || e.slug === regFilterEvent || e.id === regFilterEvent
+        );
+        const filterTitle = (selectedEvt ? (selectedEvt.title || selectedEvt.name) : regFilterEvent).toLowerCase().trim();
+        const filterSlug = (selectedEvt ? (selectedEvt.slug || selectedEvt.id) : regFilterEvent).toLowerCase().trim();
+        const regTitle = (r.event_title || "").toLowerCase().trim();
+        const regId = (r.event_id || "").toLowerCase().trim();
+        const matches =
+          regTitle === filterTitle ||
+          regId === filterSlug ||
+          (filterTitle && regTitle.includes(filterTitle)) ||
+          (filterTitle && filterTitle.includes(regTitle)) ||
+          (filterSlug && regId.includes(filterSlug));
+        if (!matches) return false;
+      }
+
+      if (regFilterDate !== "all" && r.created_at) {
+        const regTime = new Date(r.created_at).getTime();
+        const now = Date.now();
+        if (regFilterDate === "today") {
+          const startOfToday = new Date().setHours(0, 0, 0, 0);
+          if (regTime < startOfToday) return false;
+        } else if (regFilterDate === "7days") {
+          if (regTime < now - 7 * 86400000) return false;
+        } else if (regFilterDate === "30days") {
+          if (regTime < now - 30 * 86400000) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [offlineRegistrationsList, searchQuery, regFilterEvent, regFilterDate]);
 
   const filteredCmsDelegates = useMemo(() => {
     return cmsDelegates.filter((d) => {
@@ -4572,6 +4926,7 @@ export default function AdminDashboardPage() {
       title: "DELEGATES & PARTNERS",
       items: [
         { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+        { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
         { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
         { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
         { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
@@ -5987,8 +6342,8 @@ export default function AdminDashboardPage() {
           {/* TAB 1: EVENT REGISTRATIONS */}
           {activeTab === "event-registrations" && (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
-              {/* 5 Interactive Quick Filter Cards: All, Paid, Granted Free, Pending Free, Dropout */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {/* 6 Interactive Quick Filter Cards: All, Paid, Free Applications, Granted Free, Offline, Dropout */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {/* Card 1: All Delegates */}
                 <button
                   type="button"
@@ -6101,7 +6456,35 @@ export default function AdminDashboardPage() {
                   </div>
                 </button>
 
-                {/* Card 5: Dropout / Incomplete */}
+                {/* Card 5: Offline Registrations (Excel Imports & On-Spot) */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "offline" ? "all" : "offline")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "offline"
+                      ? "bg-blue-50 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-500/25 shadow-md shadow-blue-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "offline"
+                      ? "bg-blue-600 text-white shadow-xs scale-105"
+                      : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                  }`}>
+                    <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 truncate">
+                      Offline Candidates
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.offline}</span>
+                      <span className="text-[10px] text-blue-600 font-bold">Offline 📂</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 6: Dropout / Incomplete */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "dropped" ? "all" : "dropped")}
@@ -6202,6 +6585,7 @@ export default function AdminDashboardPage() {
                       <option value="paid">💳 Paid Passes (Confirmed)</option>
                       <option value="pending_review">⏳ Free Applications (Awaiting Grant)</option>
                       <option value="free_granted">🎟️ Granted Free Passes (Passes Issued ✅)</option>
+                      <option value="offline">📂 Offline Registrations (Excel Imports)</option>
                       <option value="dropped">⚠️ Dropped / Incomplete Leads</option>
                       <option value="rejected">❌ Rejected</option>
                     </select>
@@ -6269,22 +6653,39 @@ export default function AdminDashboardPage() {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const defaultEvt = cmsEvents[0] || {};
-                          setGrantAccessForm((prev) => ({
-                            ...prev,
-                            eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
-                            eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
-                          }));
-                          setShowGrantAccessModal(true);
-                        }}
-                        className="flex items-center gap-1.5 rounded-xl border border-purple-300 dark:border-purple-700 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20"
-                      >
-                        <Ticket className="h-3.5 w-3.5" />
-                        <span>+ Grant Free Event Pass</span>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const defaultEvt = cmsEvents[0] || {};
+                            setOfflineUploadEventId(defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit");
+                            setOfflineUploadEventTitle(defaultEvt.title || defaultEvt.name || "India CFO Leadership Summit 2026");
+                            setShowOfflineUploadModal(true);
+                          }}
+                          className="flex items-center gap-1.5 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-all cursor-pointer shadow-md shadow-blue-500/20"
+                          title="Import offline registered delegates from Excel or CSV sheet"
+                        >
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>+ 📤 Upload Offline Excel</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const defaultEvt = cmsEvents[0] || {};
+                            setGrantAccessForm((prev) => ({
+                              ...prev,
+                              eventId: defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit",
+                              eventTitle: defaultEvt.title || "India CFO Leadership Summit 2026",
+                            }));
+                            setShowGrantAccessModal(true);
+                          }}
+                          className="flex items-center gap-1.5 rounded-xl border border-purple-300 dark:border-purple-700 bg-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/20"
+                        >
+                          <Ticket className="h-3.5 w-3.5" />
+                          <span>+ Grant Free Event Pass</span>
+                        </button>
+                      </>
                     )}
 
                     <button
@@ -6548,6 +6949,400 @@ export default function AdminDashboardPage() {
                             <RefreshCw className="h-3.5 w-3.5" />
                             <span>Reset All Filters</span>
                           </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1B: OFFLINE DELEGATE REGISTRATIONS */}
+          {activeTab === "offline-registrations" && (
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
+              {/* Header Title & Top Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 font-bold shadow-xs">
+                    <FileSpreadsheet className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 font-display">
+                        Offline Delegate Registrations
+                      </h2>
+                      <span className="rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-700 px-2.5 py-0.5 text-[11px] font-black text-blue-800 dark:text-blue-300">
+                        Excel Imports & On-Spot
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Directly import candidate lists from Excel / CSV sheets, issue passes, and dispatch QR ticket emails.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const defaultEvt = cmsEvents[0] || {};
+                      setOfflineUploadEventId(defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit");
+                      setOfflineUploadEventTitle(defaultEvt.title || defaultEvt.name || "India CFO Leadership Summit 2026");
+                      setShowOfflineUploadModal(true);
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-blue-400 dark:border-blue-700 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>+ 📤 Upload Excel Sheet</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={generateSampleExcelTemplate}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    title="Download ready-to-fill sample template with standard columns"
+                  >
+                    <Download className="h-4 w-4 text-slate-500" />
+                    <span>📥 Sample Template (.xlsx)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportToExcel("offline-registrations")}
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Export Excel</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportToPDF("offline-registrations")}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-3.5 py-2.5 text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all cursor-pointer shadow-xs"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                    <span>Download PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 Offline Analytics KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/40">
+                  <div className="flex items-center justify-between text-blue-700 dark:text-blue-400 text-xs font-bold">
+                    <span>Total Offline Candidates</span>
+                    <FileSpreadsheet className="h-4 w-4" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-display">
+                    {offlineRegistrationsList.length}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Imported from Excel & CSV</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/60 dark:bg-purple-950/40">
+                  <div className="flex items-center justify-between text-purple-700 dark:text-purple-400 text-xs font-bold">
+                    <span>Free Passes Granted</span>
+                    <Ticket className="h-4 w-4" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-display">
+                    {offlineRegistrationsList.filter(isDelegateGrantedFree).length}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Approved complimentary</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/40">
+                  <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                    <span>Paid Passes</span>
+                    <IndianRupee className="h-4 w-4" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-display">
+                    {offlineRegistrationsList.filter(isDelegatePaid).length}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Direct fee confirmed</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-cyan-50/60 dark:bg-cyan-950/40">
+                  <div className="flex items-center justify-between text-cyan-700 dark:text-cyan-400 text-xs font-bold">
+                    <span>Events Represented</span>
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-display">
+                    {new Set(offlineRegistrationsList.map((r) => r.event_id || r.event_title).filter(Boolean)).size}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">Leadership summits</p>
+                </div>
+              </div>
+
+              {/* Filters & Search Toolbar */}
+              <div className="space-y-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search offline candidate name, email, company, or phone..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <select
+                      value={regFilterEvent}
+                      onChange={(e) => setRegFilterEvent(e.target.value)}
+                      aria-label="Filter offline candidates by event"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="all">🎪 All Events & Summits</option>
+                      {cmsEvents.map((evt) => {
+                        const eventTitle = evt.title || evt.name || evt.slug || evt.id;
+                        return (
+                          <option key={evt.id || evt.slug} value={eventTitle}>
+                            {eventTitle}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div>
+                    <select
+                      value={regFilterDate}
+                      onChange={(e) => setRegFilterDate(e.target.value)}
+                      aria-label="Filter offline candidates by date"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="all">📅 All Registration Dates</option>
+                      <option value="today">Today's Imports</option>
+                      <option value="7days">Past 7 Days</option>
+                      <option value="30days">Past 30 Days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    <span>Showing</span>
+                    <strong className="text-blue-700 dark:text-blue-400 font-mono text-sm">{filteredOfflineRegistrations.length}</strong>
+                    <span>of {offlineRegistrationsList.length} offline candidates</span>
+                  </span>
+
+                  {selectedOfflineRegIds.length > 0 && (
+                    <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/80 border border-blue-300 dark:border-blue-700 rounded-xl px-3 py-1 animate-in fade-in shadow-xs">
+                      <span className="text-xs font-black text-blue-900 dark:text-blue-200 flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                        <span>{selectedOfflineRegIds.length} Selected</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleBulkResendOfflineTickets}
+                        className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-black text-white hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        <span>Dispatch Tickets ({selectedOfflineRegIds.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOfflineRegIds([])}
+                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        title="Deselect All"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Table of Offline Candidates */}
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
+                <table className="w-full min-w-[1000px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
+                    <tr>
+                      <th className="py-3.5 px-3 min-w-[56px] w-14 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            filteredOfflineRegistrations.length > 0 &&
+                            filteredOfflineRegistrations.every((r) => selectedOfflineRegIds.includes(r.id))
+                          }
+                          onChange={() =>
+                            handleToggleSelectAllOfflineRegistrations(filteredOfflineRegistrations.map((r) => r.id))
+                          }
+                          aria-label="Select all offline delegates"
+                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3.5 px-4 min-w-[240px]">Candidate & Contact</th>
+                      <th className="py-3.5 px-4 min-w-[200px]">Organization & City</th>
+                      <th className="py-3.5 px-4 min-w-[220px]">Event & Tier</th>
+                      <th className="py-3.5 px-4 min-w-[160px]">Payment & Source</th>
+                      <th className="py-3.5 px-4 min-w-[130px] text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
+                    {filteredOfflineRegistrations.map((reg) => {
+                      const isSelected = selectedOfflineRegIds.includes(reg.id);
+                      return (
+                        <tr
+                          key={reg.id}
+                          className={`transition-colors ${
+                            isSelected
+                              ? "bg-blue-50/70 dark:bg-blue-950/40"
+                              : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
+                          }`}
+                        >
+                          <td className="py-3.5 px-3 align-middle text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectOfflineRegistration(reg.id)}
+                              aria-label={`Select ${reg.name}`}
+                              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
+
+                          {/* Candidate & Contact */}
+                          <td className="py-3.5 px-4 align-middle">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-black text-xs shadow-xs">
+                                {reg.name ? reg.name.charAt(0).toUpperCase() : "D"}
+                              </div>
+                              <div className="min-w-0 space-y-0.5">
+                                <span className="block font-black text-slate-900 dark:text-slate-100 truncate">{reg.name}</span>
+                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">{reg.designation || "Executive Delegate"}</span>
+                                <a
+                                  href={`mailto:${reg.email}`}
+                                  className="inline-flex items-center gap-1 text-[11px] text-blue-700 dark:text-blue-400 font-semibold hover:underline truncate"
+                                >
+                                  <Mail className="h-2.5 w-2.5 text-blue-600 shrink-0" />
+                                  <span className="truncate">{reg.email}</span>
+                                </a>
+                                {reg.phone && reg.phone !== "N/A" && (
+                                  <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                    <Phone className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                                    <span>{reg.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Organization & City */}
+                          <td className="py-3.5 px-4 align-middle space-y-1">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold max-w-[220px] truncate">
+                              <Building className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <span className="truncate">{reg.organization || "Corporate Enterprise"}</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                              <span>{reg.city || reg.registering_city || "Pan-India"}</span>
+                            </span>
+                          </td>
+
+                          {/* Event & Tier */}
+                          <td className="py-3.5 px-4 align-middle space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-900 dark:text-slate-100 font-bold max-w-[250px] truncate">
+                              <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <span className="truncate">{reg.event_title || reg.event_id}</span>
+                            </div>
+                            <span className="inline-block rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-blue-800 dark:text-blue-300 font-bold text-[10px] uppercase tracking-wider">
+                              {reg.pass_name || reg.registration_category || "Executive Delegate"}
+                            </span>
+                          </td>
+
+                          {/* Payment & Source */}
+                          <td className="py-3.5 px-4 align-middle space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-300 px-2 py-0.5 text-[10px] font-bold">
+                                📂 {reg.referral_source || "Offline Excel"}
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                                {reg.payment_status || "Approved"}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                              {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 align-middle text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                title="Resend QR Ticket Pass & Confirmation Email"
+                                disabled={resendingEmailId === reg.id}
+                                onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
+                                className="inline-flex items-center justify-center h-8.5 w-8.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-700 dark:hover:text-blue-300 hover:border-blue-300 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                              >
+                                {resendingEmailId === reg.id ? (
+                                  <RefreshCw className="h-3.5 w-3.5 text-blue-600 animate-spin" />
+                                ) : (
+                                  <Mail className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRegDetail(reg)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/60 px-3 py-1.5 text-xs font-black text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all shadow-xs cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-blue-700 dark:text-blue-400" />
+                                <span>View</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredOfflineRegistrations.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-16 text-center space-y-3">
+                          <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-500">
+                            <FileSpreadsheet className="h-6 w-6" />
+                          </div>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            No offline delegate registrations found
+                          </p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
+                            Upload your filled Excel or CSV sheet to import offline registered candidates.
+                          </p>
+                          <div className="flex items-center justify-center gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const defaultEvt = cmsEvents[0] || {};
+                                setOfflineUploadEventId(defaultEvt.id || defaultEvt.slug || "cfo-leadership-summit");
+                                setOfflineUploadEventTitle(defaultEvt.title || defaultEvt.name || "India CFO Leadership Summit 2026");
+                                setShowOfflineUploadModal(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm"
+                            >
+                              <Upload className="h-3.5 w-3.5" />
+                              <span>Upload Excel Sheet</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={generateSampleExcelTemplate}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors cursor-pointer shadow-sm"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Sample Template</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -15111,6 +15906,280 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* OFFLINE EXCEL IMPORT MODAL */}
+      {showOfflineUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => {
+              if (!offlineImporting) {
+                setShowOfflineUploadModal(false);
+              }
+            }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+          />
+
+          <div className="relative z-10 w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in-0 zoom-in-95 duration-200 text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 font-bold shadow-xs">
+                  <Upload className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-display">
+                    Import Offline Delegates via Excel / CSV
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Upload delegate sheet, assign event & pass tier, and optionally send QR ticket emails.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={offlineImporting}
+                onClick={() => setShowOfflineUploadModal(false)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Target Event Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                    Target Event Summit *
+                  </label>
+                  <select
+                    value={offlineUploadEventId}
+                    onChange={(e) => {
+                      const selected = cmsEvents.find((evt) => (evt.id || evt.slug) === e.target.value);
+                      setOfflineUploadEventId(e.target.value);
+                      setOfflineUploadEventTitle(selected ? selected.title : offlineUploadEventTitle);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none"
+                  >
+                    {cmsEvents.map((evt) => (
+                      <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
+                        {evt.title} ({evt.city || "Pan-India"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                    Default Pass Tier / Category *
+                  </label>
+                  <select
+                    value={offlineUploadPassCategory}
+                    onChange={(e) => setOfflineUploadPassCategory(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-slate-900 dark:text-slate-100 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none"
+                  >
+                    <option value="Executive Delegate">Executive Delegate</option>
+                    <option value="Complimentary VIP Pass">Complimentary VIP Pass</option>
+                    <option value="VIP Delegate">VIP Delegate</option>
+                    <option value="Keynote Speaker Pass">Keynote Speaker Pass</option>
+                    <option value="Sponsor Pass">Sponsor Pass</option>
+                    <option value="Honorary Guest">Honorary Guest</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Drag and Drop File Area */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setOfflineDragOver(true);
+                }}
+                onDragLeave={() => setOfflineDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setOfflineDragOver(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleOfflineExcelFileChange(e.dataTransfer.files[0]);
+                  }
+                }}
+                className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all text-center ${
+                  offlineDragOver
+                    ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/40"
+                    : offlineExcelFile
+                    ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20"
+                    : "border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 hover:border-blue-400"
+                }`}
+              >
+                <input
+                  type="file"
+                  id="offlineExcelFileInput"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleOfflineExcelFileChange(e.target.files[0]);
+                    }
+                  }}
+                />
+
+                {offlineExcelFile ? (
+                  <div className="space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                      <FileSpreadsheet className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                        {offlineExcelFile.name}
+                      </span>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">
+                        ✅ Ready to import • {offlineParsedData.length} candidate rows detected
+                      </p>
+                    </div>
+                    <label
+                      htmlFor="offlineExcelFileInput"
+                      className="inline-block text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer pt-1"
+                    >
+                      Change or choose another file
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                        Drag and drop your Excel / CSV sheet here
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Supports .xlsx, .xls, and .csv formats
+                      </p>
+                    </div>
+                    <div className="pt-2 flex items-center justify-center gap-3">
+                      <label
+                        htmlFor="offlineExcelFileInput"
+                        className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-xs"
+                      >
+                        Browse File from Device
+                      </label>
+                      <button
+                        type="button"
+                        onClick={generateSampleExcelTemplate}
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+                      >
+                        📥 Sample Template
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Send Email Checkbox Toggle */}
+              <div className="rounded-2xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/60 dark:bg-purple-950/30 p-3.5 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="offlineSendEmailsCheckbox"
+                  checked={offlineSendEmails}
+                  onChange={(e) => setOfflineSendEmails(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                />
+                <label htmlFor="offlineSendEmailsCheckbox" className="cursor-pointer select-none">
+                  <span className="font-bold text-purple-950 dark:text-purple-200 block text-xs">
+                    Automatically dispatch QR Ticket Confirmation emails to imported delegates
+                  </span>
+                  <span className="text-[11px] text-purple-800 dark:text-purple-300 block mt-0.5 leading-relaxed">
+                    If checked, each imported candidate will receive an official branded ticket pass email with a scannable QR verification code.
+                  </span>
+                </label>
+              </div>
+
+              {/* Live Preview Table of Parsed Rows */}
+              {offlineParsedData.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Parsed Candidates Preview ({offlineParsedData.length} Total Rows):
+                    </span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                      {offlineParsedData.filter((d) => d.isValidEmail).length} valid emails
+                    </span>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 custom-scrollbar">
+                    <table className="w-full text-left text-[11px] divide-y divide-slate-200 dark:divide-slate-800">
+                      <thead className="bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                        <tr>
+                          <th className="py-2 px-3">#</th>
+                          <th className="py-2 px-3">Candidate Name</th>
+                          <th className="py-2 px-3">Email Address</th>
+                          <th className="py-2 px-3">Company & Title</th>
+                          <th className="py-2 px-3">City</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                        {offlineParsedData.slice(0, 10).map((row, idx) => (
+                          <tr key={row.id || idx}>
+                            <td className="py-2 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                            <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
+                            <td className="py-2 px-3 font-mono text-slate-600 dark:text-slate-300">
+                              {row.email}
+                              {!row.isValidEmail && (
+                                <span className="ml-1 text-[10px] text-rose-500 font-bold">⚠️ Invalid</span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                              {row.company} {row.designation ? `(${row.designation})` : ""}
+                            </td>
+                            <td className="py-2 px-3 text-slate-500">{row.city || "Pan-India"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {offlineParsedData.length > 10 && (
+                    <p className="text-[10px] text-slate-400 text-center">
+                      Showing first 10 rows of {offlineParsedData.length} total rows.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={offlineImporting}
+                  onClick={() => setShowOfflineUploadModal(false)}
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={offlineImporting || offlineParsedData.length === 0}
+                  onClick={handleConfirmOfflineImport}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 font-bold text-white transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {offlineImporting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Importing Delegates...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      <span>
+                        Import {offlineParsedData.length > 0 ? `${offlineParsedData.length} Candidates` : "Now"}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* VIDEO PREVIEW MODAL */}
       {selectedVideoPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-md">
