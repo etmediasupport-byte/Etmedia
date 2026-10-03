@@ -221,6 +221,7 @@ export default function AdminQrScannerPage() {
       if (match) {
         cleanId = decodeURIComponent(match[1]).trim();
       }
+      cleanId = cleanId.replace(/^ETM-GATE[-:]/i, "").replace(/^ETM-PASS[-:#]/i, "").trim();
 
       toast.info(`Processing Pass: ${cleanId}...`);
 

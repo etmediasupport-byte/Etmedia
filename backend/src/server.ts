@@ -234,13 +234,15 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const cgst = Math.round(gstTotal / 2);
   const sgst = gstTotal - cgst;
 
-  // Direct clickable Verification URL encoded into the Scannable QR Code
   const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
   const verifyPassUrl = `${baseUrl}/verify-pass/${encodeURIComponent(regId)}`;
 
+  // Encode pure Secure Gate Token into the QR code so personal mobile phone cameras cannot open any website
+  const qrTokenPayload = `ETM-GATE:${regId}`;
+
   let qrCodeBuffer: Buffer | null = null;
   try {
-    qrCodeBuffer = await QRCode.toBuffer(verifyPassUrl, {
+    qrCodeBuffer = await QRCode.toBuffer(qrTokenPayload, {
       errorCorrectionLevel: "M",
       type: "png",
       width: 320,
@@ -3072,6 +3074,8 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
     if (urlMatch) {
       cleanId = decodeURIComponent(urlMatch[1]).trim();
     }
+    // Clean token prefixes e.g. ETM-GATE:ETM-REG-12345 or ETM-PASS#...
+    cleanId = cleanId.replace(/^ETM-GATE[-:]/i, "").replace(/^ETM-PASS[-:#]/i, "").trim();
 
     if (!pool) {
       return res.status(500).json({ success: false, message: "Database connection unavailable." });
