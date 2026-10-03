@@ -898,6 +898,8 @@ export default function AdminDashboardPage() {
   const [regFilterStatus, setRegFilterStatus] = useState<string>("all");
   const [selectedRegIds, setSelectedRegIds] = useState<string[]>([]);
   const [bulkGrantingFree, setBulkGrantingFree] = useState(false);
+  const [showBulkGrantModal, setShowBulkGrantModal] = useState(false);
+  const [bulkPassCategory, setBulkPassCategory] = useState("Complimentary VIP Pass");
   const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
   const [actionLoadingRegId, setActionLoadingRegId] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -2100,19 +2102,24 @@ export default function AdminDashboardPage() {
     );
   };
 
-  const handleBulkGrantFreePasses = async (category = "Complimentary VIP Pass") => {
+  const handleBulkGrantFreePasses = (category = "Complimentary VIP Pass") => {
     if (selectedRegIds.length === 0) {
       toast.error("Please select at least one delegate from the table.");
       return;
     }
+    setBulkPassCategory(category);
+    setShowBulkGrantModal(true);
+  };
 
-    const count = selectedRegIds.length;
-    if (!window.confirm(`Grant Free Event Pass to all ${count} selected delegates and automatically dispatch ticket QR pass emails?`)) {
+  const handleConfirmBulkGrant = async () => {
+    if (selectedRegIds.length === 0) {
+      toast.error("Please select at least one delegate.");
       return;
     }
 
+    const count = selectedRegIds.length;
     setBulkGrantingFree(true);
-    toast.info(`Granting Free Passes to ${count} delegates and sending ticket emails...`);
+    toast.info(`Granting Free Passes to ${count} delegates and dispatching QR ticket emails...`);
 
     try {
       const res = await fetch("/api/admin/registrations/bulk-grant-free", {
@@ -2123,7 +2130,7 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({
           ids: selectedRegIds,
-          category,
+          category: bulkPassCategory,
         }),
       });
 
@@ -2131,6 +2138,7 @@ export default function AdminDashboardPage() {
       if (data.success) {
         toast.success(data.message || `🎉 Free passes granted & ticket emails sent to ${count} delegates!`);
         setSelectedRegIds([]);
+        setShowBulkGrantModal(false);
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to grant bulk free passes.");
@@ -15124,6 +15132,133 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* LUXURY BULK GRANT FREE PASS MODAL */}
+      {showBulkGrantModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
+          <div
+            onClick={() => !bulkGrantingFree && setShowBulkGrantModal(false)}
+            className="fixed inset-0 bg-transparent"
+          />
+
+          <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-2xl border border-purple-200 dark:border-purple-800/80 animate-in zoom-in-95 duration-200 text-slate-900 dark:text-slate-100 space-y-5">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold shadow-md shadow-purple-500/10">
+                  <Ticket className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 font-display">
+                    Grant Free Passes & Send Emails
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Issue verified VIP entry tickets & automatically dispatch confirmation emails
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={bulkGrantingFree}
+                onClick={() => setShowBulkGrantModal(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Selected Delegates Summary Card */}
+            <div className="rounded-2xl border border-purple-200/80 dark:border-purple-900/60 bg-purple-50/60 dark:bg-purple-950/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400 animate-pulse" />
+                  Selected Delegates ({selectedRegIds.length})
+                </span>
+                <span className="rounded-full bg-purple-200 dark:bg-purple-900/80 px-2.5 py-0.5 text-[10px] font-black text-purple-900 dark:text-purple-200">
+                  {selectedRegIds.length} Total
+                </span>
+              </div>
+
+              {/* Delegate Chips Preview */}
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                {filteredRegistrations
+                  .filter((r) => selectedRegIds.includes(r.id))
+                  .map((reg) => (
+                    <div
+                      key={reg.id}
+                      className="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800/90 px-3 py-2 border border-purple-100 dark:border-purple-900/40 text-xs shadow-2xs"
+                    >
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{reg.name}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{reg.email}</p>
+                      </div>
+                      <span className="rounded-md bg-purple-50 dark:bg-purple-950/80 border border-purple-200 dark:border-purple-800 px-2 py-0.5 text-[10px] font-mono text-purple-700 dark:text-purple-300 font-bold shrink-0">
+                        {reg.organization || "Corporate"}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Pass Category Tier Config */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Grant Pass Tier / Category *
+              </label>
+              <select
+                value={bulkPassCategory}
+                onChange={(e) => setBulkPassCategory(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-purple-600 focus:outline-none cursor-pointer"
+              >
+                <option value="Complimentary VIP Pass">🌟 Complimentary VIP Pass</option>
+                <option value="Executive Delegate Pass">💼 Executive Delegate Pass</option>
+                <option value="Keynote Speaker Pass">🎤 Keynote Speaker Pass</option>
+                <option value="Special Invitee Pass">🎖️ Special Invitee Pass</option>
+                <option value="Corporate Sponsor Pass">🏢 Corporate Sponsor Pass</option>
+              </select>
+            </div>
+
+            {/* Automated Email Notice */}
+            <div className="rounded-xl border border-cyan-200 dark:border-cyan-900/60 bg-cyan-50/70 dark:bg-cyan-950/40 p-3 flex items-start gap-2.5 text-xs text-cyan-950 dark:text-cyan-200">
+              <Mail className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <strong>Automated Ticket Pass Delivery:</strong> Each selected delegate will immediately receive their scannable QR ticket pass, PDF confirmation, and event registration details in their email inbox.
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={bulkGrantingFree}
+                onClick={() => setShowBulkGrantModal(false)}
+                className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={bulkGrantingFree}
+                onClick={() => handleConfirmBulkGrant()}
+                className="flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 text-xs font-black shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
+              >
+                {bulkGrantingFree ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Dispatching Passes & Emails...</span>
+                  </>
+                ) : (
+                  <>
+                    <Ticket className="h-4 w-4" />
+                    <span>Confirm & Send Passes ({selectedRegIds.length})</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
