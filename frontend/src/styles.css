@@ -512,4 +512,140 @@
   }
 }
 
+/* =========================================================================
+   ADMIN DASHBOARD PREMIUM DARK & LIGHT THEME STYLES
+   ========================================================================= */
+.admin-panel-root {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark .admin-panel-root {
+  background-color: #080d1a !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .admin-panel-root aside {
+  background-color: #0c1427 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .admin-panel-root header {
+  background-color: rgba(12, 20, 39, 0.95) !important;
+  border-color: #1e293b !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.dark .admin-panel-root .bg-white {
+  background-color: #111c34 !important;
+  border-color: #1e2d4d !important;
+  color: #f8fafc !important;
+}
+
+.dark .admin-panel-root .bg-slate-50,
+.dark .admin-panel-root .bg-slate-50\/50,
+.dark .admin-panel-root .bg-slate-50\/60,
+.dark .admin-panel-root .bg-slate-50\/70,
+.dark .admin-panel-root .bg-slate-50\/80,
+.dark .admin-panel-root .bg-slate-50\/90,
+.dark .admin-panel-root .bg-slate-100,
+.dark .admin-panel-root .bg-slate-100\/70,
+.dark .admin-panel-root .bg-slate-200\/60,
+.dark .admin-panel-root .bg-slate-200\/80 {
+  background-color: #162442 !important;
+  border-color: #22355e !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .admin-panel-root .text-slate-900,
+.dark .admin-panel-root .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+.dark .admin-panel-root .text-slate-700,
+.dark .admin-panel-root .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .admin-panel-root .text-slate-500,
+.dark .admin-panel-root .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .admin-panel-root .border-slate-200,
+.dark .admin-panel-root .border-slate-200\/80,
+.dark .admin-panel-root .border-slate-300,
+.dark .admin-panel-root .border-slate-100 {
+  border-color: #1e2d4d !important;
+}
+
+.dark .admin-panel-root input:not([type="checkbox"]):not([type="radio"]),
+.dark .admin-panel-root select,
+.dark .admin-panel-root textarea {
+  background-color: #091122 !important;
+  border-color: #22355e !important;
+  color: #f8fafc !important;
+}
+
+.dark .admin-panel-root input::placeholder,
+.dark .admin-panel-root textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark .admin-panel-root input:focus,
+.dark .admin-panel-root select:focus,
+.dark .admin-panel-root textarea:focus {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.3) !important;
+}
+
+.dark .admin-panel-root tr:hover td {
+  background-color: rgba(30, 48, 80, 0.65) !important;
+}
+
+.dark .admin-panel-root th {
+  color: #94a3b8 !important;
+  border-color: #1e2d4d !important;
+}
+
+.dark .admin-panel-root .divide-slate-100 > * + *,
+.dark .admin-panel-root .divide-slate-200 > * + * {
+  border-color: #1e2d4d !important;
+}
+
+.dark .admin-panel-root .modal-content,
+.dark .admin-panel-root [role="dialog"] {
+  background-color: #111c34 !important;
+  border-color: #1e2d4d !important;
+  color: #f8fafc !important;
+}
+
+.dark .admin-panel-root .shadow-sm,
+.dark .admin-panel-root .shadow-md,
+.dark .admin-panel-root .shadow-lg {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Custom Scrollbar for Admin Panel */
+.admin-panel-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-panel-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-panel-root ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.dark .admin-panel-root ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+}
+
+.admin-panel-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.6);
+}
+
 

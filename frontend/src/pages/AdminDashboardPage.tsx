@@ -106,6 +106,12 @@ import {
   Grid,
   Receipt,
   User,
+  Sun,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Filter,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
@@ -361,6 +367,99 @@ export default function AdminDashboardPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const partnerFormRef = useRef<HTMLDivElement>(null);
+
+  // -------------------------------------------------------------
+  // THEME & SIDEBAR STATE
+  // -------------------------------------------------------------
+  const [adminTheme, setAdminTheme] = useState<"dark" | "light">(() => {
+    try {
+      const saved = localStorage.getItem("etmedia_admin_theme");
+      if (saved === "dark" || saved === "light") return saved;
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch (e) {
+      return "light";
+    }
+  });
+
+  const toggleAdminTheme = () => {
+    setAdminTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      try {
+        localStorage.setItem("etmedia_admin_theme", next);
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("etmedia_sidebar_collapsed") === "true";
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("etmedia_sidebar_collapsed", String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // -------------------------------------------------------------
+  // UNIVERSAL DATE-WISE FILTER
+  // -------------------------------------------------------------
+  type DateRangeFilterType = "all" | "today" | "yesterday" | "7days" | "30days" | "this_month" | "custom";
+  const [dateFilterRange, setDateFilterRange] = useState<DateRangeFilterType>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+
+  const isDateInRange = (dateInput: string | number | undefined | null): boolean => {
+    if (dateFilterRange === "all" || !dateInput) return true;
+    const ts = typeof dateInput === "number" ? dateInput : new Date(dateInput).getTime();
+    if (isNaN(ts) || ts <= 0) return true;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+
+    if (dateFilterRange === "today") {
+      return ts >= startOfToday && ts <= endOfToday;
+    }
+    if (dateFilterRange === "yesterday") {
+      const startOfYesterday = startOfToday - 86400000;
+      const endOfYesterday = startOfToday - 1;
+      return ts >= startOfYesterday && ts <= endOfYesterday;
+    }
+    if (dateFilterRange === "7days") {
+      const sevenDaysAgo = startOfToday - 6 * 86400000;
+      return ts >= sevenDaysAgo && ts <= endOfToday;
+    }
+    if (dateFilterRange === "30days") {
+      const thirtyDaysAgo = startOfToday - 29 * 86400000;
+      return ts >= thirtyDaysAgo && ts <= endOfToday;
+    }
+    if (dateFilterRange === "this_month") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+      return ts >= startOfMonth && ts <= endOfToday;
+    }
+    if (dateFilterRange === "custom") {
+      let valid = true;
+      if (customStartDate) {
+        const s = new Date(customStartDate + "T00:00:00").getTime();
+        if (!isNaN(s) && ts < s) valid = false;
+      }
+      if (customEndDate) {
+        const e = new Date(customEndDate + "T23:59:59.999").getTime();
+        if (!isNaN(e) && ts > e) valid = false;
+      }
+      return valid;
+    }
+    return true;
+  };
 
   useEffect(() => {
     if (mainScrollRef.current) {
@@ -4166,24 +4265,82 @@ export default function AdminDashboardPage() {
 
       return true;
     });
-  }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate]);
+  }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate, dateFilterRange, customStartDate, customEndDate]);
 
-  const filteredCmsDelegates = cmsDelegates.filter(
-    (d) =>
-      d.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.official_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCmsDelegates = useMemo(() => {
+    return cmsDelegates.filter((d) => {
+      if (!isDateInRange(d.created_at)) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (d.full_name || "").toLowerCase().includes(q) ||
+        (d.official_email || "").toLowerCase().includes(q) ||
+        (d.company_name || "").toLowerCase().includes(q) ||
+        (d.industry || "").toLowerCase().includes(q) ||
+        (d.city || "").toLowerCase().includes(q) ||
+        (d.mobile_number || "").toLowerCase().includes(q)
+      );
+    });
+  }, [cmsDelegates, searchQuery, dateFilterRange, customStartDate, customEndDate]);
 
-  const filteredContacts = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.enquiry_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.message.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((c) => {
+      if (!isDateInRange(c.created_at)) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.phone || "").toLowerCase().includes(q) ||
+        (c.enquiry_type || "").toLowerCase().includes(q) ||
+        (c.message || "").toLowerCase().includes(q)
+      );
+    });
+  }, [contacts, searchQuery, dateFilterRange, customStartDate, customEndDate]);
+
+  const filteredPartnerSubmissions = useMemo(() => {
+    return partnerSubmissions.filter((sub) => {
+      if (!isDateInRange(sub.created_at)) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (sub.company_name || "").toLowerCase().includes(q) ||
+        (sub.contact_person || "").toLowerCase().includes(q) ||
+        (sub.email || "").toLowerCase().includes(q) ||
+        (sub.phone || "").toLowerCase().includes(q) ||
+        (sub.partnership_type || "").toLowerCase().includes(q) ||
+        (sub.industry || "").toLowerCase().includes(q) ||
+        (sub.location || "").toLowerCase().includes(q)
+      );
+    });
+  }, [partnerSubmissions, searchQuery, dateFilterRange, customStartDate, customEndDate]);
+
+  const filteredJobApplications = useMemo(() => {
+    return jobApplications.filter((app) => {
+      if (!isDateInRange(app.created_at)) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (app.name || "").toLowerCase().includes(q) ||
+        (app.email || "").toLowerCase().includes(q) ||
+        (app.job_title || "").toLowerCase().includes(q) ||
+        (app.phone || "").toLowerCase().includes(q) ||
+        (app.experience || "").toLowerCase().includes(q)
+      );
+    });
+  }, [jobApplications, searchQuery, dateFilterRange, customStartDate, customEndDate]);
+
+  const filteredNewsletterSubscribers = useMemo(() => {
+    return newsletterSubscribers.filter((n) => {
+      if (!isDateInRange(n.created_at)) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (n.email || "").toLowerCase().includes(q) ||
+        (n.source || "").toLowerCase().includes(q)
+      );
+    });
+  }, [newsletterSubscribers, searchQuery, dateFilterRange, customStartDate, customEndDate]);
 
   interface NavItem {
     id: TabType;
@@ -4192,38 +4349,68 @@ export default function AdminDashboardPage() {
     count?: number;
   }
 
-  const navItems: NavItem[] = [
-    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
-    { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
-    { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
-    { id: "event-payments", label: "Event Payments", icon: CreditCard, count: (() => {
-      const map = new Map();
-      eventPayments.forEach((p) => {
-        const key = (p.event_slug && p.event_slug.trim()) ? p.event_slug.trim().toLowerCase() : (p.event_title && p.event_title.trim()) ? p.event_title.trim().toLowerCase() : (p.event_id && p.event_id.trim()) ? p.event_id.trim().toLowerCase() : p.id;
-        if (key && !map.has(key)) map.set(key, p);
-      });
-      return map.size;
-    })() },
-    { id: "popup", label: "Event Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
-    { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
-    { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
-    { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
-    { id: "partner-requests", label: "Partner Requests", icon: Building, count: partnerSubmissions.length },
-    { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-    { id: "career-jobs", label: "Career Jobs", icon: Briefcase, count: cmsJobs.length },
-    { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
-    { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
-    { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
-    { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
-    { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
-    { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
-    { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
-    { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
-    { id: "settings", label: "Website Settings", icon: Settings },
+  interface NavGroup {
+    title: string;
+    items: NavItem[];
+  }
+
+  const navGroups: NavGroup[] = [
+    {
+      title: "OVERVIEW",
+      items: [
+        { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: "SUMMITS & CMS",
+      items: [
+        { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+        { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
+        { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
+        { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
+      ],
+    },
+    {
+      title: "DELEGATES & PARTNERS",
+      items: [
+        { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+        { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+        { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
+        { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
+      ],
+    },
+    {
+      title: "EDITORIAL & CAREERS",
+      items: [
+        { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
+        { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
+        { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
+      ],
+    },
+    {
+      title: "MEDIA & CXO VOICES",
+      items: [
+        { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+        { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
+        { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
+      ],
+    },
+    {
+      title: "COMMUNICATIONS & SYSTEM",
+      items: [
+        { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
+        { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
+        { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
+        { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
+        { id: "settings", label: "Website Settings", icon: Settings },
+      ],
+    },
   ];
 
+  const allNavItems = useMemo(() => navGroups.flatMap((g) => g.items), [navGroups]);
+
   return (
-    <div className="relative flex h-screen w-full overflow-hidden bg-slate-100 text-slate-800 selection:bg-cyan-500/30 selection:text-cyan-900 font-sans">
+    <div className={`admin-panel-root ${adminTheme === "dark" ? "dark bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-800"} relative flex h-screen w-full overflow-hidden font-sans selection:bg-cyan-500/30 selection:text-cyan-900`}>
       <GlowBackdrop />
 
       {/* ========================================== */}
@@ -4234,111 +4421,153 @@ export default function AdminDashboardPage() {
       {mobileSidebarOpen && (
         <div
           onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col justify-between border-r border-slate-200 bg-white p-4 shadow-xs transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-md transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          sidebarCollapsed ? "lg:w-20" : "lg:w-72"
+        } w-72 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex flex-col h-full overflow-hidden space-y-4">
+        <div className="flex flex-col h-full overflow-hidden space-y-3">
           {/* Brand Logo & Header */}
           <div className="flex items-center justify-between shrink-0 pb-2">
-            <div className="flex items-center gap-3">
-              <div className="bg-transparent">
-                <img src={logo} alt="Executive Talks Media" className="h-7 w-auto object-contain" />
+            {!sidebarCollapsed ? (
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="bg-transparent shrink-0">
+                  <img src={logo} alt="Executive Talks Media" className="h-7 w-auto object-contain rounded-md shadow-2xs" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-wide truncate">Executive Talks Media</h2>
+                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400 font-extrabold uppercase tracking-wider">
+                    Admin Control Hub
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xs font-extrabold text-slate-900 tracking-wide">Executive Talks Media Hub</h2>
-                <p className="text-[10px] text-cyan-700 font-extrabold uppercase tracking-wider">
-                  Admin Control Center
-                </p>
+            ) : (
+              <div className="mx-auto">
+                <img src={logo} alt="Executive Talks" className="h-7 w-auto object-contain rounded-md shadow-2xs" />
               </div>
-            </div>
+            )}
 
-            <button
-              onClick={() => setMobileSidebarOpen(false)}
-              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setMobileSidebarOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 lg:hidden cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
-          <div className="h-px w-full bg-slate-200 shrink-0" />
+          <div className="h-px w-full bg-slate-200 dark:bg-slate-800 shrink-0" />
 
           {/* Navigation Links - Scrollable if items overflow */}
-          <nav className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as TabType);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
-                    <span className="truncate">{item.label}</span>
+          <nav className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+            {navGroups.map((group, gIdx) => (
+              <div key={group.title || gIdx} className="space-y-1">
+                {!sidebarCollapsed ? (
+                  <div className="px-2 pt-2 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    {group.title}
                   </div>
-                  {item.count !== undefined && item.count > 0 && (
-                    <span
-                      className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shrink-0 ${
-                        isActive ? "bg-white/25 text-white" : "bg-cyan-50 text-cyan-700 border border-cyan-200"
+                ) : (
+                  <div className="my-1.5 h-px w-6 mx-auto bg-slate-200 dark:bg-slate-800" />
+                )}
+
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id as TabType);
+                        setMobileSidebarOpen(false);
+                      }}
+                      title={item.label}
+                      className={`flex w-full items-center rounded-xl transition-all cursor-pointer ${
+                        sidebarCollapsed
+                          ? "justify-center p-2.5 relative group"
+                          : "justify-between px-3 py-2 text-xs font-bold"
+                      } ${
+                        isActive
+                          ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                       }`}
                     >
-                      {item.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                        {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                      </div>
+
+                      {!sidebarCollapsed && item.count !== undefined && item.count > 0 && (
+                        <span
+                          className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shrink-0 ${
+                            isActive
+                              ? "bg-white/25 text-white"
+                              : "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                          }`}
+                        >
+                          {item.count}
+                        </span>
+                      )}
+
+                      {sidebarCollapsed && item.count !== undefined && item.count > 0 && (
+                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 
         {/* Sidebar Footer Card */}
-        <div className="space-y-3 pt-4 border-t border-slate-200 shrink-0">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 font-bold text-cyan-800 text-xs">
-                <Shield className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-slate-900">
-                  {adminUser?.name || "Super Admin"}
-                </p>
-                <p className="truncate text-[10px] text-slate-500 font-medium">
-                  {adminUser?.email || "srikanth@executivetalksmedia.in"}
-                </p>
+        <div className="space-y-2.5 pt-3 border-t border-slate-200 dark:border-slate-800 shrink-0">
+          {!sidebarCollapsed ? (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs">
+                  <Shield className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {adminUser?.name || "Super Admin"}
+                  </p>
+                  <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    {adminUser?.email || "srikanth@executivetalksmedia.in"}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs" title={adminUser?.name || "Super Admin"}>
+                <Shield className="h-4 w-4" />
+              </div>
+            </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid ${sidebarCollapsed ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
             <button
               onClick={fetchDashboardData}
               disabled={loading}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-[11px] font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 shadow-xs cursor-pointer"
+              title="Refresh Platform Data"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 shadow-xs cursor-pointer"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-cyan-600" : ""}`} />
-              <span>Refresh</span>
+              {!sidebarCollapsed && <span>Refresh</span>}
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 py-2 text-[11px] font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
+              title="Sign Out of Admin"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 py-2 text-[11px] font-bold text-rose-700 dark:text-rose-400 transition-colors hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span>Logout</span>
+              {!sidebarCollapsed && <span>Logout</span>}
             </button>
           </div>
         </div>
@@ -4349,30 +4578,40 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-white px-2.5 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-hidden min-w-0 gap-2">
+        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-hidden min-w-0 gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+            {/* Mobile Open Sidebar Trigger */}
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
               title="Open Navigation Drawer"
             >
               <Menu className="h-4.5 w-4.5" />
             </button>
 
+            {/* Desktop Collapse / Expand Sidebar Trigger */}
+            <button
+              onClick={toggleSidebarCollapsed}
+              className="hidden lg:flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all cursor-pointer shrink-0 shadow-2xs"
+              title={sidebarCollapsed ? "Expand Sidebar (W-72)" : "Collapse Sidebar (W-20)"}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
+            </button>
+
             {(() => {
-              const activeNav = navItems.find((n) => n.id === activeTab) || navItems[0] || { label: "Dashboard", icon: LayoutDashboard };
+              const activeNav = allNavItems.find((n) => n.id === activeTab) || allNavItems[0] || { label: "Dashboard", icon: LayoutDashboard };
               const IconComp = activeNav.icon || LayoutDashboard;
               return (
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
-                  <div className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 font-bold shadow-2xs">
+                  <div className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
                     <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                    <h1 className="text-sm sm:text-lg font-extrabold text-slate-900 tracking-tight truncate min-w-0 flex-1">
+                    <h1 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0 flex-1">
                       {activeNav.label}
                     </h1>
-                    <span className="hidden md:inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 border border-cyan-200 uppercase tracking-wider shrink-0">
-                      CMS Control
+                    <span className="hidden xl:inline-flex items-center rounded-full bg-cyan-50 dark:bg-cyan-950/60 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 uppercase tracking-wider shrink-0">
+                      Live CMS
                     </span>
                   </div>
                 </div>
@@ -4380,11 +4619,63 @@ export default function AdminDashboardPage() {
             })()}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+            {/* Universal Date-wise Filter Dropdown */}
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2 sm:px-2.5 py-1 text-xs">
+              <CalendarDays className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              <select
+                value={dateFilterRange}
+                onChange={(e) => setDateFilterRange(e.target.value as any)}
+                className="bg-transparent text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs focus:outline-none cursor-pointer pr-1"
+                title="Filter records datewise"
+              >
+                <option value="all">📅 All Time</option>
+                <option value="today">⚡ Today</option>
+                <option value="yesterday">⏪ Yesterday</option>
+                <option value="7days">🗓️ Last 7 Days</option>
+                <option value="30days">📆 Last 30 Days</option>
+                <option value="this_month">📊 This Month</option>
+                <option value="custom">🎯 Custom Range...</option>
+              </select>
+
+              {dateFilterRange === "custom" && (
+                <div className="hidden md:flex items-center gap-1 pl-1 border-l border-slate-200 dark:border-slate-700">
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-1.5 py-0.5 text-[10px] text-slate-900 dark:text-slate-100 focus:outline-none"
+                    title="Start Date"
+                  />
+                  <span className="text-[10px] text-slate-400">to</span>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-1.5 py-0.5 text-[10px] text-slate-900 dark:text-slate-100 focus:outline-none"
+                    title="End Date"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Dark & Light Theme Switcher */}
+            <button
+              onClick={toggleAdminTheme}
+              className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
+              title={adminTheme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            >
+              {adminTheme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400 hover:rotate-90 transition-transform" />
+              ) : (
+                <Moon className="h-4 w-4 text-indigo-600 hover:-rotate-12 transition-transform" />
+              )}
+            </button>
+
             {/* Live Socket Indicator */}
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 sm:px-3 py-1 text-[11px] sm:text-xs text-emerald-800 font-bold shrink-0">
-              <Radio className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-emerald-600 animate-pulse shrink-0" />
-              <span className="whitespace-nowrap"><span className="hidden xs:inline">Sockets: </span>{stats.activeLiveUsers} Online</span>
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 text-[11px] sm:text-xs text-emerald-800 dark:text-emerald-300 font-bold shrink-0">
+              <Radio className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse shrink-0" />
+              <span className="whitespace-nowrap"><span className="hidden md:inline">Sockets: </span>{stats.activeLiveUsers} Online</span>
             </div>
 
             {/* Quick Export Buttons */}
@@ -4392,16 +4683,16 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => exportToExcel(activeTab as any)}
-                  className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-xs cursor-pointer"
+                  className="hidden md:flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-xs cursor-pointer"
                 >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Export Excel</span>
                 </button>
                 <button
                   onClick={() => exportToPDF(activeTab as any)}
-                  className="flex items-center gap-1 rounded-xl border border-cyan-200 bg-cyan-50 px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer shrink-0"
+                  className="flex items-center gap-1 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all shadow-xs cursor-pointer shrink-0"
                 >
-                  <FileText className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
+                  <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
                   <span className="hidden xs:inline">Download </span><span>PDF</span>
                 </button>
               </div>
@@ -10729,40 +11020,40 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Sponsorships">Sponsorships</p>
-                    <p className="text-base sm:text-lg font-black text-slate-900">
-                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("sponsor") || (p.partnership_type || "").toLowerCase().includes("brand")).length || 1}
+                    <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                      {filteredPartnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("sponsor") || (p.partnership_type || "").toLowerCase().includes("brand")).length}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
                     <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Speaking Proposals">Speaking Proposals</p>
-                    <p className="text-base sm:text-lg font-black text-slate-900">
-                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("speak") || (p.partnership_type || "").toLowerCase().includes("keynote")).length || 1}
+                    <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                      {filteredPartnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("speak") || (p.partnership_type || "").toLowerCase().includes("keynote")).length}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xs flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                     <Building className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title="Exhibit & PR">Exhibit & PR</p>
-                    <p className="text-base sm:text-lg font-black text-slate-900">
-                      {partnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("media") || (p.partnership_type || "").toLowerCase().includes("exhibit")).length || 1}
+                    <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
+                      {filteredPartnerSubmissions.filter((p) => (p.partnership_type || "").toLowerCase().includes("media") || (p.partnership_type || "").toLowerCase().includes("exhibit")).length}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Table Data Container */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-3">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm overflow-hidden space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <Search className="h-4 w-4 text-slate-400" />
                     <input
@@ -10770,26 +11061,26 @@ export default function AdminDashboardPage() {
                       placeholder="Search company, contact person, or email..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none w-64 md:w-80"
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-cyan-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none w-64 md:w-80"
                     />
                   </div>
 
                   <span className="text-xs text-slate-500 font-medium">
-                    Showing <strong className="text-slate-900">{partnerSubmissions.length}</strong> strategic applications
+                    Showing <strong className="text-slate-900 dark:text-slate-100">{filteredPartnerSubmissions.length}</strong> strategic applications
                   </span>
                 </div>
 
-                {partnerSubmissions.length === 0 ? (
+                {filteredPartnerSubmissions.length === 0 ? (
                   <div className="py-16 text-center text-slate-500 text-xs">
-                    <Handshake className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                    <p className="font-bold text-slate-700">No Partner Applications Found</p>
+                    <Handshake className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <p className="font-bold text-slate-700 dark:text-slate-300">No Partner Applications Found</p>
                     <p className="text-slate-400 mt-1">Strategic partnership inquiries submitted via the website form will appear here.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[900px] text-left text-xs border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
                           <th className="py-3.5 px-4 rounded-tl-xl">Company & Website</th>
                           <th className="py-3.5 px-4">Contact Executive</th>
                           <th className="py-3.5 px-4">Proposal Category</th>
@@ -10799,8 +11090,8 @@ export default function AdminDashboardPage() {
                           <th className="py-3.5 px-4 text-right rounded-tr-xl">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {partnerSubmissions.map((sub) => {
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                        {filteredPartnerSubmissions.map((sub) => {
                           const typeLower = (sub.partnership_type || sub.industry || "").toLowerCase();
                           let badgeStyle = "bg-cyan-50 text-cyan-800 border-cyan-200";
                           if (typeLower.includes("sponsor") || typeLower.includes("brand")) {
@@ -11099,28 +11390,28 @@ export default function AdminDashboardPage() {
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
                 <p className="text-xs text-slate-500 font-medium">Review candidate applications, download PDF resumes, and update hiring pipeline status</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-cyan-50 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 shadow-2xs">
-                    Total Applicants: {jobApplications.length}
+                  <span className="rounded-full bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 dark:text-cyan-300 shadow-2xs">
+                    Total Applicants: {filteredJobApplications.length}
                   </span>
                   <button
                     onClick={() => exportToExcel("career-applicants")}
-                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-xs"
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all cursor-pointer shadow-xs"
                   >
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Export Excel</span>
                   </button>
                   <button
                     onClick={() => exportToPDF("career-applicants")}
-                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-xs"
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-3 py-1.5 text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all cursor-pointer shadow-xs"
                   >
-                    <FileText className="h-3.5 w-3.5 text-cyan-600" />
+                    <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                     <span>Download PDF</span>
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
                   <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
@@ -11128,36 +11419,38 @@ export default function AdminDashboardPage() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search candidate by name, email, phone, job title, or experience..."
-                      className="w-full rounded-2xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-cyan-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none"
                     />
                   </div>
+
+                  <span className="text-xs text-slate-500 font-medium">
+                    Showing <strong className="text-slate-900 dark:text-slate-100">{filteredJobApplications.length}</strong> candidates
+                  </span>
                 </div>
 
-                <div className="mt-6 overflow-x-auto">
-                  <table className="w-full min-w-[900px] text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-                        <th className="py-3 px-4">Candidate Name</th>
-                        <th className="py-3 px-4">Applied Role</th>
-                        <th className="py-3 px-4">Contact Details</th>
-                        <th className="py-3 px-4">Experience</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4">Download Resume</th>
-                        <th className="py-3 px-4">Applied Date</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {jobApplications
-                        .filter(
-                          (app) =>
-                            app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            app.job_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            app.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            app.experience.toLowerCase().includes(searchQuery.toLowerCase())
-                        )
-                        .map((app) => (
+                <div className="mt-6 overflow-x-auto custom-scrollbar">
+                  {filteredJobApplications.length === 0 ? (
+                    <div className="py-16 text-center text-slate-500 text-xs">
+                      <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                      <p className="font-bold text-slate-700 dark:text-slate-300">No Candidate Applications Found</p>
+                      <p className="text-slate-400 mt-1">Applications received from the career portal will appear here.</p>
+                    </div>
+                  ) : (
+                    <table className="w-full min-w-[900px] text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase tracking-wider font-bold">
+                          <th className="py-3 px-4">Candidate Name</th>
+                          <th className="py-3 px-4">Applied Role</th>
+                          <th className="py-3 px-4">Contact Details</th>
+                          <th className="py-3 px-4">Experience</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4">Download Resume</th>
+                          <th className="py-3 px-4">Applied Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {filteredJobApplications.map((app) => (
                           <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                             <td className="py-4 px-4 font-bold text-slate-900">
                               <div className="flex items-center gap-2.5">
@@ -11245,16 +11538,9 @@ export default function AdminDashboardPage() {
                             </td>
                           </tr>
                         ))}
-
-                      {jobApplications.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="py-16 text-center text-slate-400">
-                            No job applications received yet. Submit an application on the Careers page to test!
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>
@@ -11561,28 +11847,52 @@ export default function AdminDashboardPage() {
           {/* ========================================== */}
           {activeTab === "newsletter" && (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
                 <p className="text-xs text-slate-500 font-medium">
                   Manage executive newsletter subscribers, real-time signups, and export subscriber lists
                 </p>
-                <button
-                  onClick={() => exportToPDF("newsletter")}
-                  className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-colors cursor-pointer"
-                >
-                  <FileText className="h-4 w-4 text-cyan-600" />
-                  <span>Download Subscribers PDF</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800 px-3.5 py-1.5 text-xs font-extrabold text-cyan-800 dark:text-cyan-300 shadow-2xs">
+                    Total: {filteredNewsletterSubscribers.length}
+                  </span>
+                  <button
+                    onClick={() => exportToPDF("newsletter")}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-4 py-2 text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <span>Download PDF</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
-                {newsletterSubscribers.length === 0 ? (
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm overflow-hidden space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search subscribers by email address or source channel..."
+                      className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-cyan-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <span className="text-xs text-slate-500 font-medium">
+                    Showing <strong className="text-slate-900 dark:text-slate-100">{filteredNewsletterSubscribers.length}</strong> active subscribers
+                  </span>
+                </div>
+
+                {filteredNewsletterSubscribers.length === 0 ? (
                   <div className="py-12 text-center text-slate-500 text-xs">
-                    No newsletter subscribers yet.
+                    <MailCheck className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <p className="font-bold text-slate-700 dark:text-slate-300">No Newsletter Subscribers Found</p>
+                    <p className="text-slate-400 mt-1">Subscribers from footer or landing page forms will appear here.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[650px] text-left text-xs">
-                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                      <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-[10px] font-black uppercase text-slate-500 tracking-wider">
                         <tr>
                           <th className="py-3 px-4">Email Address</th>
                           <th className="py-3 px-4">Source Channel</th>
@@ -11590,17 +11900,17 @@ export default function AdminDashboardPage() {
                           <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {newsletterSubscribers.map((sub) => (
-                          <tr key={sub.id} className="hover:bg-cyan-50/30 transition-colors">
-                            <td className="py-3 px-4 font-bold text-slate-900">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                        {filteredNewsletterSubscribers.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-cyan-50/30 dark:hover:bg-cyan-950/30 transition-colors">
+                            <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
                               <div className="flex items-center gap-2">
-                                <Mail className="h-3.5 w-3.5 text-cyan-600" />
+                                <Mail className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                                 <span>{sub.email}</span>
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <span className="rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-[10px] font-bold border border-slate-200">
+                              <span className="rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 text-[10px] font-bold border border-slate-200 dark:border-slate-700">
                                 {sub.source || "Website Footer"}
                               </span>
                             </td>
@@ -11610,7 +11920,7 @@ export default function AdminDashboardPage() {
                             <td className="py-3 px-4 text-right">
                               <button
                                 onClick={() => handleDeleteSubscriber(sub.id)}
-                                className="rounded-lg p-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                className="rounded-lg p-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
                                 title="Remove Subscriber"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
