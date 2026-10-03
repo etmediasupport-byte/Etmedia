@@ -410,10 +410,15 @@ function IndustriesWeServe() {
 
   const fetchSectors = async () => {
     try {
-      const res = await fetch("/api/sectors");
+      const res = await fetch(`/api/sectors?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { Pragma: "no-cache" },
+      });
       const data = await res.json();
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        setSectors(data.data);
+      const list = Array.isArray(data.sectors) ? data.sectors : (Array.isArray(data.data) ? data.data : []);
+      if (data.success && list.length > 0) {
+        const active = list.filter((s: any) => !s.status || s.status.toLowerCase() === "active");
+        setSectors(active.length > 0 ? active : list);
       }
     } catch (err) {
       console.warn("Using default sectors fallback:", err);

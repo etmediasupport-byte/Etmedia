@@ -5720,13 +5720,16 @@ app.delete("/api/admin/testimonials/:id", authenticateAdmin, async (req, res) =>
 
 // Get all sectors (Public)
 app.get("/api/sectors", async (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   try {
     if (pool) {
       await ensureSectorsTable();
       const [rows]: any = await pool.query("SELECT * FROM sectors ORDER BY priority ASC, created_at ASC");
-      return res.json({ success: true, sectors: rows });
+      return res.json({ success: true, sectors: rows, data: rows });
     }
-    return res.json({ success: true, sectors: [] });
+    return res.json({ success: true, sectors: [], data: [] });
   } catch (err: any) {
     console.error("Fetch Sectors Error:", err);
     return res.status(500).json({ success: false, message: "Failed to fetch sectors" });
