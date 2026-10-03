@@ -5099,8 +5099,28 @@ export default function AdminDashboardPage() {
                     return sum + amt;
                   }, 0);
 
-                  const baseRevenue = paidRegs.reduce((sum, r) => sum + (Number(r.pass_price) || 0), 0);
-                  const gstRevenue = paidRegs.reduce((sum, r) => sum + (Number(r.gst_amount) || Math.round((Number(r.pass_price) || 0) * 0.18)), 0);
+                  const baseRevenue = paidRegs.reduce((sum, r) => {
+                    const explicitPass = Number(r.pass_price);
+                    if (explicitPass && explicitPass > 0) return sum + explicitPass;
+                    const totalAmt = Number(r.payment_amount);
+                    if (totalAmt && totalAmt > 0) {
+                      return sum + Math.round(totalAmt / 1.18);
+                    }
+                    return sum;
+                  }, 0);
+
+                  const gstRevenue = paidRegs.reduce((sum, r) => {
+                    const explicitGst = Number(r.gst_amount);
+                    if (explicitGst && explicitGst > 0) return sum + explicitGst;
+                    const explicitPass = Number(r.pass_price);
+                    if (explicitPass && explicitPass > 0) return sum + Math.round(explicitPass * 0.18);
+                    const totalAmt = Number(r.payment_amount);
+                    if (totalAmt && totalAmt > 0) {
+                      const base = Math.round(totalAmt / 1.18);
+                      return sum + (totalAmt - base);
+                    }
+                    return sum;
+                  }, 0);
 
                   const freePassesCount = eventItemRegs.filter((r) => {
                     const cat = (r.registration_category || "").toLowerCase();
