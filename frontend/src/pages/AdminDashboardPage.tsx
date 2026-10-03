@@ -678,6 +678,7 @@ export default function AdminDashboardPage() {
   const [paymentFilterStatus, setPaymentFilterStatus] = useState<string>("all");
   const [paymentFilterCategory, setPaymentFilterCategory] = useState<string>("all");
   const [paymentFilterCity, setPaymentFilterCity] = useState<string>("all");
+  const [paymentSortBy, setPaymentSortBy] = useState<string>("revenue-desc");
   const [paymentViewMode, setPaymentViewMode] = useState<"row" | "grid">("row");
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [showTicketPreviewModal, setShowTicketPreviewModal] = useState(false);
@@ -4809,10 +4810,14 @@ export default function AdminDashboardPage() {
                     }
                   });
                   const uniquePaymentsList = Array.from(uniqueStatsMap.values());
+                  const totalPaidCount = (registrations || []).filter((r) => {
+                    const pStatus = (r.payment_status || "").toLowerCase();
+                    return (pStatus.includes("paid") || r.payment_id) && !pStatus.includes("dropped") && !pStatus.includes("rejected");
+                  }).length;
 
                   return (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Configured</span>
                           <div className="rounded-xl bg-cyan-100 p-2 text-cyan-700">
@@ -4825,7 +4830,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payments Active</span>
                           <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
@@ -4842,38 +4847,36 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-2xs">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Seats Capacity</span>
-                          <div className="rounded-2xl bg-purple-100 p-2 text-purple-700">
+                          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">Total Event Revenue</span>
+                          <div className="rounded-2xl bg-emerald-600 p-2 text-white shadow-xs">
+                            <IndianRupee className="h-4 w-4" />
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-emerald-950">
+                            ₹{totalPaidRevenue.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[11px] text-emerald-700 font-bold bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                            Real Collections
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">Paid Attendees</span>
+                          <div className="rounded-xl bg-blue-600 p-2 text-white shadow-xs">
                             <Users className="h-4 w-4" />
                           </div>
                         </div>
                         <div className="mt-2 flex items-baseline gap-2">
-                          <span className="text-2xl font-black text-slate-900">
-                            {uniquePaymentsList.reduce((acc: number, item: any) => acc + (Number(item.total_seats) || 0), 0)}
+                          <span className="text-2xl font-black text-blue-950">
+                            {totalPaidCount}
                           </span>
-                          <span className="text-[11px] text-slate-500 font-medium">Seats Managed</span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Coupons</span>
-                          <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                            <Tag className="h-4 w-4" />
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-baseline gap-2">
-                          <span className="text-2xl font-black text-slate-900">
-                            {uniquePaymentsList.reduce((acc: number, item: any) => {
-                              let c = item.coupons;
-                              if (typeof c === "string") { try { c = JSON.parse(c); } catch (e) { c = []; } }
-                              return acc + (Array.isArray(c) ? c.length : 0);
-                            }, 0)}
-                          </span>
-                          <span className="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                            Discounts Active
+                          <span className="text-[11px] text-blue-700 font-bold bg-blue-100/80 px-2 py-0.5 rounded-full">
+                            Verified Paid
                           </span>
                         </div>
                       </div>
@@ -4943,6 +4946,18 @@ export default function AdminDashboardPage() {
                       <option value="EarlyBird">Early Bird Active</option>
                     </select>
 
+                    {/* Sort By Filter */}
+                    <select
+                      value={paymentSortBy}
+                      onChange={(e) => setPaymentSortBy(e.target.value)}
+                      className="rounded-2xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 font-bold text-slate-700 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value="revenue-desc">💰 Highest Revenue First</option>
+                      <option value="paid-desc">👥 Most Paid Registrations</option>
+                      <option value="title-asc">🔤 Event Title (A-Z)</option>
+                      <option value="city-asc">📍 City (A-Z)</option>
+                    </select>
+
                     {/* City Filter */}
                     <select
                       value={paymentFilterCity}
@@ -4954,6 +4969,7 @@ export default function AdminDashboardPage() {
                       <option value="Mumbai">Mumbai</option>
                       <option value="Delhi NCR">Delhi NCR</option>
                       <option value="Bengaluru">Bengaluru</option>
+                      <option value="Visakhapatnam">Visakhapatnam</option>
                     </select>
                   </div>
                 </div>
@@ -5057,15 +5073,82 @@ export default function AdminDashboardPage() {
                   return queryMatch && statusMatch && cityMatch;
                 });
 
+                // Compute real event registration & revenue gains from database
+                const itemsWithRealGains = filteredList.map((item) => {
+                  const eventItemRegs = (registrations || []).filter((r) => {
+                    const rEvtId = (r.event_id || "").toLowerCase().trim();
+                    const rEvtTitle = (r.event_title || "").toLowerCase().trim();
+                    const itemSlug = (item.event_slug || "").toLowerCase().trim();
+                    const itemTitle = (item.event_title || "").toLowerCase().trim();
+                    const itemId = (item.event_id || item.id || "").toLowerCase().trim();
+                    
+                    return (
+                      (itemSlug && (rEvtId === itemSlug || rEvtTitle.includes(itemSlug))) ||
+                      (itemId && (rEvtId === itemId || rEvtTitle.includes(itemId))) ||
+                      (itemTitle && (rEvtTitle === itemTitle || rEvtTitle.includes(itemTitle) || itemTitle.includes(rEvtTitle)))
+                    );
+                  });
+
+                  const paidRegs = eventItemRegs.filter((r) => {
+                    const pStatus = (r.payment_status || "").toLowerCase();
+                    return (pStatus.includes("paid") || r.payment_id) && !pStatus.includes("dropped") && !pStatus.includes("rejected");
+                  });
+
+                  const eventRevenue = paidRegs.reduce((sum, r) => {
+                    const amt = Number(r.payment_amount) || (Number(r.pass_price) ? Math.round(Number(r.pass_price) * 1.18) : 0);
+                    return sum + amt;
+                  }, 0);
+
+                  const baseRevenue = paidRegs.reduce((sum, r) => sum + (Number(r.pass_price) || 0), 0);
+                  const gstRevenue = paidRegs.reduce((sum, r) => sum + (Number(r.gst_amount) || Math.round((Number(r.pass_price) || 0) * 0.18)), 0);
+
+                  const freePassesCount = eventItemRegs.filter((r) => {
+                    const cat = (r.registration_category || "").toLowerCase();
+                    const pStatus = (r.payment_status || "").toLowerCase();
+                    return (cat.includes("free") || cat.includes("vip") || Number(r.pass_price) === 0) && !pStatus.includes("paid");
+                  }).length;
+
+                  const droppedLeadsCount = eventItemRegs.filter((r) => {
+                    const pStatus = (r.payment_status || "").toLowerCase();
+                    return pStatus.includes("dropped") || pStatus.includes("lead");
+                  }).length;
+
+                  return {
+                    ...item,
+                    _stats: {
+                      totalRegs: eventItemRegs.length,
+                      paidCount: paidRegs.length,
+                      revenue: eventRevenue,
+                      baseRevenue,
+                      gstRevenue,
+                      freeCount: freePassesCount,
+                      droppedCount: droppedLeadsCount,
+                    },
+                  };
+                });
+
+                // Apply Sorting
+                const sortedList = itemsWithRealGains.sort((a, b) => {
+                  if (paymentSortBy === "revenue-desc") {
+                    return b._stats.revenue - a._stats.revenue;
+                  }
+                  if (paymentSortBy === "paid-desc") {
+                    return b._stats.paidCount - a._stats.paidCount;
+                  }
+                  if (paymentSortBy === "title-asc") {
+                    return (a.event_title || "").localeCompare(b.event_title || "");
+                  }
+                  if (paymentSortBy === "city-asc") {
+                    return (a.event_city || "").localeCompare(b.event_city || "");
+                  }
+                  return 0;
+                });
+
                 return (
                   <div className={paymentViewMode === "row" ? "grid gap-6 grid-cols-1 w-full" : "grid gap-6 md:grid-cols-2"}>
-                    {filteredList.map((item) => {
+                    {sortedList.map((item) => {
                       const isEarlyBirdActive = checkEarlyBirdStatus(item.early_bird_enabled, item.early_bird_start_date, item.early_bird_end_date).isActive;
                       const gstPct = Number(item.gst_percentage) || 18;
-
-                      const available = Number(item.available_seats) || 100;
-                      const total = Number(item.total_seats) || 100;
-                      const pctSeats = Math.round(((total - available) / total) * 100);
 
                       let parsedCoupons: any[] = [];
                       if (typeof item.coupons === "string") {
@@ -5086,6 +5169,7 @@ export default function AdminDashboardPage() {
 
                       const isSelected = selectedPaymentIds.includes(item.id);
                       const isEnabled = (item.payment_status || "Enabled") === "Enabled";
+                      const stats = item._stats;
 
                       return (
                         <div
@@ -5154,7 +5238,7 @@ export default function AdminDashboardPage() {
                           {/* CARD BODY: 2 KEY METRICS GRID */}
                           <div className="grid gap-4 sm:grid-cols-2 my-5">
                             {/* 1. Tax & Tier Pricing Policy Box */}
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-3.5 space-y-1.5 shadow-2xs">
                               <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
                                 <span>TAX & PRICING POLICY</span>
                                 <span className="text-cyan-700 font-bold">{item.currency || "INR (₹)"}</span>
@@ -5167,28 +5251,46 @@ export default function AdminDashboardPage() {
                                   ({item.gst_included ? "Included" : "Excluded"})
                                 </span>
                               </div>
-                              <div className="text-[11px] text-slate-600 font-medium">
+                              <div className="text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-200">
                                 Dynamic Pass Tiers • {isEarlyBirdActive ? "⚡ Early Bird Active" : "Regular Pricing"}
                               </div>
                             </div>
 
-                            {/* 2. Seats Capacity Progress Box */}
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-1">
-                              <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
-                                <span className="text-slate-500">Seat Capacity</span>
-                                <span className="text-emerald-700">{available} / {total} Free</span>
+                            {/* 2. Real Event Revenue & Delegate Gains Box */}
+                            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 via-teal-50/50 to-cyan-50/40 p-3.5 space-y-1.5 shadow-2xs">
+                              <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider text-emerald-900">
+                                <span className="flex items-center gap-1">
+                                  <IndianRupee className="h-3.5 w-3.5 text-emerald-700" />
+                                  <span>EVENT GAIN & COLLECTIONS</span>
+                                </span>
+                                <span className="bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                                  {stats.paidCount} Paid Delegates
+                                </span>
                               </div>
-                              <div className="text-base font-black text-slate-900 font-display flex items-baseline gap-1">
-                                <span>{total - available}</span>
-                                <span className="text-xs font-medium text-slate-500">Seats Booked</span>
+
+                              <div className="flex items-baseline justify-between pt-0.5">
+                                <div className="text-xl font-black text-emerald-950 font-display">
+                                  ₹{stats.revenue.toLocaleString("en-IN")}
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-semibold">
+                                  Base: ₹{stats.baseRevenue.toLocaleString("en-IN")} + GST: ₹{stats.gstRevenue.toLocaleString("en-IN")}
+                                </span>
                               </div>
-                              <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden mt-1">
-                                <div
-                                  className={`h-full rounded-full transition-all ${
-                                    pctSeats > 80 ? "bg-rose-500" : pctSeats > 50 ? "bg-amber-500" : "bg-emerald-500"
-                                  }`}
-                                  style={{ width: `${Math.min(pctSeats, 100)}%` }}
-                                />
+
+                              <div className="pt-2 border-t border-emerald-200/60 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-slate-700 font-bold">
+                                    🎟️ <strong className="text-slate-900">{stats.freeCount}</strong> Free VIPs
+                                  </span>
+                                  {stats.droppedCount > 0 && (
+                                    <span className="text-amber-800 font-bold bg-amber-100/90 border border-amber-300 px-1.5 py-0.2 rounded-md">
+                                      ⚠️ {stats.droppedCount} Dropped
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-emerald-800 font-black text-[10px] uppercase">
+                                  {stats.totalRegs} Total Leads
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -13289,53 +13391,6 @@ export default function AdminDashboardPage() {
                           />
                           <span className="text-xs font-bold text-slate-500">%</span>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SEAT CAPACITY & INVENTORY */}
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                      <Users className="h-4 w-4 text-emerald-600" />
-                      <span>Seat Inventory & Reservation Limits</span>
-                    </h4>
-
-                    <div className="grid gap-3 sm:grid-cols-4">
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Total Seats</label>
-                        <input
-                          type="number"
-                          value={paymentForm.total_seats ?? 150}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, total_seats: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Available Seats</label>
-                        <input
-                          type="number"
-                          value={paymentForm.available_seats ?? 120}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, available_seats: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Reserved VIP Seats</label>
-                        <input
-                          type="number"
-                          value={paymentForm.vip_seats ?? 20}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, vip_seats: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-purple-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-700 font-bold mb-1">Speaker Seats</label>
-                        <input
-                          type="number"
-                          value={paymentForm.speaker_seats ?? 10}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, speaker_seats: Number(e.target.value) })}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
-                        />
                       </div>
                     </div>
                   </div>
