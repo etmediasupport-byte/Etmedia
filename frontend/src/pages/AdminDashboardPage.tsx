@@ -47,6 +47,7 @@ import {
   X,
   Server,
   ArrowUpRight,
+  ArrowLeft,
   TrendingUp,
   Clock,
   Radio,
@@ -1040,8 +1041,8 @@ export default function AdminDashboardPage() {
   const [attendanceEndDate, setAttendanceEndDate] = useState<string>("");
   const [attendanceDateType, setAttendanceDateType] = useState<"created" | "checked_in">("created");
   const [attendanceCategoryFilter, setAttendanceCategoryFilter] = useState<string>("all");
-  // --- ATTENDANCE DETAIL ROSTER MODAL STATE ("VERE SCREEN") ---
-  const [attendanceRosterModalOpen, setAttendanceRosterModalOpen] = useState(false);
+  // --- ATTENDANCE DETAIL ROSTER VIEW STATE (PAGE-LEVEL, NO POPUP MODAL) ---
+  const [attendancePageView, setAttendancePageView] = useState<"overview" | "roster">("overview");
   const [attendanceRosterTab, setAttendanceRosterTab] = useState<"present" | "absent" | "all">("present");
   const [attendanceRosterSearch, setAttendanceRosterSearch] = useState("");
   const [attendanceRosterCategory, setAttendanceRosterCategory] = useState("all");
@@ -8040,6 +8041,33 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5">
+                  {/* View Mode Toggle: Overview vs Dedicated Full Page Attendee Roster */}
+                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setAttendancePageView("overview")}
+                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        attendancePageView === "overview"
+                          ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      Dashboard Overview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttendancePageView("roster")}
+                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                        attendancePageView === "roster"
+                          ? "bg-cyan-600 text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      <span>Attendee Roster Page</span>
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => navigate("/admin/scanner")}
@@ -8071,8 +8099,10 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 p-5 shadow-xs space-y-4">
+              {attendancePageView === "overview" && (
+                <>
+                  {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Left: Section Title & Real CMS Count Badge */}
                   <div className="space-y-1">
@@ -8155,13 +8185,13 @@ export default function AdminDashboardPage() {
                       type="button"
                       onClick={() => {
                         setAttendanceRosterTab("present");
-                        setAttendanceRosterModalOpen(true);
+                        setAttendancePageView("roster");
                       }}
                       className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
-                      title="Open dedicated attendance roster screen"
+                      title="Open dedicated attendance roster page"
                     >
                       <Users className="h-3.5 w-3.5" />
-                      <span>View Attendees Screen ↗</span>
+                      <span>View Attendees Page ↗</span>
                     </button>
 
                     {attendanceEventFilter !== "all" && (
@@ -8186,10 +8216,10 @@ export default function AdminDashboardPage() {
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("all");
-                      setAttendanceRosterModalOpen(true);
+                      setAttendancePageView("roster");
                     }}
                     className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view all registered attendees in dedicated screen"
+                    title="Click to view all registered attendees in dedicated page"
                   >
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block flex items-center justify-between">
                       <span>Total Registered</span>
@@ -8200,7 +8230,7 @@ export default function AdminDashboardPage() {
                       <ArrowUpRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-cyan-600 transition-colors" />
                     </div>
                     <span className="text-[11px] text-slate-400 font-medium block flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                      <span>View All Roster</span> <span>↗</span>
+                      <span>View All Roster Page</span> <span>↗</span>
                     </span>
                   </div>
 
@@ -8208,10 +8238,10 @@ export default function AdminDashboardPage() {
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("present");
-                      setAttendanceRosterModalOpen(true);
+                      setAttendancePageView("roster");
                     }}
                     className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view who checked in (Present) in dedicated screen"
+                    title="Click to view who checked in (Present) in dedicated page"
                   >
                     <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
                       <span>Checked-In (Present)</span>
@@ -8230,10 +8260,10 @@ export default function AdminDashboardPage() {
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("absent");
-                      setAttendanceRosterModalOpen(true);
+                      setAttendancePageView("roster");
                     }}
                     className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view who is absent / awaiting arrival in dedicated screen"
+                    title="Click to view who is absent / awaiting arrival in dedicated page"
                   >
                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
                       <span>Awaiting Arrival (Absent)</span>
@@ -8252,10 +8282,10 @@ export default function AdminDashboardPage() {
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("present");
-                      setAttendanceRosterModalOpen(true);
+                      setAttendancePageView("roster");
                     }}
                     className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view turnout breakdown in dedicated screen"
+                    title="Click to view turnout breakdown in dedicated page"
                   >
                     <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block flex items-center justify-between">
                       <span>Venue Turnout Rate</span>
@@ -8757,93 +8787,100 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
 
+                </>
+              )}
+
               {/* ========================================================================= */}
-              {/* ATTENDANCE DETAIL ROSTER MODAL ("VERE SCREEN" FOR PRESENT & ABSENT ROSTER) */}
+              {/* ATTENDANCE DETAIL ROSTER PAGE (FULL PAGE VIEW - NO POPUP MODAL) */}
               {/* ========================================================================= */}
-              {attendanceRosterModalOpen && (
-                <div
-                  className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
-                  onClick={() => setAttendanceRosterModalOpen(false)}
-                >
-                  <div
-                    className="w-full max-w-5xl max-h-[92vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* 1. MODAL HEADER */}
-                    <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-850 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <div className="h-9 w-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                            <Users className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
-                                Attendance Roster Intelligence
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
-                                Live Database Records
-                              </span>
-                            </div>
-                            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 truncate">
-                              {selectedEventAttendanceSummary.title}
-                            </h3>
-                          </div>
+              {attendancePageView === "roster" && (
+                <div className="w-full bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in duration-200">
+                  {/* 1. PAGE HEADER */}
+                  <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-850 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
+                    <div className="space-y-2 min-w-0">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setAttendancePageView("overview")}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>Back to Overview</span>
+                        </button>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+                          Live Database Records
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <div className="h-9 w-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                          <Users className="h-5 w-5" />
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pl-11 flex-wrap">
-                          {selectedEventAttendanceSummary.date && (
-                            <span className="flex items-center gap-1 font-mono font-bold">
-                              <Clock className="h-3.5 w-3.5 text-slate-400" />
-                              {selectedEventAttendanceSummary.date}
-                            </span>
-                          )}
-                          {selectedEventAttendanceSummary.city && (
-                            <span className="flex items-center gap-1 font-semibold">
-                              <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                              {selectedEventAttendanceSummary.city}
-                            </span>
-                          )}
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+                            Attendance Roster Intelligence
+                          </div>
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 truncate">
+                            {selectedEventAttendanceSummary.title}
+                          </h3>
                         </div>
                       </div>
 
-                      {/* Top Action Buttons & Event Selector */}
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        {/* EVENT SELECTOR DROPDOWN INSIDE POPUP */}
-                        <div className="relative min-w-[220px] sm:min-w-[280px]">
-                          <select
-                            value={attendanceEventFilter}
-                            onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                            className="w-full rounded-xl border-2 border-cyan-500/70 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-black text-slate-900 dark:text-cyan-200 focus:outline-none focus:border-cyan-600 shadow-2xs cursor-pointer"
-                          >
-                            <option value="all">🌐 All Summits & Events Combined ({registrations.length})</option>
-                            {eventAttendanceStats.map((st) => (
-                              <option key={st.id} value={st.id}>
-                                🏆 {st.title} ({st.totalRegistered})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={exportModalAttendanceExcel}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
-                          title="Export this active roster to Excel"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Export Excel (.xlsx)</span>
-                          <span className="sm:hidden">Excel</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAttendanceRosterModalOpen(false)}
-                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                          title="Close screen"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pl-11 flex-wrap">
+                        {selectedEventAttendanceSummary.date && (
+                          <span className="flex items-center gap-1 font-mono font-bold">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            {selectedEventAttendanceSummary.date}
+                          </span>
+                        )}
+                        {selectedEventAttendanceSummary.city && (
+                          <span className="flex items-center gap-1 font-semibold">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            {selectedEventAttendanceSummary.city}
+                          </span>
+                        )}
                       </div>
                     </div>
+
+                    {/* Top Action Buttons & Event Selector */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {/* EVENT SELECTOR DROPDOWN INSIDE ROSTER PAGE */}
+                      <div className="relative min-w-[220px] sm:min-w-[280px]">
+                        <select
+                          value={attendanceEventFilter}
+                          onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                          className="w-full rounded-xl border-2 border-cyan-500/70 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-black text-slate-900 dark:text-cyan-200 focus:outline-none focus:border-cyan-600 shadow-2xs cursor-pointer"
+                        >
+                          <option value="all">🌐 All Summits & Events Combined ({registrations.length})</option>
+                          {eventAttendanceStats.map((st) => (
+                            <option key={st.id} value={st.id}>
+                              🏆 {st.title} ({st.totalRegistered})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={exportModalAttendanceExcel}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                        title="Export this active roster to Excel"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Export Excel (.xlsx)</span>
+                        <span className="sm:hidden">Excel</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAttendancePageView("overview")}
+                        className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Back to overview"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
 
                     {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
                     <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/50 space-y-3">
@@ -9288,14 +9325,14 @@ export default function AdminDashboardPage() {
 
                       <button
                         type="button"
-                        onClick={() => setAttendanceRosterModalOpen(false)}
-                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        onClick={() => setAttendancePageView("overview")}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                       >
-                        Close Screen
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        <span>Back to Dashboard Overview</span>
                       </button>
                     </div>
                   </div>
-                </div>
               )}
 
               {/* ========================================================================= */}
