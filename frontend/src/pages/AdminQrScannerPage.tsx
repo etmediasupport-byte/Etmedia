@@ -883,13 +883,16 @@ export default function AdminQrScannerPage() {
                     <button
                       type="button"
                       onClick={() => {
+                        const del = scanResult?.delegate as any;
+                        if (!del) return;
                         const currentEvent = eventsList.find((e) => e.id === selectedEventId);
                         setThermalBadgeAttendee({
-                          ...scanResult.delegate,
-                          name: scanResult.delegate.name || scanResult.delegate.full_name || "Delegate",
-                          email: scanResult.delegate.email || scanResult.delegate.official_email || "",
-                          event_title: scanResult.delegate.event_title || scanResult.delegate.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
-                          checked_in_at: scanResult.checkedInAt || scanResult.delegate.checked_in_at || new Date().toISOString(),
+                          ...del,
+                          id: del.id || "",
+                          name: del.name || del.full_name || "Delegate",
+                          email: del.email || del.official_email || "",
+                          event_title: del.event_title || del.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
+                          checked_in_at: scanResult?.checkedInAt || del.checked_in_at || new Date().toISOString(),
                         });
                         setShowThermalBadgeModal(true);
                       }}

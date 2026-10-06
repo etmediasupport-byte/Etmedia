@@ -119,6 +119,7 @@ import {
   CalendarDays,
   RotateCcw,
   Printer,
+  Zap,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -8894,12 +8895,13 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    const d = del as any;
                                     setThermalBadgeAttendee({
                                       ...del,
-                                      name: del.name || del.full_name || "Delegate",
-                                      email: del.email || del.official_email || "",
-                                      event_title: del.event_title || del.eventTitle || selectedEventAttendanceSummary.title,
-                                      checked_in_at: del.checked_in_at || new Date().toISOString(),
+                                      name: d.name || d.full_name || "Delegate",
+                                      email: d.email || d.official_email || "",
+                                      event_title: d.event_title || d.eventTitle || selectedEventAttendanceSummary.title,
+                                      checked_in_at: d.checked_in_at || new Date().toISOString(),
                                     });
                                     setShowThermalBadgeModal(true);
                                   }}
@@ -9466,12 +9468,13 @@ export default function AdminDashboardPage() {
                                     <button
                                       type="button"
                                       onClick={() => {
+                                        const a = attendee as any;
                                         setThermalBadgeAttendee({
                                           ...attendee,
-                                          name: attendee.name || attendee.full_name || "Delegate",
-                                          email: attendee.email || attendee.official_email || "",
-                                          event_title: attendee.event_title || attendee.eventTitle || selectedEventAttendanceSummary.title,
-                                          checked_in_at: attendee.checked_in_at || new Date().toISOString(),
+                                          name: a.name || a.full_name || "Delegate",
+                                          email: a.email || a.official_email || "",
+                                          event_title: a.event_title || a.eventTitle || selectedEventAttendanceSummary.title,
+                                          checked_in_at: a.checked_in_at || new Date().toISOString(),
                                         });
                                         setShowThermalBadgeModal(true);
                                       }}

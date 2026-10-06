@@ -66,7 +66,7 @@ export default function EventDetailPage() {
            targetSlug.includes((e.slug || "").toLowerCase())
   ) || defaultEvents[0]!;
 
-  const [event, setEvent] = useState<EventItem>(initialMatched);
+  const [event, setEvent] = useState<EventItem | null>(initialMatched);
   const [loading, setLoading] = useState(false);
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regMode, setRegMode] = useState<"paid" | "free">("paid");

@@ -4,9 +4,9 @@ import { Printer, X, CheckCircle2, Copy, Sparkles, RefreshCw } from "lucide-reac
 import { toast } from "sonner";
 
 export interface ThermalBadgeAttendee {
-  id: string;
-  name: string;
-  email: string;
+  id?: string;
+  name?: string;
+  email?: string;
   event_title?: string;
   eventTitle?: string;
   organization?: string;
@@ -17,6 +17,7 @@ export interface ThermalBadgeAttendee {
   checked_in_at?: string;
   checkedInAt?: string;
   phone?: string;
+  [key: string]: any;
 }
 
 interface ThermalBadgePassModalProps {
@@ -281,12 +282,13 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
 
   // Handle auto-print if enabled
   useEffect(() => {
-    if (isOpen && autoPrint && qrDataUrl) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 400);
-      return () => clearTimeout(timer);
+    if (!isOpen || !autoPrint || !qrDataUrl) {
+      return;
     }
+    const timer = setTimeout(() => {
+      handlePrint();
+    }, 400);
+    return () => clearTimeout(timer);
   }, [isOpen, autoPrint, qrDataUrl]);
 
   if (!isOpen || !attendee) return null;

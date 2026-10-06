@@ -9,6 +9,11 @@
     "build": "cd ../frontend && npm install --include=dev && npm run build && cd ../backend && tsc && node build-sync.js",
     "start": "node dist/server.js"
   },
+  "overrides": {
+    "proxy-addr": "^2.0.8",
+    "ip-address": "^10.7.1",
+    "qs": "^6.16.0"
+  },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
