@@ -11,9 +11,9 @@ import statesData from "@/data/india-states.json";
 
 export interface PresenceState {
   id: string; // SVG ID
+  code: string; // Short code e.g. JK, UP, MH, TG, AP, TN
   name: string;
   capital: string;
-  image: string;
   isHq?: boolean;
   rawPinX: number; // In 1000x1000 SVG coordinate space
   rawPinY: number;
@@ -30,9 +30,9 @@ export interface PresenceState {
 export const presenceStates: PresenceState[] = [
   {
     id: "INJK",
+    code: "JK",
     name: "Jammu & Kashmir",
     capital: "Srinagar / Jammu",
-    image: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=160&auto=format&fit=crop&q=80",
     rawPinX: 297,
     rawPinY: 156,
     labelX: 160,
@@ -46,9 +46,9 @@ export const presenceStates: PresenceState[] = [
   },
   {
     id: "INUP",
+    code: "UP",
     name: "Uttar Pradesh",
     capital: "Lucknow / Noida",
-    image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=160&auto=format&fit=crop&q=80",
     rawPinX: 430,
     rawPinY: 380,
     labelX: 525,
@@ -62,9 +62,9 @@ export const presenceStates: PresenceState[] = [
   },
   {
     id: "INMH",
+    code: "MH",
     name: "Maharashtra",
     capital: "Mumbai / Pune",
-    image: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=160&auto=format&fit=crop&q=80",
     rawPinX: 275,
     rawPinY: 575,
     labelX: 150,
@@ -78,9 +78,9 @@ export const presenceStates: PresenceState[] = [
   },
   {
     id: "INTG",
+    code: "TG",
     name: "Telangana",
     capital: "Hyderabad",
-    image: "https://images.unsplash.com/photo-1608976328267-e673d3ec06ce?w=160&auto=format&fit=crop&q=80",
     isHq: true,
     rawPinX: 400,
     rawPinY: 645,
@@ -95,9 +95,9 @@ export const presenceStates: PresenceState[] = [
   },
   {
     id: "INAP",
+    code: "AP",
     name: "Andhra Pradesh",
     capital: "Visakhapatnam / Amaravati",
-    image: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=160&auto=format&fit=crop&q=80",
     rawPinX: 440,
     rawPinY: 715,
     labelX: 525,
@@ -111,9 +111,9 @@ export const presenceStates: PresenceState[] = [
   },
   {
     id: "INTN",
+    code: "TN",
     name: "Tamil Nadu",
     capital: "Chennai",
-    image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=160&auto=format&fit=crop&q=80",
     rawPinX: 380,
     rawPinY: 833,
     labelX: 475,
@@ -420,19 +420,15 @@ export function InteractiveIndiaMapSection() {
                           : "border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:translate-x-1"
                       }`}
                     >
-                      {/* Round Landmark Photo */}
-                      <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md bg-blue-100 flex items-center justify-center">
-                        <img
-                          src={st.image}
-                          alt={st.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                        <span className="text-[11px] font-black text-blue-700 uppercase">
-                          {st.id.substring(2)}
-                        </span>
+                      {/* State Code Badge (e.g. TG, MH, UP, AP, TN, JK) */}
+                      <div
+                        className={`relative h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 font-mono font-black text-sm tracking-wider transition-all duration-300 ${
+                          isSelected
+                            ? "bg-gradient-to-br from-[#0052cc] to-[#002f80] text-white shadow-md shadow-blue-600/35 ring-2 ring-white/80 scale-105"
+                            : "bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] text-[#0052cc] border border-blue-200/80 shadow-sm"
+                        }`}
+                      >
+                        <span>{st.code}</span>
                       </div>
 
                       {/* State Name */}
@@ -631,8 +627,14 @@ export function InteractiveIndiaMapSection() {
                     isSelected ? "bg-blue-50 border-[#0052cc] shadow-md" : "bg-white border-slate-100"
                   }`}
                 >
-                  <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 border border-slate-200">
-                    <img src={st.image} alt={st.name} className="h-full w-full object-cover" />
+                  <div
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 font-mono font-black text-xs tracking-wider transition-all ${
+                      isSelected
+                        ? "bg-gradient-to-br from-[#0052cc] to-[#002f80] text-white shadow-sm"
+                        : "bg-blue-100 text-[#0052cc]"
+                    }`}
+                  >
+                    <span>{st.code}</span>
                   </div>
                   <span className="text-xs font-bold text-slate-800 truncate">{st.name}</span>
                 </button>
