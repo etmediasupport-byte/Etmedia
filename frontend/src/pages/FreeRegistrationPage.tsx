@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
-import { events as defaultEvents } from "@/lib/site-data";
+import { events as defaultEvents, getValidImageUrl, getDefaultEventImage } from "@/lib/site-data";
 import {
   validateEmail,
   validatePhone,
@@ -81,6 +81,39 @@ export default function FreeRegistrationPage() {
 
   const [eventData, setEventData] = useState<any>(initialFallback);
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // Guaranteed valid event image
+  const eventImageSrc = getValidImageUrl(
+    eventData?.image || eventData?.event_image || eventData?.about_image,
+    eventData?.title,
+    eventData?.category
+  );
+
+  // Scroll to top on step changes
+  useEffect(() => {
+    const scrollToWizardTop = () => {
+      if (typeof window !== "undefined" && (window as any).__lenis) {
+        try {
+          (window as any).__lenis.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    scrollToWizardTop();
+    const r1 = requestAnimationFrame(scrollToWizardTop);
+    const t1 = setTimeout(scrollToWizardTop, 40);
+    const t2 = setTimeout(scrollToWizardTop, 120);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [currentStep]);
+
   const [submitting, setSubmitting] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -115,7 +148,16 @@ export default function FreeRegistrationPage() {
       .then((json) => {
         if (!isMounted) return;
         if (json.success && json.event) {
-          setEventData(json.event);
+          const ev = json.event;
+          const resolvedImg = getValidImageUrl(
+            ev.image || ev.event_image || ev.about_image,
+            ev.title,
+            ev.category
+          );
+          setEventData({
+            ...ev,
+            image: resolvedImg,
+          });
         }
       })
       .catch((e) => {
@@ -434,10 +476,13 @@ export default function FreeRegistrationPage() {
       {/* ================= HERO HEADER BANNER ================= */}
       <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/80 via-slate-950 to-cyan-950/80 z-0" />
-        {eventData?.image && (
+        {eventImageSrc && (
           <img
-            src={eventData.image}
+            src={eventImageSrc}
             alt={eventData.title}
+            onError={(e: any) => {
+              e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+            }}
             className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm z-0"
           />
         )}
@@ -520,17 +565,24 @@ export default function FreeRegistrationPage() {
           {/* LEFT COLUMN: Event Overview & Free Delegate Perks */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
             <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm space-y-3.5">
-              {eventData?.image && (
+              {eventImageSrc && (
                 <div
                   onClick={() => {
                     const el = document.getElementById("event-flyer-preview");
                     if (el) el.scrollIntoView({ behavior: "smooth" });
                     else setIsImageModalOpen(true);
                   }}
-                  className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer group"
+                  className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer group bg-slate-900 border border-slate-200/80"
                   title="Click to view full event flyer below"
                 >
-                  <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <img
+                    src={eventImageSrc}
+                    alt={eventData.title}
+                    onError={(e: any) => {
+                      e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                    }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
                   <div className="absolute bottom-2 left-2 flex items-center justify-between right-2">
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-950/90 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
@@ -1163,7 +1215,7 @@ export default function FreeRegistrationPage() {
                     <span>View Fullscreen</span>
                   </button>
                   <a
-                    href={eventData.image}
+                    href={eventImageSrc}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer"
@@ -1180,8 +1232,11 @@ export default function FreeRegistrationPage() {
                 className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-950/5 group cursor-pointer shadow-lg hover:shadow-xl transition-all"
               >
                 <img
-                  src={eventData.image}
+                  src={eventImageSrc}
                   alt={`${eventData.title} Flyer`}
+                  onError={(e: any) => {
+                    e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                  }}
                   className="w-full h-auto max-h-[850px] object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
                 />
                 <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
@@ -1223,7 +1278,7 @@ export default function FreeRegistrationPage() {
 
         {/* ================= FULLSCREEN IMAGE MODAL ================= */}
         <AnimatePresence>
-          {isImageModalOpen && eventData?.image && (
+          {isImageModalOpen && eventImageSrc && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1249,8 +1304,11 @@ export default function FreeRegistrationPage() {
                 </div>
                 <div className="overflow-auto max-h-[85vh] p-2 flex items-center justify-center">
                   <img
-                    src={eventData.image}
+                    src={eventImageSrc}
                     alt={eventData.title}
+                    onError={(e: any) => {
+                      e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                    }}
                     className="max-w-full h-auto object-contain rounded-2xl shadow-xl"
                   />
                 </div>

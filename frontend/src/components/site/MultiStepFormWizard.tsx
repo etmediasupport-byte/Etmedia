@@ -137,6 +137,32 @@ export function MultiStepFormWizard({
   const navigate = useNavigate();
   const totalSteps = steps.length;
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // Scroll to top on wizard step changes
+  useEffect(() => {
+    const scrollToWizardTop = () => {
+      if (typeof window !== "undefined" && (window as any).__lenis) {
+        try {
+          (window as any).__lenis.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    scrollToWizardTop();
+    const r1 = requestAnimationFrame(scrollToWizardTop);
+    const t1 = setTimeout(scrollToWizardTop, 40);
+    const t2 = setTimeout(scrollToWizardTop, 120);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [currentStep]);
+
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem(`etmedia_form_draft_${storageKey}`);

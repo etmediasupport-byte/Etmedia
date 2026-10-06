@@ -2309,6 +2309,14 @@ app.get("/api/events/:slug", async (req, res) => {
         if (foundEvt.status === "draft" || foundEvt.status === "archived") {
           return res.status(404).json({ success: false, message: "This event is currently unpublished." });
         }
+        if (!foundEvt.image || typeof foundEvt.image !== "string" || !foundEvt.image.trim()) {
+          const t = (foundEvt.title || "").toLowerCase();
+          if (t.includes("hr") || t.includes("recaller") || t.includes("talent")) foundEvt.image = "/assets/event-hr.jpg";
+          else if (t.includes("cfo") || t.includes("finance")) foundEvt.image = "/assets/event-cfo.jpg";
+          else if (t.includes("tech") || t.includes("ai") || t.includes("creator")) foundEvt.image = "/assets/hero-summit.jpg";
+          else if (t.includes("gcc") || t.includes("leadership")) foundEvt.image = "/assets/hero-leadership.jpg";
+          else foundEvt.image = "/assets/event-hr.jpg";
+        }
         const resData = { success: true, event: foundEvt };
         setFastCache(cacheKey, resData, 60);
         return res.json(resData);

@@ -32,7 +32,15 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { events as defaultEvents, getDefaultPricingPlans, checkEarlyBirdStatus, images, type PricingPlanTier } from "@/lib/site-data";
+import {
+  events as defaultEvents,
+  getDefaultPricingPlans,
+  checkEarlyBirdStatus,
+  images,
+  getValidImageUrl,
+  getDefaultEventImage,
+  type PricingPlanTier,
+} from "@/lib/site-data";
 import { SEOHead } from "@/components/site/SEOHead";
 import {
   validateEmail,
@@ -126,15 +134,71 @@ export default function EventRegistrationWizardPage() {
     date: initialFallback.date,
     venue: initialFallback.venue,
     city: initialFallback.city,
-    image: initialFallback.image,
+    image: getValidImageUrl(initialFallback.image, initialFallback.title, initialFallback.category),
     description: initialFallback.description,
     early_bird_enabled: true,
     early_bird_start_date: "2026-01-01",
     early_bird_end_date: "2026-12-31",
   });
 
+  // Guaranteed valid event banner image with automatic high-def fallback
+  const eventImageSrc = getValidImageUrl(
+    eventData?.image || eventData?.event_image || eventData?.about_image,
+    eventData?.title,
+    eventData?.category
+  );
+
   // Wizard active step: 1..7 (Divided into concise, focused steps)
   const [currentStep, setCurrentStep] = useState<number>(1);
+
+  // Scroll to top immediately & on post-paint frames whenever wizard step changes
+  useEffect(() => {
+    const scrollToWizardTop = () => {
+      // 1. Lenis Smooth Scroller (if active on Layout)
+      if (typeof window !== "undefined" && (window as any).__lenis) {
+        try {
+          (window as any).__lenis.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+      // 2. Native Window & Document Elements
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (document.documentElement.scrollTo) {
+        document.documentElement.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+      if (document.body.scrollTo) {
+        document.body.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+    };
+
+    scrollToWizardTop();
+    const r1 = requestAnimationFrame(scrollToWizardTop);
+    const t1 = setTimeout(scrollToWizardTop, 40);
+    const t2 = setTimeout(scrollToWizardTop, 120);
+    const t3 = setTimeout(scrollToWizardTop, 260);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [currentStep]);
+
+  const goToStep = (stepNumber: number) => {
+    setCurrentStep(stepNumber);
+    if (typeof window !== "undefined") {
+      if ((window as any).__lenis) {
+        try {
+          (window as any).__lenis.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  };
 
   // Fullscreen event flyer modal state
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
@@ -211,7 +275,15 @@ export default function EventRegistrationWizardPage() {
         if (!isMounted) return;
         if (json.success && json.event) {
           const ev = json.event;
-          setEventData(ev);
+          const resolvedImg = getValidImageUrl(
+            ev.image || ev.event_image || ev.about_image,
+            ev.title,
+            ev.category
+          );
+          setEventData({
+            ...ev,
+            image: resolvedImg,
+          });
 
           // Parse plans
           let parsed: PricingPlanTier[] = [];
@@ -771,10 +843,13 @@ export default function EventRegistrationWizardPage() {
       {/* ================= HERO HEADER BANNER ================= */}
       <div className="relative bg-slate-950 text-white pt-28 sm:pt-32 pb-10 sm:pb-14 overflow-hidden border-b border-slate-800">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/80 via-slate-950 to-purple-950/80 z-0" />
-        {eventData?.image && (
+        {eventImageSrc && (
           <img
-            src={eventData.image}
+            src={eventImageSrc}
             alt={eventData.title}
+            onError={(e: any) => {
+              e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+            }}
             className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm z-0"
           />
         )}
@@ -866,17 +941,24 @@ export default function EventRegistrationWizardPage() {
           {currentStep !== 4 && (
             <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
               <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-sm space-y-3.5">
-                {eventData?.image && (
+                {eventImageSrc && (
                   <div
                     onClick={() => {
                       const el = document.getElementById("event-flyer-preview");
                       if (el) el.scrollIntoView({ behavior: "smooth" });
                       else setIsImageModalOpen(true);
                     }}
-                    className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer group"
+                    className="relative h-28 w-full rounded-2xl overflow-hidden shadow-sm cursor-pointer group bg-slate-900 border border-slate-200/80"
                     title="Click to view full event flyer below"
                   >
-                    <img src={eventData.image} alt={eventData.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img
+                      src={eventImageSrc}
+                      alt={eventData.title}
+                      onError={(e: any) => {
+                        e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
                     <div className="absolute bottom-2 left-2 flex items-center justify-between right-2">
                       <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-950/90 text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
@@ -2144,7 +2226,7 @@ export default function EventRegistrationWizardPage() {
                     <span>View Fullscreen</span>
                   </button>
                   <a
-                    href={eventData.image}
+                    href={eventImageSrc}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer"
@@ -2161,8 +2243,11 @@ export default function EventRegistrationWizardPage() {
                 className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-950/5 group cursor-pointer shadow-lg hover:shadow-xl transition-all"
               >
                 <img
-                  src={eventData.image}
+                  src={eventImageSrc}
                   alt={`${eventData.title} Flyer`}
+                  onError={(e: any) => {
+                    e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                  }}
                   className="w-full h-auto max-h-[850px] object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
                 />
                 <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
@@ -2204,7 +2289,7 @@ export default function EventRegistrationWizardPage() {
 
         {/* ================= FULLSCREEN IMAGE MODAL ================= */}
         <AnimatePresence>
-          {isImageModalOpen && eventData?.image && (
+          {isImageModalOpen && eventImageSrc && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2230,8 +2315,11 @@ export default function EventRegistrationWizardPage() {
                 </div>
                 <div className="overflow-auto max-h-[85vh] p-2 flex items-center justify-center">
                   <img
-                    src={eventData.image}
+                    src={eventImageSrc}
                     alt={eventData.title}
+                    onError={(e: any) => {
+                      e.currentTarget.src = getDefaultEventImage(eventData?.title, eventData?.category);
+                    }}
                     className="max-w-full h-auto object-contain rounded-2xl shadow-xl"
                   />
                 </div>
