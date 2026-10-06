@@ -69,6 +69,18 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
   // Initial website load animation timer
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -410,118 +422,174 @@ export function Navbar() {
           </div>
         </nav>
 
-        {/* MOBILE & TABLET DRAWER */}
+        {/* LUXURY EXECUTIVE MOBILE SHEET */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="container-x overflow-hidden lg:hidden pt-1.5 pb-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-[120] lg:hidden bg-slate-950/65 backdrop-blur-xl flex flex-col justify-end sm:justify-center p-2.5 sm:p-5"
             >
-              <div className="space-y-2.5 rounded-3xl border border-slate-200/90 bg-white/98 backdrop-blur-2xl p-4 sm:p-5 text-slate-900 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.18)] max-h-[80vh] overflow-y-auto">
-                {/* Drawer Top Header Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-lg mx-auto rounded-[2rem] border border-white/60 bg-white/98 backdrop-blur-2xl p-4 sm:p-5 text-slate-900 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.4)] flex flex-col gap-3 max-h-[92vh] overflow-y-auto"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {/* Header Bar */}
                 <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4] animate-pulse" />
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 font-display">
                       Executive Navigation
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-700 px-2.5 py-0.5 rounded-full border border-cyan-200/60">
-                    C-Suite Portal
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-50 to-blue-50 text-cyan-700 px-2.5 py-0.5 rounded-full border border-cyan-200/60 font-mono">
+                      C-Suite Portal
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                      aria-label="Close menu"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Nav Items List */}
-                <div className="grid grid-cols-1 gap-1">
+                {/* Primary 6 Core Destinations (High-Impact 2x3 Grid) */}
+                <div className="grid grid-cols-2 gap-2">
                   {[
-                    { to: "/", label: "Home", icon: Home },
-                    { to: "/about", label: "About Us", icon: Building2 },
-                    { to: "/events", label: "Summits & Events", icon: Calendar },
-                    { to: "/partner", label: "Partners & Sponsors", icon: Handshake },
-                    { to: "/magazine", label: "Executive Magazines", icon: BookOpen },
-                    { to: "/news", label: "News & Media Coverage", icon: Newspaper },
-                    { to: "/careers", label: "Careers & Openings", icon: Briefcase },
-                    { to: "/contact", label: "Contact & Enquiry", icon: Phone },
+                    { to: "/", label: "Home", desc: "Main Portal", icon: Home },
+                    { to: "/about", label: "About Us", desc: "Vision & Board", icon: Building2 },
+                    { to: "/events", label: "Summits", desc: "CXO Conclaves", icon: Calendar },
+                    { to: "/partner", label: "Partners", desc: "Global Sponsors", icon: Handshake },
+                    { to: "/magazine", label: "Magazines", desc: "3D Flipbook", icon: BookOpen, badge: "3D Read" },
+                    { to: "/news", label: "News & Media", desc: "Press Coverage", icon: Newspaper },
                   ].map((item) => {
-                    const isItemActive = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
+                    const isItemActive =
+                      location.pathname === item.to ||
+                      (item.to !== "/" && location.pathname.startsWith(item.to));
+
                     return (
                       <Link
                         key={item.to}
                         to={item.to}
                         onClick={handleNavClick}
                         className={cn(
-                          "flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold font-btn transition-all duration-200",
+                          "relative group flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 text-left",
                           isItemActive
-                            ? "bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-indigo-500/15 text-cyan-700 border border-cyan-500/30 shadow-xs"
-                            : "text-slate-700 hover:text-cyan-600 hover:bg-slate-100/80"
+                            ? "bg-gradient-to-br from-cyan-500/15 via-blue-500/10 to-indigo-500/15 text-cyan-800 border-cyan-500/40 shadow-xs ring-1 ring-cyan-500/25"
+                            : "bg-slate-50/80 hover:bg-slate-100/90 border-slate-200/80 text-slate-700 hover:border-cyan-400/40"
                         )}
                       >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              "p-1.5 rounded-xl transition-colors",
-                              isItemActive
-                                ? "bg-cyan-500 text-white shadow-xs"
-                                : "bg-slate-100 text-slate-600"
+                        <span
+                          className={cn(
+                            "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
+                            isItemActive
+                              ? "bg-cyan-500 text-white shadow-xs"
+                              : "bg-white text-slate-700 border border-slate-200/60 shadow-2xs"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-extrabold font-btn truncate">
+                              {item.label}
+                            </span>
+                            {item.badge && (
+                              <span className="text-[8px] font-bold bg-cyan-100 text-cyan-700 px-1 py-0.2 rounded font-mono">
+                                {item.badge}
+                              </span>
                             )}
-                          >
-                            <item.icon className="h-4 w-4" />
-                          </span>
-                          <span>{item.label}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-sans truncate leading-tight">
+                            {item.desc}
+                          </p>
                         </div>
                         {isItemActive && (
-                          <span className="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]" />
+                          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4]" />
                         )}
                       </Link>
                     );
                   })}
                 </div>
 
-                {/* VIP Membership Card */}
+                {/* Secondary Row: Careers & Contact */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { to: "/careers", label: "Careers & Openings", icon: Briefcase },
+                    { to: "/contact", label: "Contact & Enquiry", icon: Phone },
+                  ].map((item) => {
+                    const isItemActive = location.pathname === item.to;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold font-btn transition-all",
+                          isItemActive
+                            ? "bg-blue-50 text-blue-700 border-blue-300 shadow-2xs"
+                            : "bg-white text-slate-600 hover:text-slate-900 border-slate-200/80 hover:bg-slate-50"
+                        )}
+                      >
+                        <item.icon className="h-3.5 w-3.5 text-slate-500" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* VIP Luxury Obsidian & Champagne Gold Membership Card */}
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     window.dispatchEvent(new CustomEvent("open-membership-modal"));
                   }}
-                  className="w-full text-left rounded-2xl p-3 bg-gradient-to-r from-amber-500/10 via-amber-400/10 to-orange-500/10 border border-amber-400/30 hover:border-amber-400/60 transition-all cursor-pointer flex items-center justify-between shadow-xs group"
+                  className="w-full text-left rounded-2xl p-2.5 bg-gradient-to-r from-slate-950 via-[#1c1808] to-slate-950 border border-amber-500/40 hover:border-amber-400/80 transition-all cursor-pointer flex items-center justify-between shadow-md group"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="p-2 rounded-xl bg-amber-500 text-white shadow-xs group-hover:scale-105 transition-transform">
-                      <Crown className="h-4 w-4" />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="h-8.5 w-8.5 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
+                      <Crown className="h-4 w-4 text-amber-100" />
                     </span>
-                    <div>
-                      <p className="text-sm font-bold font-btn text-amber-950 group-hover:text-amber-800">
-                        Executive Membership
+                    <div className="min-w-0">
+                      <p className="text-xs font-extrabold font-btn text-amber-200 group-hover:text-amber-100 truncate">
+                        Executive VIP Membership
                       </p>
-                      <p className="text-xs text-amber-700/80">
+                      <p className="text-[10px] text-amber-400/80 truncate">
                         Exclusive C-Suite Access & Privileges
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-white px-2.5 py-1 rounded-full shadow-xs">
-                    Apply
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-2.5 py-1 rounded-full shadow-xs shrink-0 font-btn ml-2">
+                    Access VIP
                   </span>
                 </button>
 
-                {/* Quick Actions at Bottom */}
-                <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      window.dispatchEvent(new CustomEvent("open-register-modal"));
-                    }}
-                    className="gradient-brand w-full flex items-center justify-center gap-2 rounded-2xl py-2.5 px-4 text-center text-sm font-extrabold font-btn text-white shadow-[0_4px_18px_rgba(0,174,239,0.35)] active:scale-[0.98] transition-all cursor-pointer border-none"
-                  >
-                    <span>Register for Summit Pass</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+                {/* Primary Summit Pass CTA Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent("open-register-modal"));
+                  }}
+                  className="gradient-brand w-full flex items-center justify-center gap-2 rounded-2xl py-2.5 sm:py-3 px-4 text-center text-xs sm:text-sm font-extrabold font-btn text-white shadow-[0_4px_20px_rgba(0,174,239,0.4)] active:scale-[0.98] transition-all cursor-pointer border-none"
+                >
+                  <span>Register for Summit Pass</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
