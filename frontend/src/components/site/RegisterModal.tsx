@@ -73,7 +73,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          const active = data.data.filter((e: any) => e.status !== "archived");
+          const active = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
           setEventsList(sortEventsChronologically(active));
         }
       })

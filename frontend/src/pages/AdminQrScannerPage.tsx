@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
 import logo from "@/assets/UPDATED LOGO.jpeg";
+import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 
 interface Delegate {
   id: string;
@@ -79,6 +80,10 @@ export default function AdminQrScannerPage() {
     checkedInBy?: string;
     scannedId?: string;
   } | null>(null);
+
+  // TVS Electronics Thermal Badge Pass Print State
+  const [thermalBadgeAttendee, setThermalBadgeAttendee] = useState<ThermalBadgeAttendee | null>(null);
+  const [showThermalBadgeModal, setShowThermalBadgeModal] = useState<boolean>(false);
 
   // Manual search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -254,6 +259,19 @@ export default function AdminQrScannerPage() {
             scannedId: cleanId,
           });
           fetchStats();
+
+          // Immediately display TVS thermal badge pass print modal
+          if (data.delegate) {
+            const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+            setThermalBadgeAttendee({
+              ...data.delegate,
+              name: data.delegate.name || data.delegate.full_name || "Delegate",
+              email: data.delegate.email || data.delegate.official_email || "",
+              event_title: data.delegate.event_title || data.delegate.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
+              checked_in_at: data.checkedInAt || data.delegate.checked_in_at || new Date().toISOString(),
+            });
+            setShowThermalBadgeModal(true);
+          }
         } else if (data.alreadyCheckedIn) {
           // Already checked in
           playSound("warning");
@@ -267,6 +285,19 @@ export default function AdminQrScannerPage() {
             checkedInBy: data.checkedInBy,
             scannedId: cleanId,
           });
+
+          // Allow admin to re-print badge slip
+          if (data.delegate) {
+            const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+            setThermalBadgeAttendee({
+              ...data.delegate,
+              name: data.delegate.name || data.delegate.full_name || "Delegate",
+              email: data.delegate.email || data.delegate.official_email || "",
+              event_title: data.delegate.event_title || data.delegate.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
+              checked_in_at: data.checkedInAt || data.delegate.checked_in_at || new Date().toISOString(),
+            });
+            setShowThermalBadgeModal(true);
+          }
         } else {
           // Invalid or Not found
           playSound("error");
@@ -848,6 +879,25 @@ export default function AdminQrScannerPage() {
                         </span>
                       </div>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+                        setThermalBadgeAttendee({
+                          ...scanResult.delegate,
+                          name: scanResult.delegate.name || scanResult.delegate.full_name || "Delegate",
+                          email: scanResult.delegate.email || scanResult.delegate.official_email || "",
+                          event_title: scanResult.delegate.event_title || scanResult.delegate.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
+                          checked_in_at: scanResult.checkedInAt || scanResult.delegate.checked_in_at || new Date().toISOString(),
+                        });
+                        setShowThermalBadgeModal(true);
+                      }}
+                      className="w-full mt-2.5 py-2.5 px-4 rounded-xl bg-gradient-to-r from-slate-900 to-black border border-slate-700 hover:border-slate-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                    >
+                      <Printer className="h-4 w-4 text-emerald-400" />
+                      <span>Print Badge Slip (TVS Thermal)</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -908,9 +958,29 @@ export default function AdminQrScannerPage() {
                         </div>
 
                         {isPresent ? (
-                          <span className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                            Present
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                              Present
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+                                setThermalBadgeAttendee({
+                                  ...del,
+                                  name: del.name || del.full_name || "Delegate",
+                                  email: del.email || "",
+                                  event_title: del.event_title || currentEvent?.title || "Executive Talks Media Summit 2026",
+                                  checked_in_at: del.checked_in_at || new Date().toISOString(),
+                                });
+                                setShowThermalBadgeModal(true);
+                              }}
+                              className="p-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-500 transition-colors cursor-pointer"
+                              title="Print TVS Thermal Badge"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         ) : (
                           <button
                             type="button"
@@ -971,14 +1041,35 @@ export default function AdminQrScannerPage() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleUndoCheckin(item.id)}
-                        className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                        title="Undo check-in (revert to Absent)"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+                            setThermalBadgeAttendee({
+                              ...item,
+                              name: item.name || item.full_name || "Delegate",
+                              email: item.email || "",
+                              event_title: item.event_title || currentEvent?.title || "Executive Talks Media Summit 2026",
+                              checked_in_at: item.checked_in_at || new Date().toISOString(),
+                            });
+                            setShowThermalBadgeModal(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Print TVS Thermal Badge"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUndoCheckin(item.id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                          title="Undo check-in (revert to Absent)"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -987,6 +1078,14 @@ export default function AdminQrScannerPage() {
           </div>
         </div>
       </main>
+
+      {/* TVS ELECTRONICS THERMAL BADGE PASS PRINT MODAL */}
+      <ThermalBadgePassModal
+        isOpen={showThermalBadgeModal}
+        onClose={() => setShowThermalBadgeModal(false)}
+        attendee={thermalBadgeAttendee}
+        defaultEventTitle={eventsList.find((e) => e.id === selectedEventId)?.title || "Executive Talks Media Summit 2026"}
+      />
     </div>
   );
 }

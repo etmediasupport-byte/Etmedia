@@ -87,7 +87,7 @@ export default function EventsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>(urlCategory);
   const [cityFilter, setCityFilter] = useState<string>(urlCity);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
-  const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => (e.status as any) !== "archived")));
+  const [eventList, setEventList] = useState<EventItem[]>(() => sortEventsChronologically(defaultEvents.filter(e => (e.status as any) !== "archived" && (e.status as any) !== "draft")));
 
   // Sync URL search params if changed externally
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function EventsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+          const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
           setEventList(sortEventsChronologically(activeEvents));
         }
       })
@@ -115,7 +115,7 @@ export default function EventsPage() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {
-            const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+            const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
             setEventList(sortEventsChronologically(activeEvents));
           }
         })

@@ -94,7 +94,14 @@ export default function EventDetailPage() {
           const res = await fetch(`/api/events/${slug}`);
           const data = await res.json();
           if (data.success && data.event && isMounted) {
+            if (data.event.status === "draft" || data.event.status === "archived") {
+              setEvent(null);
+              return;
+            }
             setEvent(data.event);
+            return;
+          } else if (!data.success && isMounted) {
+            setEvent(null);
             return;
           }
         }
@@ -754,46 +761,63 @@ export default function EventDetailPage() {
                   <span>Registrations Concluded</span>
                   <AlertCircle className="h-3.5 w-3.5 text-slate-400" />
                 </button>
+              ) : (event as any)?.allow_paid_registration === 0 && (event as any)?.allow_free_registration === 0 ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 py-2.5 px-4 text-xs font-black text-slate-500 cursor-not-allowed border border-slate-200"
+                >
+                  <span>Registrations Closed</span>
+                  <AlertCircle className="h-3.5 w-3.5 text-slate-400" />
+                </button>
               ) : liveEventStatus === "live" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenRegister("paid")}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-indigo-500/25 transition-all cursor-pointer truncate"
-                  >
-                    <Radio className="h-3.5 w-3.5 animate-pulse text-white shrink-0" />
-                    <span className="truncate">Join Live</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenRegister("free")}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-emerald-500/25 transition-all cursor-pointer truncate"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
-                    <span className="truncate">Register Free</span>
-                  </button>
+                <div className={`grid ${(event as any)?.allow_paid_registration !== 0 && (event as any)?.allow_paid_registration !== false && (event as any)?.allow_free_registration !== 0 && (event as any)?.allow_free_registration !== false ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
+                  {(event as any)?.allow_paid_registration !== 0 && (event as any)?.allow_paid_registration !== false && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("paid")}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-indigo-500/25 transition-all cursor-pointer truncate"
+                    >
+                      <Radio className="h-3.5 w-3.5 animate-pulse text-white shrink-0" />
+                      <span className="truncate">Join Live</span>
+                    </button>
+                  )}
+                  {(event as any)?.allow_free_registration !== 0 && (event as any)?.allow_free_registration !== false && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("free")}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-emerald-500/25 transition-all cursor-pointer truncate"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+                      <span className="truncate">Register Free</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid ${(event as any)?.allow_paid_registration !== 0 && (event as any)?.allow_paid_registration !== false && (event as any)?.allow_free_registration !== 0 && (event as any)?.allow_free_registration !== false ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
                   {/* Button 1: Paid Registration (Register Now) */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenRegister("paid")}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-purple-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
-                  >
-                    <Zap className="h-3.5 w-3.5 text-white shrink-0" />
-                    <span className="truncate">Register Now</span>
-                  </button>
+                  {(event as any)?.allow_paid_registration !== 0 && (event as any)?.allow_paid_registration !== false && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("paid")}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-purple-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
+                    >
+                      <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+                      <span className="truncate">Register Now</span>
+                    </button>
+                  )}
 
                   {/* Button 2: Free Pass Application (Register Free) */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenRegister("free")}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-cyan-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
-                    <span className="truncate">Register Free</span>
-                  </button>
+                  {(event as any)?.allow_free_registration !== 0 && (event as any)?.allow_free_registration !== false && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenRegister("free")}
+                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 py-2.5 px-2.5 text-xs font-black text-white hover:opacity-95 shadow-md shadow-cyan-500/20 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer group truncate"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+                      <span className="truncate">Register Free</span>
+                    </button>
+                  )}
                 </div>
               )}
 

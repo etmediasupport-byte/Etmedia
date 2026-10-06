@@ -53,7 +53,7 @@ export function EventSelectionModal({
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           const activeEvents = json.data.filter(
-            (ev: any) => ev.status !== "archived"
+            (ev: any) => ev.status !== "archived" && ev.status !== "draft"
           );
           setEventsList(sortEventsChronologically(activeEvents));
         } else {
@@ -462,26 +462,30 @@ export function EventSelectionModal({
                         </button>
 
                         {/* 2. Register as Free */}
-                        <button
-                          type="button"
-                          onClick={() => handleSelectFree(event)}
-                          className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
-                          title="Apply for a Free Delegate Pass"
-                        >
-                          <Sparkles className="h-3.5 w-3.5 text-white" />
-                          <span>Register Free</span>
-                        </button>
+                        {(event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false && (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectFree(event)}
+                            className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                            title="Apply for a Free Delegate Pass"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 text-white" />
+                            <span>Register Free</span>
+                          </button>
+                        )}
 
                         {/* 3. Register with Payment */}
-                        <button
-                          type="button"
-                          onClick={() => handleSelectPaid(event)}
-                          className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
-                          title="Book Delegate Pass with Payment"
-                        >
-                          <Zap className="h-3.5 w-3.5 text-white" />
-                          <span>Register (Paid)</span>
-                        </button>
+                        {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectPaid(event)}
+                            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                            title="Book Delegate Pass with Payment"
+                          >
+                            <Zap className="h-3.5 w-3.5 text-white" />
+                            <span>Register (Paid)</span>
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   );

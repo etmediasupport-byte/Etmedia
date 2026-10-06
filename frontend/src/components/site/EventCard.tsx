@@ -102,8 +102,18 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
               <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <span className="truncate text-[11px] sm:text-xs">{venueText}</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0 whitespace-nowrap">
-              Free & Paid Passes
+            <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${
+              (event as any).allow_paid_registration === 0 && (event as any).allow_free_registration === 0
+                ? "text-slate-600 bg-slate-100 border-slate-200"
+                : "text-emerald-700 bg-emerald-50 border-emerald-200"
+            }`}>
+              {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
+                ? "Free & Paid Passes"
+                : (event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false
+                ? "Paid Passes"
+                : (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
+                ? "Free Passes"
+                : "Passes Closed"}
             </span>
           </div>
         </div>
@@ -112,24 +122,39 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
       {/* Card Action Footer: Responsive Buttons Stack on Mobile */}
       <div className="p-3 sm:p-4 pt-0 flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full">
         {/* Button 1: Register Now (Paid Pass) */}
-        <button
-          type="button"
-          onClick={(e) => handleRegisterClick(e, "paid")}
-          className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-        >
-          <Zap className="h-3.5 w-3.5 text-white shrink-0" />
-          <span className="truncate">Register Now</span>
-        </button>
+        {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (
+          <button
+            type="button"
+            onClick={(e) => handleRegisterClick(e, "paid")}
+            className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+            <span className="truncate">Register Now</span>
+          </button>
+        )}
 
         {/* Button 2: Register Free Interest */}
-        <button
-          type="button"
-          onClick={(e) => handleRegisterClick(e, "free")}
-          className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
-          <span className="truncate">Register Free</span>
-        </button>
+        {(event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false && (
+          <button
+            type="button"
+            onClick={(e) => handleRegisterClick(e, "free")}
+            className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+            <span className="truncate">Register Free</span>
+          </button>
+        )}
+
+        {/* If both are hidden */}
+        {((event as any).allow_paid_registration === 0 || (event as any).allow_paid_registration === false) &&
+          ((event as any).allow_free_registration === 0 || (event as any).allow_free_registration === false) && (
+            <Link
+              to={`/events/${event.slug || event.id}`}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5"
+            >
+              <span>View Event Details</span>
+            </Link>
+          )}
       </div>
     </MouseTiltCard>
   );

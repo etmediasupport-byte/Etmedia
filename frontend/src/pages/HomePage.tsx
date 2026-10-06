@@ -297,14 +297,14 @@ function AboutSnapshot() {
 }
 
 function UpcomingEvents() {
-  const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => (e.status as any) !== "archived")));
+  const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => (e.status as any) !== "archived" && (e.status as any) !== "draft")));
 
   const fetchUpcoming = () => {
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          const activeEvents = data.data.filter((e: any) => e.status !== "archived");
+          const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
           setEventList(sortEventsChronologically(activeEvents));
         }
       })

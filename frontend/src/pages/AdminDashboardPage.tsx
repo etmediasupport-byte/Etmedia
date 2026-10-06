@@ -118,7 +118,9 @@ import {
   Filter,
   CalendarDays,
   RotateCcw,
+  Printer,
 } from "lucide-react";
+import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
 import { extractPdfPagesToDataUrls, parsePagesList } from "@/utils/pdfExtractor";
 import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazines, JobItem, JobApplication, getDefaultJobs, MediaGalleryItem, getDefaultMediaGallery, EventPaymentConfig, CouponItem, PricingPlanTier, getDefaultPricingPlans, checkEarlyBirdStatus } from "@/lib/site-data";
@@ -1050,6 +1052,60 @@ export default function AdminDashboardPage() {
   const [attendanceRosterTab, setAttendanceRosterTab] = useState<"present" | "absent" | "all">("present");
   const [attendanceRosterSearch, setAttendanceRosterSearch] = useState("");
   const [attendanceRosterCategory, setAttendanceRosterCategory] = useState("all");
+  // --- TVS THERMAL BADGE PASS PRINT & AUDIO STATE ---
+  const [thermalBadgeAttendee, setThermalBadgeAttendee] = useState<ThermalBadgeAttendee | null>(null);
+  const [showThermalBadgeModal, setShowThermalBadgeModal] = useState<boolean>(false);
+  const gateAudioCtxRef = useRef<AudioContext | null>(null);
+
+  const playGateAudio = (type: "success" | "warning" | "error") => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!gateAudioCtxRef.current) {
+        gateAudioCtxRef.current = new AudioCtx();
+      }
+      const ctx = gateAudioCtxRef.current;
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === "success") {
+        // High pleasant ding-dong chime (C6 -> G6)
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1046.5, now);
+        osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.15);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === "warning") {
+        // Dual alert tones (A4 -> E4)
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(330, now + 0.12);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else {
+        // Low buzzer tone
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(180, now);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+    } catch (e) {
+      console.warn("Gate audio error:", e);
+    }
+  };
   // --- E-CERTIFICATE DISPATCH & PREVIEW STATE ---
   const [previewCertAttendee, setPreviewCertAttendee] = useState<any | null>(null);
   const [sendingCertId, setSendingCertId] = useState<string | null>(null);
@@ -1138,6 +1194,8 @@ export default function AdminDashboardPage() {
     agenda_list: AgendaItem[];
     map_url: string;
     venue_address: string;
+    allow_paid_registration: number;
+    allow_free_registration: number;
   }>({
     title: "",
     category: "Conference & Leadership",
@@ -1168,6 +1226,8 @@ export default function AdminDashboardPage() {
     agenda_list: [],
     map_url: "",
     venue_address: "",
+    allow_paid_registration: 1,
+    allow_free_registration: 1,
   });
 
   const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token") || "";
@@ -1546,6 +1606,21 @@ export default function AdminDashboardPage() {
     socket.on("new_newsletter_subscriber", onNewSubscriber);
     socket.on("settings_updated", onSettingsUpdate);
 
+    const onRegVisibility = ({ id, allow_paid_registration, allow_free_registration }: any) => {
+      setCmsEvents((prev) =>
+        prev.map((e) =>
+          e.id === id
+            ? {
+                ...e,
+                ...(allow_paid_registration !== undefined && { allow_paid_registration }),
+                ...(allow_free_registration !== undefined && { allow_free_registration }),
+              }
+            : e
+        )
+      );
+    };
+    socket.on("event_registration_visibility_changed", onRegVisibility);
+
     return () => {
       socket.off("live_users_update", onLiveUsers);
       socket.off("new_registration", onNewRegistration);
@@ -1559,6 +1634,7 @@ export default function AdminDashboardPage() {
       socket.off("testimonial_updated", onTestimonialUpdate);
       socket.off("new_newsletter_subscriber", onNewSubscriber);
       socket.off("settings_updated", onSettingsUpdate);
+      socket.off("event_registration_visibility_changed", onRegVisibility);
     };
   }, []);
 
@@ -2418,15 +2494,42 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
+        playGateAudio("success");
         toast.success(data.message || `✅ Attendance recorded for ${data.delegate?.name || codeToUse}!`);
         setQuickScanInput("");
         fetchDashboardData();
+
+        // Immediately show the Print Badge Slip Modal for TVS thermal printer
+        if (data.delegate) {
+          setThermalBadgeAttendee({
+            ...data.delegate,
+            name: data.delegate.name || data.delegate.full_name || codeToUse,
+            email: data.delegate.email || data.delegate.official_email || "",
+            event_title: data.delegate.event_title || data.delegate.eventTitle || selectedEventAttendanceSummary.title,
+            checked_in_at: data.checkedInAt || data.delegate.checked_in_at || new Date().toISOString(),
+          });
+          setShowThermalBadgeModal(true);
+        }
       } else if (data.alreadyCheckedIn) {
+        playGateAudio("warning");
         toast.warning(data.message || `⚠️ Attendee is ALREADY checked in!`);
+        // If attendee is already checked in, also open modal allowing admin to re-print badge slip
+        if (data.delegate) {
+          setThermalBadgeAttendee({
+            ...data.delegate,
+            name: data.delegate.name || data.delegate.full_name || codeToUse,
+            email: data.delegate.email || data.delegate.official_email || "",
+            event_title: data.delegate.event_title || data.delegate.eventTitle || selectedEventAttendanceSummary.title,
+            checked_in_at: data.checkedInAt || data.delegate.checked_in_at || new Date().toISOString(),
+          });
+          setShowThermalBadgeModal(true);
+        }
       } else {
+        playGateAudio("error");
         toast.error(data.message || "❌ Invalid Pass ID.");
       }
     } catch (err) {
+      playGateAudio("error");
       toast.error("Network error processing check-in.");
     } finally {
       setQuickScanLoading(false);
@@ -4225,6 +4328,8 @@ export default function AdminDashboardPage() {
       agenda_list: [],
       map_url: "",
       venue_address: "",
+      allow_paid_registration: 1,
+      allow_free_registration: 1,
     });
     setOpenLocationSlots([0]);
     setEventModalOpen(true);
@@ -4311,6 +4416,8 @@ export default function AdminDashboardPage() {
       agenda_list: parsedAgenda,
       map_url: evt.map_url || "",
       venue_address: evt.venue_address || "",
+      allow_paid_registration: evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? 1 : 0,
+      allow_free_registration: evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? 1 : 0,
     });
     setOpenLocationSlots([0]);
     setEventModalOpen(true);
@@ -4510,6 +4617,46 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Error toggling featured state.");
+    }
+  };
+
+  const handleToggleRegistrationVisibility = async (evt: any, type: "paid" | "free") => {
+    if (!token) return;
+    const currentPaid = evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? 1 : 0;
+    const currentFree = evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? 1 : 0;
+
+    const newPaid = type === "paid" ? (currentPaid ? 0 : 1) : currentPaid;
+    const newFree = type === "free" ? (currentFree ? 0 : 1) : currentFree;
+
+    try {
+      const res = await fetch(`/api/admin/events/${evt.id}/registration-visibility`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          allow_paid_registration: newPaid,
+          allow_free_registration: newFree,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(
+          type === "paid"
+            ? `Paid Registration ("Register Now") ${newPaid ? "Enabled" : "Hidden"}`
+            : `Free Registration ("Register Free") ${newFree ? "Enabled" : "Hidden"}`
+        );
+        setCmsEvents((prev) =>
+          prev.map((e) =>
+            e.id === evt.id
+              ? { ...e, allow_paid_registration: newPaid, allow_free_registration: newFree }
+              : e
+          )
+        );
+      }
+    } catch (err) {
+      toast.error("Error toggling registration button.");
     }
   };
 
@@ -8744,6 +8891,25 @@ export default function AdminDashboardPage() {
                                   </button>
                                 )}
 
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setThermalBadgeAttendee({
+                                      ...del,
+                                      name: del.name || del.full_name || "Delegate",
+                                      email: del.email || del.official_email || "",
+                                      event_title: del.event_title || del.eventTitle || selectedEventAttendanceSummary.title,
+                                      checked_in_at: del.checked_in_at || new Date().toISOString(),
+                                    });
+                                    setShowThermalBadgeModal(true);
+                                  }}
+                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+                                  title="Print TVS Thermal Badge Pass Slip"
+                                >
+                                  <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
+                                  <span className="text-[10px] font-bold">Print</span>
+                                </button>
+
                                 <a
                                   href={`/verify-pass/${del.id}`}
                                   target="_blank"
@@ -9296,6 +9462,25 @@ export default function AdminDashboardPage() {
                                         <span>Admit / Check In</span>
                                       </button>
                                     )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setThermalBadgeAttendee({
+                                          ...attendee,
+                                          name: attendee.name || attendee.full_name || "Delegate",
+                                          email: attendee.email || attendee.official_email || "",
+                                          event_title: attendee.event_title || attendee.eventTitle || selectedEventAttendanceSummary.title,
+                                          checked_in_at: attendee.checked_in_at || new Date().toISOString(),
+                                        });
+                                        setShowThermalBadgeModal(true);
+                                      }}
+                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                                      title="Print TVS Thermal Badge Pass Slip"
+                                    >
+                                      <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
+                                      <span className="text-xs font-bold hidden sm:inline">Print Pass</span>
+                                    </button>
 
                                     <a
                                       href={`/verify-pass/${attendee.id}`}
@@ -10259,10 +10444,56 @@ export default function AdminDashboardPage() {
                                 </div>
                               )}
                             </div>
+
+                            {/* Quick Registration Buttons Control Bar */}
+                            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5 bg-slate-50/80 px-3 py-2 rounded-2xl border border-slate-200/60">
+                              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider shrink-0">
+                                Reg Passes:
+                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                {/* Toggle Paid */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRegistrationVisibility(evt, "paid")}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
+                                    evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false
+                                      ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                      : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
+                                  }`}
+                                  title={
+                                    evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false
+                                      ? "Paid 'Register Now' is Visible (Click to Hide)"
+                                      : "Paid 'Register Now' is Hidden (Click to Show)"
+                                  }
+                                >
+                                  <Zap className="h-3 w-3 text-amber-500 shrink-0" />
+                                  <span>Paid: {evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? "ON" : "OFF"}</span>
+                                </button>
+
+                                {/* Toggle Free */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRegistrationVisibility(evt, "free")}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
+                                    evt.allow_free_registration !== 0 && evt.allow_free_registration !== false
+                                      ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                      : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
+                                  }`}
+                                  title={
+                                    evt.allow_free_registration !== 0 && evt.allow_free_registration !== false
+                                      ? "Free 'Register Free' is Visible (Click to Hide)"
+                                      : "Free 'Register Free' is Hidden (Click to Show)"
+                                  }
+                                >
+                                  <Sparkles className="h-3 w-3 text-emerald-500 shrink-0" />
+                                  <span>Free: {evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? "ON" : "OFF"}</span>
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Admin Action Buttons */}
-                          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                             <button
                               onClick={() => handleToggleStatus(evt)}
                               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold border transition-all ${
@@ -10442,6 +10673,69 @@ export default function AdminDashboardPage() {
                         <option value="published">Published (Live & Visible)</option>
                         <option value="draft">Draft (Admin Only)</option>
                       </select>
+                    </div>
+
+                    {/* REGISTRATION BUTTONS VISIBILITY (PREMIUM FEATURE) */}
+                    <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-cyan-50/70 border border-indigo-200/90 shadow-2xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
+                            <Sparkles className="h-4 w-4 text-indigo-600" />
+                            <span>Registration Pass Buttons (Hide / Show)</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                            Control which registration options are available to visitors for this event on cards, popups, and the event detail page.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        {/* Toggle 1: Paid Registration Button */}
+                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                          eventForm.allow_paid_registration !== 0
+                            ? "bg-white border-indigo-300 ring-2 ring-indigo-500/10 shadow-xs"
+                            : "bg-slate-50/90 border-slate-200 opacity-70"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={eventForm.allow_paid_registration !== 0}
+                            onChange={(e) => setEventForm({ ...eventForm, allow_paid_registration: e.target.checked ? 1 : 0 })}
+                            className="mt-0.5 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                              <Zap className="h-3.5 w-3.5 text-amber-500" />
+                              Show "Register Now" (Paid Pass)
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {eventForm.allow_paid_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Toggle 2: Free Registration Button */}
+                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                          eventForm.allow_free_registration !== 0
+                            ? "bg-white border-emerald-300 ring-2 ring-emerald-500/10 shadow-xs"
+                            : "bg-slate-50/90 border-slate-200 opacity-70"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={eventForm.allow_free_registration !== 0}
+                            onChange={(e) => setEventForm({ ...eventForm, allow_free_registration: e.target.checked ? 1 : 0 })}
+                            className="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                              Show "Register Free" Pass
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {eventForm.allow_free_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                            </p>
+                          </div>
+                        </label>
+                      </div>
                     </div>
 
                     {/* DYNAMIC DELEGATES, SPEAKERS, SPONSORS STAT COUNTS */}
@@ -18696,6 +18990,14 @@ export default function AdminDashboardPage() {
           }
         />
       )}
+
+      {/* TVS ELECTRONICS THERMAL BADGE PASS PRINT MODAL */}
+      <ThermalBadgePassModal
+        isOpen={showThermalBadgeModal}
+        onClose={() => setShowThermalBadgeModal(false)}
+        attendee={thermalBadgeAttendee}
+        defaultEventTitle={selectedEventAttendanceSummary.title}
+      />
     </div>
   );
 }

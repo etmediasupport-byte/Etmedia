@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award } from "lucide-react";
+import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award, Zap } from "lucide-react";
 import { io } from "socket.io-client";
 import { images } from "@/lib/site-data";
 
@@ -287,13 +287,14 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
     }).catch(() => {});
   };
 
-  const handleRegisterClick = (event: EventItem) => {
+  const handleRegisterClick = (event: EventItem, mode: "paid" | "free" = "paid") => {
     // Track Click Analytics
     fetch("/api/popup/click", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         event_id: event.id,
+        mode: mode,
         session_id: sessionStorage.getItem("et_session_id") || "SESSION_" + Date.now(),
       }),
     }).catch(() => {});
@@ -307,11 +308,15 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
       onClosePreview();
     }
 
-    if (event.registration_url && event.registration_url.startsWith("http")) {
-      window.open(event.registration_url, "_blank");
+    const targetSlug = event.slug || event.id || "hr-recall-2k26";
+    if (mode === "free") {
+      navigate(`/events/${encodeURIComponent(targetSlug)}/register-free`);
     } else {
-      const targetSlug = event.slug || event.id;
-      navigate(`/events/${encodeURIComponent(targetSlug)}/register`);
+      if (event.registration_url && event.registration_url.startsWith("http")) {
+        window.open(event.registration_url, "_blank");
+      } else {
+        navigate(`/events/${encodeURIComponent(targetSlug)}/register`);
+      }
     }
   };
 
@@ -453,30 +458,78 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
               </div>
 
               {/* Event Metadata (Date & Venue) */}
-              <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-slate-400 pt-2 border-t border-slate-800/80">
-                {currentEvent.date && (
-                  <div className="flex items-center gap-1.5 text-cyan-300">
-                    <Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <span>{currentEvent.date}</span>
-                  </div>
-                )}
-                {(currentEvent.city || currentEvent.venue) && (
-                  <div className="flex items-center gap-1.5 text-slate-300">
-                    <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <span className="line-clamp-1">{currentEvent.venue ? `${currentEvent.venue}, ${currentEvent.city || ''}` : currentEvent.city}</span>
-                  </div>
-                )}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-semibold text-slate-400 pt-2 border-t border-slate-800/80">
+                <div className="flex flex-wrap items-center gap-3">
+                  {currentEvent.date && (
+                    <div className="flex items-center gap-1.5 text-cyan-300">
+                      <Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span>{currentEvent.date}</span>
+                    </div>
+                  )}
+                  {(currentEvent.city || currentEvent.venue) && (
+                    <div className="flex items-center gap-1.5 text-slate-300">
+                      <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span className="line-clamp-1">{currentEvent.venue ? `${currentEvent.venue}, ${currentEvent.city || ''}` : currentEvent.city}</span>
+                    </div>
+                  )}
+                </div>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
+                  (currentEvent as any).allow_paid_registration === 0 && (currentEvent as any).allow_free_registration === 0
+                    ? "text-slate-400 bg-slate-900 border-slate-700"
+                    : "text-emerald-400 bg-emerald-950/70 border-emerald-500/30"
+                }`}>
+                  {(currentEvent as any).allow_paid_registration !== 0 && (currentEvent as any).allow_paid_registration !== false && (currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false
+                    ? "Free & Paid Passes"
+                    : (currentEvent as any).allow_paid_registration !== 0 && (currentEvent as any).allow_paid_registration !== false
+                    ? "Paid Passes"
+                    : (currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false
+                    ? "Free Passes"
+                    : "Passes Closed"}
+                </span>
               </div>
 
-              {/* Call to Action Button */}
-              <div className="pt-1">
-                <button
-                  onClick={() => handleRegisterClick(currentEvent)}
-                  className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-3 px-5 flex items-center justify-center gap-2 gradient-brand text-white shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-                >
-                  <span className="relative z-10 tracking-wider uppercase">Register Now</span>
-                  <ArrowRight className="w-3.5 h-3.5 relative z-10 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                </button>
+              {/* Call to Action Buttons: Paid & Free */}
+              <div className={`grid ${(currentEvent as any).allow_paid_registration !== 0 && (currentEvent as any).allow_paid_registration !== false && (currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false ? "grid-cols-2" : "grid-cols-1"} gap-2.5 pt-1`}>
+                {/* 1. Register Now (Paid Pass) */}
+                {(currentEvent as any).allow_paid_registration !== 0 && (currentEvent as any).allow_paid_registration !== false && (
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterClick(currentEvent, "paid")}
+                    className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer"
+                    title="Register for Paid Pass"
+                  >
+                    <Zap className="w-3.5 h-3.5 shrink-0 text-amber-300 fill-amber-300/30" />
+                    <span className="relative z-10 tracking-wide uppercase text-[11px] sm:text-xs truncate">Register Now</span>
+                  </button>
+                )}
+
+                {/* 2. Register Free */}
+                {(currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false && (
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterClick(currentEvent, "free")}
+                    className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer"
+                    title="Apply for Free Pass"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-white animate-pulse" />
+                    <span className="relative z-10 tracking-wide uppercase text-[11px] sm:text-xs truncate">Register Free</span>
+                  </button>
+                )}
+
+                {/* If both hidden */}
+                {((currentEvent as any).allow_paid_registration === 0 || (currentEvent as any).allow_paid_registration === false) &&
+                  ((currentEvent as any).allow_free_registration === 0 || (currentEvent as any).allow_free_registration === false) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleClosePopup();
+                        navigate(`/events/${encodeURIComponent(currentEvent.slug || currentEvent.id)}`);
+                      }}
+                      className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all duration-200 cursor-pointer border border-slate-700"
+                    >
+                      <span>View Event Details</span>
+                    </button>
+                  )}
               </div>
 
               {/* Maybe Later link */}
