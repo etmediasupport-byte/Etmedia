@@ -17,6 +17,7 @@ import { socket } from "@/lib/socket";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchWithCache, invalidateClientCache } from "@/lib/api-cache";
 
 export interface NewsItem {
   id: number | string;
@@ -55,12 +56,11 @@ export default function NewsPage() {
   const [activeVideoModal, setActiveVideoModal] = useState<NewsItem | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(9);
 
-  // Fetch News from Backend
+  // Fetch News from Backend with in-memory caching
   const fetchNews = async () => {
     try {
-      const res = await fetch("/api/news");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.news)) {
+      const data = await fetchWithCache("/api/news");
+      if (data && data.success && Array.isArray(data.news)) {
         setNewsList(data.news);
       }
     } catch (err) {
@@ -75,6 +75,7 @@ export default function NewsPage() {
 
     // Listen for Realtime News updates via Socket.IO
     const onNewsUpdated = (payload: any) => {
+      invalidateClientCache("/api/news");
       fetchNews();
       if (payload?.type === "add" && payload?.news?.title) {
         toast.info(`📰 Breaking News: "${payload.news.title.slice(0, 40)}..."`, {

@@ -62,6 +62,14 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
   const [flipDirection, setFlipDirection] = useState<"next" | "prev">("next");
   const [isHoveringCorner, setIsHoveringCorner] = useState<"left" | "right" | null>(null);
 
+  // Single Leaf Textbook 3D Page Turn State
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipState, setFlipState] = useState<{
+    direction: "next" | "prev";
+    fromSpread: number;
+    toSpread: number;
+  } | null>(null);
+
   // Dynamic Mouse Drag Corner Page Flip
   const [isDraggingPage, setIsDraggingPage] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
@@ -152,23 +160,151 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
 
   const currentSpread = getSpread(currentSpreadIndex);
 
+  // Trigger single-leaf 3D textbook page flip
+  const triggerFlip = (direction: "next" | "prev", targetSpreadIdx: number) => {
+    if (isFlipping || targetSpreadIdx === currentSpreadIndex) return;
+    if (targetSpreadIdx < 0 || targetSpreadIdx >= totalSpreads) return;
+    setIsFlipping(true);
+    setFlipDirection(direction);
+    setFlipState({
+      direction,
+      fromSpread: currentSpreadIndex,
+      toSpread: targetSpreadIdx,
+    });
+    playPaperSound();
+  };
+
   // Next / Previous Navigation Handlers
   const goNext = () => {
+    if (isFlipping) return;
     if (currentSpreadIndex < totalSpreads - 1) {
-      setFlipDirection("next");
-      playPaperSound();
-      setCurrentSpreadIndex((prev) => prev + 1);
+      triggerFlip("next", currentSpreadIndex + 1);
     } else {
       setIsPlaying(false);
     }
   };
 
   const goPrev = () => {
+    if (isFlipping) return;
     if (currentSpreadIndex > 0) {
-      setFlipDirection("prev");
-      playPaperSound();
-      setCurrentSpreadIndex((prev) => prev - 1);
+      triggerFlip("prev", currentSpreadIndex - 1);
     }
+  };
+
+  // Jump to specific spread (from TOC, search, thumbnails, or slider)
+  const jumpToSpread = (targetSpreadIdx: number) => {
+    if (targetSpreadIdx === currentSpreadIndex) return;
+    if (isFlipping) {
+      setCurrentSpreadIndex(targetSpreadIdx);
+      return;
+    }
+    const direction = targetSpreadIdx > currentSpreadIndex ? "next" : "prev";
+    triggerFlip(direction, targetSpreadIdx);
+  };
+
+  // Fallback safety timeout for flip animation
+  useEffect(() => {
+    if (!flipState) return;
+    const timer = setTimeout(() => {
+      setCurrentSpreadIndex(flipState.toSpread);
+      setFlipState(null);
+      setIsFlipping(false);
+    }, 720);
+    return () => clearTimeout(timer);
+  }, [flipState]);
+
+  // Helper to render an authentic page face (cover backing, page image, or end spread)
+  const renderPageFace = (
+    src: string | null,
+    num: number | null,
+    side: "left" | "right",
+    isCoverBacking = false
+  ) => {
+    if (isCoverBacking) {
+      return (
+        <div className="h-full w-full bg-gradient-to-r from-[#08111F] via-[#7A0019]/40 to-[#08111F] flex items-center justify-center p-6 sm:p-8 text-center select-none shadow-[inset_-35px_0_45px_rgba(0,0,0,0.85)]">
+          <div className="space-y-4 opacity-75">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 mx-auto rounded-2xl bg-[#7A0019]/50 border border-[#D4AF37]/50 flex items-center justify-center shadow-lg">
+              <BookOpen className="h-7 w-7 sm:h-8 sm:w-8 text-[#D4AF37]" />
+            </div>
+            <p className="text-xs sm:text-sm font-extrabold text-white font-display uppercase tracking-wider">
+              {magazine.title}
+            </p>
+            <p className="text-[11px] sm:text-xs text-[#D4AF37] font-mono font-bold">{magazine.issue}</p>
+            <p className="text-[10px] text-slate-400 max-w-xs mx-auto leading-relaxed font-sans hidden sm:block">
+              Official C-Suite Business Publication by Executive Talks Media Business Intelligence.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (src) {
+      return (
+        <div className="relative h-full w-full bg-[#070b14] overflow-hidden select-none flex items-center justify-center">
+          <img
+            src={src}
+            alt={`Page ${num ?? ""}`}
+            className="h-full w-full object-contain bg-slate-950 pointer-events-none"
+            loading="eager"
+          />
+          {/* Inner Paper Spine Shadow Overlay */}
+          {side === "left" ? (
+            <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black/85 via-black/35 to-transparent pointer-events-none" />
+          ) : (
+            <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black/85 via-black/35 to-transparent pointer-events-none" />
+          )}
+          {/* Outer Page Edge Shadow */}
+          {side === "left" ? (
+            <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/40 to-transparent pointer-events-none" />
+          ) : (
+            <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/40 to-transparent pointer-events-none" />
+          )}
+          {/* Page Number Badge */}
+          {num && (
+            <span
+              className={`absolute bottom-3 ${
+                side === "left" ? "left-4" : "right-4"
+              } bg-black/85 backdrop-blur-md text-[10px] font-mono font-bold text-[#D4AF37] px-2.5 py-1 rounded-lg border border-slate-800 shadow-md pointer-events-none z-10`}
+            >
+              Page {num} / {totalPages}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center text-xs text-slate-500 font-mono p-6 text-center space-y-2 select-none">
+        <BookOpen className="h-8 w-8 text-slate-700 mx-auto" />
+        <span>End of Publication Spread</span>
+      </div>
+    );
+  };
+
+  // Pre-calculated spread data for smooth leaf turning
+  const fromSpreadData = getSpread(flipState?.fromSpread ?? currentSpreadIndex);
+  const toSpreadData = getSpread(flipState?.toSpread ?? currentSpreadIndex);
+
+  const staticLeftData = {
+    src: flipState
+      ? (flipState.direction === "next" ? fromSpreadData.left : toSpreadData.left)
+      : currentSpread.left,
+    num: flipState
+      ? (flipState.direction === "next" ? fromSpreadData.leftNum : toSpreadData.leftNum)
+      : currentSpread.leftNum,
+    isCoverBacking: flipState
+      ? (flipState.direction === "next" ? flipState.fromSpread === 0 : flipState.toSpread === 0)
+      : currentSpreadIndex === 0,
+  };
+
+  const staticRightData = {
+    src: flipState
+      ? (flipState.direction === "next" ? toSpreadData.right : fromSpreadData.right)
+      : currentSpread.right,
+    num: flipState
+      ? (flipState.direction === "next" ? toSpreadData.rightNum : fromSpreadData.rightNum)
+      : (currentSpreadIndex === 0 ? 1 : currentSpread.rightNum),
   };
 
   // Toggle Bookmark
@@ -540,9 +676,8 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                   key={i}
                   type="button"
                   onClick={() => {
-                    setCurrentSpreadIndex(Math.min(item.spread, totalSpreads - 1));
+                    jumpToSpread(Math.min(item.spread, totalSpreads - 1));
                     setTocOpen(false);
-                    playPaperSound();
                   }}
                   className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${
                     currentSpreadIndex === item.spread
@@ -607,9 +742,8 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                       key={idx}
                       type="button"
                       onClick={() => {
-                        setCurrentSpreadIndex(match.spread);
+                        jumpToSpread(match.spread);
                         setSearchOpen(false);
-                        playPaperSound();
                       }}
                       className="w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900 hover:border-[#D4AF37] text-xs font-bold text-white flex items-center justify-between"
                     >
@@ -657,9 +791,8 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
                   <div
                     key={sIdx}
                     onClick={() => {
-                      setCurrentSpreadIndex(sIdx);
+                      jumpToSpread(sIdx);
                       setThumbnailSidebarOpen(false);
-                      playPaperSound();
                     }}
                     className={`group relative rounded-xl border p-1 bg-slate-950 cursor-pointer transition-all ${
                       isCurrent
@@ -701,7 +834,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
         {/* Left Floating Navigation Arrow */}
         <button
           type="button"
-          disabled={currentSpreadIndex === 0}
+          disabled={currentSpreadIndex === 0 || isFlipping}
           onClick={goPrev}
           className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#08111F]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
           title="Previous Page (Flip Left / ArrowLeft)"
@@ -709,121 +842,224 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
           <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7 group-hover:-translate-x-0.5 transition-transform" />
         </button>
 
-        {/* 3D BOOK DOUBLE-PAGE SPREAD PERSPECTIVE CONTAINER (1200px CSS Perspective) */}
-        <div className="relative w-full max-w-5xl h-full flex items-center justify-center [perspective:1200px]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSpreadIndex}
-              initial={{
-                rotateY: flipDirection === "next" ? -35 : 35,
-                opacity: 0.3,
-                scale: 0.95,
+        {/* 3D BOOK DOUBLE-PAGE SPREAD CONTAINER (No whole-card swing; anchored textbook chassis) */}
+        <div className="relative w-full max-w-5xl h-full flex items-center justify-center [perspective:2200px]">
+          {/* THE BOOK CHASSIS - Remains stationary like a book resting open on an executive desk */}
+          <div
+            style={{ transform: `scale(${zoomLevel})` }}
+            className="relative flex items-center justify-center shadow-[0_60px_130px_-25px_rgba(0,0,0,0.95)] rounded-2xl overflow-hidden [transform-style:preserve-3d] border border-slate-800/90 h-[62vh] sm:h-[70vh] w-[92vw] sm:w-[84vw] max-w-[880px] bg-[#070b14] transition-transform duration-300 select-none group"
+          >
+            {/* Realistic Page Thickness Stripes on Left & Right Outer Edges */}
+            <div className="absolute inset-y-1 left-0 w-2.5 bg-gradient-to-r from-[#1a2333] via-[#0d1424] to-transparent z-25 pointer-events-none border-l-2 border-slate-700/60" />
+            <div className="absolute inset-y-1 right-0 w-2.5 bg-gradient-to-l from-[#1a2333] via-[#0d1424] to-transparent z-25 pointer-events-none border-r-2 border-slate-700/60" />
+
+            {/* STATIC LEFT PAGE FRAME */}
+            <div
+              onClick={() => {
+                if (currentSpreadIndex > 0) goPrev();
               }}
-              animate={{
-                rotateY: 0,
-                opacity: 1,
-                scale: zoomLevel,
-              }}
-              exit={{
-                rotateY: flipDirection === "next" ? 35 : -35,
-                opacity: 0.3,
-                scale: 0.95,
-              }}
-              transition={{ duration: 0.55, ease: [0.25, 1, 0.5, 1] }}
-              className="relative flex items-center justify-center shadow-[0_70px_140px_-30px_rgba(0,0,0,0.95)] rounded-2xl overflow-hidden [transform-style:preserve-3d] border border-slate-800 max-h-[76vh] group cursor-grab active:cursor-grabbing"
+              onMouseEnter={() => setIsHoveringCorner("left")}
+              onMouseLeave={() => setIsHoveringCorner(null)}
+              className={`relative h-full w-1/2 overflow-hidden border-r border-slate-900/80 transition-all ${
+                currentSpreadIndex > 0 && !isFlipping ? "cursor-pointer" : ""
+              }`}
+              title={currentSpreadIndex > 0 ? "Click to turn page back" : ""}
             >
-              {/* Glossy Cover Reflection Gloss Sweep */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-30" />
+              {renderPageFace(
+                staticLeftData.src,
+                staticLeftData.num,
+                "left",
+                staticLeftData.isCoverBacking
+              )}
 
-              {/* 2-PAGE FACING SPREAD LAYOUT */}
-              <div className="flex items-center justify-center max-h-[76vh]">
-                {/* LEFT PAGE */}
-                {currentSpreadIndex === 0 ? (
-                  /* Front Cover Hardcover Left Spine Backing */
-                  <div className="hidden md:flex h-[62vh] sm:h-[70vh] w-[40vw] max-w-[430px] bg-gradient-to-r from-[#08111F] via-[#7A0019]/40 to-[#08111F] border-r border-slate-800 items-center justify-center p-8 text-center select-none shadow-[inset_-35px_0_45px_rgba(0,0,0,0.85)]">
-                    <div className="space-y-4 opacity-75">
-                      <div className="h-16 w-16 mx-auto rounded-2xl bg-[#7A0019]/50 border border-[#D4AF37]/50 flex items-center justify-center">
-                        <BookOpen className="h-8 w-8 text-[#D4AF37]" />
-                      </div>
-                      <p className="text-sm font-extrabold text-white font-display uppercase tracking-wider">
-                        {magazine.title}
-                      </p>
-                      <p className="text-xs text-[#D4AF37] font-mono font-bold">{magazine.issue}</p>
-                      <p className="text-[10px] text-slate-400 max-w-xs mx-auto leading-relaxed font-sans">
-                        Official C-Suite Business Publication by Executive Talks Media Business Intelligence.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    onMouseEnter={() => setIsHoveringCorner("left")}
-                    onMouseLeave={() => setIsHoveringCorner(null)}
-                    className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-[#F7F8FA] overflow-hidden border-r border-slate-300 shadow-[inset_-30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
-                      isHoveringCorner === "left" ? "rotate-[-1deg]" : ""
-                    }`}
-                  >
-                    {currentSpread.left ? (
-                      <img
-                        src={currentSpread.left}
-                        alt={`Page ${currentSpread.leftNum}`}
-                        className="h-full w-full object-contain bg-slate-950"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center text-xs text-slate-500 font-mono p-6 text-center space-y-2">
-                        <BookOpen className="h-8 w-8 text-slate-700 mx-auto" />
-                        <span>End of Publication Spread</span>
-                      </div>
-                    )}
-                    {/* Inner Paper Spine Shadow Overlay */}
-                    <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/80 via-black/30 to-transparent pointer-events-none" />
+              {/* Dynamic shadow cast on left page during prev flip lift or next flip land */}
+              {flipState && (
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-15"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: flipState.direction === "next" ? [0, 0.1, 0.45, 0] : [0.4, 0.1, 0],
+                  }}
+                  transition={{ duration: 0.65, ease: "easeInOut" }}
+                  style={{
+                    background: "linear-gradient(to right, rgba(0,0,0,0.65) 0%, transparent 80%)",
+                  }}
+                />
+              )}
 
-                    {/* Page Number Badge */}
-                    <span className="absolute bottom-3 left-4 bg-black/80 text-[10px] font-mono font-bold text-[#D4AF37] px-2.5 py-1 rounded-lg border border-slate-800 shadow-md">
-                      Page {currentSpread.leftNum} / {totalPages}
-                    </span>
-                  </div>
-                )}
+              {/* Hover dog-ear corner indicator */}
+              {currentSpreadIndex > 0 && !isFlipping && isHoveringCorner === "left" && (
+                <div className="absolute top-0 left-0 w-8 h-8 bg-gradient-to-br from-[#D4AF37]/30 to-transparent pointer-events-none rounded-br-xl border-b border-r border-[#D4AF37]/50 shadow-md" />
+              )}
+            </div>
 
-                {/* CENTRAL 3D BOOK SPINE ACCENT */}
-                <div className="h-[62vh] sm:h-[70vh] w-2.5 bg-gradient-to-r from-[#08111F] via-slate-600 to-[#08111F] z-20 shrink-0 shadow-[0_0_20px_rgba(0,0,0,0.9)]" />
+            {/* STATIC RIGHT PAGE FRAME */}
+            <div
+              onClick={() => {
+                if (currentSpreadIndex < totalSpreads - 1) goNext();
+              }}
+              onMouseEnter={() => setIsHoveringCorner("right")}
+              onMouseLeave={() => setIsHoveringCorner(null)}
+              className={`relative h-full w-1/2 overflow-hidden border-l border-slate-900/80 transition-all ${
+                currentSpreadIndex < totalSpreads - 1 && !isFlipping ? "cursor-pointer" : ""
+              }`}
+              title={currentSpreadIndex < totalSpreads - 1 ? "Click to turn page forward" : ""}
+            >
+              {renderPageFace(
+                staticRightData.src,
+                staticRightData.num,
+                "right",
+                false
+              )}
 
-                {/* RIGHT PAGE */}
+              {/* Dynamic shadow cast on right page during next flip lift or prev flip land */}
+              {flipState && (
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-15"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: flipState.direction === "next" ? [0.4, 0.1, 0] : [0, 0.1, 0.45, 0],
+                  }}
+                  transition={{ duration: 0.65, ease: "easeInOut" }}
+                  style={{
+                    background: "linear-gradient(to left, rgba(0,0,0,0.65) 0%, transparent 80%)",
+                  }}
+                />
+              )}
+
+              {/* Hover dog-ear corner indicator */}
+              {currentSpreadIndex < totalSpreads - 1 && !isFlipping && isHoveringCorner === "right" && (
+                <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-[#D4AF37]/30 to-transparent pointer-events-none rounded-bl-xl border-b border-l border-[#D4AF37]/50 shadow-md" />
+              )}
+            </div>
+
+            {/* REALISTIC 3D CENTER BOOK SPINE CREASE & GUTTER SHADOW */}
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 bg-gradient-to-r from-black/85 via-black/20 to-black/85 pointer-events-none z-20" />
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 bg-slate-700/50 pointer-events-none z-25" />
+
+            {/* THE FLIPPING LEAF (Turns 180° around the center spine like a real textbook page) */}
+            {flipState && (
+              <motion.div
+                key={`flip-leaf-${flipState.fromSpread}-${flipState.toSpread}-${flipState.direction}`}
+                initial={{
+                  rotateY: 0,
+                }}
+                animate={{
+                  rotateY: flipState.direction === "next" ? -180 : 180,
+                }}
+                transition={{
+                  duration: 0.65,
+                  ease: [0.25, 0.1, 0.25, 1],
+                }}
+                onAnimationComplete={() => {
+                  const targetIdx = flipState.toSpread;
+                  setCurrentSpreadIndex(targetIdx);
+                  setFlipState(null);
+                  setIsFlipping(false);
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: flipState.direction === "next" ? "50%" : "0%",
+                  width: "50%",
+                  transformOrigin: flipState.direction === "next" ? "left center" : "right center",
+                  transformStyle: "preserve-3d",
+                  WebkitTransformStyle: "preserve-3d",
+                  zIndex: 35,
+                }}
+                className="h-full pointer-events-none shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
+              >
+                {/* FRONT FACE OF TURNING LEAF (Visible 0deg to 90deg) */}
                 <div
-                  onMouseEnter={() => setIsHoveringCorner("right")}
-                  onMouseLeave={() => setIsHoveringCorner(null)}
-                  className={`relative h-[62vh] sm:h-[70vh] w-[45vw] sm:w-[40vw] max-w-[430px] bg-[#F7F8FA] overflow-hidden border-l border-slate-300 shadow-[inset_30px_0_40px_rgba(0,0,0,0.6)] transition-all ${
-                    isHoveringCorner === "right" ? "rotate-[1deg]" : ""
-                  }`}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                  className="h-full w-full overflow-hidden bg-slate-950 shadow-2xl"
                 >
-                  {currentSpread.right ? (
-                    <img
-                      src={currentSpread.right}
-                      alt={`Page ${currentSpreadIndex === 0 ? 1 : currentSpread.rightNum}`}
-                      className="h-full w-full object-contain bg-slate-950"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-slate-950 flex flex-col items-center justify-center text-xs text-slate-500 font-mono p-6 text-center space-y-2">
-                      <BookOpen className="h-8 w-8 text-slate-700 mx-auto" />
-                      <span>End of Publication Spread</span>
-                    </div>
-                  )}
-                  {/* Inner Paper Spine Shadow Overlay */}
-                  <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/80 via-black/30 to-transparent pointer-events-none" />
+                  {flipState.direction === "next"
+                    ? renderPageFace(
+                        fromSpreadData.right,
+                        fromSpreadData.rightNum,
+                        "right",
+                        false
+                      )
+                    : renderPageFace(
+                        fromSpreadData.left,
+                        fromSpreadData.leftNum,
+                        "left",
+                        flipState.fromSpread === 0
+                      )}
 
-                  {/* Page Number Badge */}
-                  <span className="absolute bottom-3 right-4 bg-black/80 text-[10px] font-mono font-bold text-[#D4AF37] px-2.5 py-1 rounded-lg border border-slate-800 shadow-md">
-                    Page {currentSpreadIndex === 0 ? 1 : currentSpread.rightNum} / {totalPages}
-                  </span>
+                  {/* Front Face Dynamic Paper Shading */}
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 0.35, 0.75] }}
+                    transition={{ duration: 0.65, ease: "easeInOut" }}
+                    style={{
+                      background:
+                        flipState.direction === "next"
+                          ? "linear-gradient(to left, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 50%, rgba(255,255,255,0.08) 100%)"
+                          : "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 50%, rgba(255,255,255,0.08) 100%)",
+                    }}
+                  />
                 </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+
+                {/* BACK FACE OF TURNING LEAF (Rotated 180deg, Visible 90deg to 180deg) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    transform: "rotateY(180deg)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                  className="h-full w-full overflow-hidden bg-slate-950 shadow-2xl"
+                >
+                  {flipState.direction === "next"
+                    ? renderPageFace(
+                        toSpreadData.left,
+                        toSpreadData.leftNum,
+                        "left",
+                        flipState.toSpread === 0
+                      )
+                    : renderPageFace(
+                        toSpreadData.right,
+                        toSpreadData.rightNum,
+                        "right",
+                        false
+                      )}
+
+                  {/* Back Face Dynamic Paper Shading */}
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 0.75 }}
+                    animate={{ opacity: [0.75, 0.35, 0] }}
+                    transition={{ duration: 0.65, ease: "easeInOut" }}
+                    style={{
+                      background:
+                        flipState.direction === "next"
+                          ? "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 50%, rgba(255,255,255,0.06) 100%)"
+                          : "linear-gradient(to left, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 50%, rgba(255,255,255,0.06) 100%)",
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Glossy Reflection Sweep across entire book surface */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent pointer-events-none z-30" />
+          </div>
         </div>
 
         {/* Right Floating Navigation Arrow */}
         <button
           type="button"
-          disabled={currentSpreadIndex >= totalSpreads - 1}
+          disabled={currentSpreadIndex >= totalSpreads - 1 || isFlipping}
           onClick={goNext}
           className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 p-3.5 sm:p-4 rounded-full bg-[#08111F]/90 border border-slate-700 text-white hover:bg-[#7A0019] hover:border-[#D4AF37] transition-all cursor-pointer shadow-2xl disabled:opacity-20 disabled:pointer-events-none active:scale-95 group"
           title="Next Page (Flip Right / ArrowRight)"
@@ -880,11 +1116,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             value={currentSpreadIndex}
             onChange={(e) => {
               const newIdx = parseInt(e.target.value, 10);
-              if (newIdx !== currentSpreadIndex) {
-                setFlipDirection(newIdx > currentSpreadIndex ? "next" : "prev");
-                setCurrentSpreadIndex(newIdx);
-                playPaperSound();
-              }
+              jumpToSpread(newIdx);
             }}
             className="w-full accent-[#7A0019] cursor-pointer h-2 rounded-full bg-slate-800"
           />
@@ -895,7 +1127,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            disabled={currentSpreadIndex === 0}
+            disabled={currentSpreadIndex === 0 || isFlipping}
             onClick={goPrev}
             className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:border-[#D4AF37]/50 disabled:opacity-30 cursor-pointer font-btn"
           >
@@ -903,7 +1135,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
           </button>
           <button
             type="button"
-            disabled={currentSpreadIndex >= totalSpreads - 1}
+            disabled={currentSpreadIndex >= totalSpreads - 1 || isFlipping}
             onClick={goNext}
             className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#7A0019] to-[#9e0021] border border-[#D4AF37]/50 text-xs font-extrabold text-white shadow-md hover:shadow-[#7A0019]/40 disabled:opacity-30 cursor-pointer font-btn"
           >

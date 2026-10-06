@@ -131,18 +131,9 @@ export function Layout() {
         <ScrollProgressBar />
         <Navbar />
       </div>
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={location.pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: "easeInOut" }}
-          className="flex-1 print:p-0 print:m-0"
-        >
-          <Outlet />
-        </motion.main>
-      </AnimatePresence>
+      <main className="flex-1 print:p-0 print:m-0">
+        <Outlet />
+      </main>
       <div className="print:hidden">
         <Footer />
         <FloatingActions />

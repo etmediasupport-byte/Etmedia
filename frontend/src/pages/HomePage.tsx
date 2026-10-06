@@ -64,6 +64,7 @@ import { HeroSection } from "@/components/site/HeroSection";
 import { StatisticsSection } from "@/components/site/StatisticsSection";
 import { SEOHead } from "@/components/site/SEOHead";
 import { toast } from "sonner";
+import { fetchWithCache } from "@/lib/api-cache";
 
 const iconMap = {
   Crown,
@@ -122,19 +123,20 @@ function HeroCarousel() {
 
   return (
     <section className="relative h-[92vh] min-h-[620px] w-full overflow-hidden lg:h-screen">
-      {/* Background Image with Smooth Cross-Fade & Slow Zoom */}
+      {/* Background Image with Smooth Cross-Fade */}
       <AnimatePresence mode="sync">
         <motion.img
           key={index}
           src={slide.image}
           alt={slide.kicker}
-          initial={{ opacity: 0, scale: 1.15 }}
+          initial={{ opacity: 0.85 }}
           animate={{ opacity: 1, scale: 1.02 }}
           exit={{ opacity: 0 }}
-          transition={{ opacity: { duration: 1.4 }, scale: { duration: 7, ease: "linear" } }}
+          transition={{ opacity: { duration: 0.45 }, scale: { duration: 6, ease: "linear" } }}
           className="absolute inset-0 h-full w-full object-cover"
           width={1920}
           height={1080}
+          loading="eager"
         />
       </AnimatePresence>
 
@@ -143,13 +145,13 @@ function HeroCarousel() {
       <FloatingShapes />
 
       <div className="container-x relative flex h-full flex-col justify-center pt-24 z-10">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           <motion.div
             key={index}
-            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -30, filter: "blur(6px)" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0.3, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             className="max-w-3xl"
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 backdrop-blur-md">
@@ -300,8 +302,7 @@ function UpcomingEvents() {
   const [eventList, setEventList] = useState<any[]>(() => sortEventsChronologically(events.filter(e => (e.status as any) !== "archived" && (e.status as any) !== "draft")));
 
   const fetchUpcoming = () => {
-    fetch("/api/events")
-      .then((res) => res.json())
+    fetchWithCache("/api/events")
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
@@ -410,11 +411,7 @@ function IndustriesWeServe() {
 
   const fetchSectors = async () => {
     try {
-      const res = await fetch(`/api/sectors?t=${Date.now()}`, {
-        cache: "no-store",
-        headers: { Pragma: "no-cache" },
-      });
-      const data = await res.json();
+      const data = await fetchWithCache("/api/sectors");
       const list = Array.isArray(data.sectors) ? data.sectors : (Array.isArray(data.data) ? data.data : []);
       if (data.success && list.length > 0) {
         const active = list.filter((s: any) => !s.status || s.status.toLowerCase() === "active");
@@ -539,15 +536,12 @@ function CollaboratorsMarquee() {
 
   const fetchPartners = async () => {
     try {
-      const res = await fetch("/api/partners");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.partners && data.partners.length > 0) {
-          const activePartners = data.partners.filter((c: Collaborator) => c.status !== "Inactive");
-          activePartners.sort((a: Collaborator, b: Collaborator) => (a.priority ?? 0) - (b.priority ?? 0));
-          setCollaborators(activePartners);
-          return;
-        }
+      const data = await fetchWithCache("/api/partners");
+      if (data && data.partners && data.partners.length > 0) {
+        const activePartners = data.partners.filter((c: Collaborator) => c.status !== "Inactive");
+        activePartners.sort((a: Collaborator, b: Collaborator) => (a.priority ?? 0) - (b.priority ?? 0));
+        setCollaborators(activePartners);
+        return;
       }
     } catch (e) {
       console.warn("Using fallback collaborators data:", e);
@@ -856,13 +850,10 @@ function GalleryPreview() {
 
   const fetchItems = async () => {
     try {
-      const res = await fetch("/api/gallery");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
-          setItems(data.items);
-          return;
-        }
+      const data = await fetchWithCache("/api/gallery");
+      if (data && data.success && Array.isArray(data.items) && data.items.length > 0) {
+        setItems(data.items);
+        return;
       }
     } catch (err) {
       console.warn("Using fallback gallery data:", err);

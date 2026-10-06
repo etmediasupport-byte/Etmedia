@@ -53,6 +53,7 @@ import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { RegisterModal } from "@/components/site/RegisterModal";
 import { EventStatus, parseEventDateTime } from "@/components/site/EventCountdownTimer";
 import { socket } from "@/lib/socket";
+import { fetchWithCache, invalidateClientCache } from "@/lib/api-cache";
 
 export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -91,16 +92,15 @@ export default function EventDetailPage() {
     const loadEventData = async () => {
       try {
         if (slug) {
-          const res = await fetch(`/api/events/${slug}`);
-          const data = await res.json();
-          if (data.success && data.event && isMounted) {
+          const data = await fetchWithCache(`/api/events/${slug}`);
+          if (data && data.success && data.event && isMounted) {
             if (data.event.status === "draft" || data.event.status === "archived") {
               setEvent(null);
               return;
             }
             setEvent(data.event);
             return;
-          } else if (!data.success && isMounted) {
+          } else if (data && !data.success && isMounted) {
             setEvent(null);
             return;
           }
@@ -115,6 +115,7 @@ export default function EventDetailPage() {
     // Listen for socket real-time update if event changes
     const onEventUpdate = (updatedEvent: any) => {
       if (updatedEvent && (updatedEvent.slug === slug || updatedEvent.id === slug)) {
+        invalidateClientCache(`/api/events/${slug}`);
         setEvent(updatedEvent);
         toast.info("Event details updated live by event organizers!");
       }
@@ -127,13 +128,12 @@ export default function EventDetailPage() {
     };
   }, [slug]);
 
-  // Hook 2: Fetch payment config for pricing tiers
+  // Hook 2: Fetch payment config for pricing tiers with cache
   useEffect(() => {
     if (event?.id || event?.slug) {
-      fetch(`/api/event-payments/event/${event.id || event.slug}`)
-        .then((res) => res.json())
+      fetchWithCache(`/api/event-payments/event/${event.id || event.slug}`)
         .then((data) => {
-          if (data.success && data.pricingAvailable && data.payment) {
+          if (data && data.success && data.pricingAvailable && data.payment) {
             setEventPaymentConfig(data.payment);
             setIsPricingAvailable(true);
           } else {

@@ -4,39 +4,47 @@ import logoUpdated from "@/assets/UPDATED LOGO.jpeg";
 import { Sparkles } from "lucide-react";
 
 export function Preloader() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      if (typeof window !== "undefined" && sessionStorage.getItem("etmedia_preloaded_done")) {
+        return false;
+      }
+    } catch (_) {}
+    return true;
+  });
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Increment progress counter for visual effect
+    if (!loading) return;
+
+    // Fast visual counter
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + Math.floor(Math.random() * 15) + 10;
-      });
-    }, 120);
+      setProgress((prev) => (prev >= 100 ? 100 : prev + 35));
+    }, 40);
 
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+      try {
+        sessionStorage.setItem("etmedia_preloaded_done", "true");
+      } catch (_) {}
+    }, 200);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, []);
+  }, [loading]);
+
+  if (!loading) return null;
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {loading && (
         <motion.div
           key="website-preloader"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black text-white overflow-hidden select-none pointer-events-auto"
         >
           {/* Ambient Glowing Background Orbs */}

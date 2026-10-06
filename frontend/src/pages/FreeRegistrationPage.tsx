@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
 import { events as defaultEvents, getValidImageUrl, getDefaultEventImage } from "@/lib/site-data";
+import { fetchWithCache } from "@/lib/api-cache";
 import {
   validateEmail,
   validatePhone,
@@ -143,8 +144,7 @@ export default function FreeRegistrationPage() {
     let isMounted = true;
     const activeSlug = slug || searchParams.get("event") || "hr-recall-2k26";
 
-    fetch(`/api/events/${activeSlug}`)
-      .then((res) => res.json())
+    fetchWithCache(`/api/events/${activeSlug}`)
       .then((json) => {
         if (!isMounted) return;
         if (json.success && json.event) {

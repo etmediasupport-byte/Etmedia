@@ -22,6 +22,7 @@ import { Magazine3DViewer } from "@/components/site/Magazine3DViewer";
 import { ThreeDMagazineHero } from "@/components/site/3DMagazineHero";
 
 import { validateEmail } from "@/lib/validation";
+import { fetchWithCache, invalidateClientCache } from "@/lib/api-cache";
 
 const filterCategories = [
   "All Editions",
@@ -52,6 +53,7 @@ export default function MagazinePage() {
     fetchMagazines();
 
     const handleMagUpdate = () => {
+      invalidateClientCache("/api/magazines");
       fetchMagazines();
     };
 
@@ -63,13 +65,10 @@ export default function MagazinePage() {
 
   const fetchMagazines = async () => {
     try {
-      const res = await fetch("/api/magazines");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.magazines && data.magazines.length > 0) {
-          setMagazinesList(data.magazines);
-          return;
-        }
+      const data = await fetchWithCache("/api/magazines");
+      if (data && data.magazines && data.magazines.length > 0) {
+        setMagazinesList(data.magazines);
+        return;
       }
     } catch (e) {
       console.warn("Using default static magazines fallback:", e);

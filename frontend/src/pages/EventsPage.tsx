@@ -33,6 +33,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchWithCache, invalidateClientCache } from "@/lib/api-cache";
 
 // Extract all cities associated with an event
 function getEventCities(evt: any): string[] {
@@ -96,10 +97,9 @@ export default function EventsPage() {
     }
   }, [urlSearch]);
 
-  // Load real events from Database with instant optimistic fallback
+  // Load real events from Database with instant optimistic fallback & memory cache
   useEffect(() => {
-    fetch("/api/events")
-      .then((res) => res.json())
+    fetchWithCache("/api/events")
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
           const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
@@ -111,8 +111,8 @@ export default function EventsPage() {
       });
 
     const reloadEvents = () => {
-      fetch("/api/events")
-        .then((res) => res.json())
+      invalidateClientCache("/api/events");
+      fetchWithCache("/api/events")
         .then((data) => {
           if (data.success && Array.isArray(data.data)) {
             const activeEvents = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
