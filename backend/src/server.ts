@@ -15,7 +15,7 @@ import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS } from "./db.js";
 
 dotenv.config();
 
@@ -207,6 +207,75 @@ interface RegistrationEmailPayload {
   createdAt?: string;
 }
 
+export async function getDynamicEmailSubject(
+  configId: string,
+  variables: Record<string, any>,
+  fallbackSubject?: string
+): Promise<string> {
+  try {
+    let config: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query(
+        "SELECT * FROM email_subject_configs WHERE id = ? AND is_active = 1 LIMIT 1",
+        [configId]
+      );
+      if (rows && rows.length > 0) {
+        config = rows[0];
+      }
+    }
+
+    if (!config) {
+      config = DEFAULT_EMAIL_SUBJECT_CONFIGS.find((c) => c.id === configId);
+    }
+
+    if (!config) {
+      return fallbackSubject || "Executive Talks Media Business Intelligence";
+    }
+
+    // Determine base template:
+    // If template is empty, fall back to prefix + {event_name} + suffix
+    let template = config.subject_template || "";
+    if (!template.trim()) {
+      template = `${config.prefix || ""}{event_name}${config.suffix || ""}`;
+    }
+
+    const eventName = (variables.event_name || variables.eventTitle || variables.eventName || "Executive Talks Conclave").trim();
+    const delegateName = (variables.delegate_name || variables.candidateName || variables.fullName || variables.name || "Executive Delegate").trim();
+    const passId = (variables.pass_id || variables.regId || variables.registrationId || variables.certId || "").trim();
+    const company = (variables.company || variables.organization || variables.company_name || "").trim();
+    const category = (variables.category || variables.registrationCategory || variables.regCategory || "Delegate").trim();
+    const city = (variables.city || "Hyderabad").trim();
+
+    let subject = template
+      .replace(/{event_name}/gi, eventName)
+      .replace(/{delegate_name}/gi, delegateName)
+      .replace(/{pass_id}/gi, passId)
+      .replace(/{company}/gi, company)
+      .replace(/{category}/gi, category)
+      .replace(/{city}/gi, city);
+
+    if (config.prefix && !template.includes(config.prefix)) {
+      subject = `${config.prefix}${subject}`;
+    }
+    if (config.suffix && !template.includes(config.suffix)) {
+      subject = `${subject}${config.suffix}`;
+    }
+
+    // Clean up empty parentheses or hanging dashes if token was empty
+    subject = subject
+      .replace(/\(\s*\)/g, "")
+      .replace(/\s+—\s*$/g, "")
+      .replace(/\s+-\s*$/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    return subject || fallbackSubject || "Executive Talks Media Business Intelligence";
+  } catch (err) {
+    console.warn(`[EmailSubject] Error generating dynamic subject for ${configId}:`, err);
+    return fallbackSubject || "Executive Talks Media Business Intelligence";
+  }
+}
+
 async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload) {
   const regId = data.registrationId || `REG-${Date.now()}`;
   const effectiveFirstName = data.firstName || "Delegate";
@@ -257,12 +326,22 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
     console.error("[Nodemailer] Error generating QR Code PNG Buffer:", qrErr);
   }
 
+  const delegateSubjectConfigId = payStatus === "Approved (Free Pass)" ? "free_pass_granted" : "delegate_pass";
+  const dynamicUserSubject = await getDynamicEmailSubject(delegateSubjectConfigId, {
+    event_name: eventName,
+    delegate_name: effectiveFullName,
+    pass_id: regId,
+    category: regCategory,
+    company: regOrg,
+    city: regCity,
+  }, `🎉 Official Delegate Pass: ${eventName} (${regId})`);
+
   // 1. EMAIL TO DELEGATE (PERSONALIZED INBOX DELIVERY)
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
     replyTo: smtpUser,
     to: userEmail,
-    subject: `🎉 Official Delegate Pass: ${eventName} (${regId})`,
+    subject: dynamicUserSubject,
     text: `
 Dear ${effectiveFullName},
 
@@ -427,11 +506,19 @@ www.executivetalksmedia.in
     ].filter(Boolean))
   );
 
+  const dynamicAdminSubject = await getDynamicEmailSubject("admin_new_registration", {
+    event_name: eventName,
+    delegate_name: effectiveFullName,
+    pass_id: regId,
+    category: regCategory,
+    company: regOrg,
+  }, `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`);
+
   const adminMailOptions: any = {
     from: `"Executive Talks Media Registration System" <${smtpUser}>`,
     replyTo: userEmail,
     to: adminRecipients.join(", "),
-    subject: `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`,
+    subject: dynamicAdminSubject,
     text: `
 NEW DELEGATE REGISTRATION RECEIVED
 
@@ -586,11 +673,19 @@ async function sendFreeApplicationNotificationEmails(data: {
   const eventName = data.eventTitle;
   const baseUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || "https://www.executivetalksmedia.in").replace(/\/$/, "");
 
+  const dynamicFreePassSubject = await getDynamicEmailSubject("free_pass_review", {
+    event_name: eventName,
+    delegate_name: data.fullName,
+    pass_id: regId,
+    category: data.category || "Complimentary VIP Pass",
+    company: data.organization,
+  }, `📋 Free Pass Application (Under Review): ${eventName} (${regId})`);
+
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
     replyTo: smtpUser,
     to: userEmail,
-    subject: `📋 Free Pass Application (Under Review): ${eventName} (${regId})`,
+    subject: dynamicFreePassSubject,
     text: `
 Dear ${data.fullName},
 
@@ -720,11 +815,19 @@ www.executivetalksmedia.in
     ].filter(Boolean))
   );
 
+  const dynamicAdminFreePassSubject = await getDynamicEmailSubject("admin_free_pass_alert", {
+    event_name: eventName,
+    delegate_name: data.fullName,
+    pass_id: regId,
+    category: data.category || "Complimentary VIP Pass",
+    company: data.organization,
+  }, `🚨 [New Free Pass Application] ${data.fullName} (${data.organization}) — ${eventName}`);
+
   const adminMailOptions: any = {
     from: `"Executive Talks Media Alerts" <${smtpUser}>`,
     replyTo: userEmail,
     to: adminRecipients.join(", "),
-    subject: `🚨 [New Free Pass Application] ${data.fullName} (${data.organization}) — ${eventName}`,
+    subject: dynamicAdminFreePassSubject,
     text: `
 NEW FREE PASS APPLICATION RECEIVED
 
@@ -799,10 +902,15 @@ async function sendPartnerConfirmationEmail(data: {
   email: string;
   companyName: string;
 }) {
+  const dynamicSubject = await getDynamicEmailSubject("partner_inquiry_ack", {
+    company: data.companyName,
+    delegate_name: data.contactPerson,
+  }, `Partnership Interest Received — Executive Talks Media Business Intelligence`);
+
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: data.email,
-    subject: `Partnership Interest Received — Executive Talks Media Business Intelligence`,
+    subject: dynamicSubject,
     text: `Dear ${data.contactPerson},
 
 Thank you for expressing your interest in partnering with Executive Talks Media Business Intelligence.
@@ -864,10 +972,16 @@ async function sendPartnerAdminNotificationEmail(data: {
   partnership_type: string;
   message?: string;
 }) {
+  const dynamicSubject = await getDynamicEmailSubject("admin_partner_alert", {
+    company: data.company_name,
+    delegate_name: data.contact_person,
+    pass_id: data.id,
+  }, `🤝 New Partner Proposal Submitted: ${data.company_name} (${data.id})`);
+
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
-    subject: `🤝 New Partner Proposal Submitted: ${data.company_name} (${data.id})`,
+    subject: dynamicSubject,
     text: `New Partner Application Received:
     
 - Submission ID: ${data.id}
@@ -928,10 +1042,15 @@ async function sendContactAdminNotificationEmail(data: {
   message: string;
   submittedAt?: string;
 }) {
+  const dynamicSubject = await getDynamicEmailSubject("admin_contact_enquiry", {
+    delegate_name: data.name,
+    category: data.enquiryType || "General",
+  }, `📩 New Contact Enquiry: ${data.name} (${data.enquiryType || "General"})`);
+
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
-    subject: `📩 New Contact Enquiry: ${data.name} (${data.enquiryType || "General"})`,
+    subject: dynamicSubject,
     text: `New Contact Form Enquiry Received:
     
 - Reference ID: ${data.id}
@@ -3497,11 +3616,19 @@ app.post("/api/admin/certificate/send", authenticateAdmin, async (req, res) => {
       certUrl,
     });
 
+    const dynamicCertSubject = await getDynamicEmailSubject("certificate", {
+      event_name: eventTitle,
+      delegate_name: candidateName,
+      pass_id: certId,
+      company: organization,
+      city: eventCity,
+    }, `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`);
+
     const mailOptions = {
       from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
       replyTo: smtpUser,
       to: candidateEmail,
-      subject: `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`,
+      subject: dynamicCertSubject,
       html: emailHtml,
     };
 
@@ -3589,11 +3716,19 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
           certUrl,
         });
 
+        const dynamicBulkCertSubject = await getDynamicEmailSubject("certificate", {
+          event_name: eventTitle,
+          delegate_name: candidateName,
+          pass_id: certId,
+          company: organization,
+          city: eventCity,
+        }, `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`);
+
         await mailTransporter.sendMail({
           from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
           replyTo: smtpUser,
           to: candidateEmail,
-          subject: `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`,
+          subject: dynamicBulkCertSubject,
           html: emailHtml,
         });
 
@@ -6267,6 +6402,151 @@ app.patch("/api/admin/news/:id/featured", authenticateAdmin, async (req, res) =>
   } catch (err: any) {
     console.error("Toggle News Featured Error:", err);
     return res.status(500).json({ success: false, message: "Failed to toggle featured status" });
+  }
+});
+
+// ==========================================
+// EMAIL SUBJECT CONFIGURATION API ENDPOINTS
+// ==========================================
+
+// 1. Get all configured email subject templates
+app.get("/api/admin/email-subjects", authenticateAdmin, async (_req, res) => {
+  try {
+    let rows: any[] = [];
+    if (pool) {
+      const [dbRows]: any = await pool.query("SELECT * FROM email_subject_configs ORDER BY category ASC, id ASC");
+      rows = dbRows;
+    }
+    if (!rows || rows.length === 0) {
+      rows = DEFAULT_EMAIL_SUBJECT_CONFIGS as any[];
+    } else {
+      rows = rows.map((r) => ({
+        ...r,
+        available_variables: typeof r.available_variables === "string" ? JSON.parse(r.available_variables || "[]") : (r.available_variables || []),
+      }));
+    }
+    return res.json({ success: true, configs: rows });
+  } catch (err: any) {
+    console.error("[API] Error fetching email subject configs:", err);
+    return res.status(500).json({ success: false, message: err.message, configs: DEFAULT_EMAIL_SUBJECT_CONFIGS });
+  }
+});
+
+// 2. Update an email subject template
+app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { prefix, suffix, subject_template, is_active } = req.body;
+
+  try {
+    if (!pool) {
+      return res.status(503).json({ success: false, message: "Database not connected." });
+    }
+
+    const cleanPrefix = prefix !== undefined ? String(prefix) : "";
+    const cleanSuffix = suffix !== undefined ? String(suffix) : "";
+    let cleanTemplate = subject_template !== undefined ? String(subject_template).trim() : "";
+
+    // If template was left blank, synthesize from prefix + {event_name} + suffix
+    if (!cleanTemplate) {
+      cleanTemplate = `${cleanPrefix}{event_name}${cleanSuffix}`.trim();
+    }
+
+    const activeVal = is_active === false || is_active === 0 ? 0 : 1;
+
+    await pool.query(
+      `UPDATE email_subject_configs 
+       SET prefix = ?, suffix = ?, subject_template = ?, is_active = ?, updated_at = NOW() 
+       WHERE id = ?`,
+      [cleanPrefix, cleanSuffix, cleanTemplate, activeVal, id]
+    );
+
+    if (io) {
+      io.emit("email_subjects_updated", { id, updated_at: new Date().toISOString() });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Email subject configuration updated successfully!`,
+      config: {
+        id,
+        prefix: cleanPrefix,
+        suffix: cleanSuffix,
+        subject_template: cleanTemplate,
+        is_active: activeVal,
+      },
+    });
+  } catch (err: any) {
+    console.error(`[API] Error updating email subject config ${id}:`, err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 3. Reset an email subject template to default
+app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const defaultItem = DEFAULT_EMAIL_SUBJECT_CONFIGS.find((c) => c.id === id);
+  if (!defaultItem) {
+    return res.status(404).json({ success: false, message: "Default configuration not found." });
+  }
+
+  try {
+    if (pool) {
+      await pool.query(
+        `UPDATE email_subject_configs 
+         SET prefix = ?, suffix = ?, subject_template = ?, is_active = 1, updated_at = NOW() 
+         WHERE id = ?`,
+        [defaultItem.prefix, defaultItem.suffix, defaultItem.subject_template, id]
+      );
+    }
+
+    if (io) {
+      io.emit("email_subjects_updated", { id, reset: true });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Reset '${defaultItem.name}' to default subject format!`,
+      config: defaultItem,
+    });
+  } catch (err: any) {
+    console.error(`[API] Error resetting email subject ${id}:`, err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 4. Test render email subject preview
+app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res) => {
+  const { template, prefix, suffix, sampleData } = req.body;
+  try {
+    let tpl = (template || "").trim();
+    if (!tpl) {
+      tpl = `${prefix || ""}{event_name}${suffix || ""}`.trim();
+    }
+    const sample = sampleData || {
+      event_name: "HR RECALL 2K26",
+      delegate_name: "Ascend Labs",
+      pass_id: "ETM-REG-697665-3996",
+      company: "Ascend Labs Pvt Ltd",
+      category: "Executive Delegate",
+      city: "Hyderabad",
+    };
+
+    let result = tpl
+      .replace(/{event_name}/gi, sample.event_name || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, sample.delegate_name || "Ascend Labs")
+      .replace(/{pass_id}/gi, sample.pass_id || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, sample.company || "Ascend Labs")
+      .replace(/{category}/gi, sample.category || "Executive Delegate")
+      .replace(/{city}/gi, sample.city || "Hyderabad");
+
+    if (prefix && !tpl.includes(prefix)) result = `${prefix}${result}`;
+    if (suffix && !tpl.includes(suffix)) result = `${result}${suffix}`;
+
+    result = result.replace(/\(\s*\)/g, "").replace(/\s+—\s*$/g, "").replace(/\s+-\s*$/g, "").replace(/\s{2,}/g, " ").trim();
+
+    return res.json({ success: true, preview: result });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 

@@ -291,6 +291,7 @@ type TabType =
   | "testimonials"
   | "newsletter"
   | "contacts"
+  | "email-subjects"
   | "seo"
   | "users"
   | "settings"
@@ -782,6 +783,33 @@ export default function AdminDashboardPage() {
     status: "published",
     is_featured: false,
   });
+
+  // Email Subject Configuration CMS State
+  interface EmailSubjectItem {
+    id: string;
+    category: string;
+    name: string;
+    description: string;
+    recipient_type: string;
+    prefix: string;
+    suffix: string;
+    subject_template: string;
+    available_variables: string[];
+    is_active: number;
+    updated_at?: string;
+  }
+
+  const [emailSubjectsList, setEmailSubjectsList] = useState<EmailSubjectItem[]>([]);
+  const [loadingEmailSubjects, setLoadingEmailSubjects] = useState<boolean>(false);
+  const [selectedEmailSubjectCategory, setSelectedEmailSubjectCategory] = useState<string>("all");
+  const [emailSubjectSearchQuery, setEmailSubjectSearchQuery] = useState<string>("");
+  const [editingSubjectDrafts, setEditingSubjectDrafts] = useState<Record<string, { prefix: string; suffix: string; subject_template: string }>>({});
+  const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
+  const [resettingSubjectId, setResettingSubjectId] = useState<string | null>(null);
+  const [copiedSubjectId, setCopiedSubjectId] = useState<string | null>(null);
+  const [previewTestEventName, setPreviewTestEventName] = useState<string>("HR RECALL 2K26");
+  const [previewTestDelegateName, setPreviewTestDelegateName] = useState<string>("Ascend Labs");
+  const [previewTestPassId, setPreviewTestPassId] = useState<string>("ETM-REG-697665-3996");
 
   // Careers & Jobs CMS State
   const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
@@ -1404,6 +1432,28 @@ export default function AdminDashboardPage() {
         console.warn("Could not fetch news items", e);
       }
 
+      // 9c. Fetch Email Subject Configurations
+      try {
+        const subRes = await fetch("/api/admin/email-subjects", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const subData = await subRes.json();
+        if (subData.success && Array.isArray(subData.configs)) {
+          setEmailSubjectsList(subData.configs);
+          const initialDrafts: Record<string, any> = {};
+          subData.configs.forEach((c: any) => {
+            initialDrafts[c.id] = {
+              prefix: c.prefix || "",
+              suffix: c.suffix || "",
+              subject_template: c.subject_template || `${c.prefix || ""}{event_name}${c.suffix || ""}`,
+            };
+          });
+          setEditingSubjectDrafts((prev) => ({ ...initialDrafts, ...prev }));
+        }
+      } catch (e) {
+        console.warn("Could not fetch email subjects", e);
+      }
+
       // 10. Fetch Gallery Items
       try {
         const galRes = await fetch("/api/gallery");
@@ -1642,6 +1692,10 @@ export default function AdminDashboardPage() {
       fetchDashboardData();
     };
 
+    const onEmailSubjectsUpdate = () => {
+      fetchDashboardData();
+    };
+
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
     socket.on("new_contact_enquiry", onNewEnquiry);
@@ -1649,6 +1703,7 @@ export default function AdminDashboardPage() {
     socket.on("partner_updated", onPartnerUpdate);
     socket.on("magazine_updated", onMagUpdate);
     socket.on("news_updated", onNewsUpdate);
+    socket.on("email_subjects_updated", onEmailSubjectsUpdate);
     socket.on("job_updated", onJobUpdate);
     socket.on("new_job_application", onNewJobApplication);
     socket.on("gallery_updated", onGalleryUpdate);
@@ -1679,6 +1734,7 @@ export default function AdminDashboardPage() {
       socket.off("partner_updated", onPartnerUpdate);
       socket.off("magazine_updated", onMagUpdate);
       socket.off("news_updated", onNewsUpdate);
+      socket.off("email_subjects_updated", onEmailSubjectsUpdate);
       socket.off("job_updated", onJobUpdate);
       socket.off("new_job_application", onNewJobApplication);
       socket.off("gallery_updated", onGalleryUpdate);
@@ -5472,6 +5528,168 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // --- EMAIL SUBJECT CONFIGURATION CMS ACTION HANDLERS ---
+  const handleSubjectFieldChange = (configId: string, field: "prefix" | "suffix" | "subject_template", value: string) => {
+    setEditingSubjectDrafts((prev) => {
+      const existing = prev[configId] || { prefix: "", suffix: "", subject_template: "" };
+      const updated = { ...existing, [field]: value };
+      if (field === "prefix" || field === "suffix") {
+        updated.subject_template = `${updated.prefix}{event_name}${updated.suffix}`;
+      }
+      return { ...prev, [configId]: updated };
+    });
+  };
+
+  const handleSaveEmailSubject = async (configId: string) => {
+    try {
+      setSavingSubjectId(configId);
+      const currentConfig = emailSubjectsList.find((c) => c.id === configId);
+      const draft = editingSubjectDrafts[configId] || {
+        prefix: currentConfig?.prefix || "",
+        suffix: currentConfig?.suffix || "",
+        subject_template: currentConfig?.subject_template || "",
+      };
+
+      const res = await fetch(`/api/admin/email-subjects/${configId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prefix: draft.prefix,
+          suffix: draft.suffix,
+          subject_template: draft.subject_template,
+          is_active: currentConfig ? currentConfig.is_active : 1,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`✅ Email subject for "${currentConfig?.name || configId}" saved successfully!`);
+        setEmailSubjectsList((prev) =>
+          prev.map((c) => (c.id === configId ? { ...c, ...data.config } : c))
+        );
+      } else {
+        toast.error(data.message || "Failed to update email subject.");
+      }
+    } catch (err: any) {
+      console.error("Error saving email subject:", err);
+      toast.error(err.message || "An unexpected error occurred while saving.");
+    } finally {
+      setSavingSubjectId(null);
+    }
+  };
+
+  const handleResetEmailSubject = async (configId: string) => {
+    try {
+      setResettingSubjectId(configId);
+      const res = await fetch(`/api/admin/email-subjects/reset/${configId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.config) {
+        toast.success(`🔄 Reset "${data.config.name}" to factory default format!`);
+        setEmailSubjectsList((prev) =>
+          prev.map((c) => (c.id === configId ? { ...c, ...data.config } : c))
+        );
+        setEditingSubjectDrafts((prev) => ({
+          ...prev,
+          [configId]: {
+            prefix: data.config.prefix || "",
+            suffix: data.config.suffix || "",
+            subject_template: data.config.subject_template || "",
+          },
+        }));
+      } else {
+        toast.error(data.message || "Failed to reset email subject.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error resetting email subject.");
+    } finally {
+      setResettingSubjectId(null);
+    }
+  };
+
+  const handleToggleEmailSubjectActive = async (configId: string, currentActive: number) => {
+    try {
+      const nextActive = currentActive === 1 ? 0 : 1;
+      const currentConfig = emailSubjectsList.find((c) => c.id === configId);
+      const draft = editingSubjectDrafts[configId] || {
+        prefix: currentConfig?.prefix || "",
+        suffix: currentConfig?.suffix || "",
+        subject_template: currentConfig?.subject_template || "",
+      };
+
+      const res = await fetch(`/api/admin/email-subjects/${configId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prefix: draft.prefix,
+          suffix: draft.suffix,
+          subject_template: draft.subject_template,
+          is_active: nextActive,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailSubjectsList((prev) =>
+          prev.map((c) => (c.id === configId ? { ...c, is_active: nextActive } : c))
+        );
+        toast.info(nextActive === 1 ? "Subject activated" : "Subject deactivated (fallback default will be used)");
+      }
+    } catch (err: any) {
+      toast.error("Failed to toggle status");
+    }
+  };
+
+  const handleInsertSubjectVariable = (configId: string, variable: string) => {
+    const current = editingSubjectDrafts[configId] || {
+      prefix: "",
+      suffix: "",
+      subject_template: "",
+    };
+    const updatedTemplate = (current.subject_template || "") + variable;
+    setEditingSubjectDrafts((prev) => ({
+      ...prev,
+      [configId]: {
+        ...current,
+        subject_template: updatedTemplate,
+      },
+    }));
+  };
+
+  const computeSubjectLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    let tpl = (draft?.subject_template || config.subject_template || `${draft?.prefix || config.prefix || ""}{event_name}${draft?.suffix || config.suffix || ""}`).trim();
+    if (!tpl) {
+      tpl = `${config.prefix || ""}{event_name}${config.suffix || ""}`;
+    }
+
+    const preview = tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad")
+      .replace(/\(\s*\)/g, "")
+      .replace(/\s+—\s*$/g, "")
+      .replace(/\s+-\s*$/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    return preview;
+  };
+
   // --- POPUP MODAL CMS ACTION HANDLERS ---
   const handleSavePopupSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -6048,6 +6266,7 @@ export default function AdminDashboardPage() {
     {
       title: "COMMUNICATIONS & SYSTEM",
       items: [
+        { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
         { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
         { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
         { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
@@ -10111,6 +10330,8 @@ export default function AdminDashboardPage() {
                           <div className="w-full max-w-4xl">
                             <ExecutiveCertificate
                               candidateName={previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
+                              organization={previewCertAttendee.organization || (previewCertAttendee as any).company || ""}
+                              designation={previewCertAttendee.designation || ""}
                               eventTitle={eventTitle}
                               eventDate={eventDate}
                               eventVenue={eventVenue}
@@ -17058,6 +17279,473 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* EMAIL SUBJECT MANAGER TAB                  */}
+          {/* ========================================== */}
+          {activeTab === "email-subjects" && (
+            <div className="space-y-6">
+              {/* 1. Header Banner */}
+              <div className="relative overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 p-6 sm:p-8 text-white shadow-xl shadow-cyan-950/20">
+                <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold tracking-wider text-cyan-300 uppercase mb-3">
+                      <Mail className="h-3.5 w-3.5 text-cyan-400" />
+                      Executive Communications & Email Subjects
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                      Email Subject Line Manager
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Customize dynamic subject lines for every automated email sent from the platform. Adjust prefix text (before event), suffix text (after event), or the full subject template. Event titles are dynamically resolved from the database for 100% accurate branding.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={fetchDashboardData}
+                      disabled={loadingEmailSubjects}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className={`h-4 w-4 text-cyan-400 ${loadingEmailSubjects ? "animate-spin" : ""}`} />
+                      Refresh Templates
+                    </button>
+                    <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-semibold text-emerald-300">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Socket Sync Active
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Stats Grid */}
+                <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-slate-800/80 pt-6">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-medium text-slate-400">Total Email Templates</p>
+                    <p className="mt-1 text-2xl font-black text-white">{emailSubjectsList.length || 9}</p>
+                    <p className="mt-0.5 text-[10px] text-cyan-400 font-medium">All dispatch channels</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-medium text-slate-400">Dynamic Middle Token</p>
+                    <p className="mt-1 text-lg font-black text-cyan-300 truncate">{"{event_name}"}</p>
+                    <p className="mt-0.5 text-[10px] text-slate-400">Injected from summit CMS</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-medium text-slate-400">Audience Types</p>
+                    <p className="mt-1 text-2xl font-black text-emerald-400">4 Categories</p>
+                    <p className="mt-0.5 text-[10px] text-emerald-300/80">Delegates, Admins, Partners</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-medium text-slate-400">Inbox Preview</p>
+                    <p className="mt-1 text-lg font-black text-purple-300">Live Simulation</p>
+                    <p className="mt-0.5 text-[10px] text-purple-400">Instant Gmail preview</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Interactive Sandbox & Live Test Simulator */}
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                        Live Subject Simulator Sandbox
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Type sample values below to preview how all subjects dynamically adapt in real-time.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Quick Pre-fills:</span>
+                    {cmsEvents.slice(0, 3).map((evt) => (
+                      <button
+                        key={evt.id}
+                        type="button"
+                        onClick={() => setPreviewTestEventName(evt.title)}
+                        className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:border-cyan-500 hover:text-cyan-600 transition-all cursor-pointer"
+                      >
+                        {evt.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Sample Event Name: <span className="text-cyan-600 dark:text-cyan-400">{"{event_name}"}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={previewTestEventName}
+                      onChange={(e) => setPreviewTestEventName(e.target.value)}
+                      placeholder="e.g. HR RECALL 2K26"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Sample Delegate Name: <span className="text-purple-600 dark:text-purple-400">{"{delegate_name}"}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={previewTestDelegateName}
+                      onChange={(e) => setPreviewTestDelegateName(e.target.value)}
+                      placeholder="e.g. Ascend Labs"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      Sample Pass / Reg ID: <span className="text-emerald-600 dark:text-emerald-400">{"{pass_id}"}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={previewTestPassId}
+                      onChange={(e) => setPreviewTestPassId(e.target.value)}
+                      placeholder="e.g. ETM-REG-697665-3996"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Category Filter & Search Bar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: "all", label: "All Sections", match: () => true },
+                    { id: "attendee_passes", label: "Attendee Passes & QR", match: (c: string) => (c || "").toLowerCase().includes("attendee") },
+                    { id: "certificates", label: "Certificates & Accreditations", match: (c: string) => (c || "").toLowerCase().includes("certificate") },
+                    { id: "admin_alerts", label: "Internal Admin Alerts", match: (c: string) => (c || "").toLowerCase().includes("alert") || (c || "").toLowerCase().includes("admin") },
+                    { id: "partnerships", label: "Partnerships & Sponsors", match: (c: string) => (c || "").toLowerCase().includes("partner") },
+                  ].map((tab) => {
+                    const isSelected = selectedEmailSubjectCategory === tab.id;
+                    const count = emailSubjectsList.filter((s) => tab.match(s.category || "")).length;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setSelectedEmailSubjectCategory(tab.id)}
+                        className={`rounded-2xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          isSelected
+                            ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
+                            : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                            isSelected ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="relative min-w-[240px]">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={emailSubjectSearchQuery}
+                    onChange={(e) => setEmailSubjectSearchQuery(e.target.value)}
+                    placeholder="Search templates or subjects..."
+                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-cyan-500 transition-all"
+                  />
+                  {emailSubjectSearchQuery && (
+                    <button
+                      onClick={() => setEmailSubjectSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 4. Subject Templates Cards List */}
+              <div className="space-y-6">
+                {emailSubjectsList
+                  .filter((item) => {
+                    const catLower = (item.category || "").toLowerCase();
+                    const matchesCategory =
+                      selectedEmailSubjectCategory === "all" ||
+                      item.category === selectedEmailSubjectCategory ||
+                      (selectedEmailSubjectCategory === "attendee_passes" && catLower.includes("attendee")) ||
+                      (selectedEmailSubjectCategory === "certificates" && catLower.includes("certificate")) ||
+                      (selectedEmailSubjectCategory === "admin_alerts" && (catLower.includes("alert") || catLower.includes("admin"))) ||
+                      (selectedEmailSubjectCategory === "partnerships" && catLower.includes("partner"));
+                    const q = emailSubjectSearchQuery.toLowerCase().trim();
+                    const matchesSearch =
+                      !q ||
+                      item.name.toLowerCase().includes(q) ||
+                      item.description.toLowerCase().includes(q) ||
+                      item.subject_template.toLowerCase().includes(q) ||
+                      item.recipient_type.toLowerCase().includes(q);
+                    return matchesCategory && matchesSearch;
+                  })
+                  .map((item) => {
+                    const draft = editingSubjectDrafts[item.id] || {
+                      prefix: item.prefix || "",
+                      suffix: item.suffix || "",
+                      subject_template: item.subject_template || "",
+                    };
+                    const isSaving = savingSubjectId === item.id;
+                    const isResetting = resettingSubjectId === item.id;
+                    const isCopied = copiedSubjectId === item.id;
+                    const livePreviewText = computeSubjectLivePreview(item);
+                    const catLower = (item.category || "").toLowerCase();
+                    const isCert = catLower.includes("certificate");
+                    const isAttendee = catLower.includes("attendee");
+                    const isAlert = catLower.includes("alert") || catLower.includes("admin");
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-all hover:shadow-md hover:border-cyan-500/40"
+                      >
+                        {/* Top Meta Header */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-5">
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800 font-black text-sm">
+                              {isCert ? "🎓" : isAttendee ? "🎟️" : isAlert ? "🔔" : "🤝"}
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                                  {item.name}
+                                </h3>
+                                <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                  ID: {item.id}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                                    isCert
+                                      ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                                      : isAttendee
+                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                      : isAlert
+                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                      : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                  }`}
+                                >
+                                  {item.recipient_type}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {item.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleEmailSubjectActive(item.id, item.is_active)}
+                              className={`inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                                item.is_active === 1
+                                  ? "border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                                  : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              }`}
+                            >
+                              <span
+                                className={`h-2 w-2 rounded-full ${
+                                  item.is_active === 1 ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                                }`}
+                              />
+                              {item.is_active === 1 ? "Subject Active" : "Default Fallback"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Visual 3-Part Subject Builder Grid */}
+                        <div className="mt-6 space-y-4">
+                          <div>
+                            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                              Dynamic Component Builder (Prefix + Event Name + Suffix)
+                            </span>
+                            <div className="mt-2 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                              {/* Part 1: Prefix */}
+                              <div className="md:col-span-4">
+                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                  1. Before Event Name (Prefix)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={draft.prefix}
+                                  onChange={(e) => handleSubjectFieldChange(item.id, "prefix", e.target.value)}
+                                  placeholder="e.g. 🎓 Official Certificate of Participation: "
+                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                />
+                              </div>
+
+                              {/* Part 2: Dynamic Middle Event Token */}
+                              <div className="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-950/20 py-2.5 px-3 text-center">
+                                <span className="text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-400">
+                                  2. Dynamic Middle Token
+                                </span>
+                                <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-500 px-3 py-0.5 text-xs font-extrabold text-white shadow-sm shadow-cyan-500/30">
+                                  <span>{"{event_name}"}</span>
+                                </div>
+                                <span className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                                  Auto-replaced with Summit Title
+                                </span>
+                              </div>
+
+                              {/* Part 3: Suffix */}
+                              <div className="md:col-span-4">
+                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                  3. After Event Name (Suffix)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={draft.suffix}
+                                  onChange={(e) => handleSubjectFieldChange(item.id, "suffix", e.target.value)}
+                                  placeholder="e.g.  — {delegate_name}"
+                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Full Subject Template Field & Variable Quick-Insert */}
+                          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                Full Compiled Subject Template:
+                              </label>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-slate-400">Insert Tag:</span>
+                                {item.available_variables?.map((v) => (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => handleInsertSubjectVariable(item.id, v)}
+                                    title={`Click to insert ${v} into template`}
+                                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
+                                  >
+                                    +{v}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <input
+                              type="text"
+                              value={draft.subject_template}
+                              onChange={(e) => handleSubjectFieldChange(item.id, "subject_template", e.target.value)}
+                              placeholder="{event_name}"
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                            />
+                          </div>
+
+                          {/* Live Recipient Inbox Preview Simulation */}
+                          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 sm:p-4 shadow-inner">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
+                                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                  Live Recipient Inbox View (Gmail / Outlook Simulation)
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(livePreviewText);
+                                  setCopiedSubjectId(item.id);
+                                  toast.success("Subject line copied to clipboard!");
+                                  setTimeout(() => setCopiedSubjectId(null), 2000);
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                              >
+                                {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                                {isCopied ? "Copied" : "Copy Preview"}
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2.5">
+                              <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+                              <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
+                                  Executive Talks Media
+                                </span>
+                                <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                                <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 truncate">
+                                  {livePreviewText || "No subject specified"}
+                                </span>
+                                <span className="text-[11px] text-slate-400 truncate hidden md:inline">
+                                  - Official notification regarding {previewTestEventName}...
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-semibold text-slate-400 shrink-0">Now</span>
+                            </div>
+                          </div>
+
+                          {/* Action Footer */}
+                          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleResetEmailSubject(item.id)}
+                              disabled={isResetting}
+                              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                            >
+                              <RefreshCw className={`h-3.5 w-3.5 ${isResetting ? "animate-spin" : ""}`} />
+                              Reset to Default
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEmailSubject(item.id)}
+                              disabled={isSaving}
+                              className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                            >
+                              {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                              Save Subject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {emailSubjectsList.length === 0 && (
+                  <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-12 text-center">
+                    <Mail className="mx-auto h-12 w-12 text-slate-400" />
+                    <h3 className="mt-3 text-base font-bold text-slate-700 dark:text-slate-300">
+                      No Email Subject Templates Loaded
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Click the button below to initialize the default subject line templates from the server.
+                    </p>
+                    <button
+                      onClick={fetchDashboardData}
+                      className="mt-4 inline-flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-xs font-bold text-white shadow-md cursor-pointer"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Initialize Subject Configurations
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

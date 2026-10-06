@@ -38,6 +38,7 @@ export default function CertificatePage() {
   const [cmsEvents, setCmsEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>("default");
   const [customName, setCustomName] = useState<string>("");
+  const [customOrg, setCustomOrg] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState("");
   const certRef = useRef<HTMLDivElement>(null);
 
@@ -58,12 +59,13 @@ export default function CertificatePage() {
     if (!regId || regId === "preview" || regId === "demo") {
       setLoading(false);
       // Demo / preview fallback
+      const demoOrg = searchParams.get("company") || searchParams.get("org") || "Ascend Labs Pvt Ltd";
       setCert({
         id: "DEMO-REG-2026",
         certId: "ETM-CERT-2026-889921",
         candidateName: searchParams.get("name") || "Executive Delegate",
         designation: "Executive Delegate",
-        organization: "Distinguished Leader",
+        organization: demoOrg,
         eventTitle: "HR RECALL 2K26 – Hyderabad Annual Connect",
         city: "Hyderabad",
         checkinStatus: "Present",
@@ -71,6 +73,7 @@ export default function CertificatePage() {
         issueDate: "2026-12-11T17:00:00.000Z",
         verified: true,
       });
+      setCustomOrg(demoOrg);
       return;
     }
 
@@ -82,6 +85,9 @@ export default function CertificatePage() {
           setCert(data.certificate);
           if (data.certificate.candidateName) {
             setCustomName(data.certificate.candidateName);
+          }
+          if (data.certificate.organization) {
+            setCustomOrg(data.certificate.organization);
           }
         } else {
           setErrorMsg(data.message || "Certificate record not found or unverified.");
@@ -148,6 +154,7 @@ export default function CertificatePage() {
   }, [activeEvent, cert]);
 
   const candidateDisplayName = customName || cert?.candidateName || "Executive Delegate";
+  const orgDisplayName = customOrg || cert?.organization || searchParams.get("company") || searchParams.get("org") || "";
 
   const handlePrint = () => {
     window.print();
@@ -295,14 +302,14 @@ export default function CertificatePage() {
               <div ref={certRef} className="print-certificate-container w-full">
                 <ExecutiveCertificate
                   candidateName={candidateDisplayName}
+                  organization={orgDisplayName}
+                  designation={cert?.designation}
                   eventTitle={activeEventTitle}
                   eventDate={activeEventDate}
                   eventVenue={activeEventVenue}
                   city={activeEvent?.city || cert?.city || "Hyderabad"}
                   certId={cert?.certId}
                   issueDate={cert?.issueDate}
-                  designation={cert?.designation}
-                  organization={cert?.organization}
                 />
               </div>
 

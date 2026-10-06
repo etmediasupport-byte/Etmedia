@@ -3,20 +3,22 @@ import certificateFrameBg from "@/assets/certificate-frame-bg.png";
 
 export interface ExecutiveCertificateProps {
   candidateName?: string;
+  organization?: string;
+  designation?: string;
   eventTitle?: string;
   eventDate?: string;
   eventVenue?: string;
   city?: string;
   certId?: string;
   issueDate?: string;
-  designation?: string;
-  organization?: string;
   className?: string;
   showIdBadge?: boolean;
 }
 
 export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
   candidateName = "Executive Delegate",
+  organization = "",
+  designation = "",
   eventTitle = "HR RECALL 2K26 – Hyderabad Annual Connect",
   eventDate = "11th December 2026",
   eventVenue,
@@ -35,10 +37,14 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
   // Clean event title fallback
   const displayTitle = eventTitle || "HR RECALL 2K26 – Hyderabad Annual Connect";
   const displayCandidate = candidateName && candidateName.trim() ? candidateName.trim() : "Executive Delegate";
+  const displayOrganization = organization && organization.trim()
+    ? organization.trim()
+    : (designation && designation.trim() ? designation.trim() : "");
 
-  // Dynamic font sizing for long titles & names to avoid any clipping
+  // Dynamic font sizing for long titles, names & organization to avoid any clipping
   const titleFontSize = displayTitle.length > 55 ? 16 : displayTitle.length > 40 ? 18 : 20.5;
-  const nameFontSize = displayCandidate.length > 30 ? 24 : displayCandidate.length > 20 ? 28 : 32;
+  const nameFontSize = displayCandidate.length > 32 ? 22 : displayCandidate.length > 22 ? 26 : 30;
+  const orgFontSize = displayOrganization.length > 45 ? 13.5 : displayOrganization.length > 28 ? 15.5 : 17.5;
 
   // Split recognition line if event title is long
   const secondParagraphLine = `Delegate at the ${displayTitle}.`;
@@ -92,6 +98,12 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
                   font-weight: 800;
                   fill: #0f172a;
                 }
+                .cert-company {
+                  font-family: 'Montserrat', Inter, sans-serif;
+                  font-weight: 700;
+                  fill: #334155;
+                  letter-spacing: 0.5px;
+                }
                 .cert-body {
                   font-family: 'Montserrat', Inter, sans-serif;
                   font-weight: 500;
@@ -137,7 +149,7 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
             This certificate is Presented to
           </text>
 
-          {/* 5. CANDIDATE NAME SITTING ABOVE THE GOLD LINE */}
+          {/* 5. CANDIDATE NAME SITTING EXACTLY ABOVE THE GOLD LINE */}
           <text
             x="285"
             y="404"
@@ -157,6 +169,18 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
             strokeWidth="2.5"
             strokeLinecap="round"
           />
+
+          {/* 6b. COMPANY NAME SITTING EXACTLY BELOW THE GOLD LINE */}
+          {displayOrganization && (
+            <text
+              x="285"
+              y="446"
+              className="cert-company"
+              fontSize={orgFontSize}
+            >
+              {displayOrganization}
+            </text>
+          )}
 
           {/* 7. APPRECIATION PARAGRAPH */}
           <text x="285" y="495" className="cert-body" fontSize="14.5">

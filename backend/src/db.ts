@@ -213,6 +213,8 @@ export async function initDatabase() {
     await seedDefaultPopupData();
     await ensureNewsTable();
     await seedDefaultNews();
+    await ensureEmailSubjectConfigsTable();
+    await seedDefaultEmailSubjects();
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -1608,5 +1610,194 @@ export async function seedDefaultNews() {
     // Ignore if table or rows not present
   }
 }
+
+export interface EmailSubjectConfig {
+  id: string;
+  category: string;
+  name: string;
+  description: string;
+  recipient_type: string;
+  prefix: string;
+  suffix: string;
+  subject_template: string;
+  available_variables: string[];
+  is_active: number;
+  updated_at?: string;
+}
+
+export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
+  {
+    id: "certificate",
+    category: "Certificates & Accreditations",
+    name: "Official E-Certificate of Participation",
+    description: "Sent to attendees when their official participation certificate is emailed from Gate Scanner or Attendance roster.",
+    recipient_type: "Attendee / Delegate",
+    prefix: "🎓 Official Certificate of Participation: ",
+    suffix: " — {delegate_name}",
+    subject_template: "🎓 Official Certificate of Participation: {event_name} — {delegate_name}",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{city}"],
+    is_active: 1,
+  },
+  {
+    id: "delegate_pass",
+    category: "Attendee Passes & Gate Access",
+    name: "Official Delegate Pass & Entry QR Ticket",
+    description: "Sent to delegates upon successful paid registration or ticket dispatch with scannable QR ticket.",
+    recipient_type: "Paid & Confirmed Delegate",
+    prefix: "🎉 Official Delegate Pass: ",
+    suffix: " ({pass_id})",
+    subject_template: "🎉 Official Delegate Pass: {event_name} ({pass_id})",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
+    is_active: 1,
+  },
+  {
+    id: "free_pass_review",
+    category: "Attendee Passes & Gate Access",
+    name: "Complimentary Pass Application (Under Review)",
+    description: "Sent to applicants when they submit a complimentary / free pass application awaiting admin review.",
+    recipient_type: "Free Pass Applicant",
+    prefix: "⏳ Free Pass Application (Under Review): ",
+    suffix: " ({pass_id})",
+    subject_template: "⏳ Free Pass Application (Under Review): {event_name} ({pass_id})",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}"],
+    is_active: 1,
+  },
+  {
+    id: "free_pass_granted",
+    category: "Attendee Passes & Gate Access",
+    name: "Complimentary Pass Approved & Granted Entry",
+    description: "Sent to delegates when admin approves and grants complimentary VIP access.",
+    recipient_type: "Approved Complimentary Delegate",
+    prefix: "🎟️ Official Complimentary Pass: ",
+    suffix: " ({pass_id})",
+    subject_template: "🎟️ Official Complimentary Pass: {event_name} ({pass_id})",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
+    is_active: 1,
+  },
+  {
+    id: "admin_new_registration",
+    category: "Internal Management Alerts",
+    name: "Admin Alert: New Delegate Registration",
+    description: "Sent to Super Admin when an executive or delegate completes registration.",
+    recipient_type: "Admin / Operations Team",
+    prefix: "📢 [New Delegate Registration] ",
+    suffix: " - {event_name}",
+    subject_template: "📢 [New Delegate Registration] {delegate_name} ({category}) - {event_name}",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
+    is_active: 1,
+  },
+  {
+    id: "admin_free_pass_alert",
+    category: "Internal Management Alerts",
+    name: "Admin Alert: Free Pass Application Submitted",
+    description: "Sent to Super Admin when an applicant applies for a complimentary pass.",
+    recipient_type: "Admin / Operations Team",
+    prefix: "⏳ [New Free Pass Application] ",
+    suffix: " - {event_name}",
+    subject_template: "⏳ [New Free Pass Application] {delegate_name} ({company}) - {event_name}",
+    available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}"],
+    is_active: 1,
+  },
+  {
+    id: "partner_inquiry_ack",
+    category: "Corporate Partnerships & Sponsors",
+    name: "Partnership Interest Received Acknowledgment",
+    description: "Sent to corporate partners upon submitting a partnership inquiry or sponsorship request.",
+    recipient_type: "Corporate Partner / Sponsor",
+    prefix: "🤝 Partnership Interest Received: ",
+    suffix: " - Executive Talks Media Business Intelligence",
+    subject_template: "🤝 Partnership Interest Received: {company} - Executive Talks Media Business Intelligence",
+    available_variables: ["{company}", "{delegate_name}", "{pass_id}"],
+    is_active: 1,
+  },
+  {
+    id: "admin_partner_alert",
+    category: "Internal Management Alerts",
+    name: "Admin Alert: New Partner Proposal Submitted",
+    description: "Sent to Super Admin when a corporate sponsor or partner submits a proposal.",
+    recipient_type: "Admin / Operations Team",
+    prefix: "🤝 New Partner Proposal Submitted: ",
+    suffix: " ({pass_id})",
+    subject_template: "🤝 New Partner Proposal Submitted: {company} ({pass_id})",
+    available_variables: ["{company}", "{delegate_name}", "{pass_id}"],
+    is_active: 1,
+  },
+  {
+    id: "admin_contact_enquiry",
+    category: "Internal Management Alerts",
+    name: "Admin Alert: General Website Enquiry",
+    description: "Sent to Super Admin when a visitor submits a contact form enquiry.",
+    recipient_type: "Admin / Operations Team",
+    prefix: "📩 New Contact Enquiry: ",
+    suffix: " ({category})",
+    subject_template: "📩 New Contact Enquiry: {delegate_name} ({category})",
+    available_variables: ["{delegate_name}", "{category}"],
+    is_active: 1,
+  },
+];
+
+export async function ensureEmailSubjectConfigsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_subject_configs (
+        id VARCHAR(100) PRIMARY KEY,
+        category VARCHAR(100) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description VARCHAR(500),
+        recipient_type VARCHAR(100) DEFAULT 'Attendee / Delegate',
+        prefix VARCHAR(255) DEFAULT '',
+        suffix VARCHAR(255) DEFAULT '',
+        subject_template TEXT NOT NULL,
+        available_variables JSON,
+        is_active TINYINT(1) DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN category VARCHAR(100) NOT NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN name VARCHAR(255) NOT NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN description VARCHAR(500);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN recipient_type VARCHAR(100) DEFAULT 'Attendee / Delegate';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN prefix VARCHAR(255) DEFAULT '';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN suffix VARCHAR(255) DEFAULT '';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN subject_template TEXT NOT NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN available_variables JSON;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN is_active TINYINT(1) DEFAULT 1;"); } catch (e) {}
+    console.log("[MySQL] email_subject_configs table verified and up-to-date!");
+  } catch (err) {
+    console.error("[MySQL] Error ensuring email_subject_configs table:", err);
+  }
+}
+
+export async function seedDefaultEmailSubjects() {
+  if (!pool) return;
+  try {
+    for (const item of DEFAULT_EMAIL_SUBJECT_CONFIGS) {
+      const [existing]: any = await pool.query("SELECT id FROM email_subject_configs WHERE id = ? LIMIT 1", [item.id]);
+      if (!existing || existing.length === 0) {
+        await pool.query(
+          `INSERT INTO email_subject_configs (id, category, name, description, recipient_type, prefix, suffix, subject_template, available_variables, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.id,
+            item.category,
+            item.name,
+            item.description,
+            item.recipient_type,
+            item.prefix,
+            item.suffix,
+            item.subject_template,
+            JSON.stringify(item.available_variables),
+            item.is_active,
+          ]
+        );
+      }
+    }
+    console.log("[MySQL] Default email subject configurations verified in database.");
+  } catch (err) {
+    console.error("[MySQL] Error seeding email subject configs:", err);
+  }
+}
+
 
 
