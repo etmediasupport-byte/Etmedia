@@ -17,6 +17,7 @@ import {
   Briefcase,
   Phone,
   Crown,
+  Newspaper,
 } from "lucide-react";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { cn } from "@/lib/utils";
@@ -323,6 +324,17 @@ export function Navbar() {
               )}
             </NavLink>
 
+            <NavLink to="/news" onClick={handleNavClick} className={({ isActive }) => navLinkStyle(isActive)}>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 shadow-[0_0_6px_#06b6d4] shrink-0 animate-pulse" />
+                  )}
+                  <span>News</span>
+                </>
+              )}
+            </NavLink>
+
             {/* VIP Membership Link */}
             <button
               type="button"
@@ -430,6 +442,7 @@ export function Navbar() {
                     { to: "/events", label: "Summits & Events", icon: Calendar },
                     { to: "/partner", label: "Partners & Sponsors", icon: Handshake },
                     { to: "/magazine", label: "Executive Magazines", icon: BookOpen },
+                    { to: "/news", label: "News & Media Coverage", icon: Newspaper },
                     { to: "/careers", label: "Careers & Openings", icon: Briefcase },
                     { to: "/contact", label: "Contact & Enquiry", icon: Phone },
                   ].map((item) => {

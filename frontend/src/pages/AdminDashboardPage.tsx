@@ -120,6 +120,7 @@ import {
   RotateCcw,
   Printer,
   Zap,
+  Newspaper,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -273,6 +274,7 @@ interface WebsiteSettings {
 type TabType =
   | "overview"
   | "events"
+  | "news"
   | "sectors"
   | "event-payments"
   | "magazines"
@@ -758,6 +760,28 @@ export default function AdminDashboardPage() {
     });
   };
 
+  // News & Media CMS State
+  const [newsList, setNewsList] = useState<any[]>([]);
+  const [editingNews, setEditingNews] = useState<any | null>(null);
+  const [newsUploading, setNewsUploading] = useState(false);
+  const [newsFilterType, setNewsFilterType] = useState<string>("all");
+  const [newsFilterCategory, setNewsFilterCategory] = useState<string>("all");
+  const [newsSearchQuery, setNewsSearchQuery] = useState("");
+  const [newsForm, setNewsForm] = useState({
+    title: "",
+    type: "article",
+    url: "",
+    source_name: "Executive Talks Media",
+    category: "Business",
+    summary: "",
+    content: "",
+    thumbnail_url: "",
+    video_url: "",
+    published_date: new Date().toISOString().slice(0, 16),
+    status: "published",
+    is_featured: false,
+  });
+
   // Careers & Jobs CMS State
   const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
@@ -1014,6 +1038,12 @@ export default function AdminDashboardPage() {
   const [popupSettingsSaving, setPopupSettingsSaving] = useState(false);
   const [showPopupPreviewModal, setShowPopupPreviewModal] = useState(false);
   const [popupEventSearch, setPopupEventSearch] = useState("");
+
+  // --- UNIVERSAL DASHBOARD EVENT FILTER & DROPDOWN STATE ---
+  const [selectedDashboardEventId, setSelectedDashboardEventId] = useState<string>("all");
+  const [eventPickerSearch, setEventPickerSearch] = useState<string>("");
+  const [isEventPickerOpen, setIsEventPickerOpen] = useState<boolean>(false);
+  const eventPickerRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [regFilterEvent, setRegFilterEvent] = useState<string>("all");
@@ -1360,6 +1390,19 @@ export default function AdminDashboardPage() {
         console.warn("Could not fetch job applications", e);
       }
 
+      // 9b. Fetch News Items
+      try {
+        const newsRes = await fetch("/api/admin/news", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const newsData = await newsRes.json();
+        if (newsData.success && Array.isArray(newsData.news)) {
+          setNewsList(newsData.news);
+        }
+      } catch (e) {
+        console.warn("Could not fetch news items", e);
+      }
+
       // 10. Fetch Gallery Items
       try {
         const galRes = await fetch("/api/gallery");
@@ -1594,12 +1637,17 @@ export default function AdminDashboardPage() {
       }
     };
 
+    const onNewsUpdate = () => {
+      fetchDashboardData();
+    };
+
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
     socket.on("new_contact_enquiry", onNewEnquiry);
     socket.on("new_partner_submission", onNewPartnerSubmission);
     socket.on("partner_updated", onPartnerUpdate);
     socket.on("magazine_updated", onMagUpdate);
+    socket.on("news_updated", onNewsUpdate);
     socket.on("job_updated", onJobUpdate);
     socket.on("new_job_application", onNewJobApplication);
     socket.on("gallery_updated", onGalleryUpdate);
@@ -1629,6 +1677,7 @@ export default function AdminDashboardPage() {
       socket.off("new_partner_submission", onNewPartnerSubmission);
       socket.off("partner_updated", onPartnerUpdate);
       socket.off("magazine_updated", onMagUpdate);
+      socket.off("news_updated", onNewsUpdate);
       socket.off("job_updated", onJobUpdate);
       socket.off("new_job_application", onNewJobApplication);
       socket.off("gallery_updated", onGalleryUpdate);
@@ -2732,11 +2781,100 @@ export default function AdminDashboardPage() {
     return false;
   };
 
+  // Robust matcher between Event Payment configs and CMS events
+  const doesPaymentMatchEvent = (item: any, evt: any): boolean => {
+    if (!item || !evt) return false;
+    const itemSlug = (item.event_slug || "").toLowerCase().trim();
+    const itemId = (item.event_id || item.id || "").toLowerCase().trim();
+    const itemTitle = (item.event_title || "").toLowerCase().trim();
+    const eSlug = (evt.slug || "").toLowerCase().trim();
+    const eId = (evt.id || "").toLowerCase().trim();
+    const eTitle = (evt.title || evt.name || "").toLowerCase().trim();
+
+    if (eSlug && (itemSlug === eSlug || itemId === eSlug)) return true;
+    if (eId && (itemId === eId || itemSlug === eId)) return true;
+    if (eTitle && itemTitle && (itemTitle === eTitle || itemTitle.includes(eTitle) || eTitle.includes(itemTitle))) return true;
+
+    // Suffix match
+    const eIdSuffix = eId.replace(/^[^\d]*/, "").slice(-4);
+    if (eIdSuffix && eIdSuffix.length >= 4 && (itemId.includes(eIdSuffix) || itemSlug.includes(eIdSuffix))) {
+      return true;
+    }
+    return false;
+  };
+
+  // Active globally-selected event from top-right dropdown
+  const activeSelectedEvent = useMemo(() => {
+    if (!selectedDashboardEventId || selectedDashboardEventId === "all") return null;
+    return (
+      (cmsEvents || []).find((e) => {
+        const eId = (e.id || "").toString().trim().toLowerCase();
+        const eSlug = (e.slug || "").toString().trim().toLowerCase();
+        const eTitle = (e.title || e.name || "").toString().trim().toLowerCase();
+        const target = selectedDashboardEventId.toString().trim().toLowerCase();
+        return eId === target || eSlug === target || eTitle === target;
+      }) || null
+    );
+  }, [cmsEvents, selectedDashboardEventId]);
+
+  // Handler to set selected dashboard event and keep other tab filters in sync
+  const handleSelectDashboardEvent = (evtId: string) => {
+    setSelectedDashboardEventId(evtId);
+    setIsEventPickerOpen(false);
+    setEventPickerSearch("");
+    if (evtId === "all") {
+      setRegFilterEvent("all");
+      setAttendanceEventFilter("all");
+    } else {
+      const found = (cmsEvents || []).find(
+        (e) =>
+          e.id === evtId ||
+          e.slug === evtId ||
+          (e.title || e.name || "").toLowerCase() === evtId.toLowerCase()
+      );
+      const titleVal = found ? (found.title || found.name || found.slug || found.id) : evtId;
+      setRegFilterEvent(titleVal);
+      setAttendanceEventFilter(found ? (found.id || found.slug || titleVal) : evtId);
+    }
+  };
+
+  // Filtered CMS events for the header dropdown search
+  const filteredCmsEventsForPicker = useMemo(() => {
+    const list = cmsEvents || [];
+    if (!eventPickerSearch.trim()) return list;
+    const q = eventPickerSearch.toLowerCase().trim();
+    return list.filter((evt) => {
+      const title = (evt.title || evt.name || "").toLowerCase();
+      const slug = (evt.slug || evt.id || "").toLowerCase();
+      const city = (evt.city || (evt.locations && evt.locations[0]?.city) || "").toLowerCase();
+      const venue = (evt.venue || "").toLowerCase();
+      return title.includes(q) || slug.includes(q) || city.includes(q) || venue.includes(q);
+    });
+  }, [cmsEvents, eventPickerSearch]);
+
+  // Handle click outside to close the event dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eventPickerRef.current && !eventPickerRef.current.contains(event.target as Node)) {
+        setIsEventPickerOpen(false);
+      }
+    };
+    if (isEventPickerOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isEventPickerOpen]);
+
   const attendanceDelegatesList = useMemo(() => {
     let list = [...registrations];
 
-    // 1. Event Filter (Strictly matches the selected CMS Event)
-    if (attendanceEventFilter !== "all") {
+    // 0. Universal Event Filter
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      list = list.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    } else if (attendanceEventFilter !== "all") {
+      // 1. Event Filter (Strictly matches the selected CMS Event)
       const selectedEvt = (cmsEvents || []).find(
         (e) =>
           e.id === attendanceEventFilter ||
@@ -2819,11 +2957,17 @@ export default function AdminDashboardPage() {
     attendanceEndDate,
     attendanceSearchQuery,
     cmsEvents,
+    selectedDashboardEventId,
+    activeSelectedEvent,
   ]);
 
   const attendancePresentCount = useMemo(() => {
-    return registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
-  }, [registrations]);
+    let list = registrations;
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      list = list.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    }
+    return list.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+  }, [registrations, selectedDashboardEventId, activeSelectedEvent]);
 
   // Unique categories for attendance filter
   const attendanceCategoriesList = useMemo(() => {
@@ -5221,6 +5365,112 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // --- NEWS & MEDIA CMS HANDLERS ---
+  const handleSaveNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsForm.title.trim() || !newsForm.url.trim()) {
+      toast.error("News Title and URL link are required.");
+      return;
+    }
+    setNewsUploading(true);
+    try {
+      const url = editingNews ? `/api/admin/news/${editingNews.id}` : "/api/admin/news";
+      const method = editingNews ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newsForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(editingNews ? "News updated successfully!" : "News published live successfully!");
+        setNewsForm({
+          title: "",
+          type: "article",
+          url: "",
+          source_name: "Executive Talks Media",
+          category: "Business",
+          summary: "",
+          content: "",
+          thumbnail_url: "",
+          video_url: "",
+          published_date: new Date().toISOString().slice(0, 16),
+          status: "published",
+          is_featured: false,
+        });
+        setEditingNews(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save news.");
+      }
+    } catch (err) {
+      toast.error("Network error while saving news.");
+    } finally {
+      setNewsUploading(false);
+    }
+  };
+
+  const handleEditNews = (item: any) => {
+    setEditingNews(item);
+    setNewsForm({
+      title: item.title || "",
+      type: item.type || "article",
+      url: item.url || "",
+      source_name: item.source_name || "Executive Talks Media",
+      category: item.category || "Business",
+      summary: item.summary || "",
+      content: item.content || "",
+      thumbnail_url: item.thumbnail_url || "",
+      video_url: item.video_url || "",
+      published_date: item.published_date ? new Date(item.published_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      status: item.status || "published",
+      is_featured: Boolean(item.is_featured),
+    });
+  };
+
+  const handleDeleteNews = async (id: any) => {
+    if (!window.confirm("Are you sure you want to delete this news article?")) return;
+    try {
+      const res = await fetch(`/api/admin/news/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("News deleted successfully.");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete news.");
+      }
+    } catch (err) {
+      toast.error("Network error while deleting news.");
+    }
+  };
+
+  const handleToggleNewsFeatured = async (id: any, currentFeatured: any) => {
+    try {
+      const next = !(currentFeatured == 1 || currentFeatured === true);
+      const res = await fetch(`/api/admin/news/${id}/featured`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ is_featured: next }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(next ? "Marked as Featured / Breaking!" : "Removed from Featured.");
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error("Failed to toggle featured status.");
+    }
+  };
+
   // --- POPUP MODAL CMS ACTION HANDLERS ---
   const handleSavePopupSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -5393,18 +5643,26 @@ export default function AdminDashboardPage() {
 
   // Dynamic breakdown of registrations by event / category computed from MySQL registrations
   const registrationCategoryBreakdown = useMemo(() => {
-    const list = registrations || [];
+    let list = registrations || [];
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      list = list.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    }
     if (list.length === 0) return [];
 
     const counts: Record<string, number> = {};
     list.forEach((reg) => {
-      let title = reg.event_title?.trim();
-      if (!title && reg.event_id) {
-        const found = cmsEvents.find((e) => e.id === reg.event_id);
-        title = found ? (found.title || found.name) : reg.event_id;
-      }
-      if (!title) {
-        title = reg.registration_category || "Summit Delegate Pass";
+      let title = "";
+      if (selectedDashboardEventId !== "all") {
+        title = reg.pass_name || reg.registration_category || "Summit Delegate Pass";
+      } else {
+        title = reg.event_title?.trim();
+        if (!title && reg.event_id) {
+          const found = cmsEvents.find((e) => e.id === reg.event_id);
+          title = found ? (found.title || found.name) : reg.event_id;
+        }
+        if (!title) {
+          title = reg.registration_category || "Summit Delegate Pass";
+        }
       }
       counts[title] = (counts[title] || 0) + 1;
     });
@@ -5429,7 +5687,7 @@ export default function AdminDashboardPage() {
         color: palette[idx % palette.length],
       }))
       .sort((a, b) => b.count - a.count);
-  }, [registrations, cmsEvents]);
+  }, [registrations, cmsEvents, selectedDashboardEventId, activeSelectedEvent]);
 
   // Total Paid Revenue computed from verified delegate registrations
   const totalPaidRevenue = useMemo(() => {
@@ -5443,8 +5701,37 @@ export default function AdminDashboardPage() {
     }, 0);
   }, [registrations]);
 
+  // Dashboard Paid Revenue reflecting the selected event filter (or all)
+  const dashboardPaidRevenue = useMemo(() => {
+    const list = selectedDashboardEventId !== "all" && activeSelectedEvent
+      ? (registrations || []).filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent))
+      : (registrations || []);
+    return list.reduce((sum, reg) => {
+      const pStatus = (reg.payment_status || "").toLowerCase();
+      if ((pStatus.includes("paid") || reg.payment_id) && !pStatus.includes("dropped") && !pStatus.includes("rejected")) {
+        const amt = Number(reg.payment_amount) || (Number(reg.pass_price) ? Math.round(Number(reg.pass_price) * 1.18) : 0);
+        return sum + amt;
+      }
+      return sum;
+    }, 0);
+  }, [registrations, selectedDashboardEventId, activeSelectedEvent]);
+
+  // Recent registrations filtered by selected event
+  const recentDashboardRegistrations = useMemo(() => {
+    let list = registrations || [];
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      list = list.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    }
+    return list.slice(0, 5);
+  }, [registrations, selectedDashboardEventId, activeSelectedEvent]);
+
   const filteredRegistrations = useMemo(() => {
     return eventRegistrationsList.filter((r) => {
+      // 0. Universal Event Filter from top header
+      if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+        if (!doesRegistrationMatchEvent(r, activeSelectedEvent)) return false;
+      }
+
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -5515,7 +5802,7 @@ export default function AdminDashboardPage() {
 
       return true;
     });
-  }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate, dateFilterRange, customStartDate, customEndDate]);
+  }, [eventRegistrationsList, searchQuery, regFilterEvent, regFilterStatus, regFilterDate, dateFilterRange, customStartDate, customEndDate, selectedDashboardEventId, activeSelectedEvent]);
 
   const eligibleRegistrationsInFilter = useMemo(() => {
     return filteredRegistrations.filter((r) => isDelegateEligibleForGrant(r));
@@ -5528,7 +5815,19 @@ export default function AdminDashboardPage() {
     let dropped = 0;
     let offline = 0;
 
-    eventRegistrationsList.forEach((r) => {
+    let targetList = eventRegistrationsList;
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      targetList = targetList.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    } else if (regFilterEvent !== "all") {
+      const selectedEvt = cmsEvents.find(
+        (e) => (e.title || e.name) === regFilterEvent || e.slug === regFilterEvent || e.id === regFilterEvent
+      );
+      if (selectedEvt) {
+        targetList = targetList.filter((r) => doesRegistrationMatchEvent(r, selectedEvt));
+      }
+    }
+
+    targetList.forEach((r) => {
       if (isDelegateOffline(r)) {
         offline++;
       }
@@ -5544,18 +5843,22 @@ export default function AdminDashboardPage() {
     });
 
     return {
-      all: eventRegistrationsList.length,
+      all: targetList.length,
       paid,
       freeGranted,
       pendingReview,
       dropped,
       offline,
     };
-  }, [eventRegistrationsList]);
+  }, [eventRegistrationsList, selectedDashboardEventId, activeSelectedEvent, regFilterEvent, cmsEvents]);
 
   const offlineRegistrationsList = useMemo(() => {
-    return eventRegistrationsList.filter(isDelegateOffline);
-  }, [eventRegistrationsList]);
+    let list = eventRegistrationsList.filter(isDelegateOffline);
+    if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+      list = list.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent));
+    }
+    return list;
+  }, [eventRegistrationsList, selectedDashboardEventId, activeSelectedEvent]);
 
   const filteredOfflineRegistrations = useMemo(() => {
     return offlineRegistrationsList.filter((r) => {
@@ -5725,8 +6028,9 @@ export default function AdminDashboardPage() {
       ],
     },
     {
-      title: "EDITORIAL & CAREERS",
+      title: "EDITORIAL & MEDIA",
       items: [
+        { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
         { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
         { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
         { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
@@ -5965,6 +6269,155 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+            {/* Universal Event Selector & Search Dropdown */}
+            <div className="relative" ref={eventPickerRef}>
+              <button
+                type="button"
+                onClick={() => setIsEventPickerOpen((prev) => !prev)}
+                className={`flex items-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
+                  selectedDashboardEventId !== "all"
+                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-400/30"
+                    : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                }`}
+                title="Filter entire dashboard by Event / Summit"
+              >
+                <Ticket className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span className="max-w-[110px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
+                  {selectedDashboardEventId === "all"
+                    ? `All Events (${cmsEvents.length})`
+                    : (activeSelectedEvent?.title || activeSelectedEvent?.name || selectedDashboardEventId)}
+                </span>
+                {selectedDashboardEventId !== "all" ? (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectDashboardEvent("all");
+                    }}
+                    className="p-0.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800/80 text-purple-700 dark:text-purple-300 transition-colors"
+                    title="Clear filter & show All Events"
+                  >
+                    <X className="h-3 w-3" />
+                  </span>
+                ) : (
+                  <ChevronDown
+                    className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${
+                      isEventPickerOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
+              </button>
+
+              {/* Dropdown Menu Popup */}
+              {isEventPickerOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 sm:w-84 md:w-96 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-50 p-2 text-xs animate-in fade-in zoom-in-95 duration-150">
+                  {/* Search Field */}
+                  <div className="relative mb-2">
+                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      autoFocus
+                      value={eventPickerSearch}
+                      onChange={(e) => setEventPickerSearch(e.target.value)}
+                      placeholder="Search event by name, city, slug..."
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 pl-8 pr-7 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-purple-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-colors"
+                    />
+                    {eventPickerSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setEventPickerSearch("")}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Options List */}
+                  <div className="max-h-64 sm:max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                    {/* Option 1: All Events (Default) */}
+                    {(!eventPickerSearch || "all events summits".includes(eventPickerSearch.toLowerCase())) && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectDashboardEvent("all")}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                          selectedDashboardEventId === "all"
+                            ? "bg-purple-50 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 font-bold border border-purple-200 dark:border-purple-800"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Globe className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 dark:text-slate-100">All Events & Summits</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Default (aggregate overview)</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                          <span className="rounded-full bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 text-[10px] font-bold text-purple-800 dark:text-purple-300">
+                            {cmsEvents.length} Total
+                          </span>
+                          {selectedDashboardEventId === "all" && <Check className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Divider */}
+                    <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+
+                    {/* Event List */}
+                    {filteredCmsEventsForPicker.length === 0 ? (
+                      <div className="py-6 text-center text-slate-400 text-xs">
+                        No events matching "{eventPickerSearch}"
+                      </div>
+                    ) : (
+                      filteredCmsEventsForPicker.map((evt) => {
+                        const evtTitle = evt.title || evt.name || evt.slug || evt.id;
+                        const isSelected =
+                          selectedDashboardEventId !== "all" &&
+                          (selectedDashboardEventId === evt.id ||
+                            selectedDashboardEventId === evt.slug ||
+                            selectedDashboardEventId.toLowerCase() === (evt.title || evt.name || "").toLowerCase());
+                        const regCount = (registrations || []).filter((r) => doesRegistrationMatchEvent(r, evt)).length;
+                        const city = evt.city || (evt.locations && evt.locations[0]?.city) || "";
+                        const date = evt.date || "";
+
+                        return (
+                          <button
+                            key={evt.id || evt.slug}
+                            type="button"
+                            onClick={() => handleSelectDashboardEvent(evt.id || evt.slug || evtTitle)}
+                            className={`w-full flex items-start justify-between p-2 rounded-xl text-left transition-colors cursor-pointer group ${
+                              isSelected
+                                ? "bg-purple-50 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 font-bold border border-purple-200 dark:border-purple-800"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                                {evtTitle}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                                {city && <span>📍 {city}</span>}
+                                {date && <span>📅 {date}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 self-center">
+                              <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 font-mono">
+                                {regCount} regs
+                              </span>
+                              {isSelected && <Check className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Universal Date-wise Filter Dropdown */}
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2 sm:px-2.5 py-1 text-xs">
               <CalendarDays className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
@@ -6047,6 +6500,33 @@ export default function AdminDashboardPage() {
 
         {/* Main Content Area */}
         <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8">
+          {/* Active Event Filter Notification Banner */}
+          {selectedDashboardEventId !== "all" && activeSelectedEvent && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-200 dark:border-purple-800/80 bg-purple-50/90 dark:bg-purple-950/50 px-4 py-2.5 text-xs shadow-xs animate-in fade-in duration-150">
+              <div className="flex items-center gap-2.5 text-purple-950 dark:text-purple-200 font-semibold min-w-0">
+                <Ticket className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                  Dashboard Filtered by Event:
+                </span>
+                <span className="font-black text-slate-900 dark:text-slate-100 truncate">
+                  {activeSelectedEvent.title || activeSelectedEvent.name}
+                </span>
+                <span className="hidden sm:inline-block rounded-full bg-purple-200 dark:bg-purple-800 px-2.5 py-0.5 text-[10px] font-bold text-purple-900 dark:text-purple-200 font-mono">
+                  {(registrations || []).filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent)).length} Registrations
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSelectDashboardEvent("all")}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 px-3 py-1 rounded-xl shadow-2xs hover:shadow-xs transition-all cursor-pointer shrink-0 ml-auto"
+                title="Reset to All Events"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Show All Events</span>
+              </button>
+            </div>
+          )}
+
           {/* OVERVIEW TAB: ANALYTICS WIDGETS & DASHBOARD BOARDS */}
           {activeTab === "overview" && (
             <div className="space-y-8">
@@ -6072,14 +6552,16 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {cmsEvents.length}
+                        {selectedDashboardEventId !== "all" ? 1 : cmsEvents.length}
                       </div>
                       <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Live Counter
+                        {selectedDashboardEventId !== "all" ? "Filtered" : "Live Counter"}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">National C-suite summits published</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium truncate">
+                      {selectedDashboardEventId !== "all" ? (activeSelectedEvent?.title || "Selected summit") : "National C-suite summits published"}
+                    </p>
                   </div>
 
                   {/* Widget 2: Upcoming Events Counter */}
@@ -6094,7 +6576,9 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {cmsEvents.filter((e) => getEventStatus(e) !== "past").length}
+                        {selectedDashboardEventId !== "all"
+                          ? (activeSelectedEvent && getEventStatus(activeSelectedEvent) !== "past" ? 1 : 0)
+                          : cmsEvents.filter((e) => getEventStatus(e) !== "past").length}
                       </div>
                       <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
                         Active Calendar
@@ -6115,10 +6599,12 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-extrabold text-slate-900">
-                        {stats.totalRegistrations || registrations.length}
+                        {selectedDashboardEventId !== "all" && activeSelectedEvent
+                          ? (registrations.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent)).length)
+                          : (stats.totalRegistrations || registrations.length)}
                       </div>
                       <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200">
-                        Auto-Synced
+                        {selectedDashboardEventId !== "all" ? "Filtered" : "Auto-Synced"}
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-slate-500 font-medium">Executive delegates registered</p>
@@ -6200,7 +6686,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-3 flex items-baseline justify-between">
                       <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
-                        ₹{totalPaidRevenue.toLocaleString("en-IN")}
+                        ₹{dashboardPaidRevenue.toLocaleString("en-IN")}
                       </div>
                       <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
                         Paid Collections
@@ -6289,7 +6775,7 @@ export default function AdminDashboardPage() {
                         <span>Registrations Chart (By Summit Category)</span>
                       </h3>
                       <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                        Total: {registrations.length}
+                        Total: {selectedDashboardEventId !== "all" && activeSelectedEvent ? registrations.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent)).length : registrations.length}
                       </span>
                     </div>
 
@@ -6340,7 +6826,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="mt-4 divide-y divide-slate-100">
-                    {registrations.slice(0, 5).map((reg) => (
+                    {recentDashboardRegistrations.map((reg) => (
                       <div key={reg.id} className="flex items-center justify-between py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-100 font-bold text-cyan-800 text-sm">
@@ -6364,7 +6850,7 @@ export default function AdminDashboardPage() {
                       </div>
                     ))}
 
-                    {registrations.length === 0 && (
+                    {recentDashboardRegistrations.length === 0 && (
                       <div className="py-12 text-center text-slate-500 text-sm">
                         No registrations recorded yet. Submit a registration form to test!
                       </div>
@@ -6473,8 +6959,14 @@ export default function AdminDashboardPage() {
                       uniqueStatsMap.set(key, p);
                     }
                   });
-                  const uniquePaymentsList = Array.from(uniqueStatsMap.values());
-                  const totalPaidCount = (registrations || []).filter((r) => {
+                  let uniquePaymentsList = Array.from(uniqueStatsMap.values());
+                  if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+                    uniquePaymentsList = uniquePaymentsList.filter((p: any) => doesPaymentMatchEvent(p, activeSelectedEvent));
+                  }
+                  const targetRegs = selectedDashboardEventId !== "all" && activeSelectedEvent
+                    ? (registrations || []).filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent))
+                    : (registrations || []);
+                  const totalPaidCount = targetRegs.filter((r) => {
                     const pStatus = (r.payment_status || "").toLowerCase();
                     return (pStatus.includes("paid") || r.payment_id) && !pStatus.includes("dropped") && !pStatus.includes("rejected");
                   }).length;
@@ -6520,7 +7012,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="mt-2 flex items-baseline gap-2">
                           <span className="text-2xl font-black text-emerald-950">
-                            ₹{totalPaidRevenue.toLocaleString("en-IN")}
+                            ₹{dashboardPaidRevenue.toLocaleString("en-IN")}
                           </span>
                           <span className="text-[11px] text-emerald-700 font-bold bg-emerald-100/80 px-2 py-0.5 rounded-full">
                             Real Collections
@@ -6733,8 +7225,12 @@ export default function AdminDashboardPage() {
                   }
 
                   const cityMatch = paymentFilterCity === "all" || (item.event_city || "").toLowerCase().includes(paymentFilterCity.toLowerCase());
+                  let eventMatch = true;
+                  if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
+                    eventMatch = doesPaymentMatchEvent(item, activeSelectedEvent);
+                  }
 
-                  return queryMatch && statusMatch && cityMatch;
+                  return queryMatch && statusMatch && cityMatch && eventMatch;
                 });
 
                 // Compute real event registration & revenue gains from database
@@ -7333,8 +7829,24 @@ export default function AdminDashboardPage() {
                   {/* 2. Event Filter */}
                   <div>
                     <select
-                      value={regFilterEvent}
-                      onChange={(e) => setRegFilterEvent(e.target.value)}
+                      value={selectedDashboardEventId !== "all" ? (activeSelectedEvent?.title || activeSelectedEvent?.name || activeSelectedEvent?.slug || selectedDashboardEventId) : regFilterEvent}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRegFilterEvent(val);
+                        if (val === "all") {
+                          setSelectedDashboardEventId("all");
+                        } else {
+                          const found = cmsEvents.find(
+                            (ev) =>
+                              (ev.title || ev.name) === val ||
+                              ev.slug === val ||
+                              ev.id === val
+                          );
+                          if (found) {
+                            setSelectedDashboardEventId(found.id || found.slug || val);
+                          }
+                        }
+                      }}
                       aria-label="Filter by event"
                       className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 focus:border-cyan-600 focus:bg-white focus:outline-none transition-colors cursor-pointer"
                     >
@@ -12664,6 +13176,472 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: EXECUTIVE TALKS NEWS & MEDIA CMS */}
+          {activeTab === "news" && (
+            <div className="space-y-6">
+              {/* Header Banner */}
+              <div className="rounded-3xl border border-cyan-200/80 bg-gradient-to-r from-cyan-50 via-white to-blue-50 p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/20">
+                    <Newspaper className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                      <span>Executive Talks News & Media CMS</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full border border-cyan-200">
+                        Real-Time
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Publish executive news articles, press coverage links, and keynote video sessions with instant live website sync.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="rounded-full bg-cyan-100 border border-cyan-200 px-3.5 py-1.5 text-xs font-extrabold text-cyan-900 shadow-2xs flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-cyan-600" />
+                    Published: {newsList.length} Stories
+                  </span>
+                  <a
+                    href="/news"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold transition-all shadow-sm"
+                  >
+                    <span>View Public News Page</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-12">
+                {/* 1. PUBLISH / EDIT NEWS FORM (5 COLS) */}
+                <div className="lg:col-span-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-5 h-fit">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2 font-display">
+                      <PlusCircle className="h-4 w-4 text-cyan-600" />
+                      {editingNews ? "Edit News Story / Video" : "Publish New Story / Video"}
+                    </h3>
+                    {editingNews && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingNews(null);
+                          setNewsForm({
+                            title: "",
+                            type: "article",
+                            url: "",
+                            source_name: "Executive Talks Media",
+                            category: "Business",
+                            summary: "",
+                            content: "",
+                            thumbnail_url: "",
+                            video_url: "",
+                            published_date: new Date().toISOString().slice(0, 16),
+                            status: "published",
+                            is_featured: false,
+                          });
+                        }}
+                        className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                      >
+                        Cancel Editing
+                      </button>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleSaveNews} className="space-y-4">
+                    {/* News Title */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        News Headline / Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newsForm.title}
+                        onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })}
+                        placeholder="e.g. India CFO Summit 2026: Capital Allocation & AI Revolution"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium"
+                      />
+                    </div>
+
+                    {/* Content Format Type */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Content Format *
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: "article", label: "Article / Press", icon: FileText },
+                          { id: "video", label: "Video Session", icon: VideoIcon },
+                          { id: "link", label: "External Link", icon: ExternalLink },
+                        ].map((fmt) => (
+                          <button
+                            key={fmt.id}
+                            type="button"
+                            onClick={() => setNewsForm({ ...newsForm, type: fmt.id })}
+                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                              newsForm.type === fmt.id
+                                ? "bg-cyan-50 border-cyan-500 text-cyan-800 shadow-xs"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            }`}
+                          >
+                            <fmt.icon className="h-4 w-4 mb-1" />
+                            <span className="text-[11px]">{fmt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Target URL */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        {newsForm.type === "video" ? "Video URL (YouTube / Video Link) *" : "News / Article Target URL *"}
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={newsForm.url}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setNewsForm({
+                            ...newsForm,
+                            url: v,
+                            video_url: newsForm.type === "video" ? v : newsForm.video_url,
+                          });
+                        }}
+                        placeholder={newsForm.type === "video" ? "https://www.youtube.com/watch?v=..." : "https://economictimes.indiatimes.com/news/..."}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium"
+                      />
+                    </div>
+
+                    {/* Source Name & Category */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Source Publication
+                        </label>
+                        <input
+                          type="text"
+                          value={newsForm.source_name}
+                          onChange={(e) => setNewsForm({ ...newsForm, source_name: e.target.value })}
+                          placeholder="e.g. The Economic Times"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Category / Topic
+                        </label>
+                        <select
+                          value={newsForm.category}
+                          onChange={(e) => setNewsForm({ ...newsForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-white"
+                        >
+                          <option value="Finance & Economy">Finance & Economy</option>
+                          <option value="Leadership">Leadership</option>
+                          <option value="Technology & AI">Technology & AI</option>
+                          <option value="Startups & Tech">Startups & Tech</option>
+                          <option value="HR & Work">HR & Work</option>
+                          <option value="Business">Business</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Thumbnail Image URL */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Thumbnail Image (URL or Upload)
+                      </label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={newsForm.thumbnail_url}
+                          onChange={(e) => setNewsForm({ ...newsForm, thumbnail_url: e.target.value })}
+                          placeholder="https://images.unsplash.com/... or paste image URL"
+                          className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                        />
+                        <label className="cursor-pointer px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 shrink-0 border border-slate-200">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>Upload</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setNewsForm((prev) => ({ ...prev, thumbnail_url: reader.result as string }));
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {newsForm.thumbnail_url && (
+                        <div className="mt-2 relative rounded-xl overflow-hidden aspect-video max-h-28 bg-slate-900 border border-slate-200">
+                          <img
+                            src={newsForm.thumbnail_url}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Publish Date & Status */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Publish Date & Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={newsForm.published_date}
+                          onChange={(e) => setNewsForm({ ...newsForm, published_date: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                          Publishing Status
+                        </label>
+                        <select
+                          value={newsForm.status}
+                          onChange={(e) => setNewsForm({ ...newsForm, status: e.target.value as any })}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-white"
+                        >
+                          <option value="published">Published (Live)</option>
+                          <option value="draft">Draft (Hidden)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Summary / Excerpt */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                        Summary / Brief Excerpt
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={newsForm.summary}
+                        onChange={(e) => setNewsForm({ ...newsForm, summary: e.target.value })}
+                        placeholder="Brief summary of the news story or keynote highlights..."
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 resize-none"
+                      />
+                    </div>
+
+                    {/* Featured / Pin to Top Checkbox */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <input
+                        type="checkbox"
+                        id="newsIsFeatured"
+                        checked={Boolean(newsForm.is_featured)}
+                        onChange={(e) => setNewsForm({ ...newsForm, is_featured: e.target.checked })}
+                        className="h-4 w-4 rounded text-cyan-600 focus:ring-cyan-500 border-slate-300 cursor-pointer"
+                      />
+                      <label htmlFor="newsIsFeatured" className="text-xs font-extrabold text-slate-800 cursor-pointer flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                        <span>Feature in Hero / Breaking Spotlight</span>
+                      </label>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={newsUploading}
+                      className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-600/25 hover:from-cyan-500 hover:to-blue-500 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      {newsUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Publishing Story...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>{editingNews ? "Update News Story" : "Publish News Story Live"}</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+
+                {/* 2. PUBLISHED NEWS LIST (7 COLS) */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Search & Format Filter */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={newsSearchQuery}
+                        onChange={(e) => setNewsSearchQuery(e.target.value)}
+                        placeholder="Search published news..."
+                        className="w-full rounded-xl border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-slate-900 focus:border-cyan-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                      {["all", "article", "video", "link"].map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setNewsFilterType(type)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
+                            newsFilterType === type
+                              ? "bg-cyan-600 text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* List of News Items */}
+                  {newsList
+                    .filter((item) => {
+                      if (newsFilterType !== "all" && item.type !== newsFilterType) return false;
+                      if (newsSearchQuery.trim()) {
+                        const q = newsSearchQuery.toLowerCase();
+                        return (
+                          item.title?.toLowerCase().includes(q) ||
+                          item.source_name?.toLowerCase().includes(q) ||
+                          item.category?.toLowerCase().includes(q)
+                        );
+                      }
+                      return true;
+                    })
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-4 items-start justify-between"
+                      >
+                        <div className="flex gap-3.5 items-start">
+                          {/* Thumbnail */}
+                          <div className="relative w-24 h-20 sm:w-28 sm:h-20 rounded-2xl overflow-hidden bg-slate-950 shrink-0 border border-slate-200">
+                            <img
+                              src={item.thumbnail_url || "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=400&q=80"}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {item.type === "video" && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <Play className="w-4 h-4 fill-white text-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                item.type === "video"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  : item.type === "article"
+                                  ? "bg-cyan-50 text-cyan-700 border-cyan-200"
+                                  : "bg-blue-50 text-blue-700 border-blue-200"
+                              }`}>
+                                {item.type}
+                              </span>
+
+                              <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                                {item.category || "Business"}
+                              </span>
+
+                              {Boolean(item.is_featured) && (
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                                  <Star className="w-2.5 h-2.5 fill-amber-600 text-amber-600" />
+                                  Featured
+                                </span>
+                              )}
+
+                              <span className="text-[10px] text-slate-600 font-semibold">
+                                {item.source_name} • {new Date(item.published_date || item.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            <h4 className="text-sm font-extrabold text-slate-900 line-clamp-2">
+                              {item.title}
+                            </h4>
+
+                            {item.summary && (
+                              <p className="text-xs text-slate-500 line-clamp-1">
+                                {item.summary}
+                              </p>
+                            )}
+
+                            <div className="pt-1">
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-bold text-cyan-600 hover:underline inline-flex items-center gap-1"
+                              >
+                                <span className="truncate max-w-[200px]">{item.url}</span>
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex sm:flex-col items-center gap-1.5 self-end sm:self-center shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleNewsFeatured(item.id, item.is_featured)}
+                            title={item.is_featured ? "Remove featured" : "Feature on Homepage"}
+                            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                              item.is_featured
+                                ? "bg-amber-50 text-amber-600 border-amber-300"
+                                : "bg-slate-50 text-slate-400 border-slate-200 hover:text-amber-500"
+                            }`}
+                          >
+                            <Star className={`h-3.5 w-3.5 ${item.is_featured ? "fill-amber-500" : ""}`} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleEditNews(item)}
+                            title="Edit News"
+                            className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNews(item.id)}
+                            title="Delete News"
+                            className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                  {newsList.length === 0 && (
+                    <div className="text-center py-12 rounded-3xl border border-slate-200 bg-white p-6 space-y-2">
+                      <Newspaper className="h-8 w-8 mx-auto text-slate-400" />
+                      <p className="text-sm font-bold text-slate-700">No News Stories Published Yet</p>
+                      <p className="text-xs text-slate-500">
+                        Use the form on the left to publish your first executive article or video link.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

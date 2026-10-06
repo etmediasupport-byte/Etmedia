@@ -211,6 +211,8 @@ export async function initDatabase() {
     await ensureCollectionAliases();
     await ensurePopupTables();
     await seedDefaultPopupData();
+    await ensureNewsTable();
+    await seedDefaultNews();
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -1546,6 +1548,129 @@ export async function seedDefaultPopupData() {
     }
   } catch (err) {
     console.error("[MySQL] Error seeding popup data:", err);
+  }
+}
+
+export async function ensureNewsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS news (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(500) NOT NULL,
+        type VARCHAR(50) DEFAULT 'article',
+        url TEXT NOT NULL,
+        source_name VARCHAR(255) DEFAULT 'Executive Talks Media',
+        summary TEXT,
+        content LONGTEXT,
+        thumbnail_url LONGTEXT,
+        video_url TEXT,
+        published_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        category VARCHAR(100) DEFAULT 'Business',
+        status VARCHAR(50) DEFAULT 'published',
+        is_featured TINYINT(1) DEFAULT 0,
+        views_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+    try { await pool.query("ALTER TABLE news ADD COLUMN type VARCHAR(50) DEFAULT 'article';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN source_name VARCHAR(255) DEFAULT 'Executive Talks Media';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN summary TEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN content LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN thumbnail_url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN video_url TEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN published_date DATETIME DEFAULT CURRENT_TIMESTAMP;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN category VARCHAR(100) DEFAULT 'Business';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN status VARCHAR(50) DEFAULT 'published';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN is_featured TINYINT(1) DEFAULT 0;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE news ADD COLUMN views_count INT DEFAULT 0;"); } catch (e) {}
+    console.log("[MySQL] news table verified and up-to-date!");
+  } catch (err) {
+    console.error("[MySQL] Error ensuring news table:", err);
+  }
+}
+
+export async function seedDefaultNews() {
+  if (!pool) return;
+  try {
+    const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM news");
+    if (rows[0]?.count === 0) {
+      const defaultNews = [
+        {
+          title: "India CFO Leadership Summit 2026: Capital Allocation & AI Revolutionizing Corporate Treasury",
+          type: "article",
+          url: "https://economictimes.indiatimes.com",
+          source_name: "The Economic Times",
+          summary: "Over 500 top CFOs and finance leaders convene at Executive Talks Media flagship summit in Mumbai to outline risk resilience and AI integration.",
+          thumbnail_url: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80",
+          category: "Finance & Economy",
+          published_date: "2026-10-05 10:30:00",
+          status: "published",
+          is_featured: 1,
+        },
+        {
+          title: "CXO Keynote Panel: Reimagining Human Capital & Hybrid Workplaces for 2027",
+          type: "video",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          source_name: "Executive Talks TV",
+          summary: "Watch the full keynote session with visionary HR leaders and CEOs discussing high-performance executive culture in Bengaluru.",
+          thumbnail_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+          category: "Leadership",
+          published_date: "2026-10-04 15:45:00",
+          status: "published",
+          is_featured: 1,
+        },
+        {
+          title: "Founders Circle 2K27 Announced: India's Premier Startup-Corporate Collaboration Stage",
+          type: "link",
+          url: "https://livemint.com",
+          source_name: "LiveMint",
+          summary: "Executive Talks Media unveils Founders Circle 2K27, bridging venture capital, unicorn founders, and enterprise conglomerates.",
+          thumbnail_url: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80",
+          category: "Startups & Tech",
+          published_date: "2026-10-03 09:15:00",
+          status: "published",
+          is_featured: 0,
+        },
+        {
+          title: "AI & Cloud Infrastructure Conclave Highlights: Sustainable Data Centers in India",
+          type: "article",
+          url: "https://business-standard.com",
+          source_name: "Business Standard",
+          summary: "Chief Technology Officers and cloud architects discuss renewable energy grids, enterprise LLM security, and Sovereign Cloud.",
+          thumbnail_url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+          category: "Technology",
+          published_date: "2026-10-02 14:00:00",
+          status: "published",
+          is_featured: 0,
+        },
+      ];
+
+      for (const item of defaultNews) {
+        await pool.query(
+          `INSERT INTO news (title, type, url, source_name, summary, thumbnail_url, video_url, category, published_date, status, is_featured)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.title,
+            item.type,
+            item.url,
+            item.source_name,
+            item.summary,
+            item.thumbnail_url,
+            item.video_url || null,
+            item.category,
+            item.published_date,
+            item.status,
+            item.is_featured,
+          ]
+        );
+      }
+      console.log("[MySQL] Seeded default initial news articles & videos!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding default news:", err);
   }
 }
 

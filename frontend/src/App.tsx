@@ -11,6 +11,7 @@ import ContactPage from "@/pages/ContactPage";
 import PartnerWithUsPage from "@/pages/PartnerWithUsPage";
 import CareersPage from "@/pages/CareersPage";
 import GalleryPage from "@/pages/GalleryPage";
+import NewsPage from "@/pages/NewsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import AdminLoginPage from "@/pages/AdminLoginPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
@@ -183,6 +184,7 @@ export default function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="about" element={<AboutPage />} />
+              <Route path="news" element={<NewsPage />} />
               <Route path="magazine" element={<MagazinePage />} />
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />

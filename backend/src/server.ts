@@ -6058,6 +6058,219 @@ app.patch("/api/admin/magazines/:id/featured", authenticateAdmin, async (req, re
 });
 
 // ==========================================
+// EXECUTIVE TALKS NEWS & MEDIA API ENDPOINTS
+// ==========================================
+
+// 1. Get all published news items (Public)
+app.get("/api/news", async (req, res) => {
+  try {
+    const { category, type, search, limit } = req.query;
+    if (pool) {
+      let query = "SELECT * FROM news WHERE status = 'published'";
+      const params: any[] = [];
+
+      if (category && category !== "all") {
+        query += " AND category = ?";
+        params.push(category);
+      }
+      if (type && type !== "all") {
+        query += " AND type = ?";
+        params.push(type);
+      }
+      if (search) {
+        query += " AND (title LIKE ? OR summary LIKE ? OR source_name LIKE ?)";
+        const term = `%${search}%`;
+        params.push(term, term, term);
+      }
+
+      query += " ORDER BY is_featured DESC, published_date DESC, created_at DESC";
+
+      if (limit) {
+        const lim = parseInt(String(limit), 10) || 50;
+        query += ` LIMIT ${lim}`;
+      }
+
+      const [rows]: any = await pool.query(query, params);
+      return res.json({ success: true, news: rows });
+    }
+    return res.json({ success: true, news: [] });
+  } catch (err: any) {
+    console.error("Fetch News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch news" });
+  }
+});
+
+// 2. Get single news item & track view count
+app.get("/api/news/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM news WHERE id = ?", [id]);
+      if (rows.length === 0) {
+        return res.status(404).json({ success: false, message: "News item not found" });
+      }
+      pool.query("UPDATE news SET views_count = views_count + 1 WHERE id = ?", [id]).catch(() => {});
+      return res.json({ success: true, news: rows[0] });
+    }
+    return res.status(404).json({ success: false, message: "News item not found" });
+  } catch (err: any) {
+    console.error("Fetch Single News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch news item" });
+  }
+});
+
+// 3. Admin: Get all news (including drafts)
+app.get("/api/admin/news", authenticateAdmin, async (_req, res) => {
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM news ORDER BY is_featured DESC, published_date DESC, created_at DESC");
+      return res.json({ success: true, news: rows });
+    }
+    return res.json({ success: true, news: [] });
+  } catch (err: any) {
+    console.error("Admin Fetch News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch news for admin" });
+  }
+});
+
+// 4. Admin create news item
+app.post("/api/admin/news", authenticateAdmin, async (req, res) => {
+  let { title, type, url, source_name, summary, content, thumbnail_url, video_url, published_date, category, status, is_featured } = req.body;
+  if (!title || !url) {
+    return res.status(400).json({ success: false, message: "Title and Target URL are required" });
+  }
+
+  if (thumbnail_url && thumbnail_url.startsWith("data:image")) {
+    thumbnail_url = saveBase64Image(thumbnail_url);
+  }
+
+  const effectiveType = type || "article";
+  const effectiveSource = source_name || "Executive Talks Media";
+  const effectiveCategory = category || "Business";
+  const effectiveStatus = status || "published";
+  const effectiveFeatured = is_featured ? 1 : 0;
+  const effectivePublishedDate = published_date ? new Date(published_date) : new Date();
+
+  try {
+    if (pool) {
+      const [result]: any = await pool.query(
+        `INSERT INTO news (title, type, url, source_name, summary, content, thumbnail_url, video_url, published_date, category, status, is_featured)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          title,
+          effectiveType,
+          url,
+          effectiveSource,
+          summary || "",
+          content || "",
+          thumbnail_url || "",
+          video_url || "",
+          effectivePublishedDate,
+          effectiveCategory,
+          effectiveStatus,
+          effectiveFeatured,
+        ]
+      );
+      const insertedId = result.insertId;
+      const [rows]: any = await pool.query("SELECT * FROM news WHERE id = ?", [insertedId]);
+      const newNews = rows[0] || { id: insertedId, title, url, type: effectiveType };
+
+      io.emit("news_updated", { type: "add", news: newNews });
+      return res.json({ success: true, news: newNews, message: "News article added and published in real-time!" });
+    }
+    return res.status(500).json({ success: false, message: "Database not connected" });
+  } catch (err: any) {
+    console.error("Create News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to create news" });
+  }
+});
+
+// 5. Admin update news item
+app.put("/api/admin/news/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  let { title, type, url, source_name, summary, content, thumbnail_url, video_url, published_date, category, status, is_featured } = req.body;
+
+  if (thumbnail_url && thumbnail_url.startsWith("data:image")) {
+    thumbnail_url = saveBase64Image(thumbnail_url);
+  }
+
+  try {
+    if (pool) {
+      await pool.query(
+        `UPDATE news SET 
+          title = COALESCE(?, title),
+          type = COALESCE(?, type),
+          url = COALESCE(?, url),
+          source_name = COALESCE(?, source_name),
+          summary = COALESCE(?, summary),
+          content = COALESCE(?, content),
+          thumbnail_url = COALESCE(?, thumbnail_url),
+          video_url = COALESCE(?, video_url),
+          published_date = COALESCE(?, published_date),
+          category = COALESCE(?, category),
+          status = COALESCE(?, status),
+          is_featured = COALESCE(?, is_featured)
+        WHERE id = ?`,
+        [
+          title,
+          type,
+          url,
+          source_name,
+          summary,
+          content,
+          thumbnail_url,
+          video_url,
+          published_date ? new Date(published_date) : undefined,
+          category,
+          status,
+          is_featured !== undefined ? (is_featured ? 1 : 0) : undefined,
+          id,
+        ]
+      );
+      const [rows]: any = await pool.query("SELECT * FROM news WHERE id = ?", [id]);
+      const updatedNews = rows[0];
+      io.emit("news_updated", { type: "update", id, news: updatedNews });
+      return res.json({ success: true, news: updatedNews, message: "News article updated successfully!" });
+    }
+    return res.status(500).json({ success: false, message: "Database not connected" });
+  } catch (err: any) {
+    console.error("Update News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update news" });
+  }
+});
+
+// 6. Admin delete news item
+app.delete("/api/admin/news/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await pool.query("DELETE FROM news WHERE id = ?", [id]);
+    }
+    io.emit("news_updated", { type: "delete", id });
+    return res.json({ success: true, message: "News article deleted successfully" });
+  } catch (err: any) {
+    console.error("Delete News Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to delete news" });
+  }
+});
+
+// 7. Admin toggle featured status
+app.patch("/api/admin/news/:id/featured", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { is_featured } = req.body;
+  try {
+    if (pool) {
+      await pool.query("UPDATE news SET is_featured = ? WHERE id = ?", [is_featured ? 1 : 0, id]);
+    }
+    io.emit("news_updated", { type: "featured", id, is_featured });
+    return res.json({ success: true, message: "News featured state updated" });
+  } catch (err: any) {
+    console.error("Toggle News Featured Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to toggle featured status" });
+  }
+});
+
+// ==========================================
 // CAREERS & JOBS API ENDPOINTS
 // ==========================================
 
