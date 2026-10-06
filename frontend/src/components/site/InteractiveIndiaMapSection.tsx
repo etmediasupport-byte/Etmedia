@@ -145,52 +145,52 @@ export function InteractiveIndiaMapSection() {
     return map;
   }, []);
 
-  // Map scale and translation for Desktop Unified Canvas: viewBox="0 0 1440 760"
-  const mapScale = 0.72;
-  const mapOffsetX = 40;
-  const mapOffsetY = 20;
+  // Compact Map scale and translation: fits standard viewport in 1440x550 canvas
+  const mapScale = 0.56;
+  const mapOffsetX = 50;
+  const mapOffsetY = 15;
 
-  // Middle cards column position & exact top coordinates
-  const cardsStartX = 750;
-  const cardHeight = 68;
-  const cardTops = [65, 165, 265, 365, 465, 565];
+  // Middle cards column position & exact compact top coordinates
+  const cardsStartX = 740;
+  const cardHeight = 52;
+  const cardTops = [30, 118, 206, 294, 382, 470];
 
   return (
     <section
       id="service-states"
-      className="relative overflow-hidden bg-gradient-to-b from-[#f2f7fd] via-[#f8fbff] to-[#ebf4fe] py-16 sm:py-24 text-slate-900 border-t border-blue-100 select-none"
+      className="relative overflow-hidden bg-gradient-to-b from-[#f2f7fd] via-[#f8fbff] to-[#ebf4fe] py-8 sm:py-10 text-slate-900 border-t border-blue-100 select-none"
     >
       {/* Background Soft Ambient Auras */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-200/30 blur-[150px] pointer-events-none rounded-full" />
-      <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-cyan-200/35 blur-[150px] pointer-events-none rounded-full" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-200/25 blur-[130px] pointer-events-none rounded-full" />
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-200/30 blur-[130px] pointer-events-none rounded-full" />
       <div className="absolute inset-0 opacity-[0.035] bg-[radial-gradient(#0052cc_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
 
       <div className="container-x relative z-10 max-w-[1480px]">
         {/* ========================================================= */}
-        {/* 1. SECTION HEADER                                         */}
+        {/* 1. COMPACT SECTION HEADER                                 */}
         {/* ========================================================= */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <div className="flex items-center justify-center gap-3 text-xs sm:text-sm font-extrabold tracking-[0.25em] text-[#0052cc] uppercase font-mono">
-            <span className="w-8 sm:w-12 h-[1.5px] bg-gradient-to-r from-transparent to-[#0052cc]" />
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
+          <div className="flex items-center justify-center gap-3 text-[11px] sm:text-xs font-extrabold tracking-[0.25em] text-[#0052cc] uppercase font-mono">
+            <span className="w-6 sm:w-10 h-[1.5px] bg-gradient-to-r from-transparent to-[#0052cc]" />
             <span>PAN INDIA PRESENCE</span>
-            <span className="w-8 sm:w-12 h-[1.5px] bg-gradient-to-l from-transparent to-[#0052cc]" />
+            <span className="w-6 sm:w-10 h-[1.5px] bg-gradient-to-l from-transparent to-[#0052cc]" />
           </div>
 
-          <h2 className="mt-3 text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold font-display text-[#002f6c] tracking-tight leading-tight">
+          <h2 className="mt-1.5 text-2xl sm:text-4xl lg:text-[2.6rem] font-extrabold font-display text-[#002f6c] tracking-tight leading-tight">
             Our Service States
           </h2>
 
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed font-sans max-w-2xl mx-auto">
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans max-w-2xl mx-auto">
             Delivering quality services across key states in India, with a commitment to growth and excellence.
           </p>
         </div>
 
         {/* ========================================================= */}
-        {/* 2. DESKTOP UNIFIED 1440x760 SVG CANVAS                    */}
-        {/* Connecting lines start LITERALLY at the state pins!       */}
+        {/* 2. DESKTOP VIEWPORT-OPTIMIZED 1440x550 SVG CANVAS         */}
+        {/* Fits completely inside normal screen height!              */}
         {/* ========================================================= */}
-        <div className="hidden lg:block relative w-full aspect-[1440/760] max-h-[760px] mx-auto filter drop-shadow-[0_15px_35px_rgba(0,51,102,0.08)]">
-          <svg viewBox="0 0 1440 760" className="w-full h-full">
+        <div className="hidden lg:block relative w-full aspect-[1440/550] max-h-[550px] mx-auto filter drop-shadow-[0_12px_28px_rgba(0,51,102,0.07)]">
+          <svg viewBox="0 0 1440 550" className="w-full h-full">
             <defs>
               {/* Highlighted State Blue Gradient */}
               <linearGradient id="stateBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -208,7 +208,7 @@ export function InteractiveIndiaMapSection() {
 
               {/* Glowing Line Laser Filter */}
               <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feGaussianBlur stdDeviation="3" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
             </defs>
@@ -286,10 +286,10 @@ export function InteractiveIndiaMapSection() {
                     />
                     <text
                       x={st.labelX}
-                      y={st.labelY - 5}
+                      y={st.labelY - 4}
                       textAnchor={st.labelAlign === "right" ? "end" : "start"}
                       fill="#0f172a"
-                      fontSize="20"
+                      fontSize="18"
                       fontWeight="800"
                       fontFamily="system-ui, -apple-system, sans-serif"
                     >
@@ -313,21 +313,21 @@ export function InteractiveIndiaMapSection() {
                       onMouseLeave={() => setHoveredStateId(null)}
                     >
                       {/* Outer Sonar Ping 1 */}
-                      <circle r="18" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.8">
-                        <animate attributeName="r" from="6" to="26" dur="2s" repeatCount="indefinite" />
+                      <circle r="16" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.8">
+                        <animate attributeName="r" from="5" to="22" dur="2s" repeatCount="indefinite" />
                         <animate attributeName="opacity" from="0.9" to="0" dur="2s" repeatCount="indefinite" />
                       </circle>
                       {/* Outer Sonar Ping 2 */}
-                      <circle r="12" fill="none" stroke="#00f0ff" strokeWidth="1.5" opacity="0.6">
-                        <animate attributeName="r" from="4" to="20" dur="2s" begin="0.7s" repeatCount="indefinite" />
+                      <circle r="11" fill="none" stroke="#00f0ff" strokeWidth="1.5" opacity="0.6">
+                        <animate attributeName="r" from="4" to="17" dur="2s" begin="0.7s" repeatCount="indefinite" />
                         <animate attributeName="opacity" from="0.8" to="0" dur="2s" begin="0.7s" repeatCount="indefinite" />
                       </circle>
                       {/* Center Core */}
                       <circle
-                        r={isSelected ? "7" : "5.5"}
+                        r={isSelected ? "6" : "4.8"}
                         fill="#ffffff"
                         stroke="#0052cc"
-                        strokeWidth="2.5"
+                        strokeWidth="2.2"
                         filter="drop-shadow(0 0 6px #00f0ff)"
                       />
                     </g>
@@ -373,7 +373,7 @@ export function InteractiveIndiaMapSection() {
                       d={pathD}
                       fill="none"
                       stroke={isSelected ? "#0052cc" : "#38bdf8"}
-                      strokeWidth={isSelected ? "2.8" : "1.8"}
+                      strokeWidth={isSelected ? "2.6" : "1.6"}
                       strokeDasharray="6 5"
                       className="state-connector-line transition-all duration-300"
                       filter={isSelected ? "url(#lineGlow)" : undefined}
@@ -384,15 +384,15 @@ export function InteractiveIndiaMapSection() {
                     <circle
                       cx={midX}
                       cy={midY}
-                      r={isSelected ? "4.5" : "3.5"}
+                      r={isSelected ? "4" : "3"}
                       fill={isSelected ? "#00f0ff" : "#38bdf8"}
                       stroke="#ffffff"
-                      strokeWidth="1.5"
+                      strokeWidth="1.2"
                       filter="drop-shadow(0 0 4px rgba(0,240,255,0.7))"
                     />
 
                     {/* Glowing Energy Particle gliding along curve */}
-                    <circle r={isSelected ? "4" : "2.5"} fill={isSelected ? "#00f0ff" : "#0052cc"}>
+                    <circle r={isSelected ? "3.5" : "2.2"} fill={isSelected ? "#00f0ff" : "#0052cc"}>
                       <animateMotion path={pathD} dur={`${1.8 + idx * 0.25}s`} repeatCount="indefinite" />
                     </circle>
                   </g>
@@ -400,8 +400,8 @@ export function InteractiveIndiaMapSection() {
               })}
             </g>
 
-            {/* C. MIDDLE COLUMN: 6 STATE PILL CARDS (PRECISION ABSOLUTE POSITIONING) */}
-            <foreignObject x={cardsStartX} y="0" width="280" height="760">
+            {/* C. MIDDLE COLUMN: 6 STATE PILL CARDS (COMPACT HEIGHT 52px) */}
+            <foreignObject x={cardsStartX} y="0" width="280" height="550">
               <div className="relative w-full h-full select-none">
                 {presenceStates.map((st, idx) => {
                   const isSelected = activeState.id === st.id;
@@ -414,18 +414,18 @@ export function InteractiveIndiaMapSection() {
                       onMouseEnter={() => setHoveredStateId(st.id)}
                       onMouseLeave={() => setHoveredStateId(null)}
                       style={{ top: `${top}px`, height: `${cardHeight}px` }}
-                      className={`absolute left-0 right-0 flex items-center gap-3 p-2.5 rounded-full bg-white transition-all duration-300 cursor-pointer shadow-md ${
+                      className={`absolute left-0 right-0 flex items-center gap-2.5 px-3 rounded-full bg-white transition-all duration-300 cursor-pointer shadow-sm ${
                         isSelected
-                          ? "ring-2 ring-[#0052cc] shadow-xl shadow-blue-500/20 translate-x-2 bg-gradient-to-r from-blue-50 via-white to-white"
-                          : "border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:translate-x-1"
+                          ? "ring-2 ring-[#0052cc] shadow-md shadow-blue-500/20 translate-x-1.5 bg-gradient-to-r from-blue-50 via-white to-white"
+                          : "border border-slate-100 hover:border-blue-300 hover:shadow hover:translate-x-1"
                       }`}
                     >
                       {/* State Code Badge (e.g. TG, MH, UP, AP, TN, JK) */}
                       <div
-                        className={`relative h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 font-mono font-black text-sm tracking-wider transition-all duration-300 ${
+                        className={`relative h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-mono font-black text-xs tracking-wider transition-all duration-300 ${
                           isSelected
-                            ? "bg-gradient-to-br from-[#0052cc] to-[#002f80] text-white shadow-md shadow-blue-600/35 ring-2 ring-white/80 scale-105"
-                            : "bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] text-[#0052cc] border border-blue-200/80 shadow-sm"
+                            ? "bg-gradient-to-br from-[#0052cc] to-[#002f80] text-white shadow-sm ring-1 ring-white/80"
+                            : "bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] text-[#0052cc] border border-blue-200/80"
                         }`}
                       >
                         <span>{st.code}</span>
@@ -434,22 +434,22 @@ export function InteractiveIndiaMapSection() {
                       {/* State Name */}
                       <div className="min-w-0 flex-1 pr-1">
                         <h4
-                          className={`text-sm font-extrabold font-display truncate transition-colors ${
+                          className={`text-[13px] font-extrabold font-display truncate transition-colors leading-tight ${
                             isSelected ? "text-[#003366]" : "text-slate-800"
                           }`}
                         >
                           {st.name}
                         </h4>
-                        <p className="text-[10px] text-slate-500 font-medium truncate font-sans">
-                          {st.isHq ? "★ Corporate Headquarters" : st.capital}
+                        <p className="text-[9.5px] text-slate-500 font-medium truncate font-sans leading-tight mt-0.5">
+                          {st.isHq ? "★ Corporate HQ" : st.capital}
                         </p>
                       </div>
 
                       {/* Active Indicator Dot */}
                       {isSelected ? (
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#0052cc] shrink-0 mr-2 animate-pulse shadow-[0_0_8px_#0052cc]" />
+                        <span className="h-2 w-2 rounded-full bg-[#0052cc] shrink-0 mr-1 animate-pulse shadow-[0_0_6px_#0052cc]" />
                       ) : (
-                        <span className="h-2 w-2 rounded-full bg-slate-200 shrink-0 mr-2" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-200 shrink-0 mr-1" />
                       )}
                     </div>
                   );
@@ -457,24 +457,24 @@ export function InteractiveIndiaMapSection() {
               </div>
             </foreignObject>
 
-            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL */}
-            <foreignObject x="1080" y="60" width="340" height="630">
-              <div className="h-full rounded-3xl bg-gradient-to-b from-white via-white to-[#f5f9ff] border border-blue-100 p-6 shadow-xl flex flex-col justify-between">
+            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL (COMPACT HEIGHT) */}
+            <foreignObject x="1060" y="25" width="350" height="505">
+              <div className="h-full rounded-2xl bg-gradient-to-b from-white via-white to-[#f5f9ff] border border-blue-100 p-4 sm:p-5 shadow-lg flex flex-col justify-between">
                 {/* Header Pill */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="inline-flex items-center gap-2 rounded-2xl bg-[#0052cc] px-4 py-2 text-xs font-extrabold text-white shadow-md shadow-blue-600/25">
-                    <MapPin className="h-4 w-4 text-white" />
+                <div className="flex items-center justify-between mb-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-xl bg-[#0052cc] px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm">
+                    <MapPin className="h-3.5 w-3.5 text-white" />
                     <span>Our Service States</span>
                   </div>
                   {activeState.isHq && (
-                    <span className="text-[10px] font-mono font-bold text-[#0052cc] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    <span className="text-[9px] font-mono font-bold text-[#0052cc] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                       GLOBAL HQ
                     </span>
                   )}
                 </div>
 
                 {/* Mini Preview Map */}
-                <div className="relative w-full aspect-[1/1] max-h-[190px] mx-auto flex items-center justify-center my-1">
+                <div className="relative w-full aspect-[1/1] max-h-[145px] mx-auto flex items-center justify-center my-0.5">
                   <svg viewBox="0 0 1000 1000" className="w-full h-full object-contain">
                     {/* Entire Outer Outline */}
                     <g stroke="#60a5fa" strokeWidth="2.5" strokeLinejoin="round" fill="none">
@@ -521,35 +521,35 @@ export function InteractiveIndiaMapSection() {
                 </div>
 
                 {/* State Details */}
-                <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="space-y-2 pt-2 border-t border-slate-100">
                   <div>
-                    <h3 className="text-xl font-extrabold text-[#002f6c] font-display">
+                    <h3 className="text-lg font-extrabold text-[#002f6c] font-display leading-tight">
                       {activeState.name}
                     </h3>
-                    <p className="text-xs text-slate-500 font-medium">{activeState.capital} Hub</p>
+                    <p className="text-[11px] text-slate-500 font-medium">{activeState.capital} Hub</p>
                   </div>
 
-                  <div className="bg-[#f2f7fd] rounded-2xl p-3 space-y-1.5 border border-blue-50 text-xs">
-                    <div className="flex items-start gap-2">
-                      <Building2 className="h-4 w-4 text-[#0052cc] shrink-0 mt-0.5" />
+                  <div className="bg-[#f2f7fd] rounded-xl p-2.5 space-y-1 border border-blue-50 text-[11px]">
+                    <div className="flex items-start gap-1.5">
+                      <Building2 className="h-3.5 w-3.5 text-[#0052cc] shrink-0 mt-0.5" />
                       <span className="text-slate-700 leading-tight">
                         <strong className="text-slate-900 block font-bold">Venue:</strong>
                         {activeState.venues}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1 border-t border-blue-100/60 text-[11px] text-slate-600">
-                      <Calendar className="h-3.5 w-3.5 text-[#0052cc] shrink-0" />
+                    <div className="flex items-center gap-2 pt-1 border-t border-blue-100/60 text-[10px] text-slate-600">
+                      <Calendar className="h-3 w-3 text-[#0052cc] shrink-0" />
                       <span>{activeState.annualSummits}</span>
                       <span className="text-slate-300">•</span>
-                      <Users className="h-3.5 w-3.5 text-[#0052cc] shrink-0" />
+                      <Users className="h-3 w-3 text-[#0052cc] shrink-0" />
                       <span>{activeState.delegates}</span>
                     </div>
                   </div>
 
                   <Link
                     to="/events"
-                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#0052cc] hover:bg-[#0041a8] py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 transition-all font-btn cursor-pointer"
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#0052cc] hover:bg-[#0041a8] py-2 text-xs font-bold text-white shadow-sm transition-all font-btn cursor-pointer"
                   >
                     <span>Explore {activeState.name} Summits</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -563,9 +563,9 @@ export function InteractiveIndiaMapSection() {
         {/* ========================================================= */}
         {/* 3. MOBILE & TABLET RESPONSIVE VIEW (< 1024px)             */}
         {/* ========================================================= */}
-        <div className="block lg:hidden space-y-8">
+        <div className="block lg:hidden space-y-6">
           {/* Mobile Map */}
-          <div className="relative w-full max-w-[420px] aspect-[1/1] mx-auto">
+          <div className="relative w-full max-w-[380px] aspect-[1/1] mx-auto">
             <svg viewBox="0 0 1000 1000" className="w-full h-full object-contain filter drop-shadow-md">
               {/* Outer boundary stroke */}
               <g stroke="#4b8de8" strokeWidth="3" strokeLinejoin="round" fill="none">
@@ -643,9 +643,9 @@ export function InteractiveIndiaMapSection() {
           </div>
 
           {/* Mobile Details Box */}
-          <div className="bg-white rounded-3xl p-5 border border-blue-100 shadow-lg space-y-3">
+          <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-md space-y-2.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-extrabold text-[#002f6c]">{activeState.name}</h3>
+              <h3 className="text-base font-extrabold text-[#002f6c]">{activeState.name}</h3>
               <span className="text-xs font-bold text-[#0052cc] bg-blue-50 px-2.5 py-0.5 rounded-full">
                 {activeState.tag}
               </span>
@@ -653,7 +653,7 @@ export function InteractiveIndiaMapSection() {
             <p className="text-xs text-slate-600 font-medium">📍 {activeState.venues}</p>
             <Link
               to="/events"
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0052cc] py-2.5 text-xs font-bold text-white shadow"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0052cc] py-2 text-xs font-bold text-white shadow"
             >
               <span>Explore Summits</span>
               <ArrowRight className="h-3.5 w-3.5" />
