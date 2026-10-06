@@ -28,6 +28,7 @@ import {
   ArrowRight,
   ExternalLink,
   Layers,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MagazineItem } from "@/lib/site-data";
@@ -54,6 +55,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
   const [tocOpen, setTocOpen] = useState(false);
   const [thumbnailSidebarOpen, setThumbnailSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [bookmarkedPages, setBookmarkedPages] = useState<number[]>([]);
@@ -485,20 +487,20 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
       {/* ========================================================= */}
       {/* 2. TOP GLASSMORPER TOOLBAR (Blur 24px, Gold Border)       */}
       {/* ========================================================= */}
-      <div className="relative z-30 flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#08111F]/80 px-4 py-3 sm:px-6 shadow-2xl backdrop-blur-[24px] shrink-0">
+      <div className="relative z-30 flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#08111F]/90 px-3 py-2.5 sm:px-6 sm:py-3 shadow-2xl backdrop-blur-[24px] shrink-0 gap-2">
         {/* Executive Talks Media Branding & Title */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-[#7A0019] to-[#08111F] border border-[#D4AF37]/50 text-[#D4AF37] shrink-0 shadow-md">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-[#7A0019] to-[#08111F] border border-[#D4AF37]/50 text-[#D4AF37] shrink-0 shadow-md">
             <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-xs sm:text-sm font-extrabold text-white truncate font-display flex items-center gap-2">
-              <span>{magazine.title}</span>
-              <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-mono font-extrabold text-[#D4AF37] bg-[#7A0019]/40 border border-[#D4AF37]/40 rounded-full uppercase">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-xs sm:text-sm font-extrabold text-white truncate font-display flex items-center gap-1.5">
+              <span className="truncate">{magazine.title}</span>
+              <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-mono font-extrabold text-[#D4AF37] bg-[#7A0019]/40 border border-[#D4AF37]/40 rounded-full uppercase shrink-0">
                 {magazine.issue}
               </span>
             </h3>
-            <p className="text-[10px] text-slate-400 font-mono hidden sm:flex items-center gap-2">
+            <p className="text-[10px] text-slate-400 font-mono hidden sm:flex items-center gap-2 truncate">
               <span>{magazine.month || magazine.date}</span>
               <span>·</span>
               <span className="text-[#D4AF37] font-semibold">Premium 3D Flipbook</span>
@@ -507,7 +509,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
         </div>
 
         {/* Toolbar Buttons Action Group */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Table of Contents */}
           <button
             type="button"
@@ -515,8 +517,9 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
               setTocOpen((v) => !v);
               setThumbnailSidebarOpen(false);
               setSearchOpen(false);
+              setMoreMenuOpen(false);
             }}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`p-2 sm:px-3 sm:py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
               tocOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white shadow-lg shadow-[#7A0019]/40"
                 : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
@@ -534,8 +537,9 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
               setThumbnailSidebarOpen((v) => !v);
               setTocOpen(false);
               setSearchOpen(false);
+              setMoreMenuOpen(false);
             }}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`p-2 sm:px-3 sm:py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
               thumbnailSidebarOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white shadow-lg shadow-[#7A0019]/40"
                 : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
@@ -546,7 +550,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             <span className="hidden md:inline font-btn">Thumbnails</span>
           </button>
 
-          {/* Search Drawer */}
+          {/* Search Drawer (Desktop / Tablet) */}
           <button
             type="button"
             onClick={() => {
@@ -554,7 +558,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
               setTocOpen(false);
               setThumbnailSidebarOpen(false);
             }}
-            className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+            className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer hidden sm:flex shrink-0 ${
               searchOpen
                 ? "bg-[#7A0019] border-[#D4AF37] text-white"
                 : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
@@ -564,11 +568,11 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             <Search className="h-4 w-4 text-[#D4AF37]" />
           </button>
 
-          {/* Bookmark Button */}
+          {/* Bookmark Button (Desktop / Tablet) */}
           <button
             type="button"
             onClick={toggleBookmark}
-            className={`p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`p-2 rounded-xl border transition-all cursor-pointer hidden sm:flex shrink-0 ${
               bookmarkedPages.includes(currentSpreadIndex)
                 ? "bg-[#D4AF37] border-[#D4AF37] text-slate-950 shadow-md"
                 : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
@@ -582,7 +586,7 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
           <button
             type="button"
             onClick={() => setSoundEnabled((v) => !v)}
-            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer"
+            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
             title={soundEnabled ? "Mute Flip Sound" : "Enable Flip Sound"}
           >
             {soundEnabled ? (
@@ -592,24 +596,24 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             )}
           </button>
 
-          {/* Zoom Toggle (100% -> 150% -> 200% -> 300%) */}
+          {/* Zoom Toggle (Desktop / Tablet) */}
           <button
             type="button"
             onClick={() => setZoomLevel((prev) => (prev >= 3 ? 1 : prev === 1 ? 1.5 : prev === 1.5 ? 2 : 3))}
-            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold"
+            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer hidden sm:flex items-center gap-1 text-xs font-semibold shrink-0"
             title="Zoom Level (100% / 150% / 200% / 300%)"
           >
             {zoomLevel > 1 ? <ZoomOut className="h-4 w-4 text-[#D4AF37]" /> : <ZoomIn className="h-4 w-4" />}
             <span className="hidden lg:inline font-mono">{Math.round(zoomLevel * 100)}%</span>
           </button>
 
-          {/* Download PDF */}
+          {/* Download PDF (Desktop / Tablet) */}
           {magazine.pdf_url && (
             <a
               href={magazine.pdf_url}
               target="_blank"
               rel="noreferrer"
-              className="p-2 rounded-xl border border-[#D4AF37]/40 bg-[#7A0019]/40 text-[#D4AF37] hover:bg-[#7A0019] hover:text-white transition-all cursor-pointer hidden sm:flex items-center gap-1 text-xs font-bold font-btn"
+              className="p-2 rounded-xl border border-[#D4AF37]/40 bg-[#7A0019]/40 text-[#D4AF37] hover:bg-[#7A0019] hover:text-white transition-all cursor-pointer hidden sm:flex items-center gap-1 text-xs font-bold font-btn shrink-0"
               title="Download High-Res PDF"
             >
               <Download className="h-4 w-4" />
@@ -617,34 +621,144 @@ export function Magazine3DViewer({ magazine, pages, onClose }: Magazine3DViewerP
             </a>
           )}
 
-          {/* Share Magazine */}
+          {/* Share Magazine (Desktop / Tablet) */}
           <button
             type="button"
             onClick={handleShare}
-            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer"
+            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer hidden sm:flex shrink-0"
             title="Share Magazine"
           >
             {copiedLink ? <Check className="h-4 w-4 text-emerald-400" /> : <Share2 className="h-4 w-4" />}
           </button>
 
-          {/* Fullscreen */}
+          {/* Fullscreen (Desktop / Tablet) */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer hidden sm:flex"
+            className="p-2 rounded-xl border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-all cursor-pointer hidden sm:flex shrink-0"
             title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="h-4 w-4 text-[#D4AF37]" /> : <Maximize2 className="h-4 w-4" />}
           </button>
 
+          {/* Mobile "More" (•••) Dropdown Menu */}
+          <div className="relative sm:hidden shrink-0">
+            <button
+              type="button"
+              onClick={() => setMoreMenuOpen((v) => !v)}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                moreMenuOpen
+                  ? "bg-[#7A0019] border-[#D4AF37] text-white shadow-md shadow-[#7A0019]/40"
+                  : "border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white hover:border-[#D4AF37]/40"
+              }`}
+              title="More Actions"
+            >
+              <MoreHorizontal className="h-4 w-4 text-[#D4AF37]" />
+            </button>
+
+            {/* Floating Popover Sheet */}
+            <AnimatePresence>
+              {moreMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setMoreMenuOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-[#D4AF37]/50 bg-[#08111F]/98 backdrop-blur-2xl p-1.5 shadow-2xl z-50 text-xs font-semibold text-slate-200 flex flex-col gap-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        setSearchOpen(true);
+                        setTocOpen(false);
+                        setThumbnailSidebarOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/90 text-left transition-colors text-slate-200 hover:text-white cursor-pointer"
+                    >
+                      <Search className="h-4 w-4 text-[#D4AF37]" />
+                      <span>Search Spreads</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleBookmark();
+                        setMoreMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/90 text-left transition-colors text-slate-200 hover:text-white cursor-pointer"
+                    >
+                      <Bookmark className="h-4 w-4 text-[#D4AF37]" />
+                      <span>
+                        {bookmarkedPages.includes(currentSpreadIndex)
+                          ? "Remove Bookmark"
+                          : "Bookmark Spread"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setZoomLevel((prev) => (prev >= 3 ? 1 : prev === 1 ? 1.5 : prev === 1.5 ? 2 : 3));
+                      }}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-800/90 text-left transition-colors text-slate-200 hover:text-white cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ZoomIn className="h-4 w-4 text-[#D4AF37]" />
+                        <span>Zoom Level</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#D4AF37] bg-[#7A0019]/40 px-2 py-0.5 rounded-full border border-[#D4AF37]/40">
+                        {Math.round(zoomLevel * 100)}%
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleShare();
+                        setMoreMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/90 text-left transition-colors text-slate-200 hover:text-white cursor-pointer"
+                    >
+                      {copiedLink ? (
+                        <Check className="h-4 w-4 text-emerald-400" />
+                      ) : (
+                        <Share2 className="h-4 w-4 text-[#D4AF37]" />
+                      )}
+                      <span>Share Magazine</span>
+                    </button>
+
+                    {magazine.pdf_url && (
+                      <a
+                        href={magazine.pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setMoreMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-800/90 text-left transition-colors text-[#D4AF37] cursor-pointer"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download PDF</span>
+                      </a>
+                    )}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Close Button */}
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition-all cursor-pointer ml-1"
+            className="p-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition-all cursor-pointer ml-1 shrink-0"
             title="Close Magazine Viewer (Esc)"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
           </button>
         </div>
       </div>
