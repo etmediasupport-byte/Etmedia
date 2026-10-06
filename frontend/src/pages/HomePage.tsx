@@ -63,6 +63,7 @@ import { ImageZoomCard } from "@/components/ui/ImageZoomCard";
 import { HeroSection } from "@/components/site/HeroSection";
 import { StatisticsSection } from "@/components/site/StatisticsSection";
 import { SEOHead } from "@/components/site/SEOHead";
+import { InteractiveIndiaMapSection } from "@/components/site/InteractiveIndiaMapSection";
 import { toast } from "sonner";
 import { fetchWithCache } from "@/lib/api-cache";
 
@@ -1181,6 +1182,9 @@ export default function HomePage() {
 
       {/* 11. Gallery Preview */}
       <GalleryPreview />
+
+      {/* 12. Interactive India Network Map Section (Right above Footer) */}
+      <InteractiveIndiaMapSection />
 
       {/* Footer is rendered automatically by Layout */}
     </>
