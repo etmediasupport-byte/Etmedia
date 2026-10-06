@@ -8015,7 +8015,7 @@ export default function AdminDashboardPage() {
 
               {/* RESPONSIVE FULL-WIDTH TABLE WITH HORIZONTAL SCROLLBAR & CHECKBOX SELECTION */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full min-w-[1050px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50/90 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
                     <tr>
                       <th className="py-3 px-3 w-10 text-center">
@@ -9192,18 +9192,18 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* ATTENDANCE DELEGATE TABLE */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                <table className="w-full text-left text-xs">
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs custom-scrollbar">
+                <table className="w-full min-w-[1260px] text-left text-xs">
                   <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th className="py-3.5 px-3">#</th>
-                      <th className="py-3.5 px-3">Attendee Profile</th>
-                      <th className="py-3.5 px-3">Company & Role</th>
-                      <th className="py-3.5 px-3">Summit / Event</th>
-                      <th className="py-3.5 px-3">Pass Tier</th>
-                      <th className="py-3.5 px-3 text-center">Gate Status</th>
-                      <th className="py-3.5 px-3">Check-In Details</th>
-                      <th className="py-3.5 px-3 text-right">Actions</th>
+                      <th className="py-3.5 px-3 w-12 text-center">#</th>
+                      <th className="py-3.5 px-3 min-w-[220px]">Attendee Profile</th>
+                      <th className="py-3.5 px-3 min-w-[170px]">Company & Role</th>
+                      <th className="py-3.5 px-3 min-w-[180px]">Summit / Event</th>
+                      <th className="py-3.5 px-3 min-w-[130px]">Pass Tier</th>
+                      <th className="py-3.5 px-3 min-w-[110px] text-center">Gate Status</th>
+                      <th className="py-3.5 px-3 min-w-[130px]">Check-In Details</th>
+                      <th className="py-3.5 px-3 text-right min-w-[280px] w-[280px] pr-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
@@ -9348,8 +9348,8 @@ export default function AdminDashboardPage() {
                             </td>
 
                             {/* Actions */}
-                            <td className="py-3.5 px-3 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
+                            <td className="py-3.5 px-3 text-right min-w-[280px] w-[280px] whitespace-nowrap pr-4">
+                              <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                 {isPresent ? (
                                   <div className="flex items-center gap-1.5">
                                     <button
@@ -10190,7 +10190,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full min-w-[1050px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50/90 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
                     <tr>
                       <th className="py-3 px-3.5 min-w-[180px]">Delegate Name</th>
