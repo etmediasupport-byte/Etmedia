@@ -127,11 +127,11 @@ export function Footer() {
           
           {/* COLUMN 1: BRAND IDENTITY & OVERVIEW (4 cols) */}
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 space-y-3.5">
-            <Link to="/" className="inline-block transition-transform hover:scale-[1.02] bg-white rounded-2xl p-2 sm:p-2.5 shadow-sm border border-slate-200">
+            <Link to="/" className="inline-flex items-center transition-transform hover:scale-[1.02] bg-white rounded-xl px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-sm border border-slate-200/50">
               <img
                 src={executivetalksLogo}
                 alt="Executive Talks Media Business Intelligence"
-                className="h-12 sm:h-14 w-auto object-contain bg-white"
+                className="h-8 sm:h-9 md:h-10 w-auto object-contain"
                 loading="lazy"
               />
             </Link>

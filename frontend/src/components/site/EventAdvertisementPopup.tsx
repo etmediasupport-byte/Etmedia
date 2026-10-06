@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award, Zap } from "lucide-react";
+import { X, Calendar, MapPin, ArrowRight, ExternalLink, Sparkles, ChevronLeft, ChevronRight, Award, Zap, Clock } from "lucide-react";
 import { io } from "socket.io-client";
 import { images } from "@/lib/site-data";
 
@@ -475,7 +475,7 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                 </div>
                 <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                   (currentEvent as any).allow_paid_registration === 0 && (currentEvent as any).allow_free_registration === 0
-                    ? "text-slate-400 bg-slate-900 border-slate-700"
+                    ? "text-amber-400 bg-amber-950/70 border-amber-500/30 flex items-center gap-1"
                     : "text-emerald-400 bg-emerald-950/70 border-emerald-500/30"
                 }`}>
                   {(currentEvent as any).allow_paid_registration !== 0 && (currentEvent as any).allow_paid_registration !== false && (currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false
@@ -484,7 +484,12 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                     ? "Paid Passes"
                     : (currentEvent as any).allow_free_registration !== 0 && (currentEvent as any).allow_free_registration !== false
                     ? "Free Passes"
-                    : "Passes Closed"}
+                    : (
+                      <>
+                        <Clock className="w-2.5 h-2.5 shrink-0" />
+                        <span>Passes Releasing Soon</span>
+                      </>
+                    )}
                 </span>
               </div>
 
@@ -525,9 +530,10 @@ export const EventAdvertisementPopup: React.FC<Props> = ({
                         handleClosePopup();
                         navigate(`/events/${encodeURIComponent(currentEvent.slug || currentEvent.id)}`);
                       }}
-                      className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all duration-200 cursor-pointer border border-slate-700"
+                      className="w-full relative group/btn overflow-hidden rounded-xl font-extrabold text-xs py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-950/40 to-slate-900 hover:bg-slate-800 text-amber-300 transition-all duration-200 cursor-pointer border border-amber-500/30"
                     >
-                      <span>View Event Details</span>
+                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Passes Releasing Soon • View Details</span>
                     </button>
                   )}
               </div>

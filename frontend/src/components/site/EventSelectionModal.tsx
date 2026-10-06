@@ -411,10 +411,17 @@ export function EventSelectionModal({
                             {event.category || "Leadership Conclave"}
                           </span>
                           {!isPast && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Registrations Open
-                            </span>
+                            (event as any).allow_paid_registration === 0 && (event as any).allow_free_registration === 0 ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                                <Clock className="h-2.5 w-2.5 text-amber-600" />
+                                Passes Releasing Soon
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Registrations Open
+                              </span>
+                            )
                           )}
                           {Boolean(event.is_featured) && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
@@ -486,6 +493,20 @@ export function EventSelectionModal({
                             <span>Register (Paid)</span>
                           </button>
                         )}
+
+                        {/* 4. Passes Releasing Soon badge when both hidden */}
+                        {((event as any).allow_paid_registration === 0 || (event as any).allow_paid_registration === false) &&
+                          ((event as any).allow_free_registration === 0 || (event as any).allow_free_registration === false) && (
+                            <button
+                              type="button"
+                              onClick={() => handleViewDetail(event)}
+                              className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-extrabold shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                              title="Passes releasing soon - click to view summit details"
+                            >
+                              <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                              <span>Passes Releasing Soon</span>
+                            </button>
+                          )}
                       </div>
                     </motion.div>
                   );

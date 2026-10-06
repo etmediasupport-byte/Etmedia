@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap, Clock } from "lucide-react";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { images, getValidImageUrl } from "@/lib/site-data";
@@ -104,7 +104,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
             </span>
             <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${
               (event as any).allow_paid_registration === 0 && (event as any).allow_free_registration === 0
-                ? "text-slate-600 bg-slate-100 border-slate-200"
+                ? "text-amber-800 bg-amber-50 border-amber-200"
                 : "text-emerald-700 bg-emerald-50 border-emerald-200"
             }`}>
               {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
@@ -113,7 +113,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
                 ? "Paid Passes"
                 : (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
                 ? "Free Passes"
-                : "Passes Closed"}
+                : "Passes Releasing Soon"}
             </span>
           </div>
         </div>
@@ -150,9 +150,10 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
           ((event as any).allow_free_registration === 0 || (event as any).allow_free_registration === false) && (
             <Link
               to={`/events/${event.slug || event.id}`}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5"
+              className="w-full bg-amber-50/80 hover:bg-amber-100/90 text-amber-900 border border-amber-200/80 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-2xs"
             >
-              <span>View Event Details</span>
+              <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <span>Passes Releasing Soon • View Details</span>
             </Link>
           )}
       </div>

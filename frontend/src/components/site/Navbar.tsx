@@ -165,13 +165,13 @@ export function Navbar() {
           {/* LEFT: Executive Talks Media Logo */}
           <Link
             to="/"
-            className="flex min-w-0 shrink-0 items-center bg-white transition-transform hover:scale-[1.02]"
+            className="flex min-w-0 shrink-0 items-center transition-transform hover:scale-[1.02]"
             onClick={handleNavClick}
           >
             <img
               src={executivetalksLogo}
               alt="Executive Talks Media"
-              className="h-11 sm:h-12 md:h-13 lg:h-14 xl:h-15 w-auto object-contain bg-white border-none shadow-none transition-all duration-300"
+              className="h-9 sm:h-10 md:h-11 lg:h-11.5 xl:h-12 w-auto object-contain border-none shadow-none transition-all duration-300"
             />
           </Link>
 

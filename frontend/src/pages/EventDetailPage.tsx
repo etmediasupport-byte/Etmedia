@@ -765,10 +765,10 @@ export default function EventDetailPage() {
                 <button
                   type="button"
                   disabled
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 py-2.5 px-4 text-xs font-black text-slate-500 cursor-not-allowed border border-slate-200"
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-amber-50/90 py-2.5 px-4 text-xs font-black text-amber-800 cursor-not-allowed border border-amber-200 shadow-2xs"
                 >
-                  <span>Registrations Closed</span>
-                  <AlertCircle className="h-3.5 w-3.5 text-slate-400" />
+                  <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span>Passes Releasing Soon</span>
                 </button>
               ) : liveEventStatus === "live" ? (
                 <div className={`grid ${(event as any)?.allow_paid_registration !== 0 && (event as any)?.allow_paid_registration !== false && (event as any)?.allow_free_registration !== 0 && (event as any)?.allow_free_registration !== false ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
