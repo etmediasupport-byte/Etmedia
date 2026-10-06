@@ -6227,7 +6227,7 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-30 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-hidden min-w-0 gap-2 sm:gap-4">
+        <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-visible min-w-0 gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
             {/* Mobile Open Sidebar Trigger */}
             <button
@@ -6311,7 +6311,7 @@ export default function AdminDashboardPage() {
 
               {/* Dropdown Menu Popup */}
               {isEventPickerOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 sm:w-84 md:w-96 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-50 p-2 text-xs animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl z-50 p-2 text-xs animate-in fade-in zoom-in-95 duration-150 ring-1 ring-slate-900/10 dark:ring-white/10">
                   {/* Search Field */}
                   <div className="relative mb-2">
                     <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />

@@ -1594,83 +1594,18 @@ export async function ensureNewsTable() {
 export async function seedDefaultNews() {
   if (!pool) return;
   try {
-    const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM news");
-    if (rows[0]?.count === 0) {
-      const defaultNews = [
-        {
-          title: "India CFO Leadership Summit 2026: Capital Allocation & AI Revolutionizing Corporate Treasury",
-          type: "article",
-          url: "https://economictimes.indiatimes.com",
-          source_name: "The Economic Times",
-          summary: "Over 500 top CFOs and finance leaders convene at Executive Talks Media flagship summit in Mumbai to outline risk resilience and AI integration.",
-          thumbnail_url: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80",
-          category: "Finance & Economy",
-          published_date: "2026-10-05 10:30:00",
-          status: "published",
-          is_featured: 1,
-        },
-        {
-          title: "CXO Keynote Panel: Reimagining Human Capital & Hybrid Workplaces for 2027",
-          type: "video",
-          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          source_name: "Executive Talks TV",
-          summary: "Watch the full keynote session with visionary HR leaders and CEOs discussing high-performance executive culture in Bengaluru.",
-          thumbnail_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-          category: "Leadership",
-          published_date: "2026-10-04 15:45:00",
-          status: "published",
-          is_featured: 1,
-        },
-        {
-          title: "Founders Circle 2K27 Announced: India's Premier Startup-Corporate Collaboration Stage",
-          type: "link",
-          url: "https://livemint.com",
-          source_name: "LiveMint",
-          summary: "Executive Talks Media unveils Founders Circle 2K27, bridging venture capital, unicorn founders, and enterprise conglomerates.",
-          thumbnail_url: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80",
-          category: "Startups & Tech",
-          published_date: "2026-10-03 09:15:00",
-          status: "published",
-          is_featured: 0,
-        },
-        {
-          title: "AI & Cloud Infrastructure Conclave Highlights: Sustainable Data Centers in India",
-          type: "article",
-          url: "https://business-standard.com",
-          source_name: "Business Standard",
-          summary: "Chief Technology Officers and cloud architects discuss renewable energy grids, enterprise LLM security, and Sovereign Cloud.",
-          thumbnail_url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
-          category: "Technology",
-          published_date: "2026-10-02 14:00:00",
-          status: "published",
-          is_featured: 0,
-        },
-      ];
+    // Remove sample mock news records so only admin-added news exists
+    const sampleTitles = [
+      "India CFO Leadership Summit 2026: Capital Allocation & AI Revolutionizing Corporate Treasury",
+      "CXO Keynote Panel: Reimagining Human Capital & Hybrid Workplaces for 2027",
+      "Founders Circle 2K27 Announced: India's Premier Startup-Corporate Collaboration Stage",
+      "AI & Cloud Infrastructure Conclave Highlights: Sustainable Data Centers in India",
+    ];
 
-      for (const item of defaultNews) {
-        await pool.query(
-          `INSERT INTO news (title, type, url, source_name, summary, thumbnail_url, video_url, category, published_date, status, is_featured)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            item.title,
-            item.type,
-            item.url,
-            item.source_name,
-            item.summary,
-            item.thumbnail_url,
-            item.video_url || null,
-            item.category,
-            item.published_date,
-            item.status,
-            item.is_featured,
-          ]
-        );
-      }
-      console.log("[MySQL] Seeded default initial news articles & videos!");
-    }
+    await pool.query("DELETE FROM news WHERE title IN (?)", [sampleTitles]);
+    console.log("[MySQL] Cleaned up sample news items; only real admin-created news will be retained.");
   } catch (err) {
-    console.error("[MySQL] Error seeding default news:", err);
+    // Ignore if table or rows not present
   }
 }
 
