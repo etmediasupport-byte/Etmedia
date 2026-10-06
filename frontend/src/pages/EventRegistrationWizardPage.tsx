@@ -1866,6 +1866,8 @@ export default function EventRegistrationWizardPage() {
                     <EventTermsAndConditionsBox
                       checked={termsAccepted}
                       onChange={setTermsAccepted}
+                      clauses={(eventData as any)?.terms_data?.clauses}
+                      title={(eventData as any)?.terms_data?.title}
                     />
                   </div>
 

@@ -1158,6 +1158,8 @@ export default function FreeRegistrationPage() {
                       <EventTermsAndConditionsBox
                         checked={termsAccepted}
                         onChange={setTermsAccepted}
+                        clauses={eventData?.terms_data?.clauses}
+                        title={eventData?.terms_data?.title}
                       />
                     </div>
 

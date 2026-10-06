@@ -89,6 +89,7 @@ import {
   UserPlus,
   Sliders,
   ShieldCheck,
+  AlertTriangle,
   CreditCard,
   Percent,
   IndianRupee,
@@ -275,6 +276,7 @@ interface WebsiteSettings {
 type TabType =
   | "overview"
   | "events"
+  | "terms-conditions"
   | "news"
   | "sectors"
   | "event-payments"
@@ -828,6 +830,45 @@ export default function AdminDashboardPage() {
   const [previewTestDelegateName, setPreviewTestDelegateName] = useState<string>("Ascend Labs");
   const [previewTestPassId, setPreviewTestPassId] = useState<string>("ETM-REG-697665-3996");
 
+  // Terms & Conditions CMS State
+  interface TermsClause {
+    num: string | number;
+    title: string;
+    content: string;
+    isWarning?: boolean;
+  }
+
+  interface TermsTemplateItem {
+    id: string;
+    title: string;
+    description: string;
+    clauses: TermsClause[];
+    is_default: number | boolean;
+    created_at?: string;
+    updated_at?: string;
+  }
+
+  const [termsTemplatesList, setTermsTemplatesList] = useState<TermsTemplateItem[]>([]);
+  const [loadingTerms, setLoadingTerms] = useState<boolean>(false);
+  const [editingTermsTemplate, setEditingTermsTemplate] = useState<TermsTemplateItem | null>(null);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState<boolean>(false);
+  const [termsModalTab, setTermsModalTab] = useState<"builder" | "preview">("builder");
+  const [termsPreviewTemplate, setTermsPreviewTemplate] = useState<TermsTemplateItem | null>(null);
+  const [savingTermsId, setSavingTermsId] = useState<string | null>(null);
+  const [termsSearchQuery, setTermsSearchQuery] = useState<string>("");
+  const [termsForm, setTermsForm] = useState<{
+    id?: string;
+    title: string;
+    description: string;
+    is_default: boolean;
+    clauses: TermsClause[];
+  }>({
+    title: "",
+    description: "",
+    is_default: false,
+    clauses: [],
+  });
+
   // Careers & Jobs CMS State
   const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
@@ -1196,7 +1237,7 @@ export default function AdminDashboardPage() {
   const [submittingEvent, setSubmittingEvent] = useState(false);
   const [eventSaveNotification, setEventSaveNotification] = useState<{ message: string; type: "success" | "draft" } | null>(null);
 
-  const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue">("basic");
+  const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue" | "terms">("basic");
   const [openLocationSlots, setOpenLocationSlots] = useState<number[]>([0]);
 
   const toggleLocationSlot = (index: number) => {
@@ -1273,6 +1314,7 @@ export default function AdminDashboardPage() {
     venue_address: string;
     allow_paid_registration: number;
     allow_free_registration: number;
+    terms_id?: string;
   }>({
     title: "",
     category: "Conference & Leadership",
@@ -1305,6 +1347,7 @@ export default function AdminDashboardPage() {
     venue_address: "",
     allow_paid_registration: 1,
     allow_free_registration: 1,
+    terms_id: "",
   });
 
   const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token") || "";
@@ -1469,6 +1512,20 @@ export default function AdminDashboardPage() {
         }
       } catch (e) {
         console.warn("Could not fetch email subjects", e);
+      }
+
+      // 9d. Fetch Terms & Conditions Templates
+      try {
+        setLoadingTerms(true);
+        const termsRes = await fetch("/api/terms-conditions");
+        const termsData = await termsRes.json();
+        if (termsData.success && Array.isArray(termsData.data)) {
+          setTermsTemplatesList(termsData.data);
+        }
+      } catch (e) {
+        console.warn("Could not fetch terms templates", e);
+      } finally {
+        setLoadingTerms(false);
       }
 
       // 10. Fetch Gallery Items
@@ -4549,6 +4606,7 @@ export default function AdminDashboardPage() {
       venue_address: "",
       allow_paid_registration: 1,
       allow_free_registration: 1,
+      terms_id: "",
     });
     setOpenLocationSlots([0]);
     setEventModalOpen(true);
@@ -4637,6 +4695,7 @@ export default function AdminDashboardPage() {
       venue_address: evt.venue_address || "",
       allow_paid_registration: evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? 1 : 0,
       allow_free_registration: evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? 1 : 0,
+      terms_id: evt.terms_id || "",
     });
     setOpenLocationSlots([0]);
     setEventModalOpen(true);
@@ -5707,6 +5766,211 @@ export default function AdminDashboardPage() {
     return preview;
   };
 
+  // --- TERMS & CONDITIONS CMS ACTION HANDLERS ---
+  const handleOpenAddTerms = () => {
+    setEditingTermsTemplate(null);
+    setTermsForm({
+      title: "",
+      description: "",
+      is_default: termsTemplatesList.length === 0,
+      clauses: [
+        { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
+        { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
+      ],
+    });
+    setTermsModalTab("builder");
+    setIsTermsModalOpen(true);
+  };
+
+  const handleOpenEditTerms = (tmpl: TermsTemplateItem) => {
+    setEditingTermsTemplate(tmpl);
+    setTermsForm({
+      id: tmpl.id,
+      title: tmpl.title,
+      description: tmpl.description || "",
+      is_default: Boolean(tmpl.is_default),
+      clauses: Array.isArray(tmpl.clauses) ? [...tmpl.clauses] : [],
+    });
+    setTermsModalTab("builder");
+    setIsTermsModalOpen(true);
+  };
+
+  const handleDuplicateTerms = (tmpl: TermsTemplateItem) => {
+    setEditingTermsTemplate(null);
+    setTermsForm({
+      title: `${tmpl.title} (Copy)`,
+      description: tmpl.description || "",
+      is_default: false,
+      clauses: Array.isArray(tmpl.clauses) ? JSON.parse(JSON.stringify(tmpl.clauses)) : [],
+    });
+    setTermsModalTab("builder");
+    setIsTermsModalOpen(true);
+  };
+
+  const handleLoadStandardClauses = () => {
+    setTermsForm((prev) => ({
+      ...prev,
+      clauses: [
+        { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
+        { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
+        { num: 3, title: "Partner Communication", content: "I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication." },
+        { num: 4, title: "Digital & Promotional Usage", content: "I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities." },
+        { num: 5, title: "Photography & Video Consent", content: "I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes." },
+        { num: 6, title: "Data Usage", content: "I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws." },
+        { num: 7, title: "Third-Party Communication", content: "I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration." },
+        { num: 8, title: "Event Updates", content: "I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change." },
+        { num: 9, title: "Personal Safety & Belongings", content: "Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.", isWarning: true },
+        { num: 10, title: "Consent & Acceptance", content: "By clicking “I Agree / Submit Registration,” I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms." },
+      ],
+    }));
+    toast.success("Standard 10 clauses loaded into template!");
+  };
+
+  const handleAddClausePoint = () => {
+    setTermsForm((prev) => {
+      const nextNum = prev.clauses.length + 1;
+      return {
+        ...prev,
+        clauses: [
+          ...prev.clauses,
+          { num: nextNum, title: "", content: "" },
+        ],
+      };
+    });
+  };
+
+  const handleRemoveClausePoint = (index: number) => {
+    setTermsForm((prev) => {
+      const updated = prev.clauses.filter((_, i) => i !== index).map((c, i) => ({
+        ...c,
+        num: i + 1,
+      }));
+      return { ...prev, clauses: updated };
+    });
+  };
+
+  const handleMoveClausePoint = (index: number, direction: "up" | "down") => {
+    setTermsForm((prev) => {
+      const list = [...prev.clauses];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= list.length) return prev;
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      const renumbered = list.map((c, i) => ({ ...c, num: i + 1 }));
+      return { ...prev, clauses: renumbered };
+    });
+  };
+
+  const handleUpdateClauseField = (index: number, field: "title" | "content" | "isWarning", value: any) => {
+    setTermsForm((prev) => {
+      const list = [...prev.clauses];
+      list[index] = { ...list[index], [field]: value };
+      return { ...prev, clauses: list };
+    });
+  };
+
+  const handleSaveTermsTemplate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!termsForm.title.trim()) {
+      toast.error("Please enter a title for the Terms & Conditions template.");
+      return;
+    }
+    if (termsForm.clauses.length === 0) {
+      toast.error("Please add at least one clause point to this template.");
+      return;
+    }
+    const hasEmptyClauses = termsForm.clauses.some((c) => !c.title.trim() || !c.content.trim());
+    if (hasEmptyClauses) {
+      toast.error("Please ensure every clause point has a heading and content description.");
+      return;
+    }
+
+    setSavingTermsId(editingTermsTemplate?.id || "new");
+    try {
+      const isEdit = Boolean(editingTermsTemplate?.id);
+      const url = isEdit ? `/api/admin/terms-conditions/${editingTermsTemplate?.id}` : "/api/admin/terms-conditions";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: termsForm.title.trim(),
+          description: termsForm.description.trim(),
+          clauses: termsForm.clauses,
+          is_default: termsForm.is_default ? 1 : 0,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(isEdit ? "🎉 Terms & Conditions template updated!" : "🚀 Terms & Conditions template created!");
+        setIsTermsModalOpen(false);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to save terms template.");
+      }
+    } catch (err: any) {
+      toast.error("Network error while saving terms template.");
+    } finally {
+      setSavingTermsId(null);
+    }
+  };
+
+  const handleDeleteTermsTemplate = async (tmpl: TermsTemplateItem) => {
+    if (tmpl.is_default) {
+      toast.error("Cannot delete the default template. Please set another template as default first.");
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete "${tmpl.title}"? Any events using this template will fall back to default terms.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/terms-conditions/${tmpl.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Template deleted successfully.");
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete template.");
+      }
+    } catch (err) {
+      toast.error("Error deleting template.");
+    }
+  };
+
+  const handleSetDefaultTerms = async (tmpl: TermsTemplateItem) => {
+    try {
+      const res = await fetch(`/api/admin/terms-conditions/${tmpl.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: tmpl.title,
+          description: tmpl.description,
+          clauses: tmpl.clauses,
+          is_default: 1,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`🌟 "${tmpl.title}" is now the default Terms & Conditions template!`);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to set as default.");
+      }
+    } catch (err) {
+      toast.error("Error setting default template.");
+    }
+  };
+
   // --- POPUP MODAL CMS ACTION HANDLERS ---
   const handleSavePopupSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -6284,6 +6548,7 @@ export default function AdminDashboardPage() {
       title: "COMMUNICATIONS & SYSTEM",
       items: [
         { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
+        { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
         { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
         { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
         { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
@@ -11266,6 +11531,7 @@ export default function AdminDashboardPage() {
                 { id: "sponsors", label: `4. Sponsors (${eventForm.sponsors_list.length})` },
                 { id: "gallery", label: `5. Gallery (${eventForm.gallery_list.length})` },
                 { id: "venue", label: "6. Primary Map" },
+                { id: "terms", label: "7. Terms & Conditions" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -11414,6 +11680,70 @@ export default function AdminDashboardPage() {
                             </p>
                           </div>
                         </label>
+                      </div>
+                    </div>
+
+                    {/* EVENT TERMS & CONDITIONS TEMPLATE SELECTOR */}
+                    <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-cyan-50/80 via-blue-50/50 to-slate-50 border border-cyan-200 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-xs">
+                            <ShieldCheck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-900 block">
+                              Terms & Conditions Template
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              Choose which point-wise Terms & Conditions will appear during registration and in confirmation emails.
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setBuilderTab("terms")}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-white px-3 py-1.5 text-[11px] font-bold text-cyan-800 hover:bg-cyan-50 shadow-2xs transition-all cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>Preview Terms Clauses</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                        <div className="sm:col-span-2">
+                          <select
+                            value={eventForm.terms_id || ""}
+                            onChange={(e) => setEventForm({ ...eventForm, terms_id: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs cursor-pointer"
+                          >
+                            <option value="">
+                              🌟 Global Default Template ({termsTemplatesList.find((t) => t.is_default)?.title || "Standard Terms"})
+                            </option>
+                            {termsTemplatesList.map((tpl) => (
+                              <option key={tpl.id} value={tpl.id}>
+                                {tpl.title} {tpl.is_default ? "(Default)" : ""} — ({Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} Points)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="text-[11px] text-slate-600 font-medium bg-white/80 p-2.5 rounded-xl border border-cyan-100 flex items-center justify-between">
+                          <span>
+                            Selected:{" "}
+                            <strong className="text-cyan-800">
+                              {termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.title ||
+                                termsTemplatesList.find((t) => t.is_default)?.title ||
+                                "Standard Terms"}
+                            </strong>
+                          </span>
+                          <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
+                            {(termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.clauses?.length) ||
+                              (termsTemplatesList.find((t) => t.is_default)?.clauses?.length) ||
+                              10}{" "}
+                            Clauses
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -12225,6 +12555,191 @@ export default function AdminDashboardPage() {
                       />
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* TAB 7: TERMS & CONDITIONS SELECTOR & PREVIEW */}
+              {builderTab === "terms" && (
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 font-display flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                        <span>Event Terms & Conditions Clauses</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Select the template that will be displayed to delegates and included in registration confirmation emails.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEventModalOpen(false);
+                        setActiveTab("terms-conditions");
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>Manage All Templates in CMS</span>
+                    </button>
+                  </div>
+
+                  {/* Template Picker */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                    <label className="block font-extrabold text-slate-800 text-xs">
+                      Choose Active Template for "{eventForm.title || "This Event"}"
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Default Template Option */}
+                      {(() => {
+                        const defTpl = termsTemplatesList.find((t) => t.is_default);
+                        const isSelected = !eventForm.terms_id || (defTpl && eventForm.terms_id === defTpl.id);
+                        return (
+                          <div
+                            onClick={() => setEventForm({ ...eventForm, terms_id: defTpl?.id || "" })}
+                            className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                              isSelected
+                                ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
+                                : "bg-white/70 border-slate-200 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-xs text-slate-900">
+                                    {defTpl?.title || "Default Standard Terms"}
+                                  </span>
+                                  <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
+                                    Global Default
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for ETMedia corporate events."}
+                                </p>
+                              </div>
+                              <input
+                                type="radio"
+                                readOnly
+                                checked={isSelected}
+                                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
+                              />
+                            </div>
+                            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                              <span>Clauses: {defTpl?.clauses?.length || 10} points</span>
+                              {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Custom Templates */}
+                      {termsTemplatesList
+                        .filter((t) => !t.is_default)
+                        .map((tpl) => {
+                          const isSelected = eventForm.terms_id === tpl.id;
+                          return (
+                            <div
+                              key={tpl.id}
+                              onClick={() => setEventForm({ ...eventForm, terms_id: tpl.id })}
+                              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                                isSelected
+                                  ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
+                                  : "bg-white/70 border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="font-extrabold text-xs text-slate-900 block">
+                                    {tpl.title}
+                                  </span>
+                                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                                    {tpl.description || "Custom event clauses."}
+                                  </p>
+                                </div>
+                                <input
+                                  type="radio"
+                                  readOnly
+                                  checked={isSelected}
+                                  className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
+                                />
+                              </div>
+                              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                                <span>Clauses: {Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} points</span>
+                                {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Selected Template Live Preview Card */}
+                  {(() => {
+                    const activeTpl =
+                      termsTemplatesList.find((t) => t.id === eventForm.terms_id) ||
+                      termsTemplatesList.find((t) => t.is_default) || {
+                        title: "Standard ETMedia Terms & Conditions",
+                        clauses: [
+                          { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
+                          { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
+                          { num: 3, title: "Partner Communication", content: "I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication." },
+                          { num: 4, title: "Digital & Promotional Usage", content: "I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities." },
+                          { num: 5, title: "Photography & Video Consent", content: "I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes." },
+                          { num: 6, title: "Data Usage", content: "I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws." },
+                          { num: 7, title: "Third-Party Communication", content: "I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration." },
+                          { num: 8, title: "Event Updates", content: "I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change." },
+                          { num: 9, title: "Personal Safety & Belongings", content: "Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.", isWarning: true },
+                          { num: 10, title: "Consent & Acceptance", content: "By clicking “I Agree / Submit Registration,” I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms." },
+                        ],
+                      };
+
+                    return (
+                      <div className="rounded-2xl border border-cyan-200/80 bg-white p-5 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-cyan-900 uppercase tracking-wider">
+                              Preview: {activeTpl.title}
+                            </span>
+                            <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
+                              {activeTpl.clauses?.length || 0} Clauses
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            This is what the user reads before agreeing
+                          </span>
+                        </div>
+
+                        <div className="max-h-96 overflow-y-auto space-y-3 pr-2 divide-y divide-slate-100">
+                          {activeTpl.clauses?.map((c: any, i: number) => (
+                            <div
+                              key={i}
+                              className={`pt-3 first:pt-0 ${
+                                c.isWarning
+                                  ? "p-3 rounded-xl bg-amber-50/80 border border-amber-200"
+                                  : ""
+                              }`}
+                            >
+                              <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 mb-1">
+                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-cyan-800 text-[10px] font-black shrink-0">
+                                  {c.num || i + 1}
+                                </span>
+                                <span>{c.num || i + 1}. {c.title}</span>
+                                {c.isWarning && (
+                                  <span className="rounded bg-amber-200/70 text-amber-900 px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                    Important
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                                {c.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -17769,6 +18284,271 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ========================================== */}
+          {/* TERMS & CONDITIONS MANAGEMENT TAB         */}
+          {/* ========================================== */}
+          {activeTab === "terms-conditions" && (
+            <div className="space-y-6">
+              {/* Header Banner */}
+              <div className="relative overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 p-6 sm:p-8 text-white shadow-xl shadow-cyan-950/20">
+                <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold tracking-wider text-cyan-300 uppercase mb-3">
+                      <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
+                      Legal Compliance & Registration Policies
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                      Event Terms & Conditions Manager
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Create point-wise Terms & Conditions templates with custom headings and policy clauses. Assign a specific template to each event during event creation. These exact clauses appear in the event registration modal and are automatically delivered in attendee registration confirmation emails.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={fetchDashboardData}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-md cursor-pointer"
+                    >
+                      <RefreshCw className="h-4 w-4 text-cyan-400" />
+                      Refresh
+                    </button>
+
+                    <button
+                      onClick={handleOpenAddTerms}
+                      className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-xs font-extrabold text-white shadow-lg hover:scale-105 transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      + Add New Template
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Info Grid */}
+                <div className="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+                    <span className="text-xs text-slate-400 font-medium block">Total Templates</span>
+                    <span className="text-2xl font-black text-cyan-400 mt-1 block">
+                      {termsTemplatesList.length}
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">Configured in system</span>
+                  </div>
+
+                  <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+                    <span className="text-xs text-slate-400 font-medium block">Global Default Template</span>
+                    <span className="text-base font-extrabold text-white mt-1 block truncate">
+                      {termsTemplatesList.find((t) => t.is_default)?.title || "Standard Terms"}
+                    </span>
+                    <span className="text-[11px] text-emerald-400 mt-0.5 block">
+                      Applied to any event without custom selection
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+                    <span className="text-xs text-slate-400 font-medium block">Live Event Integration</span>
+                    <span className="text-2xl font-black text-emerald-400 mt-1 block">
+                      {cmsEvents.length} Events
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">
+                      Synced with Registration Form & Auto-Emails
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Templates List */}
+              <div className="space-y-6">
+                {termsTemplatesList.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200 mb-4">
+                      <ShieldCheck className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      No Terms & Conditions Templates Found
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
+                      Click below to create your first template, or load the standard 10-clause corporate ETMedia terms.
+                    </p>
+                    <button
+                      onClick={handleOpenAddTerms}
+                      className="mt-6 inline-flex items-center gap-2 rounded-2xl gradient-brand px-6 py-3 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create First Template
+                    </button>
+                  </div>
+                ) : (
+                  termsTemplatesList.map((tpl) => {
+                    const isDefault = Boolean(tpl.is_default);
+                    const clauses = Array.isArray(tpl.clauses) ? tpl.clauses : [];
+                    const linkedEvents = cmsEvents.filter((e) =>
+                      isDefault ? !e.terms_id || e.terms_id === tpl.id : e.terms_id === tpl.id
+                    );
+
+                    return (
+                      <div
+                        key={tpl.id}
+                        className={`rounded-3xl border bg-white shadow-sm transition-all overflow-hidden ${
+                          isDefault
+                            ? "border-emerald-300 ring-2 ring-emerald-500/10"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        {/* Template Card Header */}
+                        <div className="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/40">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-2.5">
+                                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 font-display">
+                                  {tpl.title}
+                                </h3>
+
+                                {isDefault ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-extrabold border border-emerald-200">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                    Global Default Template
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-bold border border-slate-200">
+                                    Custom Template
+                                  </span>
+                                )}
+
+                                <span className="rounded-full bg-cyan-100 text-cyan-800 px-3 py-1 text-xs font-bold border border-cyan-200">
+                                  {clauses.length} Clauses
+                                </span>
+                              </div>
+
+                              {tpl.description && (
+                                <p className="text-xs text-slate-500 max-w-3xl">
+                                  {tpl.description}
+                                </p>
+                              )}
+
+                              {/* Linked Events chips */}
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                <span className="text-[11px] font-bold text-slate-400">
+                                  Assigned to:
+                                </span>
+                                {linkedEvents.length === 0 ? (
+                                  <span className="text-[11px] text-slate-400 italic">
+                                    No events currently assigned
+                                  </span>
+                                ) : (
+                                  linkedEvents.slice(0, 4).map((evt) => (
+                                    <span
+                                      key={evt.id}
+                                      className="rounded-lg bg-cyan-50 border border-cyan-200 px-2 py-0.5 text-[10px] font-bold text-cyan-800 truncate max-w-xs"
+                                    >
+                                      {evt.title}
+                                    </span>
+                                  ))
+                                )}
+                                {linkedEvents.length > 4 && (
+                                  <span className="text-[10px] text-slate-500 font-bold">
+                                    +{linkedEvents.length - 4} more events
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons Toolbar */}
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                              <button
+                                onClick={() => handleOpenEditTerms(tpl)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-2xs cursor-pointer"
+                              >
+                                <Edit3 className="h-3.5 w-3.5 text-cyan-600" />
+                                Edit Clauses
+                              </button>
+
+                              {!isDefault && (
+                                <button
+                                  onClick={() => handleSetDefaultTerms(tpl.id)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all shadow-2xs cursor-pointer"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                  Make Default
+                                </button>
+                              )}
+
+                              {!isDefault && (
+                                <button
+                                  onClick={() => handleDeleteTerms(tpl.id, tpl.title)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer"
+                                  title="Delete this template"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Point-wise Clauses Visual Display matching user's screenshot */}
+                        <div className="p-6 sm:p-8 space-y-4">
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                              Point-wise Clauses Preview
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              Visible in Registration Modal & Confirmation Email
+                            </span>
+                          </div>
+
+                          <div className="space-y-3">
+                            {clauses.map((clause, idx) => (
+                              <div
+                                key={idx}
+                                className={`rounded-2xl border transition-all p-4 ${
+                                  clause.isWarning
+                                    ? "bg-amber-50/70 border-amber-200 text-amber-950"
+                                    : "bg-slate-50/60 border-slate-200/80 text-slate-900 hover:bg-white hover:border-slate-300"
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div
+                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-2xs ${
+                                      clause.isWarning
+                                        ? "bg-amber-500 text-white"
+                                        : "bg-cyan-600 text-white"
+                                    }`}
+                                  >
+                                    {clause.num || idx + 1}
+                                  </div>
+
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h4 className="font-extrabold text-sm text-slate-900">
+                                        {clause.num || idx + 1}. {clause.title}
+                                      </h4>
+                                      {clause.isWarning && (
+                                        <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900">
+                                          Safety & Liability Clause
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                                      {clause.content}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
           {/* WEBSITE SETTINGS TAB                       */}
           {/* ========================================== */}
           {activeTab === "settings" && (
@@ -20610,6 +21390,270 @@ export default function AdminDashboardPage() {
         attendee={thermalBadgeAttendee}
         defaultEventTitle={selectedEventAttendanceSummary.title}
       />
+
+      {/* TERMS & CONDITIONS TEMPLATE BUILDER MODAL */}
+      {termsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-slate-200 shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4.5 bg-gradient-to-r from-slate-50 via-cyan-50/30 to-white rounded-t-3xl shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-md">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900 font-display">
+                    {editingTermsId ? "Edit Terms & Conditions Template" : "Create Terms & Conditions Template"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Configure point-wise clauses, headings, and descriptions for event registration.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTermsModalOpen(false)}
+                className="rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="overflow-y-auto p-6 space-y-6 flex-1">
+              {/* Basic Template Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-1.5">
+                    Template Title <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={termsForm.title}
+                    onChange={(e) => setTermsForm({ ...termsForm, title: e.target.value })}
+                    placeholder="e.g. Standard ETMedia Terms & Conditions or CFO Summit Terms"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-1.5">
+                    Internal Description / Purpose (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={termsForm.description}
+                    onChange={(e) => setTermsForm({ ...termsForm, description: e.target.value })}
+                    placeholder="e.g. Used for high-profile business summits, includes partner data sharing consent."
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-medium text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 pt-1 flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={termsForm.is_default}
+                      onChange={(e) => setTermsForm({ ...termsForm, is_default: e.target.checked })}
+                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-800">
+                      Set as Global Default Template (automatically applied if an event has no custom template)
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Point-wise Clauses Section */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 font-display flex items-center gap-2">
+                      <span>Point-wise Clauses ({termsForm.clauses.length} Points)</span>
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Each clause has a point heading and detailed consent text.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleLoadDefaultClausesIntoForm}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                      Load Standard 10 Points
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleAddClause}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 px-3.5 py-1.5 text-xs font-extrabold text-white hover:bg-cyan-700 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      + Add New Clause Point
+                    </button>
+                  </div>
+                </div>
+
+                {/* Clauses list */}
+                <div className="space-y-3.5">
+                  {termsForm.clauses.map((clause, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        clause.isWarning
+                          ? "bg-amber-50/60 border-amber-300/80"
+                          : "bg-white border-slate-200 hover:border-slate-300"
+                      } shadow-2xs`}
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
+                              clause.isWarning
+                                ? "bg-amber-500 text-white"
+                                : "bg-cyan-600 text-white"
+                            }`}
+                          >
+                            {clause.num || idx + 1}
+                          </span>
+                          <span className="font-extrabold text-xs text-slate-800">
+                            Point #{clause.num || idx + 1}
+                          </span>
+                        </div>
+
+                        {/* Reorder and Delete Toolbar */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveClause(idx, "up")}
+                            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === termsForm.clauses.length - 1}
+                            onClick={() => handleMoveClause(idx, "down")}
+                            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={termsForm.clauses.length <= 1}
+                            onClick={() => handleRemoveClause(idx)}
+                            className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer ml-1"
+                            title="Delete Clause"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Clause Heading / Title:
+                          </label>
+                          <input
+                            type="text"
+                            value={clause.title}
+                            onChange={(e) => handleClauseChange(idx, "title", e.target.value)}
+                            placeholder="e.g. Accurate Information, Communication Consent..."
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                            Clause Content & Details:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={clause.content}
+                            onChange={(e) => handleClauseChange(idx, "content", e.target.value)}
+                            placeholder="e.g. I confirm that all information and details provided by me in the registration form are true, accurate, and complete."
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-normal text-slate-900 leading-relaxed focus:border-cyan-600 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="pt-1 flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(clause.isWarning)}
+                              onChange={(e) => handleClauseChange(idx, "isWarning", e.target.checked)}
+                              className="h-3.5 w-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                            />
+                            <span className="text-[11px] font-bold text-amber-900">
+                              Highlight as Safety / Disclaimer Clause (Amber card alert)
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleAddClause}
+                    className="w-full py-3 rounded-2xl border-2 border-dashed border-cyan-300 bg-cyan-50/50 hover:bg-cyan-50 text-cyan-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>+ Add Another Clause Point</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Sticky Footer */}
+            <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 bg-slate-50 rounded-b-3xl shrink-0">
+              <span className="text-xs text-slate-500 font-medium">
+                {termsForm.clauses.length} clauses configured
+              </span>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTermsModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={savingTerms}
+                  onClick={handleSaveTerms}
+                  className="inline-flex items-center gap-2 rounded-xl gradient-brand px-6 py-2.5 text-xs font-extrabold text-white shadow-md hover:scale-105 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {savingTerms ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Save Template</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

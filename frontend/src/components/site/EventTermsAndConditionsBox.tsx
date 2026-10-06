@@ -66,12 +66,21 @@ export const EVENT_TERMS_AND_CONDITIONS = [
   },
 ];
 
+export interface EventClauseItem {
+  num: string | number;
+  title: string;
+  content: string;
+  isWarning?: boolean;
+}
+
 interface EventTermsAndConditionsBoxProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   error?: string | null;
   className?: string;
   theme?: "light" | "dark";
+  clauses?: EventClauseItem[];
+  title?: string;
 }
 
 export function EventTermsAndConditionsBox({
@@ -80,11 +89,16 @@ export function EventTermsAndConditionsBox({
   error,
   className = "",
   theme = "light",
+  clauses,
+  title,
 }: EventTermsAndConditionsBoxProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   const isDark = theme === "dark";
+  const activeClauses = (clauses && clauses.length > 0) ? clauses : EVENT_TERMS_AND_CONDITIONS;
+  const activeTitle = title || "EVENT REGISTRATION – TERMS & CONDITIONS";
+  const clauseCount = activeClauses.length;
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -149,7 +163,7 @@ export function EventTermsAndConditionsBox({
                 }`}
               >
                 <FileText className="h-3 w-3" />
-                <span>{isExpanded ? "Hide 10 Clauses" : "View 10 Terms Clauses"}</span>
+                <span>{isExpanded ? `Hide ${clauseCount} Clauses` : `View ${clauseCount} Terms Clauses`}</span>
                 {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
 
@@ -185,14 +199,14 @@ export function EventTermsAndConditionsBox({
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                   <span className="text-[11px] font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    <span>EVENT REGISTRATION – TERMS & CONDITIONS</span>
+                    <span>{activeTitle}</span>
                   </span>
-                  <span className="text-[10px] text-slate-400 font-bold">10 Key Clauses</span>
+                  <span className="text-[10px] text-slate-400 font-bold">{clauseCount} Key Clauses</span>
                 </div>
 
-                {EVENT_TERMS_AND_CONDITIONS.map((clause) => (
+                {activeClauses.map((clause) => (
                   <div
-                    key={clause.num}
+                    key={String(clause.num)}
                     className={`space-y-1 p-2.5 rounded-xl border ${
                       clause.isWarning
                         ? isDark
@@ -247,7 +261,7 @@ export function EventTermsAndConditionsBox({
                     EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
                   </span>
                   <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900">
-                    Event Registration Terms & Conditions
+                    {activeTitle}
                   </h2>
                 </div>
                 <button
@@ -262,12 +276,12 @@ export function EventTermsAndConditionsBox({
               {/* Modal Scrollable Content */}
               <div className="flex-1 overflow-y-auto pr-2 py-4 space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed font-sans">
                 <p className="font-semibold text-slate-900">
-                  By submitting the event registration form, you confirm and agree to the following 10 terms:
+                  By submitting the event registration form, you confirm and agree to the following {clauseCount} terms:
                 </p>
 
-                {EVENT_TERMS_AND_CONDITIONS.map((clause) => (
+                {activeClauses.map((clause) => (
                   <div
-                    key={clause.num}
+                    key={String(clause.num)}
                     className={`p-3.5 rounded-2xl border ${
                       clause.isWarning
                         ? "bg-amber-50 border-amber-200 text-amber-950"
@@ -298,7 +312,7 @@ export function EventTermsAndConditionsBox({
                     onChange={(e) => onChange(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
                   />
-                  <span>I agree to these 10 Terms & Conditions</span>
+                  <span>I agree to these {clauseCount} Terms & Conditions</span>
                 </label>
 
                 <button

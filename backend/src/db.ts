@@ -215,6 +215,8 @@ export async function initDatabase() {
     await seedDefaultNews();
     await ensureEmailSubjectConfigsTable();
     await seedDefaultEmailSubjects();
+    await ensureTermsAndConditionsTable();
+    await seedDefaultTermsAndConditions();
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -449,6 +451,7 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_count VARCHAR(100) DEFAULT '25+';"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_paid_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_free_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN terms_id VARCHAR(100);"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
     try {
       await pool.query("UPDATE events SET allow_paid_registration = 1 WHERE allow_paid_registration IS NULL");
@@ -1798,6 +1801,104 @@ export async function seedDefaultEmailSubjects() {
     console.error("[MySQL] Error seeding email subject configs:", err);
   }
 }
+
+export const DEFAULT_TERMS_CLAUSES = [
+  {
+    num: "1",
+    title: "Accurate Information",
+    content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete.",
+  },
+  {
+    num: "2",
+    title: "Communication Consent",
+    content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities.",
+  },
+  {
+    num: "3",
+    title: "Partner Communication",
+    content: "I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication.",
+  },
+  {
+    num: "4",
+    title: "Digital & Promotional Usage",
+    content: "I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.",
+  },
+  {
+    num: "5",
+    title: "Photography & Video Consent",
+    content: "I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes.",
+  },
+  {
+    num: "6",
+    title: "Data Usage",
+    content: "I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.",
+  },
+  {
+    num: "7",
+    title: "Third-Party Communication",
+    content: "I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.",
+  },
+  {
+    num: "8",
+    title: "Event Updates",
+    content: "I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.",
+  },
+  {
+    num: "9",
+    title: "Personal Safety & Belongings",
+    content: "Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.",
+    isWarning: true,
+  },
+  {
+    num: "10",
+    title: "Consent & Acceptance",
+    content: "By clicking “I Agree / Submit Registration,” I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.",
+  },
+];
+
+export async function ensureTermsAndConditionsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS terms_and_conditions (
+        id VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        clauses LONGTEXT NOT NULL,
+        is_default TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+    try { await pool.query("ALTER TABLE events ADD COLUMN terms_id VARCHAR(100);"); } catch (e) {}
+    console.log("[MySQL] terms_and_conditions table verified!");
+  } catch (err) {
+    console.error("[MySQL] Error ensuring terms_and_conditions table:", err);
+  }
+}
+
+export async function seedDefaultTermsAndConditions() {
+  if (!pool) return;
+  try {
+    const [rows]: any = await pool.query("SELECT id FROM terms_and_conditions WHERE id = 'terms-default-10' OR is_default = 1 LIMIT 1");
+    if (!rows || rows.length === 0) {
+      await pool.query(
+        `INSERT INTO terms_and_conditions (id, title, description, clauses, is_default)
+         VALUES (?, ?, ?, ?, 1)`,
+        [
+          "terms-default-10",
+          "Standard Event Terms & Conditions (10 Key Clauses)",
+          "Default standard 10-clause terms & conditions for executive conclaves, summits, and conferences.",
+          JSON.stringify(DEFAULT_TERMS_CLAUSES),
+        ]
+      );
+      console.log("[MySQL] Seeded default terms and conditions template!");
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding default terms and conditions:", err);
+  }
+}
+
 
 
 

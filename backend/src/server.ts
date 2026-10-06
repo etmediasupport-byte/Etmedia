@@ -15,7 +15,7 @@ import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES } from "./db.js";
 
 dotenv.config();
 
@@ -276,6 +276,79 @@ export async function getDynamicEmailSubject(
   }
 }
 
+export async function getEventTerms(eventIdOrSlug?: string): Promise<{
+  id: string;
+  title: string;
+  description: string;
+  clauses: Array<{ num: string; title: string; content: string; isWarning?: boolean }>;
+}> {
+  try {
+    let termsId: string | null = null;
+    if (eventIdOrSlug && pool) {
+      const [evRows]: any = await pool.query(
+        "SELECT terms_id FROM events WHERE id = ? OR slug = ? LIMIT 1",
+        [eventIdOrSlug, eventIdOrSlug]
+      );
+      if (evRows && evRows.length > 0 && evRows[0].terms_id) {
+        termsId = evRows[0].terms_id;
+      }
+    }
+
+    if (termsId && pool) {
+      const [tRows]: any = await pool.query(
+        "SELECT * FROM terms_and_conditions WHERE id = ? LIMIT 1",
+        [termsId]
+      );
+      if (tRows && tRows.length > 0) {
+        const row = tRows[0];
+        let clauses = [];
+        try {
+          clauses = typeof row.clauses === "string" ? JSON.parse(row.clauses) : row.clauses;
+        } catch (e) {
+          clauses = DEFAULT_TERMS_CLAUSES;
+        }
+        return {
+          id: row.id,
+          title: row.title || "EVENT REGISTRATION – TERMS & CONDITIONS",
+          description: row.description || "",
+          clauses: Array.isArray(clauses) && clauses.length > 0 ? clauses : DEFAULT_TERMS_CLAUSES,
+        };
+      }
+    }
+
+    // Default template from DB
+    if (pool) {
+      const [defRows]: any = await pool.query(
+        "SELECT * FROM terms_and_conditions WHERE is_default = 1 LIMIT 1"
+      );
+      if (defRows && defRows.length > 0) {
+        const row = defRows[0];
+        let clauses = [];
+        try {
+          clauses = typeof row.clauses === "string" ? JSON.parse(row.clauses) : row.clauses;
+        } catch (e) {
+          clauses = DEFAULT_TERMS_CLAUSES;
+        }
+        return {
+          id: row.id,
+          title: row.title || "EVENT REGISTRATION – TERMS & CONDITIONS",
+          description: row.description || "",
+          clauses: Array.isArray(clauses) && clauses.length > 0 ? clauses : DEFAULT_TERMS_CLAUSES,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[Terms] Error fetching event terms:", err);
+  }
+
+  return {
+    id: "terms-default-10",
+    title: "EVENT REGISTRATION – TERMS & CONDITIONS",
+    description: "Standard 10-clause terms & conditions for executive conclaves and summits.",
+    clauses: DEFAULT_TERMS_CLAUSES,
+  };
+}
+
 async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload) {
   const regId = data.registrationId || `REG-${Date.now()}`;
   const effectiveFirstName = data.firstName || "Delegate";
@@ -336,6 +409,23 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
     city: regCity,
   }, `🎉 Official Delegate Pass: ${eventName} (${regId})`);
 
+  // Dynamically fetch Terms & Conditions for this specific event
+  const termsData = await getEventTerms(data.eventId || data.eventTitle);
+  const termsPlainList = termsData.clauses
+    .map((c) => `${c.num}. ${c.title}: ${c.content}`)
+    .join("\n");
+  const termsHtmlList = termsData.clauses
+    .map(
+      (c) => `<li style="${
+        c.isWarning
+          ? "margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;"
+          : "margin-bottom: 8px;"
+      }">
+        <strong>${c.title}:</strong> ${c.content}
+      </li>`
+    )
+    .join("\n");
+
   // 1. EMAIL TO DELEGATE (PERSONALIZED INBOX DELIVERY)
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
@@ -358,17 +448,8 @@ VENUE CHECK-IN INSTRUCTION:
 Present the attached official QR code ticket upon arrival at the venue reception desk. Event coordinators will scan your pass using the authorized gate scanner to issue your admission badge.
 Pass Token ID: ${regId}
 
-EVENT REGISTRATION – TERMS & CONDITIONS:
-1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
-2. Communication Consent: I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities.
-3. Partner Communication: I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication.
-4. Digital & Promotional Usage: I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
-5. Photography & Video Consent: I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes.
-6. Data Usage: I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.
-7. Third-Party Communication: I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.
-8. Event Updates: I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
-9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.
-10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
+${termsData.title.toUpperCase()}:
+${termsPlainList}
 
 Regards,
 Executive Talks Media Business Intelligence
@@ -435,7 +516,7 @@ www.executivetalksmedia.in
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
             <div style="border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 12px;">
               <h3 style="margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                📋 EVENT REGISTRATION – TERMS & CONDITIONS
+                📋 ${termsData.title.toUpperCase()}
               </h3>
             </div>
             <p style="margin: 0 0 12px 0; font-size: 11px; color: #64748b; font-style: italic;">
@@ -443,36 +524,7 @@ www.executivetalksmedia.in
             </p>
             
             <ol style="margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.7;">
-              <li style="margin-bottom: 8px;">
-                <strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
-              </li>
-              <li style="margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;">
-                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
-              </li>
-              <li style="margin-bottom: 0px;">
-                <strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
-              </li>
+              ${termsHtmlList}
             </ol>
           </div>
 
@@ -666,6 +718,7 @@ async function sendFreeApplicationNotificationEmails(data: {
   linkedinUrl?: string;
   category?: string;
   eventTitle: string;
+  eventId?: string;
   reasonForAttending?: string;
 }) {
   const regId = data.registrationId;
@@ -680,6 +733,23 @@ async function sendFreeApplicationNotificationEmails(data: {
     category: data.category || "Complimentary VIP Pass",
     company: data.organization,
   }, `📋 Free Pass Application (Under Review): ${eventName} (${regId})`);
+
+  // Dynamically fetch Terms & Conditions for this specific event
+  const termsData = await getEventTerms(data.eventId || data.eventTitle);
+  const termsPlainList = termsData.clauses
+    .map((c) => `${c.num}. ${c.title}: ${c.content}`)
+    .join("\n");
+  const termsHtmlList = termsData.clauses
+    .map(
+      (c) => `<li style="${
+        c.isWarning
+          ? "margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;"
+          : "margin-bottom: 8px;"
+      }">
+        <strong>${c.title}:</strong> ${c.content}
+      </li>`
+    )
+    .join("\n");
 
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
@@ -702,17 +772,8 @@ APPLICATION DETAILS:
 APPLICATION NOTICE:
 Your application is currently under review by our screening committee. Once management approves your application, you will receive your official confirmation email along with your entry QR code for fast-track venue access.
 
-EVENT REGISTRATION – TERMS & CONDITIONS:
-1. Accurate Information: I confirm that all information and details provided by me in the registration form are true, accurate, and complete.
-2. Communication Consent: I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities.
-3. Partner Communication: I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication.
-4. Digital & Promotional Usage: I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.
-5. Photography & Video Consent: I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes.
-6. Data Usage: I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws.
-7. Third-Party Communication: I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration.
-8. Event Updates: I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.
-9. Personal Safety & Belongings: Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
-10. Consent & Acceptance: By clicking "I Agree / Submit Registration", I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.
+${termsData.title.toUpperCase()}:
+${termsPlainList}
 
 For assistance:
 registration@executivetalksmedia.in
@@ -776,22 +837,15 @@ www.executivetalksmedia.in
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
             <div style="border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 12px;">
               <h3 style="margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                📋 EVENT REGISTRATION – TERMS & CONDITIONS
+                📋 ${termsData.title.toUpperCase()}
               </h3>
             </div>
+            <p style="margin: 0 0 12px 0; font-size: 11px; color: #64748b; font-style: italic;">
+              By submitting the registration form, you confirmed and agreed to the following terms and conditions:
+            </p>
+            
             <ol style="margin: 0; padding-left: 18px; font-size: 11px; color: #334155; line-height: 1.7;">
-              <li style="margin-bottom: 8px;"><strong>Accurate Information:</strong> I confirm that all information and details provided by me in the registration form are <strong>true, accurate, and complete</strong>.</li>
-              <li style="margin-bottom: 8px;"><strong>Communication Consent:</strong> I provide my consent to receive <strong>calls, WhatsApp messages, SMS, and emails</strong> from the Event Organiser regarding the event, registration, updates, offers, and related activities.</li>
-              <li style="margin-bottom: 8px;"><strong>Partner Communication:</strong> I agree that my contact details may be shared with <strong>event partners, sponsors, exhibitors, and associated organisations</strong> for event-related communication, business networking, and relevant promotional communication.</li>
-              <li style="margin-bottom: 8px;"><strong>Digital & Promotional Usage:</strong> I provide my consent to the organiser to <strong>use my name, photograph, designation, company name, videos, and other event-related content</strong> for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities.</li>
-              <li style="margin-bottom: 8px;"><strong>Photography & Video Consent:</strong> I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for <strong>event coverage and promotional purposes</strong>.</li>
-              <li style="margin-bottom: 8px;"><strong>Data Usage:</strong> I authorise the organiser to collect, store, process, and use the information provided by me for <strong>event management, communication, networking, business opportunities, and promotional activities</strong>, subject to applicable laws.</li>
-              <li style="margin-bottom: 8px;"><strong>Third-Party Communication:</strong> I understand that event partners or sponsors may contact me regarding their <strong>products, services, business solutions, or networking opportunities</strong> based on the consent provided through this registration.</li>
-              <li style="margin-bottom: 8px;"><strong>Event Updates:</strong> I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change.</li>
-              <li style="margin-bottom: 8px; background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; border-radius: 8px; padding: 8px 10px; list-style-position: inside;">
-                <strong>Personal Safety & Belongings:</strong> <strong>Participant safety and personal belongings are the sole responsibility of the participant.</strong> The Event Organiser, its partners, sponsors, venue, and associated personnel shall <strong>not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings</strong>, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event.
-              </li>
-              <li style="margin-bottom: 0px;"><strong>Consent & Acceptance:</strong> By clicking <strong>“I Agree / Submit Registration,”</strong> I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms.</li>
+              ${termsHtmlList}
             </ol>
           </div>
 
@@ -2317,6 +2371,7 @@ app.get("/api/events/:slug", async (req, res) => {
           else if (t.includes("gcc") || t.includes("leadership")) foundEvt.image = "/assets/hero-leadership.jpg";
           else foundEvt.image = "/assets/event-hr.jpg";
         }
+        foundEvt.terms_data = await getEventTerms(foundEvt.id);
         const resData = { success: true, event: foundEvt };
         setFastCache(cacheKey, resData, 60);
         return res.json(resData);
@@ -2929,6 +2984,7 @@ app.post("/api/registrations/free-start", async (req, res) => {
       linkedinUrl: linkedinUrl || "",
       category,
       eventTitle,
+      eventId: effectiveEventSlug || eventId,
       reasonForAttending,
     }).catch((emailErr) => {
       console.error("[API] Background free application email error:", emailErr);
@@ -5364,6 +5420,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
     sponsors_count,
     allow_paid_registration,
     allow_free_registration,
+    terms_id,
   } = req.body;
 
   if (!title || !category || !date || !city || !description) {
@@ -5391,8 +5448,8 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `INSERT INTO events (
-          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration, terms_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -5422,6 +5479,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           effectiveSponsorsCount,
           allowPaid,
           allowFree,
+          terms_id || null,
         ]
       );
     }
@@ -5455,6 +5513,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       sponsors_count: effectiveSponsorsCount,
       allow_paid_registration: allowPaid,
       allow_free_registration: allowFree,
+      terms_id: terms_id || null,
     };
     invalidateFastCache("events_");
     invalidateFastCache("event_slug_");
@@ -5497,6 +5556,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     sponsors_count,
     allow_paid_registration,
     allow_free_registration,
+    terms_id,
   } = req.body;
 
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
@@ -5516,7 +5576,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `UPDATE events SET 
-          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?, terms_id = ?
          WHERE id = ?`,
         [
           title,
@@ -5545,6 +5605,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
           effectiveSponsorsCount,
           allowPaid,
           allowFree,
+          terms_id || null,
           id,
         ]
       );
@@ -5578,6 +5639,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       sponsors_count: effectiveSponsorsCount,
       allow_paid_registration: allowPaid,
       allow_free_registration: allowFree,
+      terms_id: terms_id || null,
     };
     invalidateFastCache("events_");
     invalidateFastCache("event_slug_");
@@ -5587,6 +5649,155 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   } catch (err: any) {
     console.error("Update Event DB Error:", err);
     return res.status(500).json({ success: false, message: "Failed to update event." });
+  }
+});
+
+// ==========================================
+// TERMS & CONDITIONS CMS ENDPOINTS
+// ==========================================
+// 1. Get all Terms & Conditions templates
+app.get("/api/terms-conditions", async (req, res) => {
+  try {
+    if (pool) {
+      await ensureTermsAndConditionsTable();
+      const [rows]: any = await pool.query(
+        "SELECT * FROM terms_and_conditions ORDER BY is_default DESC, created_at DESC"
+      );
+      const parsed = rows.map((r: any) => {
+        let clauses = [];
+        try {
+          clauses = typeof r.clauses === "string" ? JSON.parse(r.clauses) : r.clauses;
+        } catch (e) {
+          clauses = DEFAULT_TERMS_CLAUSES;
+        }
+        return {
+          ...r,
+          clauses: Array.isArray(clauses) ? clauses : DEFAULT_TERMS_CLAUSES,
+        };
+      });
+      return res.json({ success: true, data: parsed });
+    }
+    return res.json({
+      success: true,
+      data: [
+        {
+          id: "terms-default-10",
+          title: "Standard Event Terms & Conditions (10 Key Clauses)",
+          description: "Default standard 10-clause terms & conditions for executive conclaves and summits.",
+          is_default: 1,
+          clauses: DEFAULT_TERMS_CLAUSES,
+        },
+      ],
+    });
+  } catch (err: any) {
+    console.error("[Terms] Error fetching terms list:", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch terms templates." });
+  }
+});
+
+// 2. Get single Terms & Conditions by ID
+app.get("/api/terms-conditions/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const terms = await getEventTerms(id);
+    return res.json({ success: true, data: terms });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: "Failed to fetch terms template." });
+  }
+});
+
+// 3. Create new Terms & Conditions template (Admin)
+app.post("/api/admin/terms-conditions", authenticateAdmin, async (req, res) => {
+  const { title, description, clauses, is_default } = req.body;
+  if (!title || !title.trim()) {
+    return res.status(400).json({ success: false, message: "Template title is required." });
+  }
+  const id = `TERMS-${Date.now()}`;
+  const clausesStr = typeof clauses === "string" ? clauses : JSON.stringify(clauses || DEFAULT_TERMS_CLAUSES);
+  const isDef = is_default ? 1 : 0;
+
+  try {
+    if (pool) {
+      await ensureTermsAndConditionsTable();
+      if (isDef === 1) {
+        await pool.query("UPDATE terms_and_conditions SET is_default = 0");
+      }
+      await pool.query(
+        "INSERT INTO terms_and_conditions (id, title, description, clauses, is_default) VALUES (?, ?, ?, ?, ?)",
+        [id, title.trim(), description || "", clausesStr, isDef]
+      );
+    }
+    return res.status(201).json({
+      success: true,
+      message: "Terms & Conditions template created successfully!",
+      data: {
+        id,
+        title: title.trim(),
+        description: description || "",
+        clauses: typeof clauses === "string" ? JSON.parse(clauses) : (clauses || DEFAULT_TERMS_CLAUSES),
+        is_default: isDef,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Terms] Create error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to create terms template." });
+  }
+});
+
+// 4. Update Terms & Conditions template (Admin)
+app.put("/api/admin/terms-conditions/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, description, clauses, is_default } = req.body;
+  if (!title || !title.trim()) {
+    return res.status(400).json({ success: false, message: "Template title is required." });
+  }
+  const clausesStr = typeof clauses === "string" ? clauses : JSON.stringify(clauses || DEFAULT_TERMS_CLAUSES);
+  const isDef = is_default ? 1 : 0;
+
+  try {
+    if (pool) {
+      await ensureTermsAndConditionsTable();
+      if (isDef === 1) {
+        await pool.query("UPDATE terms_and_conditions SET is_default = 0 WHERE id != ?", [id]);
+      }
+      await pool.query(
+        "UPDATE terms_and_conditions SET title = ?, description = ?, clauses = ?, is_default = ? WHERE id = ?",
+        [title.trim(), description || "", clausesStr, isDef, id]
+      );
+    }
+    return res.json({
+      success: true,
+      message: "Terms & Conditions template updated successfully!",
+      data: {
+        id,
+        title: title.trim(),
+        description: description || "",
+        clauses: typeof clauses === "string" ? JSON.parse(clauses) : (clauses || DEFAULT_TERMS_CLAUSES),
+        is_default: isDef,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Terms] Update error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to update terms template." });
+  }
+});
+
+// 5. Delete Terms & Conditions template (Admin)
+app.delete("/api/admin/terms-conditions/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT is_default FROM terms_and_conditions WHERE id = ?", [id]);
+      if (rows && rows.length > 0 && rows[0].is_default === 1) {
+        return res.status(400).json({ success: false, message: "Cannot delete the default template. Set another template as default first." });
+      }
+      await pool.query("DELETE FROM terms_and_conditions WHERE id = ?", [id]);
+      await pool.query("UPDATE events SET terms_id = NULL WHERE terms_id = ?", [id]);
+    }
+    return res.json({ success: true, message: "Terms template deleted successfully." });
+  } catch (err: any) {
+    console.error("[Terms] Delete error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to delete terms template." });
   }
 });
 
