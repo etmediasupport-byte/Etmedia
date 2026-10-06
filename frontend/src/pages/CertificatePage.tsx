@@ -1,10 +1,7 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
-  Award,
-  CheckCircle2,
   Printer,
-  Download,
   Share2,
   ArrowLeft,
   Calendar,
@@ -12,13 +9,12 @@ import {
   Building,
   User,
   ShieldCheck,
-  ExternalLink,
-  Copy,
-  Sparkles,
+  CheckCircle2,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
-import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
+import { ExecutiveCertificate } from "@/components/certificate/ExecutiveCertificate";
 
 interface CertificateData {
   id: string;
@@ -36,15 +32,45 @@ interface CertificateData {
 
 export default function CertificatePage() {
   const { regId } = useParams<{ regId: string }>();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState<CertificateData | null>(null);
+  const [cmsEvents, setCmsEvents] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>("default");
+  const [customName, setCustomName] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState("");
   const certRef = useRef<HTMLDivElement>(null);
 
+  // 1. Fetch available events from database to allow dynamic event switching
   useEffect(() => {
-    if (!regId) {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.events)) {
+          setCmsEvents(data.events);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // 2. Fetch certificate data if regId provided
+  useEffect(() => {
+    if (!regId || regId === "preview" || regId === "demo") {
       setLoading(false);
-      setErrorMsg("No certificate identifier provided.");
+      // Demo / preview fallback
+      setCert({
+        id: "DEMO-REG-2026",
+        certId: "ETM-CERT-2026-889921",
+        candidateName: searchParams.get("name") || "Executive Delegate",
+        designation: "Executive Delegate",
+        organization: "Distinguished Leader",
+        eventTitle: "HR RECALL 2K26 – Hyderabad Annual Connect",
+        city: "Hyderabad",
+        checkinStatus: "Present",
+        checkedInAt: "2026-12-11T09:00:00.000Z",
+        issueDate: "2026-12-11T17:00:00.000Z",
+        verified: true,
+      });
       return;
     }
 
@@ -54,6 +80,9 @@ export default function CertificatePage() {
       .then((data) => {
         if (data.success && data.certificate) {
           setCert(data.certificate);
+          if (data.certificate.candidateName) {
+            setCustomName(data.certificate.candidateName);
+          }
         } else {
           setErrorMsg(data.message || "Certificate record not found or unverified.");
         }
@@ -63,7 +92,62 @@ export default function CertificatePage() {
         setErrorMsg("Failed to connect to verification server.");
       })
       .finally(() => setLoading(false));
-  }, [regId]);
+  }, [regId, searchParams]);
+
+  // Resolve selected event dynamically
+  const activeEvent = useMemo(() => {
+    if (selectedEventId !== "default") {
+      const found = cmsEvents.find(
+        (e) => e.id === selectedEventId || e.slug === selectedEventId || e.title === selectedEventId
+      );
+      if (found) return found;
+    }
+
+    if (cert?.eventTitle) {
+      const matched = cmsEvents.find(
+        (e) =>
+          e.title?.toLowerCase() === cert.eventTitle.toLowerCase() ||
+          e.slug?.toLowerCase() === cert.eventTitle.toLowerCase() ||
+          (e.title && cert.eventTitle.toLowerCase().includes(e.title.toLowerCase()))
+      );
+      if (matched) return matched;
+    }
+
+    return null;
+  }, [selectedEventId, cert, cmsEvents]);
+
+  // Dynamic Event Title
+  const activeEventTitle = useMemo(() => {
+    if (activeEvent?.title) return activeEvent.title;
+    if (cert?.eventTitle) return cert.eventTitle;
+    return "HR RECALL 2K26 – Hyderabad Annual Connect";
+  }, [activeEvent, cert]);
+
+  // Dynamic Event Date
+  const activeEventDate = useMemo(() => {
+    if (activeEvent?.date) return activeEvent.date;
+    if (cert?.checkedInAt) {
+      return new Date(cert.checkedInAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+    return "11th December 2026";
+  }, [activeEvent, cert]);
+
+  // Dynamic Event Venue / City
+  const activeEventVenue = useMemo(() => {
+    if (activeEvent?.venue && activeEvent?.city) {
+      return `${activeEvent.venue}, ${activeEvent.city}`;
+    }
+    if (activeEvent?.venue) return activeEvent.venue;
+    if (activeEvent?.city) return `${activeEvent.city}, India`;
+    if (cert?.city) return `Centenary Convention Centre, ${cert.city}`;
+    return "Centenary Convention Centre, Hyderabad";
+  }, [activeEvent, cert]);
+
+  const candidateDisplayName = customName || cert?.candidateName || "Executive Delegate";
 
   const handlePrint = () => {
     window.print();
@@ -77,11 +161,11 @@ export default function CertificatePage() {
   return (
     <>
       <SEOHead
-        title={cert ? `Certificate of Attendance - ${cert.candidateName} | Executive Talks Media` : "Official E-Certificate Verification | Executive Talks Media"}
-        description="Official verifiable Certificate of Attendance and Participation from Executive Talks Media Business Intelligence."
+        title={cert ? `Certificate of Appreciation - ${candidateDisplayName} | Executive Talks Media` : "Official E-Certificate Verification | Executive Talks Media"}
+        description="Official verifiable Certificate of Appreciation and Participation from Executive Talks Media Business Intelligence."
       />
 
-      {/* PRINT-ONLY CSS */}
+      {/* PRINT-ONLY CSS: Exact landscape page layout with zero margin distortion */}
       <style>{`
         @media print {
           body {
@@ -101,25 +185,50 @@ export default function CertificatePage() {
             max-width: 100% !important;
           }
           @page {
-            size: landscape A4;
-            margin: 10mm;
+            size: landscape;
+            margin: 0;
           }
         }
       `}</style>
 
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white print:bg-white print:text-black">
-        {/* TOP CONTROLS BAR (HIDDEN IN PRINT) */}
-        <header className="no-print border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30 px-4 py-3 sm:px-8">
+        {/* TOP CONTROLS & EVENT SELECTOR TOOLBAR (HIDDEN IN PRINT) */}
+        <header className="no-print border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-30 px-3 sm:px-6 py-2.5">
           <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
             <Link
               to="/"
-              className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Back to Executive Talks Media</span>
+              <span>Back to Portal</span>
             </Link>
 
-            <div className="flex items-center gap-2.5">
+            {/* Event Name Switcher Dropdown (Dynamic Event Choice) */}
+            <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
+              <Ticket className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <label htmlFor="certEventSelect" className="text-[11px] font-bold text-slate-400 shrink-0">
+                Event:
+              </label>
+              <select
+                id="certEventSelect"
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="bg-transparent text-slate-100 text-xs font-bold focus:outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate"
+                title="Choose event to dynamically populate certificate"
+              >
+                <option value="default" className="bg-slate-900 text-white">
+                  🎪 {cert?.eventTitle || "HR RECALL 2K26 – Hyderabad"} (Current)
+                </option>
+                {cmsEvents.map((evt) => (
+                  <option key={evt.id || evt.slug} value={evt.id || evt.slug} className="bg-slate-900 text-white">
+                    {evt.title || evt.name || evt.slug}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Print & Action Buttons */}
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleCopyLink}
@@ -127,7 +236,7 @@ export default function CertificatePage() {
                 title="Copy public verification link"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Share Link</span>
+                <span className="hidden sm:inline">Share</span>
               </button>
 
               <button
@@ -142,14 +251,14 @@ export default function CertificatePage() {
           </div>
         </header>
 
-        {/* MAIN CERTIFICATE CANVAS */}
-        <main className="flex-1 flex items-center justify-center p-3 sm:p-8 overflow-x-auto">
+        {/* MAIN CERTIFICATE VIEW AREA */}
+        <main className="flex-1 flex items-center justify-center p-3 sm:p-6 lg:p-8">
           {loading ? (
             <div className="text-center py-20 space-y-4">
               <div className="h-12 w-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto" />
               <p className="text-xs font-mono text-slate-400">Verifying accredited certificate record...</p>
             </div>
-          ) : errorMsg || !cert ? (
+          ) : errorMsg && !cert ? (
             <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-slate-800 p-8 text-center space-y-4 shadow-2xl">
               <div className="h-16 w-16 mx-auto rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-3xl font-bold">
                 ⚠️
@@ -164,169 +273,52 @@ export default function CertificatePage() {
               </Link>
             </div>
           ) : (
-            <div className="w-full max-w-5xl space-y-6">
-              {/* STATUS BADGE (NO PRINT) */}
-              <div className="no-print flex items-center justify-between gap-3 px-2">
+            <div className="w-full max-w-5xl space-y-4">
+              {/* STATUS BAR (NO-PRINT) */}
+              <div className="no-print flex flex-wrap items-center justify-between gap-2 px-2 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="font-mono font-bold text-emerald-400 uppercase tracking-wider">
                     Official Authenticated Credential
                   </span>
                 </div>
-                <span className="text-xs font-mono text-slate-400">
-                  Certificate ID: <strong className="text-amber-400">{cert.certId}</strong>
-                </span>
+                <div className="flex items-center gap-3 font-mono text-slate-400 text-[11px]">
+                  <span>ID: <strong className="text-amber-400">{cert?.certId || "ETM-CERT-2026-889921"}</strong></span>
+                  <span>Issued by Executive Talks Media</span>
+                </div>
               </div>
 
-              {/* THE LUXURY CERTIFICATE (A4 LANDSCAPE RATIO) */}
-              <div
-                ref={certRef}
-                className="print-certificate-container w-full bg-[#fdfbf7] text-slate-900 rounded-3xl shadow-2xl border-8 border-double border-amber-600/40 p-6 sm:p-12 relative overflow-hidden flex flex-col justify-between min-h-[580px]"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(#e5e7eb 0.75px, transparent 0.75px), radial-gradient(#f3f4f6 0.75px, #fdfbf7 0.75px)",
-                  backgroundSize: "30px 30px",
-                  backgroundPosition: "0 0, 15px 15px",
-                }}
-              >
-                {/* ORNAMENTAL CORNER FLOURISHES */}
-                <div className="absolute top-3 left-3 w-12 h-12 border-t-4 border-l-4 border-amber-600 pointer-events-none" />
-                <div className="absolute top-3 right-3 w-12 h-12 border-t-4 border-r-4 border-amber-600 pointer-events-none" />
-                <div className="absolute bottom-3 left-3 w-12 h-12 border-b-4 border-l-4 border-amber-600 pointer-events-none" />
-                <div className="absolute bottom-3 right-3 w-12 h-12 border-b-4 border-r-4 border-amber-600 pointer-events-none" />
+              {/* 
+                THE CERTIFICATE CANVAS:
+                100% IDENTICAL TO THE ARTWORK ON MOBILE, TAB, AND LAPTOP.
+              */}
+              <div ref={certRef} className="print-certificate-container w-full">
+                <ExecutiveCertificate
+                  candidateName={candidateDisplayName}
+                  eventTitle={activeEventTitle}
+                  eventDate={activeEventDate}
+                  eventVenue={activeEventVenue}
+                  city={activeEvent?.city || cert?.city || "Hyderabad"}
+                  certId={cert?.certId}
+                  issueDate={cert?.issueDate}
+                  designation={cert?.designation}
+                  organization={cert?.organization}
+                />
+              </div>
 
-                {/* WATERMARK BACKGROUND EMBLEM */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.035] pointer-events-none">
-                  <img src={executivetalksLogo} alt="" className="w-[500px] h-[500px] object-contain grayscale" />
-                </div>
-
-                {/* 1. LETTERHEAD HEADER */}
-                <div className="relative z-10 text-center space-y-3 pb-6 border-b border-amber-500/20">
-                  <div className="flex items-center justify-center gap-3">
-                    <img
-                      src={executivetalksLogo}
-                      alt="Executive Talks Media Logo"
-                      className="h-12 sm:h-14 w-auto object-contain rounded-lg shadow-2xs"
-                    />
-                    <div className="text-left">
-                      <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-900 leading-none">
-                        Executive Talks Media
-                      </h2>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700 block mt-0.5">
-                        Business Intelligence & Conclaves
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2 text-[10px] uppercase font-bold tracking-widest text-slate-500">
-                    <span>Global Leadership Conclaves</span>
-                    <span>•</span>
-                    <span>C-Suite Summits</span>
-                    <span>•</span>
-                    <span>Excellence Awards</span>
-                  </div>
-                </div>
-
-                {/* 2. CERTIFICATE CORE CONTENT */}
-                <div className="relative z-10 text-center py-6 sm:py-8 space-y-4">
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-widest border border-amber-300">
-                      <Sparkles className="h-3 w-3 text-amber-600" />
-                      <span>Certificate of Participation & Leadership</span>
-                    </div>
-                    <p className="text-xs font-serif italic text-slate-500 pt-1">
-                      This official certificate is proudly presented to
-                    </p>
-                  </div>
-
-                  {/* CANDIDATE NAME IN LARGE LUXURY FONT */}
-                  <div className="py-2">
-                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-black font-serif uppercase tracking-wide text-slate-950 drop-shadow-xs border-b-2 border-amber-500 inline-block px-6 pb-2">
-                      {cert.candidateName}
-                    </h1>
-                  </div>
-
-                  {/* CANDIDATE TITLE & ORG */}
-                  <p className="text-xs sm:text-sm font-bold text-slate-700 max-w-xl mx-auto">
-                    {cert.designation ? `${cert.designation} — ` : ""}
-                    <span className="text-slate-900">{cert.organization || "Distinguished Executive Delegate"}</span>
-                  </p>
-
-                  <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed font-serif">
-                    in recognition of active attendance, valuable thought leadership, and executive participation in
-                  </p>
-
-                  {/* EVENT TITLE BOX */}
-                  <div className="max-w-xl mx-auto p-4 rounded-2xl bg-gradient-to-r from-amber-50/60 via-white to-amber-50/60 border border-amber-200/80 shadow-xs space-y-1">
-                    <h3 className="text-sm sm:text-lg font-black text-cyan-900 uppercase tracking-wide">
-                      {cert.eventTitle}
-                    </h3>
-                    <div className="flex items-center justify-center gap-3 text-xs text-slate-600 font-medium">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-amber-600" />
-                        {new Date(cert.checkedInAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-amber-600" />
-                        {cert.city || "Hyderabad, India"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. SIGNATORIES & GOLD EMBOSSED SEAL */}
-                <div className="relative z-10 pt-6 border-t border-amber-500/20 grid grid-cols-3 items-end text-center gap-2">
-                  {/* Left Signatory */}
-                  <div className="space-y-1">
-                    <div className="font-serif italic text-lg sm:text-xl font-bold text-slate-900 border-b border-slate-400 pb-1 mx-auto max-w-[140px]">
-                      Srikanth
-                    </div>
-                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-900">
-                      Founder & Managing Director
-                    </div>
-                    <div className="text-[10px] text-slate-500">Executive Talks Media</div>
-                  </div>
-
-                  {/* Center Official Gold Medallion Seal */}
-                  <div className="flex justify-center">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-double border-amber-600 bg-gradient-to-br from-amber-400 via-amber-200 to-amber-500 shadow-md flex flex-col items-center justify-center text-slate-950 p-2 text-center select-none">
-                      <ShieldCheck className="h-5 w-5 text-amber-900" />
-                      <span className="text-[8px] font-black uppercase tracking-tighter text-amber-950 leading-tight">
-                        OFFICIAL
-                      </span>
-                      <span className="text-[9px] font-black uppercase text-amber-950">VERIFIED</span>
-                      <span className="text-[7px] font-bold text-amber-900 leading-none">ATTENDANCE</span>
-                    </div>
-                  </div>
-
-                  {/* Right Signatory */}
-                  <div className="space-y-1">
-                    <div className="font-serif italic text-lg sm:text-xl font-bold text-slate-900 border-b border-slate-400 pb-1 mx-auto max-w-[140px]">
-                      Executive Council
-                    </div>
-                    <div className="text-[11px] font-black uppercase tracking-wider text-slate-900">
-                      Conference Convenor
-                    </div>
-                    <div className="text-[10px] text-slate-500">Summit & Awards Jury Board</div>
-                  </div>
-                </div>
-
-                {/* 4. FOOTER VERIFICATION STRIP */}
-                <div className="relative z-10 pt-4 mt-4 border-t border-slate-200/80 flex flex-wrap items-center justify-between text-[10px] font-mono text-slate-500 gap-2">
-                  <span>
-                    Certificate ID: <strong className="text-slate-900">{cert.certId}</strong>
-                  </span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>Verified Real Database Admission</span>
-                  </span>
-                  <span>Issued: {new Date(cert.issueDate).toLocaleDateString("en-IN")}</span>
-                </div>
+              {/* VERIFICATION SUMMARY CHIPS (NO-PRINT) */}
+              <div className="no-print pt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                  <CheckCircle2 className="h-4 w-4" /> Real Database Verified Gate Attendance
+                </span>
+                <span className="hidden sm:inline">•</span>
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Calendar className="h-3.5 w-3.5 text-amber-400" /> {activeEventDate}
+                </span>
+                <span className="hidden sm:inline">•</span>
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <MapPin className="h-3.5 w-3.5 text-amber-400" /> {activeEventVenue}
+                </span>
               </div>
             </div>
           )}

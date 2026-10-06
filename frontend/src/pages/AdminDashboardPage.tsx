@@ -129,6 +129,7 @@ import { Collaborator, getDefaultCollaborators, MagazineItem, getDefaultMagazine
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { EarlyBirdCountdownTimer } from "@/components/site/EarlyBirdCountdownTimer";
 import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
+import { ExecutiveCertificate } from "@/components/certificate/ExecutiveCertificate";
 
 interface Registration {
   id: string;
@@ -10094,109 +10095,32 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Certificate Frame Preview */}
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
-                      <div
-                        className="w-full bg-[#fdfbf7] text-slate-900 rounded-3xl shadow-xl border-4 border-amber-600/40 p-6 sm:p-10 relative overflow-hidden flex flex-col justify-between"
-                        style={{
-                          backgroundImage:
-                            "radial-gradient(#e5e7eb 0.75px, transparent 0.75px), radial-gradient(#f3f4f6 0.75px, #fdfbf7 0.75px)",
-                          backgroundSize: "24px 24px",
-                          backgroundPosition: "0 0, 12px 12px",
-                        }}
-                      >
-                        {/* Corner Flourishes */}
-                        <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-amber-600 pointer-events-none" />
-                        <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-amber-600 pointer-events-none" />
-                        <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-amber-600 pointer-events-none" />
-                        <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-amber-600 pointer-events-none" />
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
+                      {(() => {
+                        const matchedEvent = (activeSelectedEvent && selectedDashboardEventId !== "all")
+                          ? activeSelectedEvent
+                          : (cmsEvents.find((e) => doesRegistrationMatchEvent(previewCertAttendee, e)) || null);
 
-                        {/* Letterhead Header */}
-                        <div className="text-center space-y-2 pb-4 border-b border-amber-500/20">
-                          <div className="flex items-center justify-center gap-2.5">
-                            <img
-                              src={executivetalksLogo}
-                              alt="Executive Talks Media Logo"
-                              className="h-10 w-auto object-contain rounded-md"
+                        const eventTitle = matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
+                        const eventDate = matchedEvent?.date || (previewCertAttendee.checked_in_at ? new Date(previewCertAttendee.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "11th December 2026");
+                        const eventVenue = (matchedEvent?.venue && matchedEvent?.city)
+                          ? `${matchedEvent.venue}, ${matchedEvent.city}`
+                          : (matchedEvent?.venue || (previewCertAttendee.city ? `${previewCertAttendee.city}, India` : "Centenary Convention Centre, Hyderabad"));
+
+                        return (
+                          <div className="w-full max-w-4xl">
+                            <ExecutiveCertificate
+                              candidateName={previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
+                              eventTitle={eventTitle}
+                              eventDate={eventDate}
+                              eventVenue={eventVenue}
+                              city={matchedEvent?.city || previewCertAttendee.city || "Hyderabad"}
+                              certId={previewCertAttendee.certificate_id || `ETM-CERT-2026-${previewCertAttendee.id.replace(/[^0-9]/g, "").slice(-6) || "889921"}`}
+                              showIdBadge={false}
                             />
-                            <div className="text-left">
-                              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 leading-none">
-                                Executive Talks Media
-                              </h4>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-amber-700 block mt-0.5">
-                                Business Intelligence & Conclaves
-                              </span>
-                            </div>
                           </div>
-                          <div className="text-[9px] uppercase font-bold tracking-widest text-slate-500">
-                            Global Leadership Conclaves • C-Suite Summits • Excellence Awards
-                          </div>
-                        </div>
-
-                        {/* Core Content */}
-                        <div className="text-center py-6 space-y-3">
-                          <span className="inline-block px-3 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black uppercase tracking-widest border border-amber-300">
-                            Certificate of Participation & Leadership
-                          </span>
-                          <p className="text-[11px] font-serif italic text-slate-500">
-                            This official certificate is proudly presented to
-                          </p>
-
-                          <h2 className="text-xl sm:text-3xl font-black font-serif uppercase tracking-wide text-slate-950 border-b-2 border-amber-500 inline-block px-4 pb-1">
-                            {previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
-                          </h2>
-
-                          <p className="text-xs font-bold text-slate-700">
-                            {previewCertAttendee.designation ? `${previewCertAttendee.designation} — ` : ""}
-                            <span className="text-slate-900">{previewCertAttendee.organization || "Distinguished Executive Delegate"}</span>
-                          </p>
-
-                          <p className="text-xs text-slate-600 max-w-lg mx-auto font-serif">
-                            in recognition of active attendance, valuable thought leadership, and executive participation in
-                          </p>
-
-                          <div className="max-w-md mx-auto p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-center space-y-0.5">
-                            <h3 className="text-xs sm:text-sm font-black text-cyan-900 uppercase tracking-wide">
-                              {previewCertAttendee.event_title || selectedEventAttendanceSummary.title}
-                            </h3>
-                            <p className="text-[10px] text-slate-500 font-medium">
-                              Conducted on {previewCertAttendee.checked_in_at ? new Date(previewCertAttendee.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "Event Date"} • {previewCertAttendee.city || "Hyderabad, India"}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Signatures & Seal */}
-                        <div className="pt-4 border-t border-amber-500/20 grid grid-cols-3 items-end text-center gap-2">
-                          <div className="space-y-0.5">
-                            <div className="font-serif italic text-sm font-bold text-slate-900 border-b border-slate-300 pb-0.5 mx-auto max-w-[100px]">
-                              Srikanth
-                            </div>
-                            <div className="text-[9px] font-black uppercase text-slate-900">Founder & MD</div>
-                            <div className="text-[8px] text-slate-500">Executive Talks Media</div>
-                          </div>
-
-                          <div className="flex justify-center">
-                            <div className="w-14 h-14 rounded-full border-2 border-double border-amber-600 bg-gradient-to-br from-amber-400 via-amber-200 to-amber-500 shadow-sm flex flex-col items-center justify-center text-slate-950 p-1 text-center">
-                              <ShieldCheck className="h-3.5 w-3.5 text-amber-900" />
-                              <span className="text-[6px] font-black uppercase leading-tight text-amber-950">OFFICIAL</span>
-                              <span className="text-[7px] font-black uppercase text-amber-950">VERIFIED</span>
-                            </div>
-                          </div>
-
-                          <div className="space-y-0.5">
-                            <div className="font-serif italic text-sm font-bold text-slate-900 border-b border-slate-300 pb-0.5 mx-auto max-w-[100px]">
-                              Executive Council
-                            </div>
-                            <div className="text-[9px] font-black uppercase text-slate-900">Conference Convenor</div>
-                            <div className="text-[8px] text-slate-500">Awards Jury Board</div>
-                          </div>
-                        </div>
-
-                        {/* Verification Bar */}
-                        <div className="pt-3 mt-3 border-t border-slate-200 text-[9px] font-mono text-slate-500 flex justify-between">
-                          <span>Certificate ID: <strong className="text-slate-900">{previewCertAttendee.certificate_id || `ETM-CERT-2026-${previewCertAttendee.id.replace(/[^0-9]/g, "").slice(-6) || "202601"}`}</strong></span>
-                          <span className="text-emerald-700 font-bold">✓ Verified Gate Attendance</span>
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Modal Footer with Single Click Send Button */}
