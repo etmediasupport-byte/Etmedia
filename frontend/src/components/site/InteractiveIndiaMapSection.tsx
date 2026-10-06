@@ -1,15 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
-  Sparkles,
-  ArrowRight,
   Building2,
   Users,
-  Award,
   Calendar,
-  Compass,
+  ArrowRight,
 } from "lucide-react";
 import statesData from "@/data/india-states.json";
 
@@ -39,8 +35,8 @@ export const presenceStates: PresenceState[] = [
     image: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=160&auto=format&fit=crop&q=80",
     rawPinX: 297,
     rawPinY: 156,
-    labelX: 180,
-    labelY: 145,
+    labelX: 160,
+    labelY: 155,
     labelAlign: "right",
     venues: "SKICC Srinagar & Radisson Blu Jammu",
     annualSummits: "2 Annual Conclaves",
@@ -53,10 +49,10 @@ export const presenceStates: PresenceState[] = [
     name: "Uttar Pradesh",
     capital: "Lucknow / Noida",
     image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=160&auto=format&fit=crop&q=80",
-    rawPinX: 428,
-    rawPinY: 386,
-    labelX: 520,
-    labelY: 380,
+    rawPinX: 430,
+    rawPinY: 380,
+    labelX: 525,
+    labelY: 345,
     labelAlign: "left",
     venues: "Taj Mahal Hotel Lucknow & India Expo Centre",
     annualSummits: "3 Flagship Conclaves",
@@ -69,10 +65,10 @@ export const presenceStates: PresenceState[] = [
     name: "Maharashtra",
     capital: "Mumbai / Pune",
     image: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=160&auto=format&fit=crop&q=80",
-    rawPinX: 324,
-    rawPinY: 600,
-    labelX: 170,
-    labelY: 610,
+    rawPinX: 275,
+    rawPinY: 575,
+    labelX: 150,
+    labelY: 575,
     labelAlign: "right",
     venues: "Jio World Convention Centre & St. Regis Mumbai",
     annualSummits: "5 Major Summits",
@@ -86,10 +82,10 @@ export const presenceStates: PresenceState[] = [
     capital: "Hyderabad",
     image: "https://images.unsplash.com/photo-1608976328267-e673d3ec06ce?w=160&auto=format&fit=crop&q=80",
     isHq: true,
-    rawPinX: 398,
-    rawPinY: 644,
-    labelX: 250,
-    labelY: 675,
+    rawPinX: 400,
+    rawPinY: 645,
+    labelX: 165,
+    labelY: 645,
     labelAlign: "right",
     venues: "HICC Novotel & HITEX City Convention Centre",
     annualSummits: "6 Flagship Summits",
@@ -101,11 +97,11 @@ export const presenceStates: PresenceState[] = [
     id: "INAP",
     name: "Andhra Pradesh",
     capital: "Visakhapatnam / Amaravati",
-    image: "https://images.unsplash.com/photo-1621644820358-132d7211bf5a?w=160&auto=format&fit=crop&q=80",
-    rawPinX: 428,
-    rawPinY: 700,
-    labelX: 520,
-    labelY: 710,
+    image: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=160&auto=format&fit=crop&q=80",
+    rawPinX: 440,
+    rawPinY: 715,
+    labelX: 525,
+    labelY: 715,
     labelAlign: "left",
     venues: "Radisson Blu Resort & Novotel Varun Beach",
     annualSummits: "2 Annual Conclaves",
@@ -120,8 +116,8 @@ export const presenceStates: PresenceState[] = [
     image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=160&auto=format&fit=crop&q=80",
     rawPinX: 380,
     rawPinY: 833,
-    labelX: 470,
-    labelY: 840,
+    labelX: 475,
+    labelY: 833,
     labelAlign: "left",
     venues: "ITC Grand Chola Guindy & Le Royal Méridien",
     annualSummits: "3 Conclaves / Year",
@@ -153,10 +149,11 @@ export function InteractiveIndiaMapSection() {
   const mapScale = 0.72;
   const mapOffsetX = 40;
   const mapOffsetY = 20;
-  const cardsStartX = 760;
 
-  // Vertical positions for the 6 cards in desktop canvas
-  const cardYPositions = [80, 175, 270, 365, 460, 555];
+  // Middle cards column position & exact top coordinates
+  const cardsStartX = 750;
+  const cardHeight = 68;
+  const cardTops = [65, 165, 265, 365, 465, 565];
 
   return (
     <section
@@ -204,34 +201,52 @@ export function InteractiveIndiaMapSection() {
 
               {/* Active State Deep Blue Gradient */}
               <linearGradient id="activeStateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#003399" />
+                <stop offset="0%" stopColor="#002b80" />
                 <stop offset="50%" stopColor="#0055ff" />
-                <stop offset="100%" stopColor="#002280" />
+                <stop offset="100%" stopColor="#001f66" />
               </linearGradient>
 
               {/* Glowing Line Laser Filter */}
               <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
             </defs>
 
             {/* A. INDIA MAP GROUP (Left side of canvas) */}
             <g transform={`translate(${mapOffsetX}, ${mapOffsetY}) scale(${mapScale})`}>
-              {/* Non-operational Background States */}
-              <g className="fill-[#eef5fd] stroke-[#d3e5f8] stroke-[0.9]">
+              {/* Layer 1: Entire India Perimeter Outer Silhouette Outline */}
+              <g
+                stroke="#4b8de8"
+                strokeWidth="3.2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.9"
+              >
+                {statesData.map((st: any) => (
+                  <path key={`outline-${st.id}`} d={st.d} />
+                ))}
+              </g>
+
+              {/* Layer 2: All Non-operational Background States with Visible Clear Borders */}
+              <g>
                 {statesData
                   .filter((st: any) => !presenceStates.some((ps) => ps.id === st.id))
                   .map((st: any) => (
                     <path
-                      key={st.id}
+                      key={`bg-st-${st.id}`}
                       d={st.d}
+                      fill="#ffffff"
+                      stroke="#9ec2eb"
+                      strokeWidth="1.25"
+                      strokeLinejoin="round"
                       className="hover:fill-[#e4effc] transition-colors duration-200"
                     />
                   ))}
               </g>
 
-              {/* Highlighted Operational States */}
+              {/* Layer 3: Highlighted Operational States with Bold Outlines and Gradient Fill */}
               <g>
                 {presenceStates.map((st) => {
                   const d = statePathsMap.get(st.id);
@@ -246,36 +261,37 @@ export function InteractiveIndiaMapSection() {
                       onMouseEnter={() => setHoveredStateId(st.id)}
                       onMouseLeave={() => setHoveredStateId(null)}
                       fill={isSelected ? "url(#activeStateGrad)" : "url(#stateBlueGrad)"}
-                      stroke="#ffffff"
-                      strokeWidth={isSelected ? "2.5" : "1.2"}
-                      className="cursor-pointer transition-all duration-300 hover:brightness-110"
+                      stroke="#002b66"
+                      strokeWidth={isSelected ? "2.6" : "1.8"}
+                      strokeLinejoin="round"
+                      className="cursor-pointer transition-all duration-300 hover:brightness-110 filter drop-shadow-[0_4px_12px_rgba(0,51,153,0.35)]"
                     />
                   );
                 })}
               </g>
 
-              {/* Leader lines and labels on the map */}
+              {/* Layer 4: Thin Leader Lines & Labels for Operational States */}
               <g className="pointer-events-none">
                 {presenceStates.map((st) => (
                   <g key={`lbl-${st.id}`}>
                     <line
                       x1={st.labelX}
-                      y1={st.labelY - 5}
+                      y1={st.labelY}
                       x2={st.rawPinX}
                       y2={st.rawPinY}
-                      stroke="#0066e6"
+                      stroke="#0052cc"
                       strokeWidth="1.2"
                       strokeDasharray="3 3"
-                      opacity="0.6"
+                      opacity="0.65"
                     />
                     <text
                       x={st.labelX}
                       y={st.labelY - 5}
                       textAnchor={st.labelAlign === "right" ? "end" : "start"}
                       fill="#0f172a"
-                      fontSize="22"
+                      fontSize="20"
                       fontWeight="800"
-                      fontFamily="system-ui, sans-serif"
+                      fontFamily="system-ui, -apple-system, sans-serif"
                     >
                       {st.name}
                     </text>
@@ -283,7 +299,7 @@ export function InteractiveIndiaMapSection() {
                 ))}
               </g>
 
-              {/* Blinking Radar Beacons on States */}
+              {/* Layer 5: Blinking Radar Beacons on Operational States */}
               <g className="cursor-pointer">
                 {presenceStates.map((st) => {
                   const isSelected = activeState.id === st.id;
@@ -320,18 +336,35 @@ export function InteractiveIndiaMapSection() {
               </g>
             </g>
 
-            {/* B. CONNECTING BEZIER LINES (START EXACTLY AT THE STATE BEACON PIN!) */}
+            {/* B. CONNECTING BEZIER LINES (ACCURATELY BRIDGING STATE BEACON TO CARD) */}
             <g className="pointer-events-none">
               {presenceStates.map((st, idx) => {
                 const isSelected = activeState.id === st.id;
-                // Map coordinates converted to canvas coordinates:
+
+                // Exact coordinate where beacon sits on canvas
                 const startX = mapOffsetX + st.rawPinX * mapScale;
                 const startY = mapOffsetY + st.rawPinY * mapScale;
-                const targetX = cardsStartX;
-                const targetY = cardYPositions[idx] + 34; // Middle of the card (68px / 2 = 34)
 
-                // Smooth organic Bezier curve bridging map to card
-                const pathD = `M ${startX} ${startY} C ${startX + 180} ${startY}, ${targetX - 140} ${targetY}, ${targetX} ${targetY}`;
+                // Exact center-left coordinate of the card pill
+                const targetX = cardsStartX;
+                const targetY = cardTops[idx] + cardHeight / 2;
+
+                const dx = targetX - startX;
+                const dy = targetY - startY;
+
+                // Smooth organic Bezier curve
+                const cp1x = startX + dx * 0.42;
+                const cp1y = startY + dy * 0.12;
+                const cp2x = startX + dx * 0.82;
+                const cp2y = targetY;
+
+                const pathD = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${targetX} ${targetY}`;
+
+                // Midpoint waypoint calculation (at t = 0.52)
+                const t = 0.52;
+                const mt = 1 - t;
+                const midX = mt * mt * mt * startX + 3 * mt * mt * t * cp1x + 3 * mt * t * t * cp2x + t * t * t * targetX;
+                const midY = mt * mt * mt * startY + 3 * mt * mt * t * cp1y + 3 * mt * t * t * cp2y + t * t * t * targetY;
 
                 return (
                   <g key={`beam-${st.id}`}>
@@ -339,28 +372,40 @@ export function InteractiveIndiaMapSection() {
                     <path
                       d={pathD}
                       fill="none"
-                      stroke={isSelected ? "#0052cc" : "#60a5fa"}
-                      strokeWidth={isSelected ? "3" : "1.8"}
-                      strokeDasharray="7 5"
+                      stroke={isSelected ? "#0052cc" : "#38bdf8"}
+                      strokeWidth={isSelected ? "2.8" : "1.8"}
+                      strokeDasharray="6 5"
                       className="state-connector-line transition-all duration-300"
                       filter={isSelected ? "url(#lineGlow)" : undefined}
                       opacity={isSelected ? "1" : "0.75"}
                     />
 
+                    {/* Cyan Waypoint Dot along the path */}
+                    <circle
+                      cx={midX}
+                      cy={midY}
+                      r={isSelected ? "4.5" : "3.5"}
+                      fill={isSelected ? "#00f0ff" : "#38bdf8"}
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                      filter="drop-shadow(0 0 4px rgba(0,240,255,0.7))"
+                    />
+
                     {/* Glowing Energy Particle gliding along curve */}
-                    <circle r={isSelected ? "4.5" : "3"} fill={isSelected ? "#00f0ff" : "#0052cc"}>
-                      <animateMotion path={pathD} dur={`${1.6 + idx * 0.2}s`} repeatCount="indefinite" />
+                    <circle r={isSelected ? "4" : "2.5"} fill={isSelected ? "#00f0ff" : "#0052cc"}>
+                      <animateMotion path={pathD} dur={`${1.8 + idx * 0.25}s`} repeatCount="indefinite" />
                     </circle>
                   </g>
                 );
               })}
             </g>
 
-            {/* C. MIDDLE COLUMN: 6 STATE PILL CARDS (via foreignObject) */}
-            <foreignObject x={cardsStartX} y="50" width="280" height="660">
-              <div className="h-full flex flex-col justify-start space-y-3.5 pr-2">
-                {presenceStates.map((st) => {
+            {/* C. MIDDLE COLUMN: 6 STATE PILL CARDS (PRECISION ABSOLUTE POSITIONING) */}
+            <foreignObject x={cardsStartX} y="0" width="280" height="760">
+              <div className="relative w-full h-full select-none">
+                {presenceStates.map((st, idx) => {
                   const isSelected = activeState.id === st.id;
+                  const top = cardTops[idx];
 
                   return (
                     <div
@@ -368,15 +413,15 @@ export function InteractiveIndiaMapSection() {
                       onClick={() => setSelectedStateId(st.id)}
                       onMouseEnter={() => setHoveredStateId(st.id)}
                       onMouseLeave={() => setHoveredStateId(null)}
-                      className={`relative flex items-center gap-3 p-2.5 rounded-full bg-white transition-all duration-300 cursor-pointer shadow-md select-none ${
+                      style={{ top: `${top}px`, height: `${cardHeight}px` }}
+                      className={`absolute left-0 right-0 flex items-center gap-3 p-2.5 rounded-full bg-white transition-all duration-300 cursor-pointer shadow-md ${
                         isSelected
-                          ? "ring-2 ring-[#0052cc] shadow-xl shadow-blue-500/15 translate-x-1.5 bg-gradient-to-r from-blue-50 to-white"
+                          ? "ring-2 ring-[#0052cc] shadow-xl shadow-blue-500/20 translate-x-2 bg-gradient-to-r from-blue-50 via-white to-white"
                           : "border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:translate-x-1"
                       }`}
-                      style={{ height: "66px" }}
                     >
                       {/* Round Landmark Photo */}
-                      <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md bg-blue-50">
+                      <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md bg-blue-100 flex items-center justify-center">
                         <img
                           src={st.image}
                           alt={st.name}
@@ -385,6 +430,9 @@ export function InteractiveIndiaMapSection() {
                             (e.target as HTMLElement).style.display = "none";
                           }}
                         />
+                        <span className="text-[11px] font-black text-blue-700 uppercase">
+                          {st.id.substring(2)}
+                        </span>
                       </div>
 
                       {/* State Name */}
@@ -401,9 +449,11 @@ export function InteractiveIndiaMapSection() {
                         </p>
                       </div>
 
-                      {/* Active Dot */}
-                      {isSelected && (
-                        <span className="h-2 w-2 rounded-full bg-[#0052cc] shrink-0 mr-2 animate-pulse" />
+                      {/* Active Indicator Dot */}
+                      {isSelected ? (
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#0052cc] shrink-0 mr-2 animate-pulse shadow-[0_0_8px_#0052cc]" />
+                      ) : (
+                        <span className="h-2 w-2 rounded-full bg-slate-200 shrink-0 mr-2" />
                       )}
                     </div>
                   );
@@ -411,7 +461,7 @@ export function InteractiveIndiaMapSection() {
               </div>
             </foreignObject>
 
-            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL (via foreignObject) */}
+            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL */}
             <foreignObject x="1080" y="60" width="340" height="630">
               <div className="h-full rounded-3xl bg-gradient-to-b from-white via-white to-[#f5f9ff] border border-blue-100 p-6 shadow-xl flex flex-col justify-between">
                 {/* Header Pill */}
@@ -430,11 +480,19 @@ export function InteractiveIndiaMapSection() {
                 {/* Mini Preview Map */}
                 <div className="relative w-full aspect-[1/1] max-h-[190px] mx-auto flex items-center justify-center my-1">
                   <svg viewBox="0 0 1000 1000" className="w-full h-full object-contain">
-                    <g className="fill-[#eef5fd] stroke-[#d8e8f8] stroke-[1]">
+                    {/* Entire Outer Outline */}
+                    <g stroke="#60a5fa" strokeWidth="2.5" strokeLinejoin="round" fill="none">
+                      {statesData.map((st: any) => (
+                        <path key={`mini-out-${st.id}`} d={st.d} />
+                      ))}
+                    </g>
+                    {/* All background states */}
+                    <g fill="#ffffff" stroke="#9ec2eb" strokeWidth="1.2">
                       {statesData.map((st: any) => (
                         <path key={`mini-${st.id}`} d={st.d} />
                       ))}
                     </g>
+                    {/* Highlighted states */}
                     <g>
                       {presenceStates.map((st) => {
                         const d = statePathsMap.get(st.id);
@@ -513,13 +571,21 @@ export function InteractiveIndiaMapSection() {
           {/* Mobile Map */}
           <div className="relative w-full max-w-[420px] aspect-[1/1] mx-auto">
             <svg viewBox="0 0 1000 1000" className="w-full h-full object-contain filter drop-shadow-md">
-              <g className="fill-[#eef5fd] stroke-[#d3e5f8] stroke-[1]">
+              {/* Outer boundary stroke */}
+              <g stroke="#4b8de8" strokeWidth="3" strokeLinejoin="round" fill="none">
+                {statesData.map((st: any) => (
+                  <path key={`mob-out-${st.id}`} d={st.d} />
+                ))}
+              </g>
+              {/* Background states with clear borders */}
+              <g fill="#ffffff" stroke="#9ec2eb" strokeWidth="1.2">
                 {statesData
                   .filter((st: any) => !presenceStates.some((ps) => ps.id === st.id))
                   .map((st: any) => (
                     <path key={`mob-${st.id}`} d={st.d} />
                   ))}
               </g>
+              {/* Highlighted states */}
               <g>
                 {presenceStates.map((st) => {
                   const d = statePathsMap.get(st.id);
@@ -531,8 +597,8 @@ export function InteractiveIndiaMapSection() {
                       d={d}
                       onClick={() => setSelectedStateId(st.id)}
                       fill={isSelected ? "#003399" : "#0052cc"}
-                      stroke="#ffffff"
-                      strokeWidth="1.5"
+                      stroke="#002b66"
+                      strokeWidth="1.8"
                     />
                   );
                 })}
