@@ -42,6 +42,13 @@ export default function CertificatePage() {
   const [errorMsg, setErrorMsg] = useState("");
   const certRef = useRef<HTMLDivElement>(null);
 
+  // Always open at top of page
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
   // 1. Fetch available events from database to allow dynamic event switching
   useEffect(() => {
     fetch("/api/events")

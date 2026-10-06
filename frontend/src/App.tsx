@@ -93,17 +93,56 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "instant",
-    });
-    document.documentElement.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    document.body.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname, search]);
+    // Disable browser default scroll restoration so navigating never opens in the middle
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    }
+
+    const scrollToTopNow = () => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant",
+      });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (document.documentElement.scrollTo) {
+        document.documentElement.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+      if (document.body.scrollTo) {
+        document.body.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+      if ((window as any).__lenis) {
+        try {
+          (window as any).__lenis.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+    };
+
+    scrollToTopNow();
+    const r1 = requestAnimationFrame(scrollToTopNow);
+    const t1 = setTimeout(scrollToTopNow, 50);
+    const t2 = setTimeout(scrollToTopNow, 160);
+    const t3 = setTimeout(scrollToTopNow, 320);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [pathname, search, hash]);
 
   return null;
 }

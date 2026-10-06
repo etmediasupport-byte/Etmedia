@@ -67,6 +67,13 @@ export default function VerifyPassPage() {
   const adminToken = typeof window !== "undefined" ? localStorage.getItem("etmedia_admin_token") : null;
   const isAdmin = !!adminToken;
 
+  // Always open at top of page
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
   useEffect(() => {
     // If not admin, do not fetch any details; protect data privacy completely
     if (!isAdmin) {

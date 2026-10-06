@@ -99,12 +99,29 @@ export function Layout() {
     };
   }, []);
 
-  // Scroll to top on route change
+  // Scroll to top on route change (immediate + post-animation frames)
   useEffect(() => {
-    if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { immediate: true });
-    }
-    window.scrollTo(0, 0);
+    const scrollLayoutTop = () => {
+      if (lenisRef.current) {
+        try {
+          lenisRef.current.scrollTo(0, { immediate: true });
+        } catch (_) {}
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    scrollLayoutTop();
+    const r1 = requestAnimationFrame(scrollLayoutTop);
+    const t1 = setTimeout(scrollLayoutTop, 60);
+    const t2 = setTimeout(scrollLayoutTop, 180);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [location.pathname, location.search]);
 
   return (

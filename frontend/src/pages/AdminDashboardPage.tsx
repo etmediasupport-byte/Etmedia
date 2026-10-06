@@ -589,9 +589,26 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTo({ top: 0, left: 0 });
-    }
+    const scrollToTopNow = () => {
+      if (mainScrollRef.current) {
+        mainScrollRef.current.scrollTop = 0;
+        mainScrollRef.current.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    scrollToTopNow();
+    const r1 = requestAnimationFrame(scrollToTopNow);
+    const t1 = setTimeout(scrollToTopNow, 30);
+    const t2 = setTimeout(scrollToTopNow, 120);
+
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [activeTab]);
 
   const [stats, setStats] = useState({
@@ -6353,6 +6370,9 @@ export default function AdminDashboardPage() {
                       onClick={() => {
                         setActiveTab(item.id as TabType);
                         setMobileSidebarOpen(false);
+                        if (mainScrollRef.current) {
+                          mainScrollRef.current.scrollTop = 0;
+                        }
                       }}
                       title={item.label}
                       className={`flex w-full items-center rounded-xl transition-all cursor-pointer ${
@@ -9227,7 +9247,6 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setQuickScanInput(e.target.value)}
                       placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
                       className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
-                      autoFocus
                     />
                   </div>
                   <button

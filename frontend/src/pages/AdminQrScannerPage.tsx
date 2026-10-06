@@ -64,6 +64,13 @@ export default function AdminQrScannerPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem("etmedia_admin_token") || "";
 
+  // Always open at top of page
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
   // Scanner state
   const [isScanning, setIsScanning] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<"prompt" | "granted" | "denied">("prompt");
