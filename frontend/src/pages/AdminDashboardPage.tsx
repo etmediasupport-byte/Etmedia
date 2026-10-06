@@ -852,9 +852,12 @@ export default function AdminDashboardPage() {
   const [loadingTerms, setLoadingTerms] = useState<boolean>(false);
   const [editingTermsTemplate, setEditingTermsTemplate] = useState<TermsTemplateItem | null>(null);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState<boolean>(false);
+  const termsModalOpen = isTermsModalOpen;
+  const setTermsModalOpen = setIsTermsModalOpen;
   const [termsModalTab, setTermsModalTab] = useState<"builder" | "preview">("builder");
   const [termsPreviewTemplate, setTermsPreviewTemplate] = useState<TermsTemplateItem | null>(null);
   const [savingTermsId, setSavingTermsId] = useState<string | null>(null);
+  const savingTerms = Boolean(savingTermsId);
   const [termsSearchQuery, setTermsSearchQuery] = useState<string>("");
   const [termsForm, setTermsForm] = useState<{
     id?: string;
@@ -868,6 +871,7 @@ export default function AdminDashboardPage() {
     is_default: false,
     clauses: [],
   });
+  const editingTermsId = termsForm.id || editingTermsTemplate?.id || null;
 
   // Careers & Jobs CMS State
   const [cmsJobs, setCmsJobs] = useState<JobItem[]>([]);
@@ -5944,7 +5948,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleSetDefaultTerms = async (tmpl: TermsTemplateItem) => {
+  const handleSetDefaultTerms = async (tmplOrId: TermsTemplateItem | string) => {
+    const tmpl = typeof tmplOrId === "string" ? termsTemplatesList.find((t) => t.id === tmplOrId) : tmplOrId;
+    if (!tmpl) return;
     try {
       const res = await fetch(`/api/admin/terms-conditions/${tmpl.id}`, {
         method: "PUT",
@@ -5970,6 +5976,20 @@ export default function AdminDashboardPage() {
       toast.error("Error setting default template.");
     }
   };
+
+  const handleDeleteTerms = async (tmplOrId: TermsTemplateItem | string, title?: string) => {
+    const tmpl = typeof tmplOrId === "string"
+      ? (termsTemplatesList.find((t) => t.id === tmplOrId) || ({ id: tmplOrId, title: title || "Template", is_default: 0 } as TermsTemplateItem))
+      : tmplOrId;
+    return handleDeleteTermsTemplate(tmpl);
+  };
+
+  const handleLoadDefaultClausesIntoForm = handleLoadStandardClauses;
+  const handleAddClause = handleAddClausePoint;
+  const handleRemoveClause = handleRemoveClausePoint;
+  const handleMoveClause = handleMoveClausePoint;
+  const handleClauseChange = handleUpdateClauseField;
+  const handleSaveTerms = handleSaveTermsTemplate;
 
   // --- POPUP MODAL CMS ACTION HANDLERS ---
   const handleSavePopupSettings = async (e?: React.FormEvent) => {
