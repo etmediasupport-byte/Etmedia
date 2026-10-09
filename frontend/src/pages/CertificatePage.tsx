@@ -160,6 +160,24 @@ export default function CertificatePage() {
     return "Centenary Convention Centre, Hyderabad";
   }, [activeEvent, cert]);
 
+  const certSettings = useMemo(() => {
+    if (activeEvent?.certificate_settings) {
+      try {
+        return typeof activeEvent.certificate_settings === "string"
+          ? JSON.parse(activeEvent.certificate_settings)
+          : activeEvent.certificate_settings;
+      } catch (e) {}
+    }
+    if ((cert as any)?.certificate_settings) {
+      try {
+        return typeof (cert as any).certificate_settings === "string"
+          ? JSON.parse((cert as any).certificate_settings)
+          : (cert as any).certificate_settings;
+      } catch (e) {}
+    }
+    return null;
+  }, [activeEvent, cert]);
+
   const candidateDisplayName = customName || cert?.candidateName || "Executive Delegate";
   const orgDisplayName = customOrg || cert?.organization || searchParams.get("company") || searchParams.get("org") || "";
 
@@ -311,7 +329,16 @@ export default function CertificatePage() {
                   candidateName={candidateDisplayName}
                   organization={orgDisplayName}
                   designation={cert?.designation}
-                  eventTitle={activeEventTitle}
+                  headerTitle={certSettings?.header_title}
+                  headerSubtitle={certSettings?.header_subtitle}
+                  presentedToText={certSettings?.presented_to_text}
+                  eventTitle={certSettings?.event_title || activeEventTitle}
+                  dateVenueText={certSettings?.date_venue_text}
+                  bodyLine1={certSettings?.body_line1}
+                  bodyLine2={certSettings?.body_line2}
+                  signatoryHeader={certSettings?.signatory_header}
+                  signatoryName={certSettings?.signatory_name}
+                  signatoryOrg={certSettings?.signatory_org}
                   eventDate={activeEventDate}
                   eventVenue={activeEventVenue}
                   city={activeEvent?.city || cert?.city || "Hyderabad"}

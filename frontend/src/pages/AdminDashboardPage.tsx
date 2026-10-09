@@ -301,6 +301,7 @@ type TabType =
   | "popup"
   | "qr-scanner"
   | "attendance"
+  | "certificates"
   | "database";
 
 // ==========================================
@@ -1232,6 +1233,24 @@ export default function AdminDashboardPage() {
   const [previewCertAttendee, setPreviewCertAttendee] = useState<any | null>(null);
   const [sendingCertId, setSendingCertId] = useState<string | null>(null);
   const [bulkSendingCerts, setBulkSendingCerts] = useState(false);
+
+  // --- CERTIFICATE DESIGNER STATE ---
+  const [selectedCertEventId, setSelectedCertEventId] = useState<string>("");
+  const [savingCertDesign, setSavingCertDesign] = useState(false);
+  const [certForm, setCertForm] = useState({
+    header_title: "CERTIFICATE",
+    header_subtitle: "OF APPRECIATION",
+    presented_to_text: "This certificate is Presented to",
+    event_title: "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026",
+    date_venue_text: "2026-06-19 | Radisson Hotel, Hyderabad",
+    body_line1: "In recognition of your valuable participation as an esteemed",
+    body_line2: "Delegate at the PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026.",
+    signatory_header: "Presented By:",
+    signatory_name: "Srikanth",
+    signatory_org: "Executive Talks Media",
+    preview_candidate_name: "RAMA SRI",
+    preview_candidate_company: "Ascend Media Labs",
+  });
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2727,6 +2746,144 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error undoing check-in.");
+    }
+  };
+
+  // --- CERTIFICATE DESIGNER LOGIC ---
+  useEffect(() => {
+    if (!selectedCertEventId && cmsEvents.length > 0) {
+      setSelectedCertEventId(cmsEvents[0].id);
+    }
+  }, [cmsEvents, selectedCertEventId]);
+
+  useEffect(() => {
+    if (!selectedCertEventId || cmsEvents.length === 0) return;
+    const evt = cmsEvents.find((e) => e.id === selectedCertEventId);
+    if (!evt) return;
+
+    let parsedSettings: any = null;
+    if (evt.certificate_settings) {
+      try {
+        parsedSettings = typeof evt.certificate_settings === "string" ? JSON.parse(evt.certificate_settings) : evt.certificate_settings;
+      } catch (e) {}
+    }
+
+    const defaultVenue = evt.venue ? `${evt.date || "2026-06-19"} | ${evt.venue}${evt.city ? `, ${evt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
+
+    setCertForm((prev) => ({
+      ...prev,
+      header_title: parsedSettings?.header_title || "CERTIFICATE",
+      header_subtitle: parsedSettings?.header_subtitle || "OF APPRECIATION",
+      presented_to_text: parsedSettings?.presented_to_text || "This certificate is Presented to",
+      event_title: parsedSettings?.event_title || evt.title || "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026",
+      date_venue_text: parsedSettings?.date_venue_text || defaultVenue,
+      body_line1: parsedSettings?.body_line1 || "In recognition of your valuable participation as an esteemed",
+      body_line2: parsedSettings?.body_line2 || `Delegate at the ${evt.title || "Executive Leadership Summit 2026"}.`,
+      signatory_header: parsedSettings?.signatory_header || "Presented By:",
+      signatory_name: parsedSettings?.signatory_name || "Srikanth",
+      signatory_org: parsedSettings?.signatory_org || "Executive Talks Media",
+      preview_candidate_name: prev.preview_candidate_name || "RAMA SRI",
+      preview_candidate_company: prev.preview_candidate_company || "Ascend Media Labs",
+    }));
+  }, [selectedCertEventId, cmsEvents]);
+
+  const handleSaveCertificateDesign = async () => {
+    if (!selectedCertEventId) {
+      toast.error("Please select an event to save certificate design.");
+      return;
+    }
+    setSavingCertDesign(true);
+    try {
+      const res = await fetch(`/api/admin/events/${selectedCertEventId}/certificate`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ certificate_settings: certForm }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Certificate design & content saved successfully!");
+        setCmsEvents((prev) =>
+          prev.map((e) => (e.id === selectedCertEventId ? { ...e, certificate_settings: certForm } : e))
+        );
+      } else {
+        toast.error(data.message || "Failed to save certificate design.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Network error while saving certificate design.");
+    } finally {
+      setSavingCertDesign(false);
+    }
+  };
+
+  const applyCertTemplatePreset = (presetType: "appreciation" | "participation" | "excellence" | "speaker") => {
+    const currentEvt = cmsEvents.find((e) => e.id === selectedCertEventId);
+    const evTitle = currentEvt?.title || "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026";
+    const evVenue = currentEvt?.venue ? `${currentEvt.date || "2026-06-19"} | ${currentEvt.venue}${currentEvt.city ? `, ${currentEvt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
+
+    if (presetType === "appreciation") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF APPRECIATION",
+        presented_to_text: "This certificate is Presented to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In recognition of your valuable participation as an esteemed",
+        body_line2: `Delegate at the ${evTitle}.`,
+        signatory_header: "Presented By:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Certificate of Appreciation' template preset!");
+    } else if (presetType === "participation") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF PARTICIPATION",
+        presented_to_text: "This is to certify that",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "For active attendance, strategic engagement and leadership presence at",
+        body_line2: `the national conclave of ${evTitle}.`,
+        signatory_header: "Organized & Certified By:",
+        signatory_name: "Srikanth Adusumalli",
+        signatory_org: "Executive Talks Media Business Intelligence",
+      }));
+      toast.info("Applied 'Certificate of Participation' template preset!");
+    } else if (presetType === "excellence") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF EXCELLENCE & HONOR",
+        presented_to_text: "Award of Distinction is Proudly Conferred to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In distinguished recognition of exceptional industry leadership and benchmark excellence at",
+        body_line2: `${evTitle}.`,
+        signatory_header: "Executive Jury & Advisory Board:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Certificate of Excellence' template preset!");
+    } else if (presetType === "speaker") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF KEYNOTE HONOR",
+        presented_to_text: "Presented with Gratitude & Esteem to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In honor of your distinguished keynote address and transformative domain insights at",
+        body_line2: `the annual edition of ${evTitle}.`,
+        signatory_header: "Summit Directorate:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Speaker Keynote Honor' template preset!");
     }
   };
 
@@ -6553,6 +6710,7 @@ export default function AdminDashboardPage() {
     {
       title: "COMMUNICATIONS & SYSTEM",
       items: [
+        { id: "certificates", label: "Certificate Designer", icon: Award },
         { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
         { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
         { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
@@ -10610,7 +10768,14 @@ export default function AdminDashboardPage() {
                           ? activeSelectedEvent
                           : (cmsEvents.find((e) => doesRegistrationMatchEvent(previewCertAttendee, e)) || null);
 
-                        const eventTitle = matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
+                        let parsedCertSettings: any = null;
+                        if (matchedEvent?.certificate_settings) {
+                          try {
+                            parsedCertSettings = typeof matchedEvent.certificate_settings === "string" ? JSON.parse(matchedEvent.certificate_settings) : matchedEvent.certificate_settings;
+                          } catch (e) {}
+                        }
+
+                        const eventTitle = parsedCertSettings?.event_title || matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
                         const eventDate = matchedEvent?.date || (previewCertAttendee.checked_in_at ? new Date(previewCertAttendee.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "11th December 2026");
                         const eventVenue = (matchedEvent?.venue && matchedEvent?.city)
                           ? `${matchedEvent.venue}, ${matchedEvent.city}`
@@ -10622,9 +10787,18 @@ export default function AdminDashboardPage() {
                               candidateName={previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
                               organization={previewCertAttendee.organization || (previewCertAttendee as any).company || ""}
                               designation={previewCertAttendee.designation || ""}
+                              headerTitle={parsedCertSettings?.header_title || "CERTIFICATE"}
+                              headerSubtitle={parsedCertSettings?.header_subtitle || "OF APPRECIATION"}
+                              presentedToText={parsedCertSettings?.presented_to_text || "This certificate is Presented to"}
                               eventTitle={eventTitle}
                               eventDate={eventDate}
                               eventVenue={eventVenue}
+                              dateVenueText={parsedCertSettings?.date_venue_text}
+                              bodyLine1={parsedCertSettings?.body_line1}
+                              bodyLine2={parsedCertSettings?.body_line2}
+                              signatoryHeader={parsedCertSettings?.signatory_header}
+                              signatoryName={parsedCertSettings?.signatory_name}
+                              signatoryOrg={parsedCertSettings?.signatory_org}
                               city={matchedEvent?.city || previewCertAttendee.city || "Hyderabad"}
                               certId={previewCertAttendee.certificate_id || `ETM-CERT-2026-${previewCertAttendee.id.replace(/[^0-9]/g, "").slice(-6) || "889921"}`}
                               showIdBadge={false}
@@ -18550,6 +18724,429 @@ export default function AdminDashboardPage() {
                     );
                   })
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* CERTIFICATE DESIGNER & CUSTOMIZER TAB      */}
+          {/* ========================================== */}
+          {activeTab === "certificates" && (
+            <div className="space-y-6">
+              {/* Header & Event Selector Card */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200/80 pb-6">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-xs">
+                      <Award className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                          E-Certificate Designer & Customizer
+                        </h2>
+                        <span className="rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 text-[11px] font-black text-amber-800 uppercase tracking-wider">
+                          Live Studio
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                        Customize certificate title, event body matter, venue address, and signature for each event with real-time live review.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Save Design Button */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveCertificateDesign}
+                      disabled={savingCertDesign || !selectedCertEventId}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingCertDesign ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Saving Design...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          <span>Save Certificate Design</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Event Selector & Quick Preset Templates */}
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                  {/* Event Select Dropdown */}
+                  <div className="lg:col-span-5 space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Select Target Event to Design Certificate:</span>
+                    </label>
+                    <select
+                      value={selectedCertEventId}
+                      onChange={(e) => setSelectedCertEventId(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-xs cursor-pointer"
+                    >
+                      {cmsEvents.length === 0 ? (
+                        <option value="">No events available</option>
+                      ) : (
+                        cmsEvents.map((evt) => (
+                          <option key={evt.id} value={evt.id}>
+                            🎪 {evt.title} ({evt.date || "Upcoming"} - {evt.venue || evt.city || "Venue TBA"})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Preset Template Quick Badges */}
+                  <div className="lg:col-span-7 space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Quick Preset Templates (1-Click Fill):</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("appreciation")}
+                        className="rounded-xl border border-amber-300/80 bg-amber-50/70 hover:bg-amber-100/80 px-3 py-1.5 text-xs font-bold text-amber-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Award className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Appreciation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("participation")}
+                        className="rounded-xl border border-blue-300/80 bg-blue-50/70 hover:bg-blue-100/80 px-3 py-1.5 text-xs font-bold text-blue-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Participation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("excellence")}
+                        className="rounded-xl border border-purple-300/80 bg-purple-50/70 hover:bg-purple-100/80 px-3 py-1.5 text-xs font-bold text-purple-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Crown className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Excellence & Honor</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("speaker")}
+                        className="rounded-xl border border-emerald-300/80 bg-emerald-50/70 hover:bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Star className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Keynote Speaker</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2-Column Main Workspace: Editor Left, Live Preview Right */}
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                {/* LEFT COLUMN: Customization Inputs */}
+                <div className="xl:col-span-5 space-y-6">
+                  {/* Card 1: Certificate Headers */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <Award className="h-4 w-4 text-amber-500" />
+                      <span>1. Certificate Headings & Honor Type</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Main Header Text (Top Gold Title)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.header_title}
+                          onChange={(e) => setCertForm({ ...certForm, header_title: e.target.value })}
+                          placeholder="CERTIFICATE"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Subtitle / Honor Category
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.header_subtitle}
+                          onChange={(e) => setCertForm({ ...certForm, header_subtitle: e.target.value })}
+                          placeholder="OF APPRECIATION / OF PARTICIPATION"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Presented-To Introduction Line
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.presented_to_text}
+                          onChange={(e) => setCertForm({ ...certForm, presented_to_text: e.target.value })}
+                          placeholder="This certificate is Presented to"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Event Details & Venue Address */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <MapPin className="h-4 w-4 text-amber-500" />
+                      <span>2. Event Title & Venue / Address Line</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Event Title Displayed on Certificate
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.event_title}
+                          onChange={(e) => setCertForm({ ...certForm, event_title: e.target.value })}
+                          placeholder="PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Event Date & Venue / Full Address Line
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.date_venue_text}
+                          onChange={(e) => setCertForm({ ...certForm, date_venue_text: e.target.value })}
+                          placeholder="2026-06-19 | Radisson Hotel, Hyderabad"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Displayed below the event title on the certificate. Include date, hotel venue, and city.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Recognition Body Matter */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <FileText className="h-4 w-4 text-amber-500" />
+                      <span>3. Certificate Body Matter & Appreciation Text</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Body Text - Line 1 (Introductory recognition)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={certForm.body_line1}
+                          onChange={(e) => setCertForm({ ...certForm, body_line1: e.target.value })}
+                          placeholder="In recognition of your valuable participation as an esteemed"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Body Text - Line 2 (Role & Conclave closure)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={certForm.body_line2}
+                          onChange={(e) => setCertForm({ ...certForm, body_line2: e.target.value })}
+                          placeholder="Delegate at the PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026."
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Signatory & Issuing Details */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                      <span>4. Signatory & Organization Details</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Signatory Header
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_header}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_header: e.target.value })}
+                          placeholder="Presented By:"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Signatory Name (Under Signature)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_name}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_name: e.target.value })}
+                          placeholder="Srikanth"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Issuing Organization Name
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_org}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_org: e.target.value })}
+                          placeholder="Executive Talks Media"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Test Attendee Preview Controls */}
+                  <div className="rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-amber-900 tracking-wider border-b border-amber-200/80 pb-3">
+                      <Eye className="h-4 w-4 text-amber-600" />
+                      <span>5. Live Test Preview Delegate (Sample Data)</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">
+                          Sample Attendee Name
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.preview_candidate_name}
+                          onChange={(e) => setCertForm({ ...certForm, preview_candidate_name: e.target.value })}
+                          placeholder="RAMA SRI"
+                          className="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-amber-500 focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">
+                          Sample Company / Affiliation
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.preview_candidate_company}
+                          onChange={(e) => setCertForm({ ...certForm, preview_candidate_company: e.target.value })}
+                          placeholder="Ascend Media Labs"
+                          className="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-amber-500 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Real-Time Live Certificate Preview Studio */}
+                <div className="xl:col-span-7 space-y-4 sticky top-6">
+                  <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5 sm:p-6 shadow-xl text-white">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
+                        <div>
+                          <h3 className="text-sm font-black text-white tracking-wide uppercase">
+                            Real-Time Live Certificate Preview
+                          </h3>
+                          <p className="text-[11px] text-slate-400">
+                            WYSIWYG: Exact gold-framed SVG certificate as seen by delegates and in emails.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewCertAttendee({
+                              id: "PREVIEW-DEMO",
+                              name: certForm.preview_candidate_name,
+                              first_name: certForm.preview_candidate_name,
+                              last_name: "",
+                              organization: certForm.preview_candidate_company,
+                              designation: "Executive Delegate",
+                              event_title: certForm.event_title,
+                              city: "Hyderabad",
+                              email: "delegate@executivetalksmedia.in",
+                              created_at: new Date().toISOString(),
+                              checked_in_at: new Date().toISOString(),
+                              certificate_sent_at: new Date().toISOString(),
+                              certificate_id: "ETM-CERT-2026-LIVE",
+                              pass_name: "Executive VIP Delegate",
+                              certificate_settings: certForm,
+                            } as any);
+                          }}
+                          className="rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 text-amber-400" />
+                          <span>Fullscreen Modal</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* LIVE CERTIFICATE CANVAS */}
+                    <div className="w-full overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-800/50">
+                      <ExecutiveCertificate
+                        candidateName={certForm.preview_candidate_name || "RAMA SRI"}
+                        organization={certForm.preview_candidate_company || "Ascend Media Labs"}
+                        designation="Executive Delegate"
+                        headerTitle={certForm.header_title}
+                        headerSubtitle={certForm.header_subtitle}
+                        presentedToText={certForm.presented_to_text}
+                        eventTitle={certForm.event_title}
+                        dateVenueText={certForm.date_venue_text}
+                        bodyLine1={certForm.body_line1}
+                        bodyLine2={certForm.body_line2}
+                        signatoryHeader={certForm.signatory_header}
+                        signatoryName={certForm.signatory_name}
+                        signatoryOrg={certForm.signatory_org}
+                        certId="ETM-CERT-2026-LIVE"
+                        issueDate={new Date().toISOString()}
+                      />
+                    </div>
+
+                    {/* Bottom Status & Info Bar */}
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <span className="text-[11px] font-medium text-slate-300">
+                          Auto-adjusts typography for mobile, tablet, desktop, and print PDF.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveCertificateDesign}
+                        disabled={savingCertDesign || !selectedCertEventId}
+                        className="text-xs font-black text-amber-400 hover:text-amber-300 underline underline-offset-4 cursor-pointer"
+                      >
+                        Save this design to database →
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

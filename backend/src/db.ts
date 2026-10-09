@@ -452,6 +452,7 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_paid_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_free_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN terms_id VARCHAR(100);"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN certificate_settings LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
     try {
       await pool.query("UPDATE events SET allow_paid_registration = 1 WHERE allow_paid_registration IS NULL");

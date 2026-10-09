@@ -3935,6 +3935,29 @@ app.get("/api/certificate/:regId", async (req, res) => {
     const certNum = reg.id.replace(/[^0-9]/g, "").slice(-6) || "202601";
     const certId = reg.certificate_id || `ETM-CERT-2026-${certNum}`;
 
+    let certificateSettings: any = null;
+    let eventVenue = "Radisson Hotel, Hyderabad";
+    let eventDate = reg.checked_in_at
+      ? new Date(reg.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : "11th December 2026";
+
+    if (pool && reg.event_title) {
+      try {
+        const [evtRows]: any = await pool.query(
+          "SELECT id, title, date, venue, city, certificate_settings FROM events WHERE title = ? OR title LIKE ? LIMIT 1",
+          [reg.event_title, `%${reg.event_title.slice(0, 20)}%`]
+        );
+        if (evtRows && evtRows.length > 0) {
+          const ev = evtRows[0];
+          if (ev.venue) eventVenue = ev.venue;
+          if (ev.date) eventDate = ev.date;
+          if (ev.certificate_settings) {
+            certificateSettings = typeof ev.certificate_settings === "string" ? JSON.parse(ev.certificate_settings) : ev.certificate_settings;
+          }
+        }
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       certificate: {
@@ -3944,11 +3967,14 @@ app.get("/api/certificate/:regId", async (req, res) => {
         designation: reg.designation || "",
         organization: reg.organization || "",
         eventTitle: reg.event_title || "Executive Leadership Summit 2026",
+        eventDate,
+        eventVenue,
         city: reg.city || "Hyderabad, India",
         checkinStatus: reg.checkin_status || "Present",
         checkedInAt: reg.checked_in_at || new Date().toISOString(),
         issueDate: reg.certificate_sent_at || reg.checked_in_at || new Date().toISOString(),
         verified: true,
+        certificate_settings: certificateSettings,
       },
     });
   } catch (err: any) {
@@ -5916,6 +5942,53 @@ app.patch("/api/admin/events/:id/registration-visibility", authenticateAdmin, as
   }
 });
 
+
+// Certificate template management for event
+app.get("/api/admin/events/:id/certificate", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!pool) return res.json({ success: true, certificate_settings: null });
+    await ensureEventsTable();
+    const [rows]: any = await pool.query("SELECT id, title, date, venue, city, certificate_settings FROM events WHERE id = ? LIMIT 1", [id]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Event not found." });
+    }
+    const evt = rows[0];
+    let certSettings: any = null;
+    if (evt.certificate_settings) {
+      try {
+        certSettings = typeof evt.certificate_settings === "string" ? JSON.parse(evt.certificate_settings) : evt.certificate_settings;
+      } catch (e) {}
+    }
+    return res.json({
+      success: true,
+      event: { id: evt.id, title: evt.title, date: evt.date, venue: evt.venue, city: evt.city },
+      certificate_settings: certSettings,
+    });
+  } catch (err: any) {
+    console.error("Get Event Certificate Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to load certificate settings." });
+  }
+});
+
+app.put("/api/admin/events/:id/certificate", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { certificate_settings } = req.body;
+  try {
+    if (pool) {
+      await ensureEventsTable();
+      const certStr = typeof certificate_settings === "string" ? certificate_settings : JSON.stringify(certificate_settings || {});
+      await pool.query("UPDATE events SET certificate_settings = ? WHERE id = ?", [certStr, id]);
+    }
+    invalidateFastCache("events_");
+    invalidateFastCache("event_slug_");
+    io.emit("event_certificate_updated", { id, certificate_settings });
+    return res.json({ success: true, message: "Certificate template & design saved successfully!" });
+  } catch (err: any) {
+    console.error("Update Event Certificate Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to save certificate settings." });
+  }
+});
 
 // 4. Delete event
 app.delete("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
