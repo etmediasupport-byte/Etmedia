@@ -207,11 +207,17 @@ interface RegistrationEmailPayload {
   createdAt?: string;
 }
 
-export async function getDynamicEmailSubject(
+export async function getDynamicEmailContent(
   configId: string,
   variables: Record<string, any>,
-  fallbackSubject?: string
-): Promise<string> {
+  fallbacks?: { subject?: string; intro?: string; body?: string; notes?: string }
+): Promise<{
+  subject: string;
+  intro: string;
+  body: string;
+  notes: string;
+  bodyHtml: string;
+}> {
   try {
     let config: any = null;
     if (pool) {
@@ -228,17 +234,6 @@ export async function getDynamicEmailSubject(
       config = DEFAULT_EMAIL_SUBJECT_CONFIGS.find((c) => c.id === configId);
     }
 
-    if (!config) {
-      return fallbackSubject || "Executive Talks Media Business Intelligence";
-    }
-
-    // Determine base template:
-    // If template is empty, fall back to prefix + {event_name} + suffix
-    let template = config.subject_template || "";
-    if (!template.trim()) {
-      template = `${config.prefix || ""}{event_name}${config.suffix || ""}`;
-    }
-
     const eventName = (variables.event_name || variables.eventTitle || variables.eventName || "Executive Talks Conclave").trim();
     const delegateName = (variables.delegate_name || variables.candidateName || variables.fullName || variables.name || "Executive Delegate").trim();
     const passId = (variables.pass_id || variables.regId || variables.registrationId || variables.certId || "").trim();
@@ -246,22 +241,29 @@ export async function getDynamicEmailSubject(
     const category = (variables.category || variables.registrationCategory || variables.regCategory || "Delegate").trim();
     const city = (variables.city || "Hyderabad").trim();
 
-    let subject = template
-      .replace(/{event_name}/gi, eventName)
-      .replace(/{delegate_name}/gi, delegateName)
-      .replace(/{pass_id}/gi, passId)
-      .replace(/{company}/gi, company)
-      .replace(/{category}/gi, category)
-      .replace(/{city}/gi, city);
+    const replaceTokens = (text: string) => {
+      if (!text) return "";
+      return text
+        .replace(/{event_name}/gi, eventName)
+        .replace(/{delegate_name}/gi, delegateName)
+        .replace(/{pass_id}/gi, passId)
+        .replace(/{company}/gi, company)
+        .replace(/{category}/gi, category)
+        .replace(/{city}/gi, city);
+    };
 
-    if (config.prefix && !template.includes(config.prefix)) {
+    // 1. Subject
+    let subjectTemplate = config?.subject_template || fallbacks?.subject || "";
+    if (!subjectTemplate.trim() && config?.prefix) {
+      subjectTemplate = `${config.prefix}{event_name}${config.suffix || ""}`;
+    }
+    let subject = replaceTokens(subjectTemplate);
+    if (config?.prefix && !subjectTemplate.includes(config.prefix)) {
       subject = `${config.prefix}${subject}`;
     }
-    if (config.suffix && !template.includes(config.suffix)) {
+    if (config?.suffix && !subjectTemplate.includes(config.suffix)) {
       subject = `${subject}${config.suffix}`;
     }
-
-    // Clean up empty parentheses or hanging dashes if token was empty
     subject = subject
       .replace(/\(\s*\)/g, "")
       .replace(/\s+—\s*$/g, "")
@@ -269,11 +271,53 @@ export async function getDynamicEmailSubject(
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    return subject || fallbackSubject || "Executive Talks Media Business Intelligence";
+    // 2. Intro
+    const introTemplate = config?.body_intro || fallbacks?.intro || `Dear ${delegateName},`;
+    const intro = replaceTokens(introTemplate);
+
+    // 3. Body
+    const bodyTemplate = config?.body_template || fallbacks?.body || "";
+    const body = replaceTokens(bodyTemplate);
+
+    // 4. Notes
+    const notesTemplate = config?.body_notes || fallbacks?.notes || "";
+    const notes = replaceTokens(notesTemplate);
+
+    // 5. Convert body to HTML paragraphs if plain text
+    let bodyHtml = body;
+    if (bodyHtml && !bodyHtml.includes("<p>") && !bodyHtml.includes("<div>")) {
+      bodyHtml = bodyHtml
+        .split("\n\n")
+        .map((p) => `<p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.6; color: #334155;">${p.replace(/\n/g, "<br/>")}</p>`)
+        .join("");
+    }
+
+    return {
+      subject: subject || fallbacks?.subject || "Executive Talks Media Business Intelligence",
+      intro,
+      body,
+      notes,
+      bodyHtml,
+    };
   } catch (err) {
-    console.warn(`[EmailSubject] Error generating dynamic subject for ${configId}:`, err);
-    return fallbackSubject || "Executive Talks Media Business Intelligence";
+    console.warn(`[EmailContent] Error generating dynamic email content for ${configId}:`, err);
+    return {
+      subject: fallbacks?.subject || "Executive Talks Media Business Intelligence",
+      intro: `Dear ${variables.delegate_name || "Delegate"},`,
+      body: fallbacks?.body || "",
+      notes: fallbacks?.notes || "",
+      bodyHtml: fallbacks?.body || "",
+    };
   }
+}
+
+export async function getDynamicEmailSubject(
+  configId: string,
+  variables: Record<string, any>,
+  fallbackSubject?: string
+): Promise<string> {
+  const content = await getDynamicEmailContent(configId, variables, { subject: fallbackSubject });
+  return content.subject;
 }
 
 export async function getEventTerms(eventIdOrSlug?: string): Promise<{
@@ -6945,10 +6989,10 @@ app.get("/api/admin/email-subjects", authenticateAdmin, async (_req, res) => {
   }
 });
 
-// 2. Update an email subject template
+// 2. Update an email subject & body template
 app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { prefix, suffix, subject_template, is_active } = req.body;
+  const { prefix, suffix, subject_template, body_intro, body_template, body_notes, is_active } = req.body;
 
   try {
     if (!pool) {
@@ -6958,6 +7002,9 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
     const cleanPrefix = prefix !== undefined ? String(prefix) : "";
     const cleanSuffix = suffix !== undefined ? String(suffix) : "";
     let cleanTemplate = subject_template !== undefined ? String(subject_template).trim() : "";
+    const cleanIntro = body_intro !== undefined ? String(body_intro) : "";
+    const cleanBody = body_template !== undefined ? String(body_template) : "";
+    const cleanNotes = body_notes !== undefined ? String(body_notes) : "";
 
     // If template was left blank, synthesize from prefix + {event_name} + suffix
     if (!cleanTemplate) {
@@ -6968,9 +7015,9 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
 
     await pool.query(
       `UPDATE email_subject_configs 
-       SET prefix = ?, suffix = ?, subject_template = ?, is_active = ?, updated_at = NOW() 
+       SET prefix = ?, suffix = ?, subject_template = ?, body_intro = ?, body_template = ?, body_notes = ?, is_active = ?, updated_at = NOW() 
        WHERE id = ?`,
-      [cleanPrefix, cleanSuffix, cleanTemplate, activeVal, id]
+      [cleanPrefix, cleanSuffix, cleanTemplate, cleanIntro, cleanBody, cleanNotes, activeVal, id]
     );
 
     if (io) {
@@ -6979,12 +7026,15 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
 
     return res.json({
       success: true,
-      message: `✅ Email subject configuration updated successfully!`,
+      message: `✅ Email template configuration updated successfully!`,
       config: {
         id,
         prefix: cleanPrefix,
         suffix: cleanSuffix,
         subject_template: cleanTemplate,
+        body_intro: cleanIntro,
+        body_template: cleanBody,
+        body_notes: cleanNotes,
         is_active: activeVal,
       },
     });
@@ -7006,9 +7056,17 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
     if (pool) {
       await pool.query(
         `UPDATE email_subject_configs 
-         SET prefix = ?, suffix = ?, subject_template = ?, is_active = 1, updated_at = NOW() 
+         SET prefix = ?, suffix = ?, subject_template = ?, body_intro = ?, body_template = ?, body_notes = ?, is_active = 1, updated_at = NOW() 
          WHERE id = ?`,
-        [defaultItem.prefix, defaultItem.suffix, defaultItem.subject_template, id]
+        [
+          defaultItem.prefix,
+          defaultItem.suffix,
+          defaultItem.subject_template,
+          defaultItem.body_intro || "",
+          defaultItem.body_template || "",
+          defaultItem.body_notes || "",
+          id,
+        ]
       );
     }
 
@@ -7018,7 +7076,7 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
 
     return res.json({
       success: true,
-      message: `✅ Reset '${defaultItem.name}' to default subject format!`,
+      message: `✅ Reset '${defaultItem.name}' to default email template!`,
       config: defaultItem,
     });
   } catch (err: any) {
@@ -7029,7 +7087,7 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
 
 // 4. Test render email subject preview
 app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res) => {
-  const { template, prefix, suffix, sampleData } = req.body;
+  const { template, prefix, suffix, body_intro, body_template, body_notes, sampleData } = req.body;
   try {
     let tpl = (template || "").trim();
     if (!tpl) {
@@ -7044,20 +7102,34 @@ app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res
       city: "Hyderabad",
     };
 
-    let result = tpl
-      .replace(/{event_name}/gi, sample.event_name || "HR RECALL 2K26")
-      .replace(/{delegate_name}/gi, sample.delegate_name || "Ascend Labs")
-      .replace(/{pass_id}/gi, sample.pass_id || "ETM-REG-697665-3996")
-      .replace(/{company}/gi, sample.company || "Ascend Labs")
-      .replace(/{category}/gi, sample.category || "Executive Delegate")
-      .replace(/{city}/gi, sample.city || "Hyderabad");
+    const replaceTokens = (text: string) => {
+      if (!text) return "";
+      return text
+        .replace(/{event_name}/gi, sample.event_name || "HR RECALL 2K26")
+        .replace(/{delegate_name}/gi, sample.delegate_name || "Ascend Labs")
+        .replace(/{pass_id}/gi, sample.pass_id || "ETM-REG-697665-3996")
+        .replace(/{company}/gi, sample.company || "Ascend Labs")
+        .replace(/{category}/gi, sample.category || "Executive Delegate")
+        .replace(/{city}/gi, sample.city || "Hyderabad");
+    };
 
+    let result = replaceTokens(tpl);
     if (prefix && !tpl.includes(prefix)) result = `${prefix}${result}`;
     if (suffix && !tpl.includes(suffix)) result = `${result}${suffix}`;
 
     result = result.replace(/\(\s*\)/g, "").replace(/\s+—\s*$/g, "").replace(/\s+-\s*$/g, "").replace(/\s{2,}/g, " ").trim();
 
-    return res.json({ success: true, preview: result });
+    const renderedIntro = replaceTokens(body_intro || `Dear ${sample.delegate_name},`);
+    const renderedBody = replaceTokens(body_template || "");
+    const renderedNotes = replaceTokens(body_notes || "");
+
+    return res.json({
+      success: true,
+      preview: result,
+      renderedIntro,
+      renderedBody,
+      renderedNotes,
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

@@ -507,7 +507,7 @@ export default function AdminDashboardPage() {
     try {
       const saved = localStorage.getItem("etmedia_admin_theme");
       if (saved === "dark" || saved === "light") return saved;
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return "light"; // Default to clean white/light theme
     } catch (e) {
       return "light";
     }
@@ -816,6 +816,9 @@ export default function AdminDashboardPage() {
     prefix: string;
     suffix: string;
     subject_template: string;
+    body_intro?: string;
+    body_template?: string;
+    body_notes?: string;
     available_variables: string[];
     is_active: number;
     updated_at?: string;
@@ -825,7 +828,20 @@ export default function AdminDashboardPage() {
   const [loadingEmailSubjects, setLoadingEmailSubjects] = useState<boolean>(false);
   const [selectedEmailSubjectCategory, setSelectedEmailSubjectCategory] = useState<string>("all");
   const [emailSubjectSearchQuery, setEmailSubjectSearchQuery] = useState<string>("");
-  const [editingSubjectDrafts, setEditingSubjectDrafts] = useState<Record<string, { prefix: string; suffix: string; subject_template: string }>>({});
+  const [editingSubjectDrafts, setEditingSubjectDrafts] = useState<
+    Record<
+      string,
+      {
+        prefix: string;
+        suffix: string;
+        subject_template: string;
+        body_intro: string;
+        body_template: string;
+        body_notes: string;
+      }
+    >
+  >({});
+  const [emailCardSubTab, setEmailCardSubTab] = useState<Record<string, "subject" | "body" | "preview">>({});
   const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
   const [resettingSubjectId, setResettingSubjectId] = useState<string | null>(null);
   const [copiedSubjectId, setCopiedSubjectId] = useState<string | null>(null);
@@ -969,6 +985,7 @@ export default function AdminDashboardPage() {
     role: "admin",
   });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [userCreating, setUserCreating] = useState(false);
 
   // Website Settings State
@@ -1552,6 +1569,9 @@ export default function AdminDashboardPage() {
               prefix: c.prefix || "",
               suffix: c.suffix || "",
               subject_template: c.subject_template || `${c.prefix || ""}{event_name}${c.suffix || ""}`,
+              body_intro: c.body_intro || "",
+              body_template: c.body_template || "",
+              body_notes: c.body_notes || "",
             };
           });
           setEditingSubjectDrafts((prev) => ({ ...initialDrafts, ...prev }));
@@ -5905,10 +5925,21 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // --- EMAIL SUBJECT CONFIGURATION CMS ACTION HANDLERS ---
-  const handleSubjectFieldChange = (configId: string, field: "prefix" | "suffix" | "subject_template", value: string) => {
+  // --- EMAIL SUBJECT & BODY CONFIGURATION CMS ACTION HANDLERS ---
+  const handleSubjectFieldChange = (
+    configId: string,
+    field: "prefix" | "suffix" | "subject_template" | "body_intro" | "body_template" | "body_notes",
+    value: string
+  ) => {
     setEditingSubjectDrafts((prev) => {
-      const existing = prev[configId] || { prefix: "", suffix: "", subject_template: "" };
+      const existing = prev[configId] || {
+        prefix: "",
+        suffix: "",
+        subject_template: "",
+        body_intro: "",
+        body_template: "",
+        body_notes: "",
+      };
       const updated = { ...existing, [field]: value };
       if (field === "prefix" || field === "suffix") {
         updated.subject_template = `${updated.prefix}{event_name}${updated.suffix}`;
@@ -5925,6 +5956,9 @@ export default function AdminDashboardPage() {
         prefix: currentConfig?.prefix || "",
         suffix: currentConfig?.suffix || "",
         subject_template: currentConfig?.subject_template || "",
+        body_intro: currentConfig?.body_intro || "",
+        body_template: currentConfig?.body_template || "",
+        body_notes: currentConfig?.body_notes || "",
       };
 
       const res = await fetch(`/api/admin/email-subjects/${configId}`, {
@@ -5937,21 +5971,24 @@ export default function AdminDashboardPage() {
           prefix: draft.prefix,
           suffix: draft.suffix,
           subject_template: draft.subject_template,
+          body_intro: draft.body_intro,
+          body_template: draft.body_template,
+          body_notes: draft.body_notes,
           is_active: currentConfig ? currentConfig.is_active : 1,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(`✅ Email subject for "${currentConfig?.name || configId}" saved successfully!`);
+        toast.success(`✅ Email template for "${currentConfig?.name || configId}" saved successfully!`);
         setEmailSubjectsList((prev) =>
           prev.map((c) => (c.id === configId ? { ...c, ...data.config } : c))
         );
       } else {
-        toast.error(data.message || "Failed to update email subject.");
+        toast.error(data.message || "Failed to update email template.");
       }
     } catch (err: any) {
-      console.error("Error saving email subject:", err);
+      console.error("Error saving email template:", err);
       toast.error(err.message || "An unexpected error occurred while saving.");
     } finally {
       setSavingSubjectId(null);
@@ -5980,13 +6017,16 @@ export default function AdminDashboardPage() {
             prefix: data.config.prefix || "",
             suffix: data.config.suffix || "",
             subject_template: data.config.subject_template || "",
+            body_intro: data.config.body_intro || "",
+            body_template: data.config.body_template || "",
+            body_notes: data.config.body_notes || "",
           },
         }));
       } else {
-        toast.error(data.message || "Failed to reset email subject.");
+        toast.error(data.message || "Failed to reset email template.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Error resetting email subject.");
+      toast.error(err.message || "Error resetting email template.");
     } finally {
       setResettingSubjectId(null);
     }
@@ -6000,6 +6040,9 @@ export default function AdminDashboardPage() {
         prefix: currentConfig?.prefix || "",
         suffix: currentConfig?.suffix || "",
         subject_template: currentConfig?.subject_template || "",
+        body_intro: currentConfig?.body_intro || "",
+        body_template: currentConfig?.body_template || "",
+        body_notes: currentConfig?.body_notes || "",
       };
 
       const res = await fetch(`/api/admin/email-subjects/${configId}`, {
@@ -6012,6 +6055,9 @@ export default function AdminDashboardPage() {
           prefix: draft.prefix,
           suffix: draft.suffix,
           subject_template: draft.subject_template,
+          body_intro: draft.body_intro,
+          body_template: draft.body_template,
+          body_notes: draft.body_notes,
           is_active: nextActive,
         }),
       });
@@ -6021,27 +6067,31 @@ export default function AdminDashboardPage() {
         setEmailSubjectsList((prev) =>
           prev.map((c) => (c.id === configId ? { ...c, is_active: nextActive } : c))
         );
-        toast.info(nextActive === 1 ? "Subject activated" : "Subject deactivated (fallback default will be used)");
+        toast.info(nextActive === 1 ? "Template activated" : "Template deactivated (fallback default will be used)");
       }
     } catch (err: any) {
       toast.error("Failed to toggle status");
     }
   };
 
-  const handleInsertSubjectVariable = (configId: string, variable: string) => {
-    const current = editingSubjectDrafts[configId] || {
-      prefix: "",
-      suffix: "",
-      subject_template: "",
-    };
-    const updatedTemplate = (current.subject_template || "") + variable;
-    setEditingSubjectDrafts((prev) => ({
-      ...prev,
-      [configId]: {
-        ...current,
-        subject_template: updatedTemplate,
-      },
-    }));
+  const handleInsertSubjectVariable = (configId: string, targetField: "subject_template" | "body_template", variable: string) => {
+    setEditingSubjectDrafts((prev) => {
+      const current = prev[configId] || {
+        prefix: "",
+        suffix: "",
+        subject_template: "",
+        body_intro: "",
+        body_template: "",
+        body_notes: "",
+      };
+      return {
+        ...prev,
+        [configId]: {
+          ...current,
+          [targetField]: (current[targetField] || "") + variable,
+        },
+      };
+    });
   };
 
   const computeSubjectLivePreview = (config: EmailSubjectItem) => {
@@ -6065,6 +6115,42 @@ export default function AdminDashboardPage() {
       .trim();
 
     return preview;
+  };
+
+  const computeIntroLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_intro !== undefined ? draft.body_intro : config.body_intro) || `Dear ${previewTestDelegateName || "Ascend Labs"},`;
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
+  };
+
+  const computeBodyLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_template !== undefined ? draft.body_template : config.body_template) || "";
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
+  };
+
+  const computeNotesLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_notes !== undefined ? draft.body_notes : config.body_notes) || "";
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
   };
 
   // --- TERMS & CONDITIONS CMS ACTION HANDLERS ---
@@ -7076,15 +7162,15 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-visible min-w-0 gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+        <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-6 py-2 sm:py-3.5 shadow-2xs w-full max-w-full min-w-0 gap-1.5 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-hidden">
             {/* Mobile Open Sidebar Trigger */}
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1.5 sm:p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
               title="Open Navigation Drawer"
             >
-              <Menu className="h-4.5 w-4.5" />
+              <Menu className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </button>
 
             {/* Desktop Collapse / Expand Sidebar Trigger */}
@@ -7100,15 +7186,15 @@ export default function AdminDashboardPage() {
               const activeNav = allNavItems.find((n) => n.id === activeTab) || allNavItems[0] || { label: "Dashboard", icon: LayoutDashboard };
               const IconComp = activeNav.icon || LayoutDashboard;
               return (
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
-                  <div className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
+                  <div className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
                     <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                    <h1 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0 flex-1">
+                    <h1 className="text-xs sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0">
                       {activeNav.label}
                     </h1>
-                    <span className="hidden xl:inline-flex items-center rounded-full bg-cyan-50 dark:bg-cyan-950/60 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 uppercase tracking-wider shrink-0">
+                    <span className="hidden xl:inline-flex items-center rounded-full bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 text-[10px] font-extrabold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 uppercase tracking-wider shrink-0">
                       Live CMS
                     </span>
                   </div>
@@ -7117,21 +7203,21 @@ export default function AdminDashboardPage() {
             })()}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {/* Universal Event Selector & Search Dropdown */}
             <div className="relative" ref={eventPickerRef}>
               <button
                 type="button"
                 onClick={() => setIsEventPickerOpen((prev) => !prev)}
-                className={`flex items-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
                   selectedDashboardEventId !== "all"
-                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-400/30"
+                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-2xs ring-1 ring-purple-400/30"
                     : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
                 }`}
                 title="Filter entire dashboard by Event / Summit"
               >
                 <Ticket className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                <span className="max-w-[110px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
+                <span className="max-w-[90px] xs:max-w-[120px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
                   {selectedDashboardEventId === "all"
                     ? `All Events (${cmsEvents.length})`
                     : (activeSelectedEvent?.title || activeSelectedEvent?.name || selectedDashboardEventId)}
@@ -9059,7 +9145,7 @@ export default function AdminDashboardPage() {
                                 title="Resend Pass & Confirmation Email"
                                 disabled={resendingEmailId === reg.id}
                                 onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
-                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50/60 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50/60 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                               >
                                 {resendingEmailId === reg.id ? (
                                   <RefreshCw className="h-3 w-3 text-cyan-600 animate-spin" />
@@ -9071,7 +9157,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRegDetail(reg)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                               >
                                 <Eye className="h-3 w-3 text-cyan-600" />
                                 <span>View</span>
@@ -9157,7 +9243,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={generateSampleExcelTemplate}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
                     title="Download ready-to-fill sample template with standard columns"
                   >
                     <Download className="h-4 w-4 text-slate-500" />
@@ -9466,7 +9552,7 @@ export default function AdminDashboardPage() {
                                 title="Resend QR Ticket Pass Email"
                                 disabled={resendingEmailId === reg.id}
                                 onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
-                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/60 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/60 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                               >
                                 {resendingEmailId === reg.id ? (
                                   <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
@@ -9478,7 +9564,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRegDetail(reg)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                               >
                                 <Eye className="h-3 w-3 text-blue-600" />
                                 <span>View</span>
@@ -9558,13 +9644,13 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full">
                   {/* View Mode Toggle: Overview vs Dedicated Full Page Attendee Roster */}
-                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-2xs">
+                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-2xs w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("overview")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
                         attendancePageView === "overview"
                           ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
@@ -9575,21 +9661,21 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("roster")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendancePageView === "roster"
                           ? "bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                       }`}
                     >
                       <Users className="h-3.5 w-3.5" />
-                      <span>Attendee Roster Page</span>
+                      <span>Attendee Roster</span>
                     </button>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => navigate("/admin/scanner")}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-cyan-600/25 transition-all cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-black shadow-md shadow-cyan-600/25 transition-all cursor-pointer shrink-0"
                   >
                     <Camera className="h-4 w-4" />
                     <span>Launch Camera Scanner 🚀</span>
@@ -9598,17 +9684,17 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={exportAttendanceSheet}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-emerald-600/25 transition-all cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-black shadow-md shadow-emerald-600/25 transition-all cursor-pointer shrink-0"
                     title="Export all filtered attendee records to Excel (.xlsx)"
                   >
                     <Download className="h-4 w-4" />
-                    <span>Download Attendance Excel (.xlsx)</span>
+                    <span className="hidden xs:inline">Download Attendance </span><span>Excel (.xlsx)</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => fetchDashboardData()}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
                     title="Refresh data from server"
                   >
                     <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
@@ -9620,7 +9706,7 @@ export default function AdminDashboardPage() {
               {attendancePageView === "overview" && (
                 <>
                   {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 p-5 shadow-xs space-y-4">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Left: Section Title & Real CMS Count Badge */}
                   <div className="space-y-1">
@@ -9647,7 +9733,7 @@ export default function AdminDashboardPage() {
                         id="attendance-event-dropdown"
                         value={attendanceEventFilter}
                         onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-white dark:bg-slate-800 px-4 py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
+                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 sm:py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
                       >
                         <option value="all">
                           🌐 All Summits & Conferences Combined ({registrations.length} Total Registered • {attendancePresentCount} Checked In)
@@ -9664,14 +9750,14 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* ACTIVE SELECTED SUMMIT BANNER CARD */}
-                <div className="rounded-xl border border-cyan-200/70 dark:border-cyan-900/50 bg-cyan-50/50 dark:bg-cyan-950/20 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                <div className="rounded-xl border border-cyan-200/80 dark:border-cyan-900/50 bg-cyan-50/60 dark:bg-cyan-950/30 p-3.5 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
                       {attendanceEventFilter === "all" ? "🌐" : "🎯"}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">
                           Active Event Scope:
                         </span>
                         <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
@@ -9698,14 +9784,14 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => {
                         setAttendanceRosterTab("present");
                         setAttendancePageView("roster");
                       }}
-                      className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      className="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                       title="Open dedicated attendance roster page"
                     >
                       <Users className="h-3.5 w-3.5" />
@@ -9716,7 +9802,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setAttendanceEventFilter("all")}
-                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
                         <span>All Summits</span>
@@ -9728,26 +9814,25 @@ export default function AdminDashboardPage() {
 
               {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
               <div className="space-y-2">
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                   {/* Card 1: Total Registered */}
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("all");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view all registered attendees in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
                       <span>Total Registered</span>
                       <Users className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
                     </span>
-                    <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.total.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-cyan-600 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-cyan-600 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium block flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                       <span>View All Roster Page</span> <span>↗</span>
                     </span>
                   </div>
@@ -9758,18 +9843,18 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("present");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view who checked in (Present) in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
                       <span>Checked-In (Present)</span>
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.present.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-emerald-400/60 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-emerald-500/70 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block flex items-center gap-1 group-hover:underline">
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:underline">
                       <span>{selectedEventAttendanceSummary.turnout}% turn-out • View Present</span> <span>↗</span>
                     </span>
                   </div>
@@ -9780,18 +9865,18 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("absent");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view who is absent / awaiting arrival in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center justify-between">
                       <span>Awaiting Arrival (Absent)</span>
                       <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.absent.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-amber-400/60 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-amber-500/70 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium block flex items-center gap-1 group-hover:underline">
+                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1 group-hover:underline">
                       <span>Pending scan • View Absent</span> <span>↗</span>
                     </span>
                   </div>
@@ -9802,10 +9887,10 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("present");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/80 bg-cyan-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view turnout breakdown in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 flex items-center justify-between">
                       <span>Venue Turnout Rate</span>
                       <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                     </span>
@@ -9816,7 +9901,7 @@ export default function AdminDashboardPage() {
                           style={{ width: `${selectedEventAttendanceSummary.turnout}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                         <span>Attendance:</span>
                         <span className="text-cyan-700 dark:text-cyan-300 font-black flex items-center gap-1 group-hover:underline">
                           {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
@@ -9829,10 +9914,10 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* QUICK GATE CHECK-IN FORM */}
-              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-r from-cyan-50/60 via-white to-slate-50 dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <div className="flex items-center gap-2">
-                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
                       Quick Gate Check-In (Scanner Gun or Manual Pass ID)
                     </h3>
@@ -9847,7 +9932,7 @@ export default function AdminDashboardPage() {
                     e.preventDefault();
                     handleQuickCheckin();
                   }}
-                  className="flex gap-2"
+                  className="flex flex-col sm:flex-row gap-2"
                 >
                   <div className="relative flex-1">
                     <input
@@ -9855,13 +9940,13 @@ export default function AdminDashboardPage() {
                       value={quickScanInput}
                       onChange={(e) => setQuickScanInput(e.target.value)}
                       placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={quickScanLoading || !quickScanInput.trim()}
-                    className="flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm shrink-0"
                   >
                     {quickScanLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -9874,34 +9959,34 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* UNIVERSAL SEARCH & MULTI-FILTER SUITE */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 p-4 space-y-3.5">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-xs">
                 {/* Row 1: Universal Search & Attendance Status Tabs */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="relative min-w-[280px] flex-1 max-w-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="relative w-full sm:max-w-lg">
                     <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
                       value={attendanceSearchQuery}
                       onChange={(e) => setAttendanceSearchQuery(e.target.value)}
                       placeholder="Search attendee by Name, Mobile Number, Email, Pass ID, Company, Role, City..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
                     />
                     {attendanceSearchQuery && (
                       <button
                         type="button"
                         onClick={() => setAttendanceSearchQuery("")}
-                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>
 
-                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-xs">
+                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold shadow-xs w-full sm:w-auto justify-between">
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("all")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
                         attendanceStatusFilter === "all"
                           ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -9912,7 +9997,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("present")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendanceStatusFilter === "present"
                           ? "bg-emerald-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
@@ -9924,7 +10009,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("absent")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendanceStatusFilter === "absent"
                           ? "bg-amber-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-amber-600"
@@ -9937,7 +10022,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Row 2: Secondary Filter Controls (Category, Date Range, Date Basis, Reset) */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* Pass Category Filter */}
                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -10041,7 +10126,7 @@ export default function AdminDashboardPage() {
               {/* ATTENDANCE DELEGATE TABLE */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs custom-scrollbar">
                 <table className="w-full min-w-[1260px] text-left text-xs">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     <tr>
                       <th className="py-3.5 px-3 w-12 text-center">#</th>
                       <th className="py-3.5 px-3 min-w-[220px]">Attendee Profile</th>
@@ -10265,7 +10350,7 @@ export default function AdminDashboardPage() {
                                     });
                                     setShowThermalBadgeModal(true);
                                   }}
-                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
                                   title="Print TVS Thermal Badge Pass Slip"
                                 >
                                   <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
@@ -10333,13 +10418,13 @@ export default function AdminDashboardPage() {
               {attendancePageView === "roster" && (
                 <div className="w-full bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in duration-200">
                   {/* 1. PAGE HEADER */}
-                  <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-850 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
+                  <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-2 min-w-0">
                       <div className="flex items-center gap-2.5">
                         <button
                           type="button"
                           onClick={() => setAttendancePageView("overview")}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
                         >
                           <ArrowLeft className="h-3.5 w-3.5 text-cyan-600" />
                           <span>Back to Overview</span>
@@ -10420,7 +10505,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                     {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/50 space-y-3">
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-3">
                       {/* Tab Buttons */}
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700/60">
@@ -10662,7 +10747,7 @@ export default function AdminDashboardPage() {
                                 className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                                   isPresent
                                     ? "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10"
-                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700"
+                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
                                 }`}
                               >
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -10838,7 +10923,7 @@ export default function AdminDashboardPage() {
                                         });
                                         setShowThermalBadgeModal(true);
                                       }}
-                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
                                       title="Print TVS Thermal Badge Pass Slip"
                                     >
                                       <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
@@ -10864,7 +10949,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* 4. MODAL FOOTER */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold flex-wrap">
                         <span>
                           Total Roster: <strong className="text-slate-900 dark:text-white font-black">{eventScopedDelegates.length}</strong>
@@ -10905,7 +10990,7 @@ export default function AdminDashboardPage() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Modal Top Bar */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold shadow-2xs">
                           <Award className="h-4 w-4" />
@@ -10925,7 +11010,7 @@ export default function AdminDashboardPage() {
                           href={`/certificate/${previewCertAttendee.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Open Public Page</span>
@@ -10989,7 +11074,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Modal Footer with Single Click Send Button */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3">
                       <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                         Registered Email: <strong className="text-slate-900 dark:text-slate-100 font-mono">{previewCertAttendee.email || "No email available"}</strong>
                       </div>
@@ -11125,7 +11210,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedCmsDelegateDetail(del)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                           >
                             <Eye className="h-3 w-3 text-purple-600" />
                             <span>View</span>
@@ -18152,14 +18237,24 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                           Account Password *
                         </label>
-                        <input
-                          type="password"
-                          required
-                          value={newUserForm.password}
-                          onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="••••••••••••"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showNewUserPassword ? "text" : "password"}
+                            required
+                            value={newUserForm.password}
+                            onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                            className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 pl-4 pr-11 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                            placeholder="••••••••••••"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewUserPassword((prev) => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer p-1"
+                            title={showNewUserPassword ? "Hide password" : "Show password"}
+                          >
+                            {showNewUserPassword ? <EyeOff className="h-4 w-4 text-slate-600" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-1">
@@ -18423,11 +18518,19 @@ export default function AdminDashboardPage() {
                       prefix: item.prefix || "",
                       suffix: item.suffix || "",
                       subject_template: item.subject_template || "",
+                      body_intro: item.body_intro || "",
+                      body_template: item.body_template || "",
+                      body_notes: item.body_notes || "",
                     };
+                    const activeSubTab = emailCardSubTab[item.id] || "subject";
                     const isSaving = savingSubjectId === item.id;
                     const isResetting = resettingSubjectId === item.id;
                     const isCopied = copiedSubjectId === item.id;
                     const livePreviewText = computeSubjectLivePreview(item);
+                    const liveIntroText = computeIntroLivePreview(item);
+                    const liveBodyText = computeBodyLivePreview(item);
+                    const liveNotesText = computeNotesLivePreview(item);
+
                     const catLower = (item.category || "").toLowerCase();
                     const isCert = catLower.includes("certificate");
                     const isAttendee = catLower.includes("attendee");
@@ -18487,139 +18590,331 @@ export default function AdminDashboardPage() {
                                   item.is_active === 1 ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
                                 }`}
                               />
-                              {item.is_active === 1 ? "Subject Active" : "Default Fallback"}
+                              {item.is_active === 1 ? "Template Active" : "Default Fallback"}
                             </button>
                           </div>
                         </div>
 
-                        {/* Visual 3-Part Subject Builder Grid */}
-                        <div className="mt-6 space-y-4">
-                          <div>
-                            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                              Dynamic Component Builder (Prefix + Event Name + Suffix)
-                            </span>
-                            <div className="mt-2 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                              {/* Part 1: Prefix */}
-                              <div className="md:col-span-4">
-                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                  1. Before Event Name (Prefix)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={draft.prefix}
-                                  onChange={(e) => handleSubjectFieldChange(item.id, "prefix", e.target.value)}
-                                  placeholder="e.g. 🎓 Official Certificate of Participation: "
-                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                                />
-                              </div>
+                        {/* Sub-Tab Navigation Switcher */}
+                        <div className="mt-5 flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "subject" }))}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                              activeSubTab === "subject"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            <span>1. Subject Line Builder</span>
+                          </button>
 
-                              {/* Part 2: Dynamic Middle Event Token */}
-                              <div className="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-950/20 py-2.5 px-3 text-center">
-                                <span className="text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-400">
-                                  2. Dynamic Middle Token
-                                </span>
-                                <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-500 px-3 py-0.5 text-xs font-extrabold text-white shadow-sm shadow-cyan-500/30">
-                                  <span>{"{event_name}"}</span>
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                              activeSubTab === "body"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            <span>2. Email Body & Message Matter</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "preview" }))}
+                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                              activeSubTab === "preview"
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>3. Full Live Email Preview</span>
+                          </button>
+                        </div>
+
+                        {/* TAB 1: SUBJECT LINE BUILDER */}
+                        {activeSubTab === "subject" && (
+                          <div className="mt-5 space-y-4">
+                            <div>
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                                Dynamic Component Builder (Prefix + Event Name + Suffix)
+                              </span>
+                              <div className="mt-2 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                                {/* Part 1: Prefix */}
+                                <div className="md:col-span-4">
+                                  <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                    1. Before Event Name (Prefix)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={draft.prefix}
+                                    onChange={(e) => handleSubjectFieldChange(item.id, "prefix", e.target.value)}
+                                    placeholder="e.g. 🎓 Official Certificate of Participation: "
+                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                  />
                                 </div>
-                                <span className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
-                                  Auto-replaced with Summit Title
-                                </span>
-                              </div>
 
-                              {/* Part 3: Suffix */}
-                              <div className="md:col-span-4">
-                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                  3. After Event Name (Suffix)
+                                {/* Part 2: Dynamic Middle Event Token */}
+                                <div className="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-950/20 py-2.5 px-3 text-center">
+                                  <span className="text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-400">
+                                    2. Dynamic Middle Token
+                                  </span>
+                                  <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-500 px-3 py-0.5 text-xs font-extrabold text-white shadow-sm shadow-cyan-500/30">
+                                    <span>{"{event_name}"}</span>
+                                  </div>
+                                  <span className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                                    Auto-replaced with Summit Title
+                                  </span>
+                                </div>
+
+                                {/* Part 3: Suffix */}
+                                <div className="md:col-span-4">
+                                  <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                    3. After Event Name (Suffix)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={draft.suffix}
+                                    onChange={(e) => handleSubjectFieldChange(item.id, "suffix", e.target.value)}
+                                    placeholder="e.g.  — {delegate_name}"
+                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Full Subject Template Field & Variable Quick-Insert */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                  Full Compiled Subject Template:
                                 </label>
-                                <input
-                                  type="text"
-                                  value={draft.suffix}
-                                  onChange={(e) => handleSubjectFieldChange(item.id, "suffix", e.target.value)}
-                                  placeholder="e.g.  — {delegate_name}"
-                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                                />
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400">Insert Tag:</span>
+                                  {item.available_variables?.map((v) => (
+                                    <button
+                                      key={v}
+                                      type="button"
+                                      onClick={() => handleInsertSubjectVariable(item.id, "subject_template", v)}
+                                      title={`Click to insert ${v} into subject template`}
+                                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
+                                    >
+                                      +{v}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={draft.subject_template}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "subject_template", e.target.value)}
+                                placeholder="{event_name}"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+                            </div>
+
+                            {/* Live Recipient Inbox Preview Simulation */}
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 sm:p-4 shadow-inner">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                                  <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
+                                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                  <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    Inbox Subject Line View (Gmail / Outlook Simulation)
+                                  </span>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(livePreviewText);
+                                    setCopiedSubjectId(item.id);
+                                    toast.success("Subject line copied to clipboard!");
+                                    setTimeout(() => setCopiedSubjectId(null), 2000);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                                >
+                                  {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                                  {isCopied ? "Copied" : "Copy Preview"}
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2.5">
+                                <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+                                <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
+                                    Executive Talks Media
+                                  </span>
+                                  <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                                  <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 truncate">
+                                    {livePreviewText || "No subject specified"}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400 truncate hidden md:inline">
+                                    - Official notification regarding {previewTestEventName}...
+                                  </span>
+                                </div>
+                                <span className="text-[10px] font-semibold text-slate-400 shrink-0">Now</span>
                               </div>
                             </div>
                           </div>
+                        )}
 
-                          {/* Full Subject Template Field & Variable Quick-Insert */}
-                          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                                Full Compiled Subject Template:
+                        {/* TAB 2: EMAIL BODY & MESSAGE MATTER */}
+                        {activeSubTab === "body" && (
+                          <div className="mt-5 space-y-4">
+                            {/* Salutation / Intro Line */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-2">
+                              <label className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                1. Salutation / Greeting Line:
                               </label>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[10px] font-bold text-slate-400">Insert Tag:</span>
-                                {item.available_variables?.map((v) => (
-                                  <button
-                                    key={v}
-                                    type="button"
-                                    onClick={() => handleInsertSubjectVariable(item.id, v)}
-                                    title={`Click to insert ${v} into template`}
-                                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
-                                  >
-                                    +{v}
-                                  </button>
-                                ))}
-                              </div>
+                              <input
+                                type="text"
+                                value={draft.body_intro}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_intro", e.target.value)}
+                                placeholder="Dear {delegate_name},"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                Shown at the top of the email body before the main message.
+                              </p>
                             </div>
 
-                            <input
-                              type="text"
-                              value={draft.subject_template}
-                              onChange={(e) => handleSubjectFieldChange(item.id, "subject_template", e.target.value)}
-                              placeholder="{event_name}"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                            />
-                          </div>
-
-                          {/* Live Recipient Inbox Preview Simulation */}
-                          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 sm:p-4 shadow-inner">
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
-                                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-                                <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                  Live Recipient Inbox View (Gmail / Outlook Simulation)
-                                </span>
+                            {/* Main Message Body Textarea */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                  2. Main Email Body Matter & Recognition Content:
+                                </label>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400">Insert Variable:</span>
+                                  {item.available_variables?.map((v) => (
+                                    <button
+                                      key={v}
+                                      type="button"
+                                      onClick={() => handleInsertSubjectVariable(item.id, "body_template", v)}
+                                      title={`Click to insert ${v} into body matter`}
+                                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
+                                    >
+                                      +{v}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(livePreviewText);
-                                  setCopiedSubjectId(item.id);
-                                  toast.success("Subject line copied to clipboard!");
-                                  setTimeout(() => setCopiedSubjectId(null), 2000);
-                                }}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                              >
-                                {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                                {isCopied ? "Copied" : "Copy Preview"}
-                              </button>
+                              <textarea
+                                rows={7}
+                                value={draft.body_template}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_template", e.target.value)}
+                                placeholder="Enter custom message body matter here..."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3.5 text-xs font-sans leading-relaxed text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+                                <span>Separate paragraphs with empty lines. Tokens like <code>{"{delegate_name}"}</code> and <code>{"{event_name}"}</code> are dynamically replaced with real data.</span>
+                              </p>
                             </div>
 
-                            <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2.5">
-                              <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
-                              <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
-                                  Executive Talks Media
-                                </span>
-                                <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
-                                <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 truncate">
-                                  {livePreviewText || "No subject specified"}
-                                </span>
-                                <span className="text-[11px] text-slate-400 truncate hidden md:inline">
-                                  - Official notification regarding {previewTestEventName}...
-                                </span>
-                              </div>
-                              <span className="text-[10px] font-semibold text-slate-400 shrink-0">Now</span>
+                            {/* Footer Instructions / Notes */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-2">
+                              <label className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                3. Additional Guidelines / Gate Instructions (Optional Note):
+                              </label>
+                              <input
+                                type="text"
+                                value={draft.body_notes}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_notes", e.target.value)}
+                                placeholder="e.g. Please arrive 15 minutes prior to session commencement to collect your physical badge."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
                             </div>
                           </div>
+                        )}
 
-                          {/* Action Footer */}
-                          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        {/* TAB 3: FULL LIVE EMAIL PREVIEW */}
+                        {activeSubTab === "preview" && (
+                          <div className="mt-5 space-y-4">
+                            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 shadow-inner">
+                              <div className="max-w-2xl mx-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
+                                {/* Email Top Brand Header */}
+                                <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 p-5 text-white text-center border-b border-cyan-500/30">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                                    EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
+                                  </p>
+                                  <h4 className="mt-1 text-sm sm:text-base font-extrabold text-white">
+                                    {livePreviewText}
+                                  </h4>
+                                </div>
+
+                                {/* Email Body Box */}
+                                <div className="p-6 sm:p-8 space-y-4 text-slate-800 dark:text-slate-200">
+                                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                    {liveIntroText}
+                                  </p>
+
+                                  <div className="space-y-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                    {liveBodyText
+                                      ? liveBodyText.split("\n\n").map((para, pIdx) => (
+                                          <p key={pIdx} className="whitespace-pre-line">
+                                            {para}
+                                          </p>
+                                        ))
+                                      : (
+                                        <p className="italic text-slate-400">
+                                          (No message body entered. Default template will be dispatched.)
+                                        </p>
+                                      )}
+                                  </div>
+
+                                  {/* Highlight Info Card */}
+                                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-950/40 p-4 space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Summit Event:</span>
+                                      <span className="font-extrabold text-cyan-700 dark:text-cyan-300">{previewTestEventName}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Reference / Pass ID:</span>
+                                      <span className="font-mono font-bold text-slate-900 dark:text-white">{previewTestPassId}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Executive Attendee:</span>
+                                      <span className="font-bold text-slate-800 dark:text-slate-200">{previewTestDelegateName}</span>
+                                    </div>
+                                  </div>
+
+                                  {liveNotesText && (
+                                    <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                                      <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                                      <span>{liveNotesText}</span>
+                                    </div>
+                                  )}
+
+                                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 space-y-1">
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">Warm regards,</p>
+                                    <p className="font-extrabold text-cyan-600 dark:text-cyan-400">Executive Talks Media Business Intelligence</p>
+                                    <p className="text-[11px] text-slate-400">Headquartered in Hyderabad, India • Connecting Leaders, Inspiring Excellence.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Footer */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Changes apply instantly to all future automated emails for this category.</span>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
                             <button
                               type="button"
                               onClick={() => handleResetEmailSubject(item.id)}
@@ -18634,14 +18929,19 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => handleSaveEmailSubject(item.id)}
                               disabled={isSaving}
-                              className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-6 py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                             >
                               {isSaving ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <>
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                  <span>Saving Template...</span>
+                                </>
                               ) : (
-                                <Save className="h-4 w-4" />
+                                <>
+                                  <Save className="h-3.5 w-3.5" />
+                                  <span>Save Template (Subject & Body)</span>
+                                </>
                               )}
-                              Save Subject
                             </button>
                           </div>
                         </div>
@@ -19532,7 +19832,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleExportIssuedCertsExcel(filteredIssuedDelegates)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
                       >
                         <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         <span>Export Excel</span>
@@ -19752,7 +20052,7 @@ export default function AdminDashboardPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                           <th className="py-3.5 px-4">Certificate ID / Number</th>
                           <th className="py-3.5 px-4">Candidate / Delegate</th>
                           <th className="py-3.5 px-4">Organization & City</th>
