@@ -3392,7 +3392,7 @@ export default function AdminDashboardPage() {
           "Full Name": "Prasanna Kumar",
           "Email": "prasanna.kumar@example.com",
           "Phone": "+91 9848012345",
-          "Company": "ET Media Global",
+          "Company": "Executive Talks Media",
           "Designation": "VP Operations",
           "City": "Visakhapatnam",
           "Event": "Procurement Leadership Summit & Awards 2026",
@@ -12621,7 +12621,7 @@ export default function AdminDashboardPage() {
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for ETMedia corporate events."}
+                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for Executive Talks Media corporate events."}
                                 </p>
                               </div>
                               <input
@@ -12685,7 +12685,7 @@ export default function AdminDashboardPage() {
                     const activeTpl =
                       termsTemplatesList.find((t) => t.id === eventForm.terms_id) ||
                       termsTemplatesList.find((t) => t.is_default) || {
-                        title: "Standard ETMedia Terms & Conditions",
+                        title: "Standard Executive Talks Media Terms & Conditions",
                         clauses: [
                           { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
                           { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
@@ -18375,7 +18375,7 @@ export default function AdminDashboardPage() {
                       No Terms & Conditions Templates Found
                     </h3>
                     <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
-                      Click below to create your first template, or load the standard 10-clause corporate ETMedia terms.
+                      Click below to create your first template, or load the standard 10-clause corporate Executive Talks Media terms.
                     </p>
                     <button
                       onClick={handleOpenAddTerms}
@@ -21439,7 +21439,7 @@ export default function AdminDashboardPage() {
                     required
                     value={termsForm.title}
                     onChange={(e) => setTermsForm({ ...termsForm, title: e.target.value })}
-                    placeholder="e.g. Standard ETMedia Terms & Conditions or CFO Summit Terms"
+                    placeholder="e.g. Standard Executive Talks Media Terms & Conditions or CFO Summit Terms"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs"
                   />
                 </div>

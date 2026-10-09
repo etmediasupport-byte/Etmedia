@@ -1147,6 +1147,85 @@ async function sendContactAdminNotificationEmail(data: {
   }
 }
 
+async function sendContactUserConfirmationEmail(data: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  enquiryType?: string;
+  message: string;
+  submittedAt?: string;
+}) {
+  const dynamicSubject = `Thank You for Contacting Executive Talks Media Business Intelligence [Ref: ${data.id}]`;
+
+  const mailOptions = {
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: data.email.trim(),
+    subject: dynamicSubject,
+    text: `Dear ${data.name},
+
+Thank you for contacting Executive Talks Media Business Intelligence.
+
+We have received your enquiry regarding "${data.enquiryType || "General Advisory"}" [Reference: ${data.id}].
+Our executive advisory desk will review your requirements and get back to you shortly.
+
+Summary of your submission:
+- Reference ID: ${data.id}
+- Full Name: ${data.name}
+- Email: ${data.email}
+- Phone: ${data.phone || "N/A"}
+- Enquiry Category: ${data.enquiryType || "General Advisory"}
+
+For urgent assistance, feel free to reach out to us directly at registration@executivetalksmedia.in or info@executivetalksmedia.in.
+
+Warm regards,
+Executive Talks Media Business Intelligence
+Conference & Corporate Relations Desk
+Website: https://www.executivetalksmedia.in
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #3b82f6 50%, #6366f1 100%); padding: 30px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">Executive Talks Media</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95; font-weight: 500;">Business Intelligence & Leadership Summits</p>
+        </div>
+        <div style="padding: 30px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Dear ${data.name},</p>
+          <p>Thank you for reaching out to <strong>Executive Talks Media Business Intelligence</strong>. We have received your inquiry and our team is currently reviewing your details.</p>
+          
+          <div style="background-color: #f8fafc; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px 20px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; color: #0f172a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Submission Details</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr><td style="padding: 4px 0; color: #64748b; width: 35%;">Reference ID:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">${data.id}</td></tr>
+              <tr><td style="padding: 4px 0; color: #64748b;">Enquiry Category:</td><td style="padding: 4px 0; font-weight: 600; color: #0284c7;">${data.enquiryType || "General Advisory"}</td></tr>
+              <tr><td style="padding: 4px 0; color: #64748b;">Submitted Date:</td><td style="padding: 4px 0; font-weight: 500;">${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</td></tr>
+            </table>
+          </div>
+
+          <p>An executive coordinator from our relations team will connect with you shortly regarding your requirements.</p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <p style="margin: 0; font-weight: 700; color: #0f172a;">Warm regards,</p>
+            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Executive Advisory Desk<br/><strong>Executive Talks Media Business Intelligence</strong><br/>Email: <a href="mailto:registration@executivetalksmedia.in" style="color: #0284c7;">registration@executivetalksmedia.in</a></p>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #94a3b8; font-size: 11px;">
+          © ${new Date().getFullYear()} Executive Talks Media Business Intelligence. All rights reserved.
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Contact user confirmation email sent to ${data.email} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending contact user confirmation:`, err.message);
+    return false;
+  }
+}
+
 async function sendJobApplicationAdminNotificationEmail(data: {
   id: string;
   job_id: string;
@@ -1326,7 +1405,7 @@ app.use(
   compression({
     level: 6,
     threshold: 512, // Compress any response larger than 512 bytes
-    filter: (req, res) => {
+    filter: (req: any, res: any) => {
       if (req.headers["x-no-compression"]) {
         return false;
       }
@@ -4322,8 +4401,11 @@ app.post("/api/contact", async (req, res) => {
       notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
     });
 
-    // Send admin email notification to registration@etmedia.in
+    // Send admin email notification to registration@executivetalksmedia.in & srikanth@executivetalksmedia.in
     sendContactAdminNotificationEmail(newEnquiry).catch(err => console.error("Contact admin email notification error:", err));
+
+    // Send acknowledgement confirmation email to the user
+    sendContactUserConfirmationEmail(newEnquiry).catch(err => console.error("Contact user confirmation email error:", err));
 
     return res.status(201).json({
       success: true,
@@ -7915,16 +7997,20 @@ app.get("/api/settings", async (req, res) => {
 app.put("/api/admin/settings", authenticateAdmin, async (req, res) => {
   const settingsObj = req.body;
   try {
-    if (pool) {
+    if (pool && settingsObj && typeof settingsObj === "object") {
       await ensureNewAdminTables();
-      for (const [key, val] of Object.entries(settingsObj)) {
-        await pool.query(
-          "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-          [key, String(val), String(val)]
-        );
+      const entries = Object.entries(settingsObj);
+      for (const [key, val] of entries) {
+        if (key && val !== undefined && val !== null) {
+          await pool.query(
+            "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+            [String(key), String(val), String(val)]
+          );
+        }
       }
     }
     io.emit("settings_updated", settingsObj);
+    return res.json({ success: true, message: "Website settings updated successfully!" });
   } catch (err: any) {
     console.error("Update Settings Error:", err);
     return res.status(500).json({ success: false, message: "Failed to update settings" });
