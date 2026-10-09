@@ -122,6 +122,7 @@ import {
   Printer,
   Zap,
   Newspaper,
+  Share2,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -1737,7 +1738,11 @@ export default function AdminDashboardPage() {
     }
     if (storedUser) {
       try {
-        setAdminUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setAdminUser(parsed);
+        if (parsed?.role === "scanner" || parsed?.role === "subadmin" || parsed?.role === "gate_staff") {
+          setActiveTab("qr-scanner");
+        }
       } catch (e) {
         console.warn("Invalid admin user json in storage", e);
       }
@@ -1863,6 +1868,15 @@ export default function AdminDashboardPage() {
       socket.off("event_registration_visibility_changed", onRegVisibility);
     };
   }, []);
+
+  // Restrict scanner role users strictly to QR scanner and Attendance views
+  const isScannerOnlyUser = adminUser?.role === "scanner" || adminUser?.role === "subadmin" || adminUser?.role === "gate_staff";
+
+  useEffect(() => {
+    if (isScannerOnlyUser && activeTab !== "qr-scanner" && activeTab !== "attendance") {
+      setActiveTab("qr-scanner");
+    }
+  }, [isScannerOnlyUser, activeTab]);
 
   // --- TESTIMONIALS CMS HANDLERS ---
   const handleSaveTestimonial = async (e: React.FormEvent) => {
@@ -6802,66 +6816,76 @@ export default function AdminDashboardPage() {
     items: NavItem[];
   }
 
-  const navGroups: NavGroup[] = [
-    {
-      title: "OVERVIEW",
-      items: [
-        { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
-      ],
-    },
-    {
-      title: "SUMMITS & CMS",
-      items: [
-        { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
-        { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
-        { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
-        { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
-      ],
-    },
-    {
-      title: "DELEGATES & PARTNERS",
-      items: [
-        { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
-        { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
-        { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
-        { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
-        { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-        { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
-        { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
-      ],
-    },
-    {
-      title: "EDITORIAL & MEDIA",
-      items: [
-        { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
-        { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
-        { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
-        { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
-      ],
-    },
-    {
-      title: "MEDIA & CXO VOICES",
-      items: [
-        { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
-        { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
-        { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
-      ],
-    },
-    {
-      title: "COMMUNICATIONS & SYSTEM",
-      items: [
-        { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
-        { id: "certificates", label: "Certificate Designer", icon: Sparkles },
-        { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
-        { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
-        { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
-        { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
-        { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
-        { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
-        { id: "settings", label: "Website Settings", icon: Settings },
-      ],
-    },
-  ];
+  const navGroups: NavGroup[] = isScannerOnlyUser
+    ? [
+        {
+          title: "GATE SCANNER ACCESS",
+          items: [
+            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+            { id: "attendance", label: "Event Attendance Roster", icon: UserCheck, count: attendancePresentCount },
+          ],
+        },
+      ]
+    : [
+        {
+          title: "OVERVIEW",
+          items: [
+            { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
+          ],
+        },
+        {
+          title: "SUMMITS & CMS",
+          items: [
+            { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+            { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
+            { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
+            { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
+          ],
+        },
+        {
+          title: "DELEGATES & PARTNERS",
+          items: [
+            { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+            { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
+            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+            { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
+            { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+            { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
+            { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
+          ],
+        },
+        {
+          title: "EDITORIAL & MEDIA",
+          items: [
+            { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
+            { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
+            { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
+            { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
+          ],
+        },
+        {
+          title: "MEDIA & CXO VOICES",
+          items: [
+            { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+            { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
+            { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
+          ],
+        },
+        {
+          title: "COMMUNICATIONS & SYSTEM",
+          items: [
+            { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
+            { id: "certificates", label: "Certificate Designer", icon: Sparkles },
+            { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
+            { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
+            { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
+            { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
+            { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
+            { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
+            { id: "settings", label: "Website Settings", icon: Settings },
+          ],
+        },
+      ];
 
   const allNavItems = useMemo(() => navGroups.flatMap((g) => g.items), [navGroups]);
 
@@ -6988,23 +7012,38 @@ export default function AdminDashboardPage() {
           {!sidebarCollapsed ? (
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs">
-                  <Shield className="h-4 w-4" />
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
+                  isScannerOnlyUser
+                    ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
+                    : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
+                }`}>
+                  {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {adminUser?.name || "Super Admin"}
+                    {adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}
                   </p>
                   <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                    {adminUser?.email || "srikanth@executivetalksmedia.in"}
+                    {adminUser?.email || "staff@executivetalksmedia.in"}
                   </p>
+                  <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                    isScannerOnlyUser
+                      ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                      : "bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300"
+                  }`}>
+                    {isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin"}
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs" title={adminUser?.name || "Super Admin"}>
-                <Shield className="h-4 w-4" />
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs ${
+                isScannerOnlyUser
+                  ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
+                  : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
+              }`} title={adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}>
+                {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
               </div>
             </div>
           )}
@@ -17953,51 +17992,60 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {adminUsers.map((u) => (
-                    <div
-                      key={u.id}
-                      className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600" />
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase text-cyan-800 border border-cyan-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-600 animate-pulse" />
-                          {u.role || "SUPER_ADMIN"}
-                        </span>
+                  {adminUsers.map((u) => {
+                    const isScanner = u.role === "scanner" || u.role === "subadmin" || u.role === "gate_staff";
+                    return (
+                      <div
+                        key={u.id}
+                        className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
+                      >
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${isScanner ? "bg-gradient-to-r from-amber-500 to-amber-600" : "bg-gradient-to-r from-cyan-500 to-blue-600"}`} />
+                        
+                        <div className="flex items-center justify-between">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase border ${
+                            isScanner
+                              ? "bg-amber-50 text-amber-900 border-amber-300"
+                              : "bg-cyan-50 text-cyan-800 border-cyan-200"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isScanner ? "bg-amber-600" : "bg-cyan-600"}`} />
+                            {isScanner ? "📱 GATE SCANNER STAFF" : "🛡️ SUPER ADMIN"}
+                          </span>
 
-                        {adminUsers.length > 1 && (
-                          <button
-                            onClick={() => handleDeleteAdminUser(u.id)}
-                            className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Revoke Admin Access"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 text-white font-black text-base shadow-sm">
-                          {u.name.charAt(0).toUpperCase()}
+                          {adminUsers.length > 1 && (
+                            <button
+                              onClick={() => handleDeleteAdminUser(u.id)}
+                              className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                              title="Revoke Admin Access"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-sm font-extrabold text-slate-900">{u.name}</h4>
-                          <p className="truncate text-xs text-slate-500 font-medium">{u.email}</p>
+
+                        <div className="flex items-center gap-4">
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white font-black text-base shadow-sm ${
+                            isScanner ? "bg-gradient-to-br from-amber-600 to-amber-800" : "bg-gradient-to-br from-slate-800 to-slate-950"
+                          }`}>
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="truncate text-sm font-extrabold text-slate-900">{u.name}</h4>
+                            <p className="truncate text-xs text-slate-500 font-medium">{u.email}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] text-slate-400">
+                          <span className={`flex items-center gap-1 font-medium ${isScanner ? "text-amber-700" : "text-emerald-700"}`}>
+                            {isScanner ? <QrCode className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                            {isScanner ? "Gate QR Scanner Only" : "Full Privilege Access"}
+                          </span>
+                          <span className="font-mono">
+                            {new Date(u.created_at || Date.now()).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] text-slate-400">
-                        <span className="flex items-center gap-1 font-medium text-emerald-700">
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                          Full Privilege Access
-                        </span>
-                        <span className="font-mono">
-                          {new Date(u.created_at || Date.now()).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Security Overview Card */}
                   <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 space-y-3">
@@ -18014,7 +18062,7 @@ export default function AdminDashboardPage() {
                     <div className="space-y-1">
                       <h4 className="text-xs font-extrabold text-slate-900">Database Role Policies</h4>
                       <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                        Super Administrators retain full read, write, update, and delete access across all 15 CMS database tables.
+                        Super Administrators retain full read, write, update, and delete access across all 15 CMS database tables. Gate Scanner Staff accounts are strictly limited to QR attendance scanning.
                       </p>
                     </div>
 
@@ -18066,8 +18114,8 @@ export default function AdminDashboardPage() {
                         <UserPlus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-extrabold text-slate-900">Create Administrator</h3>
-                        <p className="text-xs text-slate-500 font-medium">Grant full CMS control panel privileges</p>
+                        <h3 className="text-base font-extrabold text-slate-900">Create Staff / Admin Account</h3>
+                        <p className="text-xs text-slate-500 font-medium">Create Super Admin or Gate QR Scanner Staff</p>
                       </div>
                     </div>
 
@@ -18082,7 +18130,7 @@ export default function AdminDashboardPage() {
                           value={newUserForm.name}
                           onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
                           className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="e.g. Executive Manager"
+                          placeholder="e.g. Gate Staff Volunteer"
                         />
                       </div>
 
@@ -18096,7 +18144,7 @@ export default function AdminDashboardPage() {
                           value={newUserForm.email}
                           onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
                           className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="admin@executivetalksmedia.in"
+                          placeholder="scanner@executivetalksmedia.in"
                         />
                       </div>
 
@@ -18114,6 +18162,25 @@ export default function AdminDashboardPage() {
                         />
                       </div>
 
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Account Access Role / Privileges *
+                        </label>
+                        <select
+                          value={newUserForm.role}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="admin">🛡️ Full Super Admin (Full CMS & System Access)</option>
+                          <option value="scanner">📱 Gate Scanner Staff (QR Scanner & Attendance Only)</option>
+                        </select>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {newUserForm.role === "scanner"
+                            ? "📱 Scanner Staff will ONLY see Gate QR Scanner and Attendance Check-In screens."
+                            : "🛡️ Super Admin has full administrative control over all events, data, and settings."}
+                        </p>
+                      </div>
+
                       <div className="flex gap-3 pt-3">
                         <button
                           type="button"
@@ -18127,7 +18194,7 @@ export default function AdminDashboardPage() {
                           disabled={userCreating}
                           className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                         >
-                          {userCreating ? "Creating Account..." : "Create Admin Account"}
+                          {userCreating ? "Creating Account..." : "Create Account"}
                         </button>
                       </div>
                     </form>
