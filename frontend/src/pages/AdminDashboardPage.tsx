@@ -6962,7 +6962,7 @@ export default function AdminDashboardPage() {
           items: [
             { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
             { id: "certificates", label: "Certificate Designer", icon: Sparkles },
-            { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
+            { id: "email-subjects", label: "Email Subject & Body Manager", icon: Mail, count: emailSubjectsList.length },
             { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
             { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
             { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
@@ -18596,50 +18596,70 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Sub-Tab Navigation Switcher */}
-                        <div className="mt-5 flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                        <div className="mt-5 p-2 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-2 shadow-2xs">
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "subject" }))}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
                               activeSubTab === "subject"
-                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
                             }`}
                           >
-                            <Mail className="h-3.5 w-3.5" />
+                            <Mail className="h-4 w-4" />
                             <span>1. Subject Line Builder</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
                               activeSubTab === "body"
-                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
+                                : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 hover:bg-cyan-50 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600"
                             }`}
                           >
-                            <FileText className="h-3.5 w-3.5" />
-                            <span>2. Email Body & Message Matter</span>
+                            <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                            <span>2. Email Body & Message Matter 📝</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "preview" }))}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all cursor-pointer ${
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
                               activeSubTab === "preview"
-                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 scale-[1.02]"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
                             }`}
                           >
-                            <Eye className="h-3.5 w-3.5" />
-                            <span>3. Full Live Email Preview</span>
+                            <Eye className="h-4 w-4" />
+                            <span>3. Full Live Email Preview 👁️</span>
                           </button>
                         </div>
 
                         {/* TAB 1: SUBJECT LINE BUILDER */}
                         {activeSubTab === "subject" && (
                           <div className="mt-5 space-y-4">
+                            {/* Quick Switch Banner to Email Body Editor */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800">
+                              <div className="text-xs">
+                                <span className="font-extrabold text-cyan-900 dark:text-cyan-200 block">
+                                  Want to customize the Email Body matter & greeting text?
+                                </span>
+                                <p className="text-[11px] text-cyan-700 dark:text-cyan-400">
+                                  Click below or select <strong>Tab 2 (Email Body)</strong> above to edit the intro line, recognition matter, and venue notes.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
+                                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                <span>Switch to Email Body Editor 📝</span>
+                              </button>
+                            </div>
+
                             <div>
                               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
                                 Dynamic Component Builder (Prefix + Event Name + Suffix)
