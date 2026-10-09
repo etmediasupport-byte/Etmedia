@@ -8240,6 +8240,47 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
   }
 });
 
+// Admin update admin user
+app.put("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password, role } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ success: false, message: "Name and email are required" });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid official email address." });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid Admin Name." });
+  }
+
+  try {
+    if (pool) {
+      if (password && typeof password === "string" && password.trim().length > 0) {
+        if (password.length < 6) {
+          return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await pool.query(
+          "UPDATE admins SET name = ?, email = ?, password = ?, role = ? WHERE id = ?",
+          [name, email, hashedPassword, role || "admin", id]
+        );
+      } else {
+        await pool.query(
+          "UPDATE admins SET name = ?, email = ?, role = ? WHERE id = ?",
+          [name, email, role || "admin", id]
+        );
+      }
+    }
+    return res.json({ success: true, message: `Admin account '${name}' updated successfully!` });
+  } catch (err: any) {
+    console.error("Update Admin User Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update admin user" });
+  }
+});
+
 // Admin delete admin user
 app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;

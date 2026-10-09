@@ -123,6 +123,7 @@ import {
   Zap,
   Newspaper,
   Share2,
+  Info,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -987,6 +988,15 @@ export default function AdminDashboardPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [userCreating, setUserCreating] = useState(false);
+  const [editingAdminUser, setEditingAdminUser] = useState<AdminUserItem | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
+  const [showEditUserPassword, setShowEditUserPassword] = useState(false);
+  const [userUpdating, setUserUpdating] = useState(false);
 
   // Website Settings State
   const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
@@ -2099,6 +2109,62 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error deleting user.");
+    }
+  };
+
+  const handleOpenEditAdminUser = (user: AdminUserItem) => {
+    setEditingAdminUser(user);
+    setEditUserForm({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      role: user.role || "admin",
+    });
+    setShowEditUserPassword(false);
+  };
+
+  const handleUpdateAdminUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAdminUser) return;
+    if (!editUserForm.name.trim() || !editUserForm.email.trim()) {
+      toast.error("Name and email are required.");
+      return;
+    }
+    if (!validateEmail(editUserForm.email.trim())) {
+      toast.error("Please enter a valid official email address.");
+      return;
+    }
+    if (editUserForm.password && editUserForm.password.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    setUserUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/users/${editingAdminUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editUserForm.name.trim(),
+          email: editUserForm.email.trim(),
+          password: editUserForm.password || undefined,
+          role: editUserForm.role || "admin",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Admin user updated successfully!");
+        setEditingAdminUser(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to update user.");
+      }
+    } catch (err) {
+      toast.error("Network error updating user.");
+    } finally {
+      setUserUpdating(false);
     }
   };
 
@@ -18096,15 +18162,27 @@ export default function AdminDashboardPage() {
                             {isScanner ? "📱 GATE SCANNER STAFF" : "🛡️ SUPER ADMIN"}
                           </span>
 
-                          {adminUsers.length > 1 && (
+                          <div className="flex items-center gap-1">
                             <button
-                              onClick={() => handleDeleteAdminUser(u.id)}
-                              className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
-                              title="Revoke Admin Access"
+                              type="button"
+                              onClick={() => handleOpenEditAdminUser(u)}
+                              className="rounded-xl p-2 text-slate-400 hover:bg-cyan-50 hover:text-cyan-600 transition-colors cursor-pointer"
+                              title="Edit Admin Account & Role"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Edit3 className="h-4 w-4" />
                             </button>
-                          )}
+
+                            {adminUsers.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAdminUser(u.id)}
+                                className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Revoke Admin Access"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -18290,6 +18368,125 @@ export default function AdminDashboardPage() {
                           className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                         >
                           {userCreating ? "Creating Account..." : "Create Account"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Admin User Modal */}
+              {editingAdminUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                  <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900 animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      onClick={() => setEditingAdminUser(null)}
+                      className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <Edit3 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-900">Edit Admin User Account</h3>
+                        <p className="text-xs text-slate-500 font-medium">Update account name, email, credentials, or role</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleUpdateAdminUser} className="space-y-4 pt-2">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editUserForm.name}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="e.g. Prasanna"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Official Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={editUserForm.email}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="admin@executivetalksmedia.in"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                            Reset / Change Password
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-medium">(Optional)</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showEditUserPassword ? "text" : "password"}
+                            value={editUserForm.password}
+                            onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                            className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 pl-4 pr-11 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                            placeholder="Leave blank to keep existing password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditUserPassword((prev) => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer p-1"
+                            title={showEditUserPassword ? "Hide password" : "Show password"}
+                          >
+                            {showEditUserPassword ? <EyeOff className="h-4 w-4 text-slate-600" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Leave empty if you only want to change the Name, Email, or Role.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Account Access Role / Privileges *
+                        </label>
+                        <select
+                          value={editUserForm.role}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="admin">🛡️ Full Super Admin (Full CMS & System Access)</option>
+                          <option value="scanner">📱 Gate Scanner Staff (QR Scanner & Attendance Only)</option>
+                        </select>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {editUserForm.role === "scanner"
+                            ? "📱 Scanner Staff will ONLY see Gate QR Scanner and Attendance Check-In screens."
+                            : "🛡️ Super Admin has full administrative control over all events, data, and settings."}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditingAdminUser(null)}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={userUpdating}
+                          className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          {userUpdating ? "Saving Changes..." : "Save Changes"}
                         </button>
                       </div>
                     </form>
