@@ -97,6 +97,18 @@ export default function EventsPage() {
     }
   }, [urlSearch]);
 
+  // Sync statusFilter when navigating between /events, /events/upcoming, /events/past, /events/live
+  useEffect(() => {
+    const currentStatus = location.pathname.includes("past")
+      ? "past"
+      : location.pathname.includes("upcoming")
+        ? "upcoming"
+        : location.pathname.includes("live")
+          ? "live"
+          : "all";
+    setStatusFilter(currentStatus as any);
+  }, [location.pathname]);
+
   // Load real events from Database with instant optimistic fallback & memory cache
   useEffect(() => {
     fetchWithCache("/api/events")

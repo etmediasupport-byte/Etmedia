@@ -971,9 +971,9 @@ export default function AdminDashboardPage() {
   // Website Settings State
   const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
     site_name: "Executive Talks Media Hub",
-    support_email: "partner.support@executivetalksmedia.in",
-    support_phone: "+91 98765 43210",
-    whatsapp_number: "+91 98765 43210",
+    support_email: "info@executivetalksmedia.in",
+    support_phone: "+91 91002 66777",
+    whatsapp_number: "+91 91002 66777",
     office_address: "Executive Talks Media Business Intelligence, Cyber City, Hyderabad, India",
     office_hours: "Mon - Fri: 9:00 AM - 6:00 PM IST",
     facebook_url: "https://facebook.com/executivetalksmedia",
@@ -2113,20 +2113,6 @@ export default function AdminDashboardPage() {
       const emailVal = validateEmail(siteSettings.support_email, "Support Email");
       if (!emailVal.isValid) {
         toast.error(emailVal.error);
-        return;
-      }
-    }
-    if (siteSettings.support_phone) {
-      const phoneVal = validatePhone(siteSettings.support_phone, "Support Phone");
-      if (!phoneVal.isValid) {
-        toast.error(phoneVal.error);
-        return;
-      }
-    }
-    if (siteSettings.whatsapp_number) {
-      const waVal = validatePhone(siteSettings.whatsapp_number, "WhatsApp Number");
-      if (!waVal.isValid) {
-        toast.error(waVal.error);
         return;
       }
     }
@@ -11051,7 +11037,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedContactDetail(con);
-                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\npartner.support@executivetalksmedia.in`);
+                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\ninfo@executivetalksmedia.in`);
                                 }}
                                 className="inline-flex items-center gap-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1.5 text-xs font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all cursor-pointer shadow-xs"
                                 title="Reply via Dashboard"

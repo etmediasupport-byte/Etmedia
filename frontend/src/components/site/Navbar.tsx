@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   ChevronDown,
   Menu,
@@ -18,46 +18,34 @@ import {
   Phone,
   Crown,
   Newspaper,
+  MapPin,
+  ArrowUpRight,
+  Radio,
 } from "lucide-react";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { cn } from "@/lib/utils";
 import { MagneticButton } from "@/components/ui/MagneticButton";
-import { events } from "@/lib/site-data";
-
-const megaEventCategories = [
-  {
-    icon: Calendar,
-    title: "Upcoming Conferences",
-    desc: "India CFO Summit, HR Excellence & AI Tech Conclave",
-    to: "/events/upcoming",
-  },
-  {
-    icon: Award,
-    title: "Past Events & Recaps",
-    desc: "Galleries, keynotes, recaps and delegate outcomes",
-    to: "/events/past",
-  },
-  {
-    icon: Users,
-    title: "Delegate Registration",
-    desc: "Reserve seats for senior executives and leaders",
-    isRegister: true,
-  },
-  {
-    icon: Handshake,
-    title: "Partner & Sponsorship",
-    desc: "Sponsorship tiers, exhibition booths and media visibility",
-    to: "/events/partner",
-  },
-];
+import {
+  events as defaultEvents,
+  EventItem,
+  getEventStatus,
+  sortEventsChronologically,
+  getValidImageUrl,
+} from "@/lib/site-data";
+import { fetchWithCache, invalidateClientCache } from "@/lib/api-cache";
+import { socket } from "@/lib/socket";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventsMegaOpen, setEventsMegaOpen] = useState(false);
+  const [eventsMegaTab, setEventsMegaTab] = useState<"upcoming" | "past" | "register" | "partner">("upcoming");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dbEvents, setDbEvents] = useState<EventItem[]>(() =>
+    sortEventsChronologically(defaultEvents.filter((e) => (e.status as any) !== "archived" && (e.status as any) !== "draft"))
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,6 +64,58 @@ export function Navbar() {
     }, 1800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch real database events with caching and real-time socket reload
+  useEffect(() => {
+    fetchWithCache("/api/events")
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.data)) {
+          const active = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
+          setDbEvents(sortEventsChronologically(active));
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch navbar events:", err);
+      });
+
+    const reload = () => {
+      invalidateClientCache("/api/events");
+      fetchWithCache("/api/events")
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.data)) {
+            const active = data.data.filter((e: any) => e.status !== "archived" && e.status !== "draft");
+            setDbEvents(sortEventsChronologically(active));
+          }
+        })
+        .catch(() => {});
+    };
+
+    socket.on("event_created", reload);
+    socket.on("event_updated", reload);
+    socket.on("event_deleted", reload);
+    socket.on("event_status_changed", reload);
+    socket.on("event_featured_changed", reload);
+
+    return () => {
+      socket.off("event_created", reload);
+      socket.off("event_updated", reload);
+      socket.off("event_deleted", reload);
+      socket.off("event_status_changed", reload);
+      socket.off("event_featured_changed", reload);
+    };
+  }, []);
+
+  // Filter events into upcoming and past
+  const upcomingEvents = useMemo(() => {
+    return dbEvents.filter((e) => {
+      const st = getEventStatus(e);
+      return st === "upcoming" || st === "live";
+    });
+  }, [dbEvents]);
+
+  const pastEvents = useMemo(() => {
+    return dbEvents.filter((e) => getEventStatus(e) === "past");
+  }, [dbEvents]);
 
   // Global custom event listener for "navbar-loading"
   useEffect(() => {
@@ -106,11 +146,15 @@ export function Navbar() {
   }, []);
 
   // Filter search results dynamically
-  const filteredEvents = events.filter((e) =>
-    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return dbEvents.filter((e) =>
+      e.title.toLowerCase().includes(q) ||
+      (e.category && e.category.toLowerCase().includes(q)) ||
+      (e.city && e.city.toLowerCase().includes(q))
+    );
+  }, [dbEvents, searchQuery]);
 
   const handleSearchResultClick = (path: string) => {
     setSearchOpen(false);
@@ -232,70 +276,333 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.97 }}
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 w-[32rem] mt-2 rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-2xl p-4 shadow-2xl text-slate-900 z-50"
+                    className="absolute top-full left-1/2 -translate-x-1/2 w-[44rem] max-w-[95vw] mt-2 rounded-3xl border border-slate-200/90 bg-white/98 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.18)] text-slate-900 z-50"
                   >
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+                    {/* Top Mega Menu Header */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3.5">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-cyan-600" />
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-700 font-display">
+                        <span className="p-1 rounded-lg bg-cyan-500/10 text-cyan-600">
+                          <Sparkles className="h-4 w-4" />
+                        </span>
+                        <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-slate-900 font-display">
                           Executive Talks Business Summits
                         </span>
                       </div>
                       <Link
                         to="/events"
                         onClick={handleNavClick}
-                        className="text-xs font-bold text-cyan-600 hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-cyan-600 hover:text-cyan-700 hover:underline flex items-center gap-1"
                       >
-                        All Events <ArrowRight className="h-3 w-3" />
+                        <span>All Summits ({dbEvents.length})</span>
+                        <ArrowRight className="h-3 w-3" />
                       </Link>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5">
-                      {megaEventCategories.map((cat) => (
-                        cat.isRegister ? (
-                          <button
-                            key={cat.title}
-                            type="button"
-                            onClick={() => {
-                              setEventsMegaOpen(false);
-                              handleNavClick();
-                              window.dispatchEvent(new CustomEvent("open-select-event-modal"));
-                            }}
-                            className="group flex flex-col p-2.5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/40 transition-all duration-200 shadow-2xs text-left cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="gradient-brand p-1.5 rounded-xl text-white group-hover:scale-105 transition-transform shadow-xs">
-                                <cat.icon className="h-3.5 w-3.5" />
-                              </span>
+                    {/* 2-Column Split: Navigation Categories (Left) & Real Database Events List (Right) */}
+                    <div className="grid grid-cols-12 gap-3.5 items-start">
+                      {/* Left: Interactive Categories */}
+                      <div className="col-span-5 space-y-2">
+                        {/* 1. Upcoming Conferences */}
+                        <Link
+                          to="/events/upcoming"
+                          onMouseEnter={() => setEventsMegaTab("upcoming")}
+                          onClick={handleNavClick}
+                          className={cn(
+                            "group flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer",
+                            eventsMegaTab === "upcoming"
+                              ? "bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 border-cyan-400/50 shadow-xs"
+                              : "border-slate-100 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-200"
+                          )}
+                        >
+                          <span className={cn(
+                            "p-2 rounded-xl text-white shrink-0 transition-transform group-hover:scale-105 shadow-xs",
+                            eventsMegaTab === "upcoming" ? "gradient-brand" : "bg-slate-700"
+                          )}>
+                            <Calendar className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
                               <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
-                                {cat.title}
+                                Upcoming Conferences
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800">
+                                {upcomingEvents.length}
                               </span>
                             </div>
-                            <p className="mt-1.5 text-[11px] text-slate-500 leading-snug">
-                              {cat.desc}
+                            <p className="mt-0.5 text-[10.5px] text-slate-500 leading-snug line-clamp-1">
+                              Flagship summits & conclaves
                             </p>
-                          </button>
-                        ) : (
-                          <Link
-                            key={cat.to || cat.title}
-                            to={cat.to!}
-                            onClick={handleNavClick}
-                            className="group flex flex-col p-2.5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-cyan-500/40 transition-all duration-200 shadow-2xs"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="gradient-brand p-1.5 rounded-xl text-white group-hover:scale-105 transition-transform shadow-xs">
-                                <cat.icon className="h-3.5 w-3.5" />
+                          </div>
+                        </Link>
+
+                        {/* 2. Past Events & Recaps */}
+                        <Link
+                          to="/events/past"
+                          onMouseEnter={() => setEventsMegaTab("past")}
+                          onClick={handleNavClick}
+                          className={cn(
+                            "group flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer",
+                            eventsMegaTab === "past"
+                              ? "bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-400/50 shadow-xs"
+                              : "border-slate-100 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-200"
+                          )}
+                        >
+                          <span className={cn(
+                            "p-2 rounded-xl text-white shrink-0 transition-transform group-hover:scale-105 shadow-xs",
+                            eventsMegaTab === "past" ? "bg-gradient-to-br from-amber-500 to-orange-600" : "bg-slate-700"
+                          )}>
+                            <Award className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-amber-600 transition-colors">
+                                Past Events & Recaps
                               </span>
-                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-cyan-600 transition-colors">
-                                {cat.title}
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                                {pastEvents.length}
                               </span>
                             </div>
-                            <p className="mt-1.5 text-[11px] text-slate-500 leading-snug">
-                              {cat.desc}
+                            <p className="mt-0.5 text-[10.5px] text-slate-500 leading-snug line-clamp-1">
+                              Galleries, keynotes & highlights
                             </p>
-                          </Link>
-                        )
-                      ))}
+                          </div>
+                        </Link>
+
+                        {/* 3. Delegate Registration */}
+                        <button
+                          type="button"
+                          onMouseEnter={() => setEventsMegaTab("register")}
+                          onClick={() => {
+                            setEventsMegaOpen(false);
+                            handleNavClick();
+                            window.dispatchEvent(new CustomEvent("open-select-event-modal"));
+                          }}
+                          className={cn(
+                            "w-full group flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer",
+                            eventsMegaTab === "register"
+                              ? "bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-purple-400/50 shadow-xs"
+                              : "border-slate-100 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-200"
+                          )}
+                        >
+                          <span className={cn(
+                            "p-2 rounded-xl text-white shrink-0 transition-transform group-hover:scale-105 shadow-xs",
+                            eventsMegaTab === "register" ? "bg-gradient-to-br from-purple-600 to-indigo-700" : "bg-slate-700"
+                          )}>
+                            <Users className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-purple-600 transition-colors">
+                                Delegate Registration
+                              </span>
+                              <span className="text-[10px] font-bold text-purple-700 uppercase">Passes</span>
+                            </div>
+                            <p className="mt-0.5 text-[10.5px] text-slate-500 leading-snug line-clamp-1">
+                              Reserve executive passes & QR codes
+                            </p>
+                          </div>
+                        </button>
+
+                        {/* 4. Partner & Sponsorship */}
+                        <Link
+                          to="/partner"
+                          onMouseEnter={() => setEventsMegaTab("partner")}
+                          onClick={handleNavClick}
+                          className={cn(
+                            "group flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer",
+                            eventsMegaTab === "partner"
+                              ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-400/50 shadow-xs"
+                              : "border-slate-100 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-200"
+                          )}
+                        >
+                          <span className={cn(
+                            "p-2 rounded-xl text-white shrink-0 transition-transform group-hover:scale-105 shadow-xs",
+                            eventsMegaTab === "partner" ? "bg-gradient-to-br from-emerald-600 to-teal-700" : "bg-slate-700"
+                          )}>
+                            <Handshake className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold font-btn text-slate-900 group-hover:text-emerald-600 transition-colors">
+                                Partner & Alliances
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-700 uppercase">B2B</span>
+                            </div>
+                            <p className="mt-0.5 text-[10.5px] text-slate-500 leading-snug line-clamp-1">
+                              Sponsorships & exhibition booths
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Right: Real Dynamic Database Events Panel */}
+                      <div className="col-span-7 bg-slate-50/80 rounded-2xl p-3 border border-slate-100 min-h-[220px]">
+                        {eventsMegaTab === "upcoming" && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1 mb-1.5">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+                                Featured Upcoming Summits
+                              </span>
+                              <Link
+                                to="/events/upcoming"
+                                onClick={handleNavClick}
+                                className="text-[11px] font-bold text-cyan-600 hover:underline flex items-center gap-0.5"
+                              >
+                                <span>View All ({upcomingEvents.length})</span>
+                                <ArrowRight className="h-3 w-3" />
+                              </Link>
+                            </div>
+
+                            {upcomingEvents.length > 0 ? (
+                              <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                                {upcomingEvents.slice(0, 4).map((evt) => (
+                                  <Link
+                                    key={evt.id || evt.slug}
+                                    to={`/events/${evt.slug || evt.id}`}
+                                    onClick={handleNavClick}
+                                    className="group flex items-center gap-3 p-2 rounded-xl bg-white border border-slate-200/80 hover:border-cyan-400 hover:shadow-sm transition-all text-left"
+                                  >
+                                    <img
+                                      src={getValidImageUrl(evt.image)}
+                                      alt={evt.title}
+                                      className="h-10 w-12 rounded-lg object-cover bg-slate-200 shrink-0 group-hover:scale-105 transition-transform"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = "none";
+                                      }}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-xs font-bold text-slate-900 group-hover:text-cyan-600 truncate transition-colors">
+                                        {evt.title}
+                                      </h4>
+                                      <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-500 font-medium truncate">
+                                        <span className="text-purple-700 font-semibold truncate">📅 {evt.date}</span>
+                                        <span>•</span>
+                                        <span className="truncate">📍 {evt.city}</span>
+                                      </div>
+                                    </div>
+                                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-600 shrink-0 transition-colors" />
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-xs text-slate-500 font-medium">
+                                No upcoming summits scheduled at this moment.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {eventsMegaTab === "past" && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1 mb-1.5">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">
+                                Past Summits & Archives
+                              </span>
+                              <Link
+                                to="/events/past"
+                                onClick={handleNavClick}
+                                className="text-[11px] font-bold text-amber-600 hover:underline flex items-center gap-0.5"
+                              >
+                                <span>View Recaps ({pastEvents.length})</span>
+                                <ArrowRight className="h-3 w-3" />
+                              </Link>
+                            </div>
+
+                            {pastEvents.length > 0 ? (
+                              <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                                {pastEvents.slice(0, 4).map((evt) => (
+                                  <Link
+                                    key={evt.id || evt.slug}
+                                    to={`/events/${evt.slug || evt.id}`}
+                                    onClick={handleNavClick}
+                                    className="group flex items-center gap-3 p-2 rounded-xl bg-white border border-slate-200/80 hover:border-amber-400 hover:shadow-sm transition-all text-left"
+                                  >
+                                    <img
+                                      src={getValidImageUrl(evt.image)}
+                                      alt={evt.title}
+                                      className="h-10 w-12 rounded-lg object-cover bg-slate-200 shrink-0 group-hover:scale-105 transition-transform"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = "none";
+                                      }}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-xs font-bold text-slate-900 group-hover:text-amber-600 truncate transition-colors">
+                                        {evt.title}
+                                      </h4>
+                                      <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-500 font-medium truncate">
+                                        <span className="truncate">📅 {evt.date}</span>
+                                        <span>•</span>
+                                        <span className="truncate">📍 {evt.city}</span>
+                                      </div>
+                                    </div>
+                                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-600 shrink-0 transition-colors" />
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-xs text-slate-500 font-medium">
+                                No past summits listed.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {eventsMegaTab === "register" && (
+                          <div className="p-3 bg-white rounded-xl border border-purple-100 flex flex-col justify-between h-full space-y-3">
+                            <div>
+                              <div className="inline-flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-purple-700">
+                                <Users className="h-3.5 w-3.5" />
+                                <span>Official Delegate Desk</span>
+                              </div>
+                              <h4 className="text-sm font-bold text-slate-900 mt-1">
+                                Reserve VIP Passes & Conference Seats
+                              </h4>
+                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                Access C-Suite keynotes, interactive panel discussions, and high-impact enterprise networking sessions.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEventsMegaOpen(false);
+                                  handleNavClick();
+                                  window.dispatchEvent(new CustomEvent("open-select-event-modal"));
+                                }}
+                                className="gradient-brand flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white text-center shadow-xs hover:scale-102 transition-transform cursor-pointer border-none"
+                              >
+                                Select Summit to Register
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {eventsMegaTab === "partner" && (
+                          <div className="p-3 bg-white rounded-xl border border-emerald-100 flex flex-col justify-between h-full space-y-3">
+                            <div>
+                              <div className="inline-flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-emerald-700">
+                                <Handshake className="h-3.5 w-3.5" />
+                                <span>Enterprise Alliances</span>
+                              </div>
+                              <h4 className="text-sm font-bold text-slate-900 mt-1">
+                                Partner with National Leadership Summits
+                              </h4>
+                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                Title sponsorships, exhibition booths, thought leadership keynote slots, and verified B2B lead generation.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <Link
+                                to="/partner"
+                                onClick={handleNavClick}
+                                className="w-full py-2 px-3 rounded-xl text-xs font-bold text-white text-center bg-emerald-600 hover:bg-emerald-700 shadow-xs hover:scale-102 transition-transform cursor-pointer"
+                              >
+                                Explore Partnership Opportunities →
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}

@@ -976,7 +976,7 @@ We look forward to building a successful partnership with your organisation.
 
 Regards,
 Executive Talks Media Business Intelligence
-partner.support@executivetalksmedia.in
+partners@executivetalksmedia.in
 www.executivetalksmedia.in`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -996,7 +996,7 @@ www.executivetalksmedia.in`,
         <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; color: #64748b; font-size: 13px;">
           <p style="margin: 0; font-weight: bold; color: #1e293b;">Regards,</p>
           <p style="margin: 2px 0; font-weight: bold; color: #0f172a;">Executive Talks Media Business Intelligence</p>
-          <p style="margin: 4px 0 0 0;"><a href="mailto:partner.support@executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">partner.support@executivetalksmedia.in</a></p>
+          <p style="margin: 4px 0 0 0;"><a href="mailto:partners@executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">partners@executivetalksmedia.in</a></p>
           <p style="margin: 2px 0 0 0;"><a href="https://www.executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">www.executivetalksmedia.in</a></p>
         </div>
       </div>

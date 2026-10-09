@@ -399,7 +399,11 @@ export default function ContactPage() {
                     </p>
                     <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
                       <div>📞 +91 91002 66777</div>
-                      <div className="text-purple-700 truncate">✉️ registration@executivetalksmedia.in</div>
+                      <div className="text-purple-700 truncate">
+                        <a href="mailto:registration@executivetalksmedia.in" className="hover:underline flex items-center gap-1">
+                          <span>✉️ registration@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -425,7 +429,7 @@ export default function ContactPage() {
                       <Award className="h-5 w-5" />
                     </div>
                     <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-emerald-700 uppercase border border-emerald-200/60">
-                      Sponsorships
+                      Sponsorships & Alliances
                     </span>
                   </div>
 
@@ -438,20 +442,31 @@ export default function ContactPage() {
                     </p>
                     <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
                       <div>💬 WhatsApp: +91 91002 66777</div>
-                      <div className="text-emerald-700 truncate">✉️ partner.support@executivetalksmedia.in</div>
+                      <div className="text-emerald-700 truncate">
+                        <a href="mailto:partners@executivetalksmedia.in" className="hover:underline flex items-center gap-1">
+                          <span>✉️ partners@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
                   <a
                     href={contact.whatsapp}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
-                    <span>Instant WhatsApp Chat</span>
+                    <span>WhatsApp Chat</span>
                     <MessageCircle className="h-3 w-3" />
+                  </a>
+                  <a
+                    href="mailto:partners@executivetalksmedia.in"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline"
+                  >
+                    <span>Email Alliances</span>
+                    <Mail className="h-3 w-3" />
                   </a>
                 </div>
               </div>
@@ -466,7 +481,7 @@ export default function ContactPage() {
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-amber-700 uppercase border border-amber-200/60">
-                      Editorial Desk
+                      Official Inquiries
                     </span>
                   </div>
 
@@ -475,21 +490,25 @@ export default function ContactPage() {
                       Executive Talks Magazine
                     </h3>
                     <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium">
-                      Leader interviews, cover story features, media accreditations, and editorial inquiries.
+                      Leader interviews, cover story features, media accreditations, and official general inquiries.
                     </p>
                     <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
                       <div>🕒 Mon – Sat: 9:00 AM – 7:00 PM</div>
-                      <div className="text-amber-700 truncate">✉️ contact@executivetalksmedia.in</div>
+                      <div className="text-amber-700 truncate">
+                        <a href="mailto:info@executivetalksmedia.in" className="hover:underline flex items-center gap-1">
+                          <span>✉️ info@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4 pt-3.5 border-t border-slate-100">
                   <a
-                    href="mailto:contact@executivetalksmedia.in"
+                    href="mailto:info@executivetalksmedia.in"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
                   >
-                    <span>Email Editorial Team</span>
+                    <span>Email Official Desk</span>
                     <Mail className="h-3 w-3" />
                   </a>
                 </div>

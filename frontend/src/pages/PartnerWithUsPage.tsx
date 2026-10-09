@@ -856,11 +856,11 @@ export default function PartnerWithUsPage() {
 
             <MagneticButton strength={15}>
               <a
-                href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}`}
+                href={`mailto:${contact.emails[2] ?? contact.emails[0] ?? "partners@executivetalksmedia.in"}`}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 px-7 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 transition-colors cursor-pointer shadow-2xs"
               >
                 <Mail className="h-4 w-4 text-cyan-600" />
-                <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partner.support@executivetalksmedia.in"}</span>
+                <span>Email: {contact.emails[2] ?? contact.emails[0] ?? "partners@executivetalksmedia.in"}</span>
               </a>
             </MagneticButton>
           </div>
