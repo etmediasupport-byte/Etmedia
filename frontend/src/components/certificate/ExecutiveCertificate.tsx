@@ -224,20 +224,46 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
             {displayBodyLine2}
           </text>
 
-          {/* Optional Certificate ID Stamp in top-right area */}
-          {showIdBadge && certId && (
+          {/* 8. OFFICIAL CERTIFICATE NUMBER & VERIFICATION STAMP */}
+          <g transform="translate(285, 595)">
+            <rect
+              x="0"
+              y="-16"
+              width="230"
+              height="26"
+              rx="6"
+              fill="#f8fafc"
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
             <text
-              x="970"
-              y="20"
-              textAnchor="end"
-              fontFamily="monospace"
-              fontSize="10"
-              fontWeight="bold"
-              fill="#94a3b8"
+              x="12"
+              y="2"
+              fontFamily="'Montserrat', monospace, sans-serif"
+              fontSize="11"
+              fontWeight="800"
+              fill="#475569"
+              letterSpacing="0.8"
             >
-              ID: {certId}
+              CERT NO:{" "}
+              <tspan fill="#0f172a" fontWeight="900">
+                {certId || "ETM-CERT-001"}
+              </tspan>
             </text>
-          )}
+          </g>
+
+          {/* Security & Issue Credential Microprint */}
+          <text
+            x="285"
+            y="635"
+            fontFamily="'Montserrat', sans-serif"
+            fontSize="9"
+            fontWeight="600"
+            fill="#94a3b8"
+            letterSpacing="0.5"
+          >
+            OFFICIAL ACCREDITED CREDENTIAL • VERIFIABLE AT EXECUTIVETALKSMEDIA.IN
+          </text>
         </svg>
       </div>
     </div>

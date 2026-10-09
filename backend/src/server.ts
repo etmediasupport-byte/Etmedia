@@ -3900,6 +3900,140 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
   }
 });
 
+// 2c. Auto-Generate Sequential Certificate IDs for an Event / All Events
+app.post("/api/admin/certificates/auto-generate-ids", authenticateAdmin, async (req, res) => {
+  const { eventId, prefix, startSeq = 1, padding = 3, overwriteExisting = false } = req.body;
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection not available." });
+    }
+
+    let targetEventTitle = "";
+    let derivedPrefix = (prefix || "").trim().toUpperCase();
+
+    if (eventId && eventId !== "all") {
+      const [evtRows]: any = await pool.query("SELECT id, title, certificate_settings FROM events WHERE id = ? LIMIT 1", [eventId]);
+      if (evtRows && evtRows.length > 0) {
+        targetEventTitle = evtRows[0].title;
+        if (!derivedPrefix) {
+          // Derive 3-letter acronym from event title, e.g. "HR RECALL 2K26" -> "HRR", "PROCUREMENT LEADERSHIP" -> "PLS"
+          const words = targetEventTitle.replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+          if (words.length >= 2) {
+            derivedPrefix = `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`;
+          } else if (words.length === 1) {
+            derivedPrefix = `ETM-${words[0].slice(0, 3).toUpperCase()}`;
+          } else {
+            derivedPrefix = "ETM-CERT";
+          }
+        }
+      }
+    }
+
+    if (!derivedPrefix) {
+      derivedPrefix = "ETM-CERT";
+    }
+    if (!derivedPrefix.startsWith("ETM-")) {
+      derivedPrefix = `ETM-${derivedPrefix}`;
+    }
+
+    // Query registrations for the target event or all events
+    let regQuery = "SELECT id, created_at, certificate_id, name, event_title FROM registrations";
+    const queryParams: any[] = [];
+    if (targetEventTitle) {
+      regQuery += " WHERE event_id = ? OR event_title = ? OR event_title LIKE ?";
+      queryParams.push(eventId, targetEventTitle, `%${targetEventTitle.slice(0, 20)}%`);
+    }
+    regQuery += " ORDER BY created_at ASC, id ASC";
+
+    const [rows]: any = await pool.query(regQuery, queryParams);
+
+    let currentSeq = parseInt(String(startSeq), 10) || 1;
+    const padLen = parseInt(String(padding), 10) || 3;
+    let updatedCount = 0;
+    const assignments: Array<{ id: string; name: string; certificate_id: string }> = [];
+
+    for (const row of rows || []) {
+      if (!overwriteExisting && row.certificate_id && row.certificate_id.trim()) {
+        continue;
+      }
+      const seqStr = String(currentSeq).padStart(padLen, "0");
+      const generatedCertId = `${derivedPrefix}-${seqStr}`;
+
+      await pool.query("UPDATE registrations SET certificate_id = ? WHERE id = ?", [generatedCertId, row.id]);
+      await pool.query("UPDATE delegate_registrations SET certificate_id = ? WHERE id = ?", [generatedCertId, row.id]);
+
+      assignments.push({
+        id: row.id,
+        name: row.name || "Delegate",
+        certificate_id: generatedCertId,
+      });
+
+      currentSeq++;
+      updatedCount++;
+    }
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "certificates_generated",
+        updatedCount,
+        eventId,
+        prefix: derivedPrefix,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `🎉 Successfully assigned ${updatedCount} sequential Certificate IDs (e.g. ${derivedPrefix}-${String(startSeq).padStart(padLen, "0")})!`,
+      updatedCount,
+      prefix: derivedPrefix,
+      nextSeq: currentSeq,
+      assignments,
+    });
+  } catch (err: any) {
+    console.error("[API] Generate Certificate IDs Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to generate certificate IDs." });
+  }
+});
+
+// 2d. Assign / Update Single Candidate Certificate ID
+app.put("/api/admin/certificates/assign-id", authenticateAdmin, async (req, res) => {
+  const { regId, certId } = req.body;
+  if (!regId || !certId) {
+    return res.status(400).json({ success: false, message: "Registration ID and Certificate ID are required." });
+  }
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection not available." });
+    }
+
+    const cleanCertId = certId.trim().toUpperCase();
+
+    await pool.query("UPDATE registrations SET certificate_id = ? WHERE id = ?", [cleanCertId, regId]);
+    await pool.query("UPDATE delegate_registrations SET certificate_id = ? WHERE id = ?", [cleanCertId, regId]);
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "certificate_id_assigned",
+        regId,
+        certificateId: cleanCertId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Certificate ID updated to ${cleanCertId}!`,
+      certificate_id: cleanCertId,
+    });
+  } catch (err: any) {
+    console.error("[API] Assign Certificate ID Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to assign certificate ID." });
+  }
+});
+
 // 3. Public Verifiable Certificate Data Endpoint
 app.get("/api/certificate/:regId", async (req, res) => {
   const { regId } = req.params;
@@ -3911,15 +4045,15 @@ app.get("/api/certificate/:regId", async (req, res) => {
     let reg: any = null;
     if (pool) {
       const [rows]: any = await pool.query(
-        "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM registrations WHERE id = ? LIMIT 1",
-        [regId]
+        "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM registrations WHERE id = ? OR certificate_id = ? LIMIT 1",
+        [regId, regId]
       );
       if (rows && rows.length > 0) {
         reg = rows[0];
       } else {
         const [delRows]: any = await pool.query(
-          "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM delegate_registrations WHERE id = ? LIMIT 1",
-          [regId]
+          "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM delegate_registrations WHERE id = ? OR certificate_id = ? LIMIT 1",
+          [regId, regId]
         );
         if (delRows && delRows.length > 0) {
           reg = delRows[0];

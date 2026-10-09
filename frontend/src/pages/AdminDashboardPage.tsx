@@ -302,6 +302,7 @@ type TabType =
   | "qr-scanner"
   | "attendance"
   | "certificates"
+  | "issued-certificates"
   | "database";
 
 // ==========================================
@@ -1234,7 +1235,7 @@ export default function AdminDashboardPage() {
   const [sendingCertId, setSendingCertId] = useState<string | null>(null);
   const [bulkSendingCerts, setBulkSendingCerts] = useState(false);
 
-  // --- CERTIFICATE DESIGNER STATE ---
+  // --- CERTIFICATE DESIGNER & NUMBERING STATE ---
   const [selectedCertEventId, setSelectedCertEventId] = useState<string>("");
   const [savingCertDesign, setSavingCertDesign] = useState(false);
   const [certForm, setCertForm] = useState({
@@ -1248,9 +1249,30 @@ export default function AdminDashboardPage() {
     signatory_header: "Presented By:",
     signatory_name: "Srikanth",
     signatory_org: "Executive Talks Media",
+    cert_prefix: "ETM-PLS",
+    cert_start_seq: 1,
+    cert_padding: 3,
     preview_candidate_name: "RAMA SRI",
     preview_candidate_company: "Ascend Media Labs",
   });
+
+  // --- ISSUED CERTIFICATES HUB STATE ---
+  const [issuedCertSearch, setIssuedCertSearch] = useState<string>("");
+  const [issuedCertEventFilter, setIssuedCertEventFilter] = useState<string>("all");
+  const [issuedCertStatusFilter, setIssuedCertStatusFilter] = useState<"all" | "issued" | "emailed" | "pending" | "checked_in">("all");
+  const [autoCertModalOpen, setAutoCertModalOpen] = useState(false);
+  const [autoCertConfig, setAutoCertConfig] = useState({
+    eventId: "all",
+    prefix: "ETM-HRR",
+    startSeq: 1,
+    padding: 3,
+    overwriteExisting: false,
+  });
+  const [generatingCertSeq, setGeneratingCertSeq] = useState(false);
+  const [editingCertIdReg, setEditingCertIdReg] = useState<{ id: string; name: string; currentCertId: string } | null>(null);
+  const [tempCertIdValue, setTempCertIdValue] = useState("");
+  const [savingSingleCertId, setSavingSingleCertId] = useState(false);
+  const [selectedIssuedCertIds, setSelectedIssuedCertIds] = useState<string[]>([]);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -2770,6 +2792,12 @@ export default function AdminDashboardPage() {
 
     const defaultVenue = evt.venue ? `${evt.date || "2026-06-19"} | ${evt.venue}${evt.city ? `, ${evt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
 
+    // Calculate suggested prefix from event title, e.g. "HR RECALL 2K26" -> "ETM-HRR"
+    const words = (evt.title || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+    const suggestedPrefix = words.length >= 2
+      ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+      : "ETM-CERT";
+
     setCertForm((prev) => ({
       ...prev,
       header_title: parsedSettings?.header_title || "CERTIFICATE",
@@ -2782,10 +2810,122 @@ export default function AdminDashboardPage() {
       signatory_header: parsedSettings?.signatory_header || "Presented By:",
       signatory_name: parsedSettings?.signatory_name || "Srikanth",
       signatory_org: parsedSettings?.signatory_org || "Executive Talks Media",
+      cert_prefix: parsedSettings?.cert_prefix || suggestedPrefix,
+      cert_start_seq: parsedSettings?.cert_start_seq || 1,
+      cert_padding: parsedSettings?.cert_padding || 3,
       preview_candidate_name: prev.preview_candidate_name || "RAMA SRI",
       preview_candidate_company: prev.preview_candidate_company || "Ascend Media Labs",
     }));
+
+    setAutoCertConfig((prev) => ({
+      ...prev,
+      eventId: evt.id,
+      prefix: parsedSettings?.cert_prefix || suggestedPrefix,
+    }));
   }, [selectedCertEventId, cmsEvents]);
+
+  // Handle Auto-Generate Certificate IDs for an Event / All Events
+  const handleAutoGenerateCertIds = async () => {
+    setGeneratingCertSeq(true);
+    try {
+      const res = await fetch("/api/admin/certificates/auto-generate-ids", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          eventId: autoCertConfig.eventId,
+          prefix: autoCertConfig.prefix,
+          startSeq: autoCertConfig.startSeq,
+          padding: autoCertConfig.padding,
+          overwriteExisting: autoCertConfig.overwriteExisting,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `Assigned ${data.updatedCount} Certificate IDs!`);
+        if (Array.isArray(data.assignments) && data.assignments.length > 0) {
+          const map = new Map(data.assignments.map((a: any) => [a.id, a.certificate_id]));
+          setRegistrations((prev) =>
+            prev.map((r) => (map.has(r.id) ? { ...r, certificate_id: map.get(r.id) as string } : r))
+          );
+        } else {
+          fetchDashboardData();
+        }
+        setAutoCertModalOpen(false);
+      } else {
+        toast.error(data.message || "Failed to generate Certificate IDs.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error while generating Certificate IDs.");
+    } finally {
+      setGeneratingCertSeq(false);
+    }
+  };
+
+  // Handle Save Single Certificate ID (Inline / Custom override)
+  const handleSaveSingleCertId = async () => {
+    if (!editingCertIdReg || !tempCertIdValue.trim()) return;
+    setSavingSingleCertId(true);
+    try {
+      const res = await fetch("/api/admin/certificates/assign-id", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          regId: editingCertIdReg.id,
+          certId: tempCertIdValue.trim().toUpperCase(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `Certificate ID set to ${data.certificate_id}!`);
+        setRegistrations((prev) =>
+          prev.map((r) => (r.id === editingCertIdReg.id ? { ...r, certificate_id: data.certificate_id } : r))
+        );
+        setEditingCertIdReg(null);
+      } else {
+        toast.error(data.message || "Failed to update Certificate ID.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error while updating Certificate ID.");
+    } finally {
+      setSavingSingleCertId(false);
+    }
+  };
+
+  // Export Issued Certificates to Excel
+  const handleExportIssuedCertsExcel = (filteredList: any[]) => {
+    if (!filteredList || filteredList.length === 0) {
+      toast.error("No certificate records found to export.");
+      return;
+    }
+    const rows = filteredList.map((r, idx) => ({
+      "S.No": idx + 1,
+      "Certificate ID / Number": r.certificate_id || "NOT ASSIGNED",
+      "Registration ID": r.id,
+      "Delegate Name": r.name || `${r.first_name || ""} ${r.last_name || ""}`.trim() || "N/A",
+      "Email Address": r.email || r.official_email || "N/A",
+      "Phone Number": r.phone || r.mobile_number || "N/A",
+      "Designation": r.designation || "N/A",
+      "Organization / Company": r.organization || r.company_name || "N/A",
+      "Conference / Event": r.event_title || "N/A",
+      "Gate Check-In Status": r.checkin_status?.toLowerCase() === "present" ? "Present (Verified)" : "Absent",
+      "Gate Checked-In At": r.checked_in_at ? new Date(r.checked_in_at).toLocaleString("en-IN") : "N/A",
+      "E-Certificate Emailed Date": r.certificate_sent_at ? new Date(r.certificate_sent_at).toLocaleString("en-IN") : "Pending / Not Sent",
+      "Public Verification Link": `https://executivetalksmedia.in/certificate/${r.id}`,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Issued_Certificates");
+    XLSX.writeFile(wb, `ETM_Issued_Certificates_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Issued certificates exported to Excel successfully!");
+  };
 
   const handleSaveCertificateDesign = async () => {
     if (!selectedCertEventId) {
@@ -6710,7 +6850,8 @@ export default function AdminDashboardPage() {
     {
       title: "COMMUNICATIONS & SYSTEM",
       items: [
-        { id: "certificates", label: "Certificate Designer", icon: Award },
+        { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
+        { id: "certificates", label: "Certificate Designer", icon: Sparkles },
         { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
         { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
         { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
@@ -19024,11 +19165,73 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Card 5: Test Attendee Preview Controls */}
+                  {/* Card 5: Certificate Serial Numbering & Format */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <Zap className="h-4 w-4 text-amber-500" />
+                      <span>5. Certificate Numbering Format & Sequence (e.g. ETM-HRR-001)</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Prefix (e.g. ETM-HRR)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.cert_prefix}
+                          onChange={(e) => setCertForm({ ...certForm, cert_prefix: e.target.value.toUpperCase() })}
+                          placeholder="ETM-HRR"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Start Sequence No.
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={certForm.cert_start_seq}
+                          onChange={(e) => setCertForm({ ...certForm, cert_start_seq: parseInt(e.target.value, 10) || 1 })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Padding Digits
+                        </label>
+                        <select
+                          value={certForm.cert_padding}
+                          onChange={(e) => setCertForm({ ...certForm, cert_padding: parseInt(e.target.value, 10) || 3 })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all cursor-pointer"
+                        >
+                          <option value={2}>2 Digits (01)</option>
+                          <option value={3}>3 Digits (001)</option>
+                          <option value={4}>4 Digits (0001)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-3 rounded-2xl border border-amber-200/80 bg-amber-50/60 p-3 text-xs text-amber-900 space-y-0.5">
+                        <span className="font-extrabold text-[10px] uppercase tracking-wider text-amber-700">
+                          Live Numbering Format Example:
+                        </span>
+                        <p className="font-mono font-bold text-xs">
+                          {certForm.cert_prefix || "ETM-CERT"}-{String(certForm.cert_start_seq || 1).padStart(certForm.cert_padding || 3, "0")},{" "}
+                          {certForm.cert_prefix || "ETM-CERT"}-{String((certForm.cert_start_seq || 1) + 1).padStart(certForm.cert_padding || 3, "0")},{" "}
+                          {certForm.cert_prefix || "ETM-CERT"}-{String((certForm.cert_start_seq || 1) + 2).padStart(certForm.cert_padding || 3, "0")}...
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 6: Test Attendee Preview Controls */}
                   <div className="rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-sm space-y-4">
                     <div className="flex items-center gap-2 text-xs font-black uppercase text-amber-900 tracking-wider border-b border-amber-200/80 pb-3">
                       <Eye className="h-4 w-4 text-amber-600" />
-                      <span>5. Live Test Preview Delegate (Sample Data)</span>
+                      <span>6. Live Test Preview Delegate (Sample Data)</span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -19123,7 +19326,7 @@ export default function AdminDashboardPage() {
                         signatoryHeader={certForm.signatory_header}
                         signatoryName={certForm.signatory_name}
                         signatoryOrg={certForm.signatory_org}
-                        certId="ETM-CERT-2026-LIVE"
+                        certId={`${certForm.cert_prefix || "ETM-CERT"}-${String(certForm.cert_start_seq || 1).padStart(certForm.cert_padding || 3, "0")}`}
                         issueDate={new Date().toISOString()}
                       />
                     </div>
@@ -19150,6 +19353,823 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* ========================================== */}
+          {/* ISSUED CERTIFICATES & CREDENTIALS HUB TAB   */}
+          {/* ========================================== */}
+          {activeTab === "issued-certificates" && (() => {
+            // Filter delegates based on search, event filter, status, and universal date range
+            const filteredIssuedDelegates = registrations.filter((r) => {
+              // Universal Date Filter
+              if (!isDateInRange(r.created_at || r.checked_in_at)) return false;
+
+              // Event Filter
+              if (issuedCertEventFilter !== "all") {
+                const matchesEvent =
+                  r.event_id === issuedCertEventFilter ||
+                  r.event_title?.toLowerCase() === issuedCertEventFilter.toLowerCase() ||
+                  (r.event_title && r.event_title.toLowerCase().includes(issuedCertEventFilter.toLowerCase()));
+                if (!matchesEvent) return false;
+              }
+
+              // Status Filter
+              if (issuedCertStatusFilter === "issued" && !r.certificate_id) return false;
+              if (issuedCertStatusFilter === "emailed" && !r.certificate_sent_at) return false;
+              if (issuedCertStatusFilter === "pending" && r.certificate_id) return false;
+              if (issuedCertStatusFilter === "checked_in" && r.checkin_status?.toLowerCase() !== "present") return false;
+
+              // Search Filter
+              if (issuedCertSearch.trim()) {
+                const q = issuedCertSearch.trim().toLowerCase();
+                const certNum = (r.certificate_id || "").toLowerCase();
+                const regId = (r.id || "").toLowerCase();
+                const name = (r.name || `${r.first_name || ""} ${r.last_name || ""}`).toLowerCase();
+                const email = (r.email || r.official_email || "").toLowerCase();
+                const phone = (r.phone || "").toLowerCase();
+                const org = (r.organization || "").toLowerCase();
+                const eventTitle = (r.event_title || "").toLowerCase();
+
+                return (
+                  certNum.includes(q) ||
+                  regId.includes(q) ||
+                  name.includes(q) ||
+                  email.includes(q) ||
+                  phone.includes(q) ||
+                  org.includes(q) ||
+                  eventTitle.includes(q)
+                );
+              }
+
+              return true;
+            });
+
+            // Overall counts for quick stats cards
+            const totalScopedDelegates = registrations.length;
+            const certAssignedCount = registrations.filter((r) => Boolean(r.certificate_id && r.certificate_id.trim())).length;
+            const certEmailedCount = registrations.filter((r) => Boolean(r.certificate_sent_at)).length;
+            const gateCheckedInCount = registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+            const certPendingCount = registrations.filter((r) => !r.certificate_id || !r.certificate_id.trim()).length;
+
+            return (
+              <div className="space-y-6">
+                {/* 1. Header & Actions Banner */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200/80 dark:border-slate-800 pb-6">
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                            Issued Certificates & Credential Hub
+                          </h2>
+                          <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider">
+                            Database Live
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                          Search by Certificate Number (e.g. <span className="font-mono font-bold text-amber-600 dark:text-amber-400">ETM-HRR-001</span>), auto-generate sequential certificate IDs per conference, view live SVG certificates, and dispatch emails.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Hub Buttons */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Auto-Generate Sequence Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentEvt = cmsEvents.find((e) => e.id === issuedCertEventFilter);
+                          const words = ((currentEvt ? currentEvt.title : "HR RECALL 2K26") || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+                          const autoPrefix = words.length >= 2
+                            ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+                            : "ETM-CERT";
+
+                          setAutoCertConfig({
+                            eventId: issuedCertEventFilter,
+                            prefix: autoPrefix,
+                            startSeq: 1,
+                            padding: 3,
+                            overwriteExisting: false,
+                          });
+                          setAutoCertModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-amber-500/20 hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        <Zap className="h-4 w-4" />
+                        <span>Auto-Generate Certificate Numbers</span>
+                      </button>
+
+                      {/* Export to Excel */}
+                      <button
+                        type="button"
+                        onClick={() => handleExportIssuedCertsExcel(filteredIssuedDelegates)}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Export Excel</span>
+                      </button>
+
+                      {/* Bulk Send Unsent Certificates */}
+                      <button
+                        type="button"
+                        onClick={() => handleBulkSendCertificates(true)}
+                        disabled={bulkSendingCerts}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-cyan-600/20 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {bulkSendingCerts ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Dispatching...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4" />
+                            <span>Bulk Email Unsent</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Interactive Quick Stats Cards */}
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {/* Stat 1: Total Delegates */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("all")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "all"
+                          ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                          All Delegates
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{totalScopedDelegates}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 2: Certificate Numbers Assigned */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("issued")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "issued"
+                          ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 font-bold border border-amber-300 dark:border-amber-700">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                          Numbered / Assigned
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certAssignedCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 3: Certificates Emailed */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("emailed")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "emailed"
+                          ? "bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-300 dark:border-emerald-700">
+                        <MailCheck className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 truncate">
+                          E-Certificates Sent
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certEmailedCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 4: Gate Checked-In */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("checked_in")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "checked_in"
+                          ? "bg-blue-50 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-blue-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-400 font-bold border border-blue-300 dark:border-blue-700">
+                        <UserCheck className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 truncate">
+                          Gate Attendance
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{gateCheckedInCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 5: Missing Certificate Numbers */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("pending")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "pending"
+                          ? "bg-rose-50 dark:bg-rose-950/80 border-rose-500 ring-2 ring-rose-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-rose-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-400 font-bold border border-rose-300 dark:border-rose-700">
+                        <AlertTriangle className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 truncate">
+                          Unassigned / Pending
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certPendingCount}</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Search & Conference Filter Bar */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    {/* Search Input */}
+                    <div className="sm:col-span-7 relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={issuedCertSearch}
+                        onChange={(e) => setIssuedCertSearch(e.target.value)}
+                        placeholder="Search by Certificate No (e.g. ETM-HRR-001), Delegate Name, Email, Organization..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all"
+                      />
+                      {issuedCertSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setIssuedCertSearch("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Conference Filter Dropdown */}
+                    <div className="sm:col-span-5">
+                      <select
+                        value={issuedCertEventFilter}
+                        onChange={(e) => setIssuedCertEventFilter(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all cursor-pointer"
+                      >
+                        <option value="all">🎪 All Conferences & Summits ({cmsEvents.length})</option>
+                        {cmsEvents.map((evt) => {
+                          const count = registrations.filter(
+                            (r) => r.event_id === evt.id || r.event_title === evt.title
+                          ).length;
+                          return (
+                            <option key={evt.id} value={evt.id}>
+                              🎪 {evt.title} ({count} delegates)
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Filter Status Pills */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Status:</span>
+                      {[
+                        { id: "all", label: "All Delegates", count: totalScopedDelegates },
+                        { id: "issued", label: "With Certificate No", count: certAssignedCount },
+                        { id: "emailed", label: "Emailed", count: certEmailedCount },
+                        { id: "checked_in", label: "Gate Checked-In", count: gateCheckedInCount },
+                        { id: "pending", label: "Missing Certificate No", count: certPendingCount },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setIssuedCertStatusFilter(tab.id as any)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            issuedCertStatusFilter === tab.id
+                              ? "bg-amber-500 text-slate-950 shadow-xs"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Showing <span className="text-slate-900 dark:text-slate-100 font-black">{filteredIssuedDelegates.length}</span> matching delegate records
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Issued Certificates Data Table */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                          <th className="py-3.5 px-4">Certificate ID / Number</th>
+                          <th className="py-3.5 px-4">Candidate / Delegate</th>
+                          <th className="py-3.5 px-4">Organization & City</th>
+                          <th className="py-3.5 px-4">Conference / Event</th>
+                          <th className="py-3.5 px-4 text-center">Gate Attendance</th>
+                          <th className="py-3.5 px-4 text-center">E-Certificate Email</th>
+                          <th className="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                        {filteredIssuedDelegates.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-16 text-center">
+                              <div className="max-w-md mx-auto space-y-3">
+                                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto text-xl">
+                                  🏆
+                                </div>
+                                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">
+                                  No certificate records match your filters
+                                </h4>
+                                <p className="text-xs text-slate-400">
+                                  Try adjusting your search query, event filter, or auto-generate certificate numbers for attendees.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredIssuedDelegates.map((reg) => {
+                            const hasCertId = Boolean(reg.certificate_id && reg.certificate_id.trim());
+                            const hasSentEmail = Boolean(reg.certificate_sent_at);
+                            const isCheckedIn = reg.checkin_status?.toLowerCase() === "present";
+                            const certDisplayId = reg.certificate_id || `ETM-CERT-2026-${reg.id.replace(/[^0-9]/g, "").slice(-6) || "001"}`;
+
+                            return (
+                              <tr
+                                key={reg.id}
+                                className="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors group"
+                              >
+                                {/* Certificate ID Column */}
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  {hasCertId ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono font-black text-xs text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-xl shadow-2xs">
+                                        {reg.certificate_id}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(reg.certificate_id || "");
+                                          toast.success(`Copied Certificate ID: ${reg.certificate_id}`);
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                                        title="Copy Certificate Number"
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCertIdReg({
+                                            id: reg.id,
+                                            name: reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Delegate",
+                                            currentCertId: reg.certificate_id || "",
+                                          });
+                                          setTempCertIdValue(reg.certificate_id || "");
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900 text-slate-400 hover:text-amber-600 transition-colors"
+                                        title="Edit Certificate Number"
+                                      >
+                                        <Edit3 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[11px] text-slate-400 italic">
+                                        Unassigned
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCertIdReg({
+                                            id: reg.id,
+                                            name: reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Delegate",
+                                            currentCertId: "",
+                                          });
+                                          setTempCertIdValue("");
+                                        }}
+                                        className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition-all cursor-pointer"
+                                      >
+                                        + Assign ID
+                                      </button>
+                                    </div>
+                                  )}
+                                  <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                    Ref: {reg.id}
+                                  </p>
+                                </td>
+
+                                {/* Candidate Details */}
+                                <td className="py-3.5 px-4">
+                                  <div className="font-black text-slate-900 dark:text-slate-100">
+                                    {reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate"}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {reg.designation || "Executive Delegate"}
+                                  </div>
+                                  <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span>{reg.email || reg.official_email || "No email"}</span>
+                                    {reg.phone && reg.phone !== "N/A" && <span>• {reg.phone}</span>}
+                                  </div>
+                                </td>
+
+                                {/* Organization */}
+                                <td className="py-3.5 px-4">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200">
+                                    {reg.organization || "Independent Leader"}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">
+                                    {reg.city || "Hyderabad"}, {reg.country || "India"}
+                                  </div>
+                                </td>
+
+                                {/* Conference */}
+                                <td className="py-3.5 px-4 max-w-[220px]">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate" title={reg.event_title}>
+                                    🎪 {reg.event_title || "Executive Leadership Summit"}
+                                  </div>
+                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                                    {reg.pass_name || reg.registration_category || "VIP Delegate"}
+                                  </span>
+                                </td>
+
+                                {/* Gate Attendance */}
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  {isCheckedIn ? (
+                                    <div>
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Present
+                                      </span>
+                                      {reg.checked_in_at && (
+                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                          {new Date(reg.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-500">
+                                      Absent / Not Scanned
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Email Status */}
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  {hasSentEmail ? (
+                                    <div>
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                        <MailCheck className="h-3 w-3" />
+                                        Emailed
+                                      </span>
+                                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                        {new Date(reg.certificate_sent_at!).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                      Pending Dispatch
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Action Hub Buttons */}
+                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    {/* 1. Review Live Certificate */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const matchingEvent = cmsEvents.find(
+                                          (e) => e.id === reg.event_id || e.title === reg.event_title
+                                        );
+                                        let parsedCertSettings = null;
+                                        if (matchingEvent?.certificate_settings) {
+                                          try {
+                                            parsedCertSettings = typeof matchingEvent.certificate_settings === "string"
+                                              ? JSON.parse(matchingEvent.certificate_settings)
+                                              : matchingEvent.certificate_settings;
+                                          } catch (e) {}
+                                        }
+
+                                        setPreviewCertAttendee({
+                                          ...reg,
+                                          certificate_id: reg.certificate_id || certDisplayId,
+                                          certificate_settings: parsedCertSettings,
+                                        } as any);
+                                      }}
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950 text-slate-700 dark:text-slate-200 hover:text-amber-700 transition-all cursor-pointer shadow-2xs"
+                                      title="Review Live Certificate"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </button>
+
+                                    {/* 2. Dispatch Email */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendCertificate(reg.id, reg.name)}
+                                      disabled={sendingCertId === reg.id || (!reg.email && !reg.official_email)}
+                                      className="p-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                      title={hasSentEmail ? "Resend E-Certificate Email" : "Send E-Certificate Email"}
+                                    >
+                                      {sendingCertId === reg.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Mail className="h-4 w-4" />
+                                      )}
+                                    </button>
+
+                                    {/* 3. Public Verification Link */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const certUrl = `https://executivetalksmedia.in/certificate/${encodeURIComponent(reg.id)}`;
+                                        navigator.clipboard.writeText(certUrl);
+                                        toast.success("Public verification URL copied to clipboard!");
+                                      }}
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      title="Copy Public Certificate Link"
+                                    >
+                                      <Share2 className="h-4 w-4" />
+                                    </button>
+
+                                    {/* 4. Open in New Tab */}
+                                    <a
+                                      href={`/certificate/${encodeURIComponent(reg.id)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      title="Open Public Certificate Page"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* MODAL: Auto-Generate Certificate IDs */}
+                {autoCertModalOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6 text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <Zap className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-black tracking-tight">Auto-Generate Certificate Numbers</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Batch assign sequential Certificate IDs to delegates
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAutoCertModalOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Target Event */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Target Conference / Event
+                          </label>
+                          <select
+                            value={autoCertConfig.eventId}
+                            onChange={(e) => {
+                              const evId = e.target.value;
+                              const selectedEvt = cmsEvents.find((evt) => evt.id === evId);
+                              const words = ((selectedEvt ? selectedEvt.title : "HR RECALL 2K26") || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+                              const suggested = words.length >= 2
+                                ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+                                : "ETM-CERT";
+                              setAutoCertConfig({ ...autoCertConfig, eventId: evId, prefix: suggested });
+                            }}
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer"
+                          >
+                            <option value="all">🎪 All Events & Registrations</option>
+                            {cmsEvents.map((evt) => (
+                              <option key={evt.id} value={evt.id}>
+                                🎪 {evt.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Certificate Prefix */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Certificate ID Prefix (e.g. ETM-HRR or ETM-PLS)
+                          </label>
+                          <input
+                            type="text"
+                            value={autoCertConfig.prefix}
+                            onChange={(e) => setAutoCertConfig({ ...autoCertConfig, prefix: e.target.value.toUpperCase() })}
+                            placeholder="ETM-HRR"
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        {/* Sequence Start & Padding */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                              Start Number
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={autoCertConfig.startSeq}
+                              onChange={(e) => setAutoCertConfig({ ...autoCertConfig, startSeq: parseInt(e.target.value, 10) || 1 })}
+                              className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                              Number Digits / Padding
+                            </label>
+                            <select
+                              value={autoCertConfig.padding}
+                              onChange={(e) => setAutoCertConfig({ ...autoCertConfig, padding: parseInt(e.target.value, 10) || 3 })}
+                              className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer"
+                            >
+                              <option value={2}>2 Digits (01, 02...)</option>
+                              <option value={3}>3 Digits (001, 002...)</option>
+                              <option value={4}>4 Digits (0001, 0002...)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Overwrite Checkbox */}
+                        <div className="flex items-center gap-2.5 pt-2">
+                          <input
+                            type="checkbox"
+                            id="overwriteCertIds"
+                            checked={autoCertConfig.overwriteExisting}
+                            onChange={(e) => setAutoCertConfig({ ...autoCertConfig, overwriteExisting: e.target.checked })}
+                            className="h-4 w-4 rounded-md text-amber-500 focus:ring-amber-400 border-slate-300 cursor-pointer"
+                          />
+                          <label htmlFor="overwriteCertIds" className="text-xs text-slate-600 dark:text-slate-300 font-medium cursor-pointer">
+                            Overwrite existing Certificate Numbers (if unchecked, only unassigned attendees receive numbers)
+                          </label>
+                        </div>
+
+                        {/* Format Preview Card */}
+                        <div className="rounded-2xl border border-amber-300/80 dark:border-amber-700/80 bg-amber-50/60 dark:bg-amber-950/40 p-3.5 text-xs text-amber-900 dark:text-amber-300 space-y-1">
+                          <p className="font-extrabold uppercase text-[10px] tracking-wider text-amber-700 dark:text-amber-400">
+                            Sequence Output Preview:
+                          </p>
+                          <p className="font-mono font-bold text-sm">
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq).padStart(autoCertConfig.padding, "0")},{" "}
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq + 1).padStart(autoCertConfig.padding, "0")},{" "}
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq + 2).padStart(autoCertConfig.padding, "0")}...
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setAutoCertModalOpen(false)}
+                          className="px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerateCertIds}
+                          disabled={generatingCertSeq}
+                          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                        >
+                          {generatingCertSeq ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Assigning Numbers...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="h-4 w-4" />
+                              <span>Assign Numbers Now</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL: Edit Single Candidate Certificate ID */}
+                {editingCertIdReg && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <Edit3 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black">Assign Certificate Number</h3>
+                            <p className="text-[11px] text-slate-400">{editingCertIdReg.name}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCertIdReg(null)}
+                          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Official Certificate ID / Serial Number
+                          </label>
+                          <input
+                            type="text"
+                            value={tempCertIdValue}
+                            onChange={(e) => setTempCertIdValue(e.target.value.toUpperCase())}
+                            placeholder="e.g. ETM-HRR-001"
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          This certificate ID is permanently saved to the attendee's database record and printed on their official verifiable certificate.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setEditingCertIdReg(null)}
+                          className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveSingleCertId}
+                          disabled={savingSingleCertId || !tempCertIdValue.trim()}
+                          className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 disabled:opacity-50"
+                        >
+                          {savingSingleCertId ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3.5 w-3.5" />
+                              <span>Save Number</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ========================================== */}
           {/* WEBSITE SETTINGS TAB                       */}
