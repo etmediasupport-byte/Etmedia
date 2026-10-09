@@ -155,9 +155,20 @@
   }
 
   p {
+    text-align: left;
+    text-wrap: pretty;
+  }
+
+  .prose p,
+  .article-body p {
     text-align: justify;
     text-justify: inter-word;
-    text-wrap: pretty;
+  }
+
+  .admin-panel-root,
+  .admin-panel-root * {
+    text-align: left;
+    text-justify: auto;
   }
 
   h1,

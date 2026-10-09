@@ -7540,7 +7540,7 @@ export default function AdminDashboardPage() {
                   <span>Platform Operations & Engagement Metrics</span>
                 </h3>
 
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
                   {/* Widget 1: Total Events (Live Counter) */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
@@ -7551,16 +7551,16 @@ export default function AdminDashboardPage() {
                         <Calendar className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all" ? 1 : cmsEvents.length}
                       </div>
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {selectedDashboardEventId !== "all" ? "Filtered" : "Live Counter"}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium truncate">
+                    <p className="mt-2 text-xs text-slate-500 font-medium truncate text-left">
                       {selectedDashboardEventId !== "all" ? (activeSelectedEvent?.title || "Selected summit") : "National C-suite summits published"}
                     </p>
                   </div>
@@ -7575,17 +7575,17 @@ export default function AdminDashboardPage() {
                         <Clock className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all"
                           ? (activeSelectedEvent && getEventStatus(activeSelectedEvent) !== "past" ? 1 : 0)
                           : cmsEvents.filter((e) => getEventStatus(e) !== "past").length}
                       </div>
-                      <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
+                      <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200 shrink-0">
                         Active Calendar
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Scheduled conferences & forums</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Scheduled conferences & forums</p>
                   </div>
 
                   {/* Widget 3: Total Registrations */}
@@ -7598,17 +7598,17 @@ export default function AdminDashboardPage() {
                         <Users className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all" && activeSelectedEvent
                           ? (registrations.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent)).length)
                           : (stats.totalRegistrations || registrations.length)}
                       </div>
-                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200">
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200 shrink-0">
                         {selectedDashboardEventId !== "all" ? "Filtered" : "Auto-Synced"}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Executive delegates registered</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Executive delegates registered</p>
                   </div>
 
                   {/* Widget 4: Partner Requests Counter */}
@@ -7621,19 +7621,18 @@ export default function AdminDashboardPage() {
                         <Handshake className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {partnerSubmissions.length}
                       </div>
-                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200 shrink-0">
                         Sponsorship
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Collaborators & brand partners</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Collaborators & brand partners</p>
                   </div>
 
-
-                  {/* Widget 6: Newsletter Subscribers Counter */}
+                  {/* Widget 5: Newsletter Subscribers Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7643,18 +7642,18 @@ export default function AdminDashboardPage() {
                         <MailCheck className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {newsletterSubscribers.length}
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         Verified Emails
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Weekly insights subscribers</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Weekly insights subscribers</p>
                   </div>
 
-                  {/* Widget 7: Gallery Images Counter */}
+                  {/* Widget 6: Gallery Images Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-indigo-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7664,18 +7663,18 @@ export default function AdminDashboardPage() {
                         <Film className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {cmsGalleryItems.length}
                       </div>
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200 shrink-0">
                         Photos & Videos
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Media assets stored in CMS</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Media assets stored in CMS</p>
                   </div>
 
-                  {/* Widget 8: Total Revenue / Paid Collections Counter */}
+                  {/* Widget 7: Total Revenue / Paid Collections Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7685,15 +7684,15 @@ export default function AdminDashboardPage() {
                         <IndianRupee className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-xl sm:text-2xl xl:text-3xl font-black text-slate-900 font-mono tracking-tight shrink-0">
                         ₹{dashboardPaidRevenue.toLocaleString("en-IN")}
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         Paid Collections
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Gross delegate pass collections (incl. GST)</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Gross delegate pass collections (incl. GST)</p>
                   </div>
                 </div>
               </div>
