@@ -1396,6 +1396,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// Enable Trust Proxy for Hostinger / Nginx / Cloudflare reverse proxy support
+app.set("trust proxy", true);
+
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "et_media_super_secret_jwt_key_2026";
@@ -1468,6 +1471,7 @@ const apiRateLimiter = rateLimit({
   max: 1000, // Increased limit for responsive client interactions
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." },
 });
 
@@ -1476,6 +1480,7 @@ const authRateLimiter = rateLimit({
   max: 20, // Limit each IP to 20 auth attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many authentication attempts. Please try again after 15 minutes." },
 });
 
