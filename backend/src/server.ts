@@ -5701,6 +5701,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
     status,
     is_featured,
     speakers_list,
+    zura_list,
     sponsors_list,
     gallery_list,
     agenda_list,
@@ -5725,6 +5726,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
 
   const speakersListStr = typeof speakers_list === "string" ? speakers_list : JSON.stringify(speakers_list || []);
+  const zuraListStr = typeof zura_list === "string" ? zura_list : JSON.stringify(zura_list || []);
   const sponsorsListStr = typeof sponsors_list === "string" ? sponsors_list : JSON.stringify(sponsors_list || []);
   const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
   const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
@@ -5741,8 +5743,8 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `INSERT INTO events (
-          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration, show_pricing, terms_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, zura_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration, show_pricing, terms_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -5762,6 +5764,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           status || "published",
           is_featured ? 1 : 0,
           speakersListStr,
+          zuraListStr,
           sponsorsListStr,
           galleryListStr,
           agendaListStr,
@@ -5797,6 +5800,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       status,
       is_featured,
       speakers_list: speakersListStr,
+      zura_list: zuraListStr,
       sponsors_list: sponsorsListStr,
       gallery_list: galleryListStr,
       agenda_list: agendaListStr,
@@ -5841,6 +5845,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     status,
     is_featured,
     speakers_list,
+    zura_list,
     sponsors_list,
     gallery_list,
     agenda_list,
@@ -5857,6 +5862,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
 
   const locationsStr = typeof locations === "string" ? locations : JSON.stringify(locations || []);
   const speakersListStr = typeof speakers_list === "string" ? speakers_list : JSON.stringify(speakers_list || []);
+  const zuraListStr = typeof zura_list === "string" ? zura_list : JSON.stringify(zura_list || []);
   const sponsorsListStr = typeof sponsors_list === "string" ? sponsors_list : JSON.stringify(sponsors_list || []);
   const galleryListStr = typeof gallery_list === "string" ? gallery_list : JSON.stringify(gallery_list || []);
   const agendaListStr = typeof agenda_list === "string" ? agenda_list : JSON.stringify(agenda_list || []);
@@ -5873,7 +5879,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       await ensureEventsTable();
       await pool.query(
         `UPDATE events SET 
-          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?, show_pricing = ?, terms_id = ?
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, zura_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?, show_pricing = ?, terms_id = ?
          WHERE id = ?`,
         [
           title,
@@ -5892,6 +5898,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
           status,
           is_featured ? 1 : 0,
           speakersListStr,
+          zuraListStr,
           sponsorsListStr,
           galleryListStr,
           agendaListStr,
@@ -5927,6 +5934,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       status,
       is_featured,
       speakers_list: speakersListStr,
+      zura_list: zuraListStr,
       sponsors_list: sponsorsListStr,
       gallery_list: galleryListStr,
       agenda_list: agendaListStr,

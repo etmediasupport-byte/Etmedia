@@ -425,6 +425,7 @@ export async function ensureEventsTable() {
         status VARCHAR(50) DEFAULT 'published',
         is_featured TINYINT(1) DEFAULT 0,
         speakers_list LONGTEXT,
+        zura_list LONGTEXT,
         sponsors_list LONGTEXT,
         gallery_list LONGTEXT,
         agenda_list LONGTEXT,
@@ -441,6 +442,7 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN about_content LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN about_image LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN speakers_list LONGTEXT;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN zura_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN sponsors_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN gallery_list LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN agenda_list LONGTEXT;"); } catch (colErr) {}

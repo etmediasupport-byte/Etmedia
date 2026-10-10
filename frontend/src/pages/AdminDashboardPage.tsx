@@ -1311,7 +1311,7 @@ export default function AdminDashboardPage() {
   const [submittingEvent, setSubmittingEvent] = useState(false);
   const [eventSaveNotification, setEventSaveNotification] = useState<{ message: string; type: "success" | "draft" } | null>(null);
 
-  const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "sponsors" | "gallery" | "venue" | "terms">("basic");
+  const [builderTab, setBuilderTab] = useState<"basic" | "agenda" | "speakers" | "zura" | "sponsors" | "gallery" | "venue" | "terms">("basic");
   const [openLocationSlots, setOpenLocationSlots] = useState<number[]>([0]);
 
   const toggleLocationSlot = (index: number) => {
@@ -1320,7 +1320,7 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // Sub-modal states for Speaker, Sponsor, Agenda, and Gallery
+  // Sub-modal states for Speaker, Zura, Sponsor, Agenda, and Gallery
   const [speakerModalOpen, setSpeakerModalOpen] = useState(false);
   const [editingSpeakerIndex, setEditingSpeakerIndex] = useState<number | null>(null);
   const [speakerForm, setSpeakerForm] = useState<Speaker>({
@@ -1337,6 +1337,24 @@ export default function AdminDashboardPage() {
     twitter_url: "",
   });
   const [uploadingSpeakerImg, setUploadingSpeakerImg] = useState(false);
+
+  // Sub-modal states for Zura & Jury Board
+  const [zuraModalOpen, setZuraModalOpen] = useState(false);
+  const [editingZuraIndex, setEditingZuraIndex] = useState<number | null>(null);
+  const [zuraForm, setZuraForm] = useState<Speaker>({
+    id: "",
+    name: "",
+    designation: "",
+    organization: "",
+    photo: "",
+    topic: "",
+    website_url: "",
+    linkedin_url: "",
+    youtube_url: "",
+    instagram_url: "",
+    twitter_url: "",
+  });
+  const [uploadingZuraImg, setUploadingZuraImg] = useState(false);
 
   const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
   const [editingSponsorIndex, setEditingSponsorIndex] = useState<number | null>(null);
@@ -1385,6 +1403,7 @@ export default function AdminDashboardPage() {
     sponsors_count: string;
     locations: { city: string; venue: string; date: string; time: string; address?: string; map_url?: string }[];
     speakers_list: Speaker[];
+    zura_list: Speaker[];
     sponsors_list: Sponsor[];
     gallery_list: GalleryItem[];
     agenda_list: AgendaItem[];
@@ -1419,6 +1438,7 @@ export default function AdminDashboardPage() {
       },
     ],
     speakers_list: [],
+    zura_list: [],
     sponsors_list: [],
     gallery_list: [],
     agenda_list: [],
@@ -4724,6 +4744,113 @@ export default function AdminDashboardPage() {
     toast.success("Speaker deleted.");
   };
 
+  // Zura Modal Handlers
+  const handleOpenAddZura = () => {
+    setEditingZuraIndex(null);
+    setZuraForm({
+      id: `zura-${Date.now()}`,
+      name: "",
+      designation: "",
+      organization: "",
+      photo: "",
+      topic: "",
+      website_url: "",
+      linkedin_url: "",
+      youtube_url: "",
+      instagram_url: "",
+      twitter_url: "",
+    });
+    setZuraModalOpen(true);
+  };
+
+  const handleOpenEditZura = (index: number) => {
+    const zura = eventForm.zura_list[index];
+    if (zura) {
+      setEditingZuraIndex(index);
+      setZuraForm({
+        ...zura,
+        website_url: zura.website_url || zura.websiteUrl || "",
+        linkedin_url: zura.linkedin_url || zura.linkedinUrl || "",
+        youtube_url: zura.youtube_url || zura.youtubeUrl || "",
+        instagram_url: zura.instagram_url || zura.instagramUrl || "",
+        twitter_url: zura.twitter_url || zura.twitterUrl || "",
+      });
+      setZuraModalOpen(true);
+    }
+  };
+
+  const handleZuraImgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be under 10MB");
+      return;
+    }
+
+    setUploadingZuraImg(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      setZuraForm((prev) => ({ ...prev, photo: base64Data }));
+
+      try {
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            filename: file.name,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          setZuraForm((prev) => ({ ...prev, photo: data.url }));
+          toast.success("Zura photo uploaded!");
+        } else {
+          toast.success("Zura photo loaded into preview!");
+        }
+      } catch (err) {
+        toast.success("Zura photo loaded into preview!");
+      } finally {
+        setUploadingZuraImg(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveZuraModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!zuraForm.name.trim() || !zuraForm.designation.trim() || !zuraForm.organization.trim()) {
+      toast.error("❌ Zura Name, Designation, and Company are required.");
+      return;
+    }
+
+    setEventForm((prev) => {
+      const updated = [...prev.zura_list];
+      if (editingZuraIndex !== null) {
+        updated[editingZuraIndex] = { ...zuraForm };
+      } else {
+        updated.push({ ...zuraForm, id: zuraForm.id || `zura-${Date.now()}` });
+      }
+      return { ...prev, zura_list: updated };
+    });
+
+    setZuraModalOpen(false);
+    toast.success("✅ Zura saved successfully!");
+  };
+
+  const handleDeleteZuraItem = (index: number) => {
+    setEventForm((prev) => ({
+      ...prev,
+      zura_list: prev.zura_list.filter((_, i) => i !== index),
+    }));
+    toast.success("Zura member deleted.");
+  };
+
   // Sponsor Modal Handlers
   const handleOpenAddSponsor = () => {
     setEditingSponsorIndex(null);
@@ -5054,6 +5181,13 @@ export default function AdminDashboardPage() {
     } catch (e) {}
     if (!parsedSpeakers) parsedSpeakers = [];
 
+    let parsedZura: Speaker[] = [];
+    try {
+      if (typeof evt.zura_list === "string") parsedZura = JSON.parse(evt.zura_list);
+      else if (Array.isArray(evt.zura_list)) parsedZura = evt.zura_list;
+    } catch (e) {}
+    if (!parsedZura) parsedZura = [];
+
     let parsedSponsors: Sponsor[] = [];
     try {
       if (typeof evt.sponsors_list === "string") parsedSponsors = JSON.parse(evt.sponsors_list);
@@ -5091,6 +5225,7 @@ export default function AdminDashboardPage() {
       sponsors_count: evt.sponsors_count || "25+",
       locations: parsedLocations,
       speakers_list: parsedSpeakers,
+      zura_list: parsedZura,
       sponsors_list: parsedSponsors,
       gallery_list: parsedGallery,
       agenda_list: parsedAgenda,
@@ -5179,6 +5314,7 @@ export default function AdminDashboardPage() {
       time: primaryLoc.time,
       locations: JSON.stringify(eventForm.locations),
       speakers_list: JSON.stringify(eventForm.speakers_list),
+      zura_list: JSON.stringify(eventForm.zura_list),
       sponsors_list: JSON.stringify(eventForm.sponsors_list),
       gallery_list: JSON.stringify(eventForm.gallery_list),
       agenda_list: JSON.stringify(eventForm.agenda_list),
@@ -12079,10 +12215,11 @@ export default function AdminDashboardPage() {
                 { id: "basic", label: `1. Basic & Venues (${eventForm.locations.length})` },
                 { id: "agenda", label: `2. Agenda (${eventForm.agenda_list.length})` },
                 { id: "speakers", label: `3. Speakers (${eventForm.speakers_list.length})` },
-                { id: "sponsors", label: `4. Sponsors (${eventForm.sponsors_list.length})` },
-                { id: "gallery", label: `5. Gallery (${eventForm.gallery_list.length})` },
-                { id: "venue", label: "6. Primary Map" },
-                { id: "terms", label: "7. Terms & Conditions" },
+                { id: "zura", label: `4. Zura (${eventForm.zura_list.length})` },
+                { id: "sponsors", label: `5. Sponsors (${eventForm.sponsors_list.length})` },
+                { id: "gallery", label: `6. Gallery (${eventForm.gallery_list.length})` },
+                { id: "venue", label: "7. Primary Map" },
+                { id: "terms", label: "8. Terms & Conditions" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -13001,7 +13138,143 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* TAB 4: SPONSORS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+              {/* TAB 4: ZURA & JURY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+              {builderTab === "zura" && (
+                <div className="space-y-5">
+                  {/* Summary Card */}
+                  <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-bold text-amber-800">
+                        <CheckCircle2 className="h-4 w-4 text-amber-600" />
+                        <span>✅ {eventForm.zura_list.length} Zura Added</span>
+                      </span>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Zura & Jury Board</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Zura" to open modal popup, upload photo, and save.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenAddZura}
+                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>+ Add Zura</span>
+                    </button>
+                  </div>
+
+                  {/* Zura Summary Grid */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {eventForm.zura_list.map((zura, idx) => (
+                      <div key={zura.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-amber-300 transition-all">
+                        <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
+                          {zura.photo ? (
+                            <img src={zura.photo} alt={zura.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
+                              {zura.name.charAt(0) || "Z"}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{zura.name}</h5>
+                            {(zura.website_url || zura.websiteUrl) && (
+                              <a
+                                href={zura.website_url || zura.websiteUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-cyan-700 hover:opacity-80 shrink-0"
+                                title="Website"
+                              >
+                                <Globe className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {(zura.linkedin_url || zura.linkedinUrl) && (
+                              <a
+                                href={zura.linkedin_url || zura.linkedinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[#0077b5] hover:opacity-80 shrink-0"
+                                title="LinkedIn Profile"
+                              >
+                                <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
+                              </a>
+                            )}
+                            {(zura.youtube_url || zura.youtubeUrl) && (
+                              <a
+                                href={zura.youtube_url || zura.youtubeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-red-600 hover:opacity-80 shrink-0"
+                                title="YouTube Channel"
+                              >
+                                <Youtube className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {(zura.instagram_url || zura.instagramUrl) && (
+                              <a
+                                href={zura.instagram_url || zura.instagramUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-pink-600 hover:opacity-80 shrink-0"
+                                title="Instagram"
+                              >
+                                <Instagram className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {(zura.twitter_url || zura.twitterUrl) && (
+                              <a
+                                href={zura.twitter_url || zura.twitterUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-sky-500 hover:opacity-80 shrink-0"
+                                title="Twitter / X"
+                              >
+                                <Twitter className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium truncate">{zura.designation}</p>
+                          <p className="text-[11px] text-amber-800 font-bold truncate">{zura.organization}</p>
+                        </div>
+
+                        <div className="flex flex-col gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditZura(idx)}
+                            className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-800 hover:bg-amber-100 cursor-pointer"
+                            title="Edit Zura"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteZuraItem(idx)}
+                            className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                            title="Delete Zura"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {eventForm.zura_list.length === 0 && (
+                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                        No zura members added yet. Click "+ Add Zura" above.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: SPONSORS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
               {builderTab === "sponsors" && (
                 <div className="space-y-5">
                   {/* Summary Card */}
@@ -13421,9 +13694,9 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       {speakerModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+              <h4 className="font-extrabold text-slate-900 text-base font-display">
                 {editingSpeakerIndex !== null ? "Edit Keynote Speaker" : "Add Keynote Speaker"}
               </h4>
               <button
@@ -13431,85 +13704,89 @@ export default function AdminDashboardPage() {
                 onClick={() => setSpeakerModalOpen(false)}
                 className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSpeakerModal} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Speaker Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={speakerForm.name}
-                  onChange={(e) => setSpeakerForm({ ...speakerForm, name: e.target.value })}
-                  placeholder="e.g. Dr. Rajesh Sharma"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Designation *</label>
-                <input
-                  type="text"
-                  required
-                  value={speakerForm.designation}
-                  onChange={(e) => setSpeakerForm({ ...speakerForm, designation: e.target.value })}
-                  placeholder="e.g. Chief Technology Officer / Executive VP"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
-                <input
-                  type="text"
-                  required
-                  value={speakerForm.organization}
-                  onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
-                  placeholder="e.g. Executive Talks Media Hub / Enterprise AI Solutions"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-slate-700 font-bold">Photo Image (Upload or URL) *</label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>{uploadingSpeakerImg ? "Uploading..." : "Upload File"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleSpeakerImgFileUpload}
-                      disabled={uploadingSpeakerImg}
-                      className="hidden"
-                    />
-                  </label>
+            <form onSubmit={handleSaveSpeakerModal} className="space-y-4 text-xs">
+              {/* 2-column inputs for main speaker information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Speaker Name *</label>
                   <input
                     type="text"
                     required
-                    value={speakerForm.photo}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, photo: e.target.value })}
-                    placeholder="Image URL..."
-                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs"
+                    value={speakerForm.name}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, name: e.target.value })}
+                    placeholder="e.g. Dr. Rajesh Sharma"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Designation *</label>
+                  <input
+                    type="text"
+                    required
+                    value={speakerForm.designation}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, designation: e.target.value })}
+                    placeholder="e.g. Chief Technology Officer / Executive VP"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
+                  <input
+                    type="text"
+                    required
+                    value={speakerForm.organization}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
+                    placeholder="e.g. Executive Talks Media Hub"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
+                  <input
+                    type="text"
+                    value={speakerForm.topic || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
+                    placeholder="e.g. Keynote: AI Transformation"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Photo Image Span 2 Columns */}
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
+                  <div className="flex items-center gap-2.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>{uploadingSpeakerImg ? "Uploading..." : "Upload File"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSpeakerImgFileUpload}
+                        disabled={uploadingSpeakerImg}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={speakerForm.photo}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, photo: e.target.value })}
+                      placeholder="Image URL or uploaded file path..."
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
-                <input
-                  type="text"
-                  value={speakerForm.topic || ""}
-                  onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
-                  placeholder="e.g. Keynote: AI Transformation in Enterprise Finance"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              {/* Speaker Custom URLs Section */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+              {/* Speaker Custom URLs Section - 2 Columns */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block text-slate-800 font-extrabold text-xs">
                     Speaker Links & Social URLs (Optional)
@@ -13519,74 +13796,76 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                    <Globe className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Website / Portfolio URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={speakerForm.website_url || speakerForm.websiteUrl || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, website_url: e.target.value })}
-                    placeholder="e.g. https://www.speakerwebsite.com"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none"
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>Website / Portfolio URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={speakerForm.website_url || speakerForm.websiteUrl || ""}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, website_url: e.target.value })}
+                      placeholder="e.g. https://www.speakerwebsite.com"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                    <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
-                    <span>LinkedIn Profile URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
-                    placeholder="e.g. https://www.linkedin.com/in/username"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                      <span>LinkedIn Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
+                      placeholder="e.g. https://www.linkedin.com/in/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                    <Youtube className="h-3.5 w-3.5 text-red-600" />
-                    <span>YouTube Channel / Video URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={speakerForm.youtube_url || speakerForm.youtubeUrl || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, youtube_url: e.target.value })}
-                    placeholder="e.g. https://www.youtube.com/@username"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Youtube className="h-3.5 w-3.5 text-red-600" />
+                      <span>YouTube Channel / Video URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={speakerForm.youtube_url || speakerForm.youtubeUrl || ""}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, youtube_url: e.target.value })}
+                      placeholder="e.g. https://www.youtube.com/@username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                    <Instagram className="h-3.5 w-3.5 text-pink-600" />
-                    <span>Instagram Profile URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={speakerForm.instagram_url || speakerForm.instagramUrl || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, instagram_url: e.target.value })}
-                    placeholder="e.g. https://www.instagram.com/username"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Instagram className="h-3.5 w-3.5 text-pink-600" />
+                      <span>Instagram Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={speakerForm.instagram_url || speakerForm.instagramUrl || ""}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, instagram_url: e.target.value })}
+                      placeholder="e.g. https://www.instagram.com/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                    <Twitter className="h-3.5 w-3.5 text-sky-500" />
-                    <span>Twitter / X Profile URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={speakerForm.twitter_url || speakerForm.twitterUrl || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, twitter_url: e.target.value })}
-                    placeholder="e.g. https://x.com/username"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none"
-                  />
+                  <div className="sm:col-span-2">
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Twitter className="h-3.5 w-3.5 text-sky-500" />
+                      <span>Twitter / X Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={speakerForm.twitter_url || speakerForm.twitterUrl || ""}
+                      onChange={(e) => setSpeakerForm({ ...speakerForm, twitter_url: e.target.value })}
+                      placeholder="e.g. https://x.com/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -13611,13 +13890,213 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ========================================== */}
+      {/* POPUP SUB-MODAL: ZURA & JURY EDIT/ADD      */}
+      {/* ========================================== */}
+      {zuraModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-base font-display">
+                {editingZuraIndex !== null ? "Edit Zura Member" : "Add Zura Member"}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setZuraModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveZuraModal} className="space-y-4 text-xs">
+              {/* 2-column inputs for main zura information */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Zura Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={zuraForm.name}
+                    onChange={(e) => setZuraForm({ ...zuraForm, name: e.target.value })}
+                    placeholder="e.g. Dr. Rajesh Sharma"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Designation *</label>
+                  <input
+                    type="text"
+                    required
+                    value={zuraForm.designation}
+                    onChange={(e) => setZuraForm({ ...zuraForm, designation: e.target.value })}
+                    placeholder="e.g. Jury Chair / Executive VP"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
+                  <input
+                    type="text"
+                    required
+                    value={zuraForm.organization}
+                    onChange={(e) => setZuraForm({ ...zuraForm, organization: e.target.value })}
+                    placeholder="e.g. Executive Talks Media Hub"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
+                  <input
+                    type="text"
+                    value={zuraForm.topic || ""}
+                    onChange={(e) => setZuraForm({ ...zuraForm, topic: e.target.value })}
+                    placeholder="e.g. Jury Evaluation & Governance"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Photo Image Span 2 Columns */}
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
+                  <div className="flex items-center gap-2.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>{uploadingZuraImg ? "Uploading..." : "Upload File"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleZuraImgFileUpload}
+                        disabled={uploadingZuraImg}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={zuraForm.photo}
+                      onChange={(e) => setZuraForm({ ...zuraForm, photo: e.target.value })}
+                      placeholder="Image URL or uploaded file path..."
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Zura Custom URLs Section - 2 Columns */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-slate-800 font-extrabold text-xs">
+                    Zura Links & Social URLs (Optional)
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    Only provided URLs will appear on user side
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                      <span>Website / Portfolio URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={zuraForm.website_url || zuraForm.websiteUrl || ""}
+                      onChange={(e) => setZuraForm({ ...zuraForm, website_url: e.target.value })}
+                      placeholder="e.g. https://www.zuraprofile.com"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                      <span>LinkedIn Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={zuraForm.linkedin_url || zuraForm.linkedinUrl || ""}
+                      onChange={(e) => setZuraForm({ ...zuraForm, linkedin_url: e.target.value })}
+                      placeholder="e.g. https://www.linkedin.com/in/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Youtube className="h-3.5 w-3.5 text-red-600" />
+                      <span>YouTube Channel / Video URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={zuraForm.youtube_url || zuraForm.youtubeUrl || ""}
+                      onChange={(e) => setZuraForm({ ...zuraForm, youtube_url: e.target.value })}
+                      placeholder="e.g. https://www.youtube.com/@username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Instagram className="h-3.5 w-3.5 text-pink-600" />
+                      <span>Instagram Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={zuraForm.instagram_url || zuraForm.instagramUrl || ""}
+                      onChange={(e) => setZuraForm({ ...zuraForm, instagram_url: e.target.value })}
+                      placeholder="e.g. https://www.instagram.com/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                      <Twitter className="h-3.5 w-3.5 text-sky-500" />
+                      <span>Twitter / X Profile URL</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={zuraForm.twitter_url || zuraForm.twitterUrl || ""}
+                      onChange={(e) => setZuraForm({ ...zuraForm, twitter_url: e.target.value })}
+                      placeholder="e.g. https://x.com/username"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setZuraModalOpen(false)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                >
+                  Save Zura
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
       {/* POPUP SUB-MODAL: SPONSOR EDIT/ADD          */}
       {/* ========================================== */}
       {sponsorModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm font-display">
+              <h4 className="font-extrabold text-slate-900 text-base font-display">
                 {editingSponsorIndex !== null ? "Edit Corporate Sponsor" : "Add Corporate Sponsor"}
               </h4>
               <button
@@ -13625,77 +14104,79 @@ export default function AdminDashboardPage() {
                 onClick={() => setSponsorModalOpen(false)}
                 className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSponsorModal} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Brand Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Google, Microsoft, KPMG..."
-                  value={sponsorForm.name}
-                  onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Website URL (Optional)</label>
-                <input
-                  type="url"
-                  placeholder="e.g. https://www.google.com"
-                  value={sponsorForm.websiteUrl || (sponsorForm as any).website || ""}
-                  onChange={(e) =>
-                    setSponsorForm({
-                      ...sponsorForm,
-                      websiteUrl: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Sponsorship Tier *</label>
-                <select
-                  value={sponsorForm.tier}
-                  onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value as any })}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                >
-                  <option value="Title Partner">Title Partner</option>
-                  <option value="Platinum Sponsor">Platinum Sponsor</option>
-                  <option value="Gold Sponsor">Gold Sponsor</option>
-                  <option value="Silver Partner">Silver Partner</option>
-                  <option value="Technology Partner">Technology Partner</option>
-                  <option value="Media Partner">Media Partner</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-slate-700 font-bold">Logo (Upload File or URL) *</label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>{uploadingSponsorLogo ? "Uploading..." : "Upload Logo"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleSponsorLogoFileUpload}
-                      disabled={uploadingSponsorLogo}
-                      className="hidden"
-                    />
-                  </label>
+            <form onSubmit={handleSaveSponsorModal} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Brand Name *</label>
                   <input
                     type="text"
                     required
-                    value={sponsorForm.logo}
-                    onChange={(e) => setSponsorForm({ ...sponsorForm, logo: e.target.value })}
-                    placeholder="Logo URL..."
-                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs"
+                    placeholder="e.g. Google, Microsoft, KPMG..."
+                    value={sponsorForm.name}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Website URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="e.g. https://www.google.com"
+                    value={sponsorForm.websiteUrl || (sponsorForm as any).website || ""}
+                    onChange={(e) =>
+                      setSponsorForm({
+                        ...sponsorForm,
+                        websiteUrl: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Sponsorship Tier *</label>
+                  <select
+                    value={sponsorForm.tier}
+                    onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value as any })}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  >
+                    <option value="Title Partner">Title Partner</option>
+                    <option value="Platinum Sponsor">Platinum Sponsor</option>
+                    <option value="Gold Sponsor">Gold Sponsor</option>
+                    <option value="Silver Partner">Silver Partner</option>
+                    <option value="Technology Partner">Technology Partner</option>
+                    <option value="Media Partner">Media Partner</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold mb-1">Logo (Upload or URL) *</label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-2.5 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>{uploadingSponsorLogo ? "..." : "Upload"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSponsorLogoFileUpload}
+                        disabled={uploadingSponsorLogo}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={sponsorForm.logo}
+                      onChange={(e) => setSponsorForm({ ...sponsorForm, logo: e.target.value })}
+                      placeholder="Logo URL..."
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
                 </div>
               </div>
 

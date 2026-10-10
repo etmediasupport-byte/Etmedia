@@ -354,6 +354,7 @@ export type EventItem = {
   sponsors_count?: string;
   locations?: string | any[];
   speakers_list?: string | Speaker[];
+  zura_list?: string | Speaker[];
   sponsors_list?: string | Sponsor[];
   gallery_list?: string | GalleryItem[];
   agenda_list?: string | AgendaItem[];
