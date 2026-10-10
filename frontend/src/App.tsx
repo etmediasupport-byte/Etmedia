@@ -226,6 +226,9 @@ export default function App() {
               <Route path="news" element={<NewsPage />} />
               <Route path="magazine" element={<MagazinePage />} />
               <Route path="events" element={<EventsPage />} />
+              <Route path="events/upcoming" element={<EventsPage />} />
+              <Route path="events/past" element={<EventsPage />} />
+              <Route path="events/live" element={<EventsPage />} />
               <Route path="events/:slug" element={<EventDetailPage />} />
               <Route path="events/:slug/register" element={<EventRegistrationWizardPage />} />
               <Route path="events/:slug/register-free" element={<FreeRegistrationPage />} />

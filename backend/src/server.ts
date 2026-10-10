@@ -207,11 +207,17 @@ interface RegistrationEmailPayload {
   createdAt?: string;
 }
 
-export async function getDynamicEmailSubject(
+export async function getDynamicEmailContent(
   configId: string,
   variables: Record<string, any>,
-  fallbackSubject?: string
-): Promise<string> {
+  fallbacks?: { subject?: string; intro?: string; body?: string; notes?: string }
+): Promise<{
+  subject: string;
+  intro: string;
+  body: string;
+  notes: string;
+  bodyHtml: string;
+}> {
   try {
     let config: any = null;
     if (pool) {
@@ -228,17 +234,6 @@ export async function getDynamicEmailSubject(
       config = DEFAULT_EMAIL_SUBJECT_CONFIGS.find((c) => c.id === configId);
     }
 
-    if (!config) {
-      return fallbackSubject || "Executive Talks Media Business Intelligence";
-    }
-
-    // Determine base template:
-    // If template is empty, fall back to prefix + {event_name} + suffix
-    let template = config.subject_template || "";
-    if (!template.trim()) {
-      template = `${config.prefix || ""}{event_name}${config.suffix || ""}`;
-    }
-
     const eventName = (variables.event_name || variables.eventTitle || variables.eventName || "Executive Talks Conclave").trim();
     const delegateName = (variables.delegate_name || variables.candidateName || variables.fullName || variables.name || "Executive Delegate").trim();
     const passId = (variables.pass_id || variables.regId || variables.registrationId || variables.certId || "").trim();
@@ -246,22 +241,29 @@ export async function getDynamicEmailSubject(
     const category = (variables.category || variables.registrationCategory || variables.regCategory || "Delegate").trim();
     const city = (variables.city || "Hyderabad").trim();
 
-    let subject = template
-      .replace(/{event_name}/gi, eventName)
-      .replace(/{delegate_name}/gi, delegateName)
-      .replace(/{pass_id}/gi, passId)
-      .replace(/{company}/gi, company)
-      .replace(/{category}/gi, category)
-      .replace(/{city}/gi, city);
+    const replaceTokens = (text: string) => {
+      if (!text) return "";
+      return text
+        .replace(/{event_name}/gi, eventName)
+        .replace(/{delegate_name}/gi, delegateName)
+        .replace(/{pass_id}/gi, passId)
+        .replace(/{company}/gi, company)
+        .replace(/{category}/gi, category)
+        .replace(/{city}/gi, city);
+    };
 
-    if (config.prefix && !template.includes(config.prefix)) {
+    // 1. Subject
+    let subjectTemplate = config?.subject_template || fallbacks?.subject || "";
+    if (!subjectTemplate.trim() && config?.prefix) {
+      subjectTemplate = `${config.prefix}{event_name}${config.suffix || ""}`;
+    }
+    let subject = replaceTokens(subjectTemplate);
+    if (config?.prefix && !subjectTemplate.includes(config.prefix)) {
       subject = `${config.prefix}${subject}`;
     }
-    if (config.suffix && !template.includes(config.suffix)) {
+    if (config?.suffix && !subjectTemplate.includes(config.suffix)) {
       subject = `${subject}${config.suffix}`;
     }
-
-    // Clean up empty parentheses or hanging dashes if token was empty
     subject = subject
       .replace(/\(\s*\)/g, "")
       .replace(/\s+—\s*$/g, "")
@@ -269,11 +271,53 @@ export async function getDynamicEmailSubject(
       .replace(/\s{2,}/g, " ")
       .trim();
 
-    return subject || fallbackSubject || "Executive Talks Media Business Intelligence";
+    // 2. Intro
+    const introTemplate = config?.body_intro || fallbacks?.intro || `Dear ${delegateName},`;
+    const intro = replaceTokens(introTemplate);
+
+    // 3. Body
+    const bodyTemplate = config?.body_template || fallbacks?.body || "";
+    const body = replaceTokens(bodyTemplate);
+
+    // 4. Notes
+    const notesTemplate = config?.body_notes || fallbacks?.notes || "";
+    const notes = replaceTokens(notesTemplate);
+
+    // 5. Convert body to HTML paragraphs if plain text
+    let bodyHtml = body;
+    if (bodyHtml && !bodyHtml.includes("<p>") && !bodyHtml.includes("<div>")) {
+      bodyHtml = bodyHtml
+        .split("\n\n")
+        .map((p) => `<p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.6; color: #334155;">${p.replace(/\n/g, "<br/>")}</p>`)
+        .join("");
+    }
+
+    return {
+      subject: subject || fallbacks?.subject || "Executive Talks Media Business Intelligence",
+      intro,
+      body,
+      notes,
+      bodyHtml,
+    };
   } catch (err) {
-    console.warn(`[EmailSubject] Error generating dynamic subject for ${configId}:`, err);
-    return fallbackSubject || "Executive Talks Media Business Intelligence";
+    console.warn(`[EmailContent] Error generating dynamic email content for ${configId}:`, err);
+    return {
+      subject: fallbacks?.subject || "Executive Talks Media Business Intelligence",
+      intro: `Dear ${variables.delegate_name || "Delegate"},`,
+      body: fallbacks?.body || "",
+      notes: fallbacks?.notes || "",
+      bodyHtml: fallbacks?.body || "",
+    };
   }
+}
+
+export async function getDynamicEmailSubject(
+  configId: string,
+  variables: Record<string, any>,
+  fallbackSubject?: string
+): Promise<string> {
+  const content = await getDynamicEmailContent(configId, variables, { subject: fallbackSubject });
+  return content.subject;
 }
 
 export async function getEventTerms(eventIdOrSlug?: string): Promise<{
@@ -976,7 +1020,7 @@ We look forward to building a successful partnership with your organisation.
 
 Regards,
 Executive Talks Media Business Intelligence
-partner.support@executivetalksmedia.in
+partners@executivetalksmedia.in
 www.executivetalksmedia.in`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -996,7 +1040,7 @@ www.executivetalksmedia.in`,
         <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; color: #64748b; font-size: 13px;">
           <p style="margin: 0; font-weight: bold; color: #1e293b;">Regards,</p>
           <p style="margin: 2px 0; font-weight: bold; color: #0f172a;">Executive Talks Media Business Intelligence</p>
-          <p style="margin: 4px 0 0 0;"><a href="mailto:partner.support@executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">partner.support@executivetalksmedia.in</a></p>
+          <p style="margin: 4px 0 0 0;"><a href="mailto:partners@executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">partners@executivetalksmedia.in</a></p>
           <p style="margin: 2px 0 0 0;"><a href="https://www.executivetalksmedia.in" style="color: #00AEEF; text-decoration: none;">www.executivetalksmedia.in</a></p>
         </div>
       </div>
@@ -1143,6 +1187,85 @@ async function sendContactAdminNotificationEmail(data: {
     return true;
   } catch (err: any) {
     console.error(`[Nodemailer] Error sending contact admin alert:`, err.message);
+    return false;
+  }
+}
+
+async function sendContactUserConfirmationEmail(data: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  enquiryType?: string;
+  message: string;
+  submittedAt?: string;
+}) {
+  const dynamicSubject = `Thank You for Contacting Executive Talks Media Business Intelligence [Ref: ${data.id}]`;
+
+  const mailOptions = {
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
+    to: data.email.trim(),
+    subject: dynamicSubject,
+    text: `Dear ${data.name},
+
+Thank you for contacting Executive Talks Media Business Intelligence.
+
+We have received your enquiry regarding "${data.enquiryType || "General Advisory"}" [Reference: ${data.id}].
+Our executive advisory desk will review your requirements and get back to you shortly.
+
+Summary of your submission:
+- Reference ID: ${data.id}
+- Full Name: ${data.name}
+- Email: ${data.email}
+- Phone: ${data.phone || "N/A"}
+- Enquiry Category: ${data.enquiryType || "General Advisory"}
+
+For urgent assistance, feel free to reach out to us directly at registration@executivetalksmedia.in or info@executivetalksmedia.in.
+
+Warm regards,
+Executive Talks Media Business Intelligence
+Conference & Corporate Relations Desk
+Website: https://www.executivetalksmedia.in
+`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #3b82f6 50%, #6366f1 100%); padding: 30px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">Executive Talks Media</h1>
+          <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95; font-weight: 500;">Business Intelligence & Leadership Summits</p>
+        </div>
+        <div style="padding: 30px; color: #334155; font-size: 14px; line-height: 1.6;">
+          <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Dear ${data.name},</p>
+          <p>Thank you for reaching out to <strong>Executive Talks Media Business Intelligence</strong>. We have received your inquiry and our team is currently reviewing your details.</p>
+          
+          <div style="background-color: #f8fafc; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px 20px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; color: #0f172a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Submission Details</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr><td style="padding: 4px 0; color: #64748b; width: 35%;">Reference ID:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">${data.id}</td></tr>
+              <tr><td style="padding: 4px 0; color: #64748b;">Enquiry Category:</td><td style="padding: 4px 0; font-weight: 600; color: #0284c7;">${data.enquiryType || "General Advisory"}</td></tr>
+              <tr><td style="padding: 4px 0; color: #64748b;">Submitted Date:</td><td style="padding: 4px 0; font-weight: 500;">${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</td></tr>
+            </table>
+          </div>
+
+          <p>An executive coordinator from our relations team will connect with you shortly regarding your requirements.</p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <p style="margin: 0; font-weight: 700; color: #0f172a;">Warm regards,</p>
+            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Executive Advisory Desk<br/><strong>Executive Talks Media Business Intelligence</strong><br/>Email: <a href="mailto:registration@executivetalksmedia.in" style="color: #0284c7;">registration@executivetalksmedia.in</a></p>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center; color: #94a3b8; font-size: 11px;">
+          © ${new Date().getFullYear()} Executive Talks Media Business Intelligence. All rights reserved.
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Nodemailer] Contact user confirmation email sent to ${data.email} (${info.messageId})`);
+    return true;
+  } catch (err: any) {
+    console.error(`[Nodemailer] Error sending contact user confirmation:`, err.message);
     return false;
   }
 }
@@ -1317,6 +1440,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// Enable Trust Proxy for Hostinger / Nginx / Cloudflare reverse proxy support
+app.set("trust proxy", true);
+
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "et_media_super_secret_jwt_key_2026";
@@ -1326,7 +1452,7 @@ app.use(
   compression({
     level: 6,
     threshold: 512, // Compress any response larger than 512 bytes
-    filter: (req, res) => {
+    filter: (req: any, res: any) => {
       if (req.headers["x-no-compression"]) {
         return false;
       }
@@ -1389,6 +1515,7 @@ const apiRateLimiter = rateLimit({
   max: 1000, // Increased limit for responsive client interactions
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." },
 });
 
@@ -1397,6 +1524,7 @@ const authRateLimiter = rateLimit({
   max: 20, // Limit each IP to 20 auth attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many authentication attempts. Please try again after 15 minutes." },
 });
 
@@ -3821,6 +3949,140 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
   }
 });
 
+// 2c. Auto-Generate Sequential Certificate IDs for an Event / All Events
+app.post("/api/admin/certificates/auto-generate-ids", authenticateAdmin, async (req, res) => {
+  const { eventId, prefix, startSeq = 1, padding = 3, overwriteExisting = false } = req.body;
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection not available." });
+    }
+
+    let targetEventTitle = "";
+    let derivedPrefix = (prefix || "").trim().toUpperCase();
+
+    if (eventId && eventId !== "all") {
+      const [evtRows]: any = await pool.query("SELECT id, title, certificate_settings FROM events WHERE id = ? LIMIT 1", [eventId]);
+      if (evtRows && evtRows.length > 0) {
+        targetEventTitle = evtRows[0].title;
+        if (!derivedPrefix) {
+          // Derive 3-letter acronym from event title, e.g. "HR RECALL 2K26" -> "HRR", "PROCUREMENT LEADERSHIP" -> "PLS"
+          const words = targetEventTitle.replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+          if (words.length >= 2) {
+            derivedPrefix = `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`;
+          } else if (words.length === 1) {
+            derivedPrefix = `ETM-${words[0].slice(0, 3).toUpperCase()}`;
+          } else {
+            derivedPrefix = "ETM-CERT";
+          }
+        }
+      }
+    }
+
+    if (!derivedPrefix) {
+      derivedPrefix = "ETM-CERT";
+    }
+    if (!derivedPrefix.startsWith("ETM-")) {
+      derivedPrefix = `ETM-${derivedPrefix}`;
+    }
+
+    // Query registrations for the target event or all events
+    let regQuery = "SELECT id, created_at, certificate_id, name, event_title FROM registrations";
+    const queryParams: any[] = [];
+    if (targetEventTitle) {
+      regQuery += " WHERE event_id = ? OR event_title = ? OR event_title LIKE ?";
+      queryParams.push(eventId, targetEventTitle, `%${targetEventTitle.slice(0, 20)}%`);
+    }
+    regQuery += " ORDER BY created_at ASC, id ASC";
+
+    const [rows]: any = await pool.query(regQuery, queryParams);
+
+    let currentSeq = parseInt(String(startSeq), 10) || 1;
+    const padLen = parseInt(String(padding), 10) || 3;
+    let updatedCount = 0;
+    const assignments: Array<{ id: string; name: string; certificate_id: string }> = [];
+
+    for (const row of rows || []) {
+      if (!overwriteExisting && row.certificate_id && row.certificate_id.trim()) {
+        continue;
+      }
+      const seqStr = String(currentSeq).padStart(padLen, "0");
+      const generatedCertId = `${derivedPrefix}-${seqStr}`;
+
+      await pool.query("UPDATE registrations SET certificate_id = ? WHERE id = ?", [generatedCertId, row.id]);
+      await pool.query("UPDATE delegate_registrations SET certificate_id = ? WHERE id = ?", [generatedCertId, row.id]);
+
+      assignments.push({
+        id: row.id,
+        name: row.name || "Delegate",
+        certificate_id: generatedCertId,
+      });
+
+      currentSeq++;
+      updatedCount++;
+    }
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "certificates_generated",
+        updatedCount,
+        eventId,
+        prefix: derivedPrefix,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `🎉 Successfully assigned ${updatedCount} sequential Certificate IDs (e.g. ${derivedPrefix}-${String(startSeq).padStart(padLen, "0")})!`,
+      updatedCount,
+      prefix: derivedPrefix,
+      nextSeq: currentSeq,
+      assignments,
+    });
+  } catch (err: any) {
+    console.error("[API] Generate Certificate IDs Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to generate certificate IDs." });
+  }
+});
+
+// 2d. Assign / Update Single Candidate Certificate ID
+app.put("/api/admin/certificates/assign-id", authenticateAdmin, async (req, res) => {
+  const { regId, certId } = req.body;
+  if (!regId || !certId) {
+    return res.status(400).json({ success: false, message: "Registration ID and Certificate ID are required." });
+  }
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection not available." });
+    }
+
+    const cleanCertId = certId.trim().toUpperCase();
+
+    await pool.query("UPDATE registrations SET certificate_id = ? WHERE id = ?", [cleanCertId, regId]);
+    await pool.query("UPDATE delegate_registrations SET certificate_id = ? WHERE id = ?", [cleanCertId, regId]);
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "certificate_id_assigned",
+        regId,
+        certificateId: cleanCertId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Certificate ID updated to ${cleanCertId}!`,
+      certificate_id: cleanCertId,
+    });
+  } catch (err: any) {
+    console.error("[API] Assign Certificate ID Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to assign certificate ID." });
+  }
+});
+
 // 3. Public Verifiable Certificate Data Endpoint
 app.get("/api/certificate/:regId", async (req, res) => {
   const { regId } = req.params;
@@ -3832,15 +4094,15 @@ app.get("/api/certificate/:regId", async (req, res) => {
     let reg: any = null;
     if (pool) {
       const [rows]: any = await pool.query(
-        "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM registrations WHERE id = ? LIMIT 1",
-        [regId]
+        "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM registrations WHERE id = ? OR certificate_id = ? LIMIT 1",
+        [regId, regId]
       );
       if (rows && rows.length > 0) {
         reg = rows[0];
       } else {
         const [delRows]: any = await pool.query(
-          "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM delegate_registrations WHERE id = ? LIMIT 1",
-          [regId]
+          "SELECT id, name, first_name, last_name, email, organization, designation, city, event_title, pass_name, registration_category, checkin_status, checked_in_at, certificate_sent_at, certificate_id FROM delegate_registrations WHERE id = ? OR certificate_id = ? LIMIT 1",
+          [regId, regId]
         );
         if (delRows && delRows.length > 0) {
           reg = delRows[0];
@@ -3856,6 +4118,29 @@ app.get("/api/certificate/:regId", async (req, res) => {
     const certNum = reg.id.replace(/[^0-9]/g, "").slice(-6) || "202601";
     const certId = reg.certificate_id || `ETM-CERT-2026-${certNum}`;
 
+    let certificateSettings: any = null;
+    let eventVenue = "Radisson Hotel, Hyderabad";
+    let eventDate = reg.checked_in_at
+      ? new Date(reg.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+      : "11th December 2026";
+
+    if (pool && reg.event_title) {
+      try {
+        const [evtRows]: any = await pool.query(
+          "SELECT id, title, date, venue, city, certificate_settings FROM events WHERE title = ? OR title LIKE ? LIMIT 1",
+          [reg.event_title, `%${reg.event_title.slice(0, 20)}%`]
+        );
+        if (evtRows && evtRows.length > 0) {
+          const ev = evtRows[0];
+          if (ev.venue) eventVenue = ev.venue;
+          if (ev.date) eventDate = ev.date;
+          if (ev.certificate_settings) {
+            certificateSettings = typeof ev.certificate_settings === "string" ? JSON.parse(ev.certificate_settings) : ev.certificate_settings;
+          }
+        }
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       certificate: {
@@ -3865,11 +4150,14 @@ app.get("/api/certificate/:regId", async (req, res) => {
         designation: reg.designation || "",
         organization: reg.organization || "",
         eventTitle: reg.event_title || "Executive Leadership Summit 2026",
+        eventDate,
+        eventVenue,
         city: reg.city || "Hyderabad, India",
         checkinStatus: reg.checkin_status || "Present",
         checkedInAt: reg.checked_in_at || new Date().toISOString(),
         issueDate: reg.certificate_sent_at || reg.checked_in_at || new Date().toISOString(),
         verified: true,
+        certificate_settings: certificateSettings,
       },
     });
   } catch (err: any) {
@@ -4322,8 +4610,11 @@ app.post("/api/contact", async (req, res) => {
       notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
     });
 
-    // Send admin email notification to registration@etmedia.in
+    // Send admin email notification to registration@executivetalksmedia.in & srikanth@executivetalksmedia.in
     sendContactAdminNotificationEmail(newEnquiry).catch(err => console.error("Contact admin email notification error:", err));
+
+    // Send acknowledgement confirmation email to the user
+    sendContactUserConfirmationEmail(newEnquiry).catch(err => console.error("Contact user confirmation email error:", err));
 
     return res.status(201).json({
       success: true,
@@ -5847,6 +6138,53 @@ app.patch("/api/admin/events/:id/registration-visibility", authenticateAdmin, as
 });
 
 
+// Certificate template management for event
+app.get("/api/admin/events/:id/certificate", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!pool) return res.json({ success: true, certificate_settings: null });
+    await ensureEventsTable();
+    const [rows]: any = await pool.query("SELECT id, title, date, venue, city, certificate_settings FROM events WHERE id = ? LIMIT 1", [id]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Event not found." });
+    }
+    const evt = rows[0];
+    let certSettings: any = null;
+    if (evt.certificate_settings) {
+      try {
+        certSettings = typeof evt.certificate_settings === "string" ? JSON.parse(evt.certificate_settings) : evt.certificate_settings;
+      } catch (e) {}
+    }
+    return res.json({
+      success: true,
+      event: { id: evt.id, title: evt.title, date: evt.date, venue: evt.venue, city: evt.city },
+      certificate_settings: certSettings,
+    });
+  } catch (err: any) {
+    console.error("Get Event Certificate Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to load certificate settings." });
+  }
+});
+
+app.put("/api/admin/events/:id/certificate", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { certificate_settings } = req.body;
+  try {
+    if (pool) {
+      await ensureEventsTable();
+      const certStr = typeof certificate_settings === "string" ? certificate_settings : JSON.stringify(certificate_settings || {});
+      await pool.query("UPDATE events SET certificate_settings = ? WHERE id = ?", [certStr, id]);
+    }
+    invalidateFastCache("events_");
+    invalidateFastCache("event_slug_");
+    io.emit("event_certificate_updated", { id, certificate_settings });
+    return res.json({ success: true, message: "Certificate template & design saved successfully!" });
+  } catch (err: any) {
+    console.error("Update Event Certificate Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to save certificate settings." });
+  }
+});
+
 // 4. Delete event
 app.delete("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
@@ -6663,10 +7001,10 @@ app.get("/api/admin/email-subjects", authenticateAdmin, async (_req, res) => {
   }
 });
 
-// 2. Update an email subject template
+// 2. Update an email subject & body template
 app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { prefix, suffix, subject_template, is_active } = req.body;
+  const { prefix, suffix, subject_template, body_intro, body_template, body_notes, is_active } = req.body;
 
   try {
     if (!pool) {
@@ -6676,6 +7014,9 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
     const cleanPrefix = prefix !== undefined ? String(prefix) : "";
     const cleanSuffix = suffix !== undefined ? String(suffix) : "";
     let cleanTemplate = subject_template !== undefined ? String(subject_template).trim() : "";
+    const cleanIntro = body_intro !== undefined ? String(body_intro) : "";
+    const cleanBody = body_template !== undefined ? String(body_template) : "";
+    const cleanNotes = body_notes !== undefined ? String(body_notes) : "";
 
     // If template was left blank, synthesize from prefix + {event_name} + suffix
     if (!cleanTemplate) {
@@ -6686,9 +7027,9 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
 
     await pool.query(
       `UPDATE email_subject_configs 
-       SET prefix = ?, suffix = ?, subject_template = ?, is_active = ?, updated_at = NOW() 
+       SET prefix = ?, suffix = ?, subject_template = ?, body_intro = ?, body_template = ?, body_notes = ?, is_active = ?, updated_at = NOW() 
        WHERE id = ?`,
-      [cleanPrefix, cleanSuffix, cleanTemplate, activeVal, id]
+      [cleanPrefix, cleanSuffix, cleanTemplate, cleanIntro, cleanBody, cleanNotes, activeVal, id]
     );
 
     if (io) {
@@ -6697,12 +7038,15 @@ app.put("/api/admin/email-subjects/:id", authenticateAdmin, async (req, res) => 
 
     return res.json({
       success: true,
-      message: `✅ Email subject configuration updated successfully!`,
+      message: `✅ Email template configuration updated successfully!`,
       config: {
         id,
         prefix: cleanPrefix,
         suffix: cleanSuffix,
         subject_template: cleanTemplate,
+        body_intro: cleanIntro,
+        body_template: cleanBody,
+        body_notes: cleanNotes,
         is_active: activeVal,
       },
     });
@@ -6724,9 +7068,17 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
     if (pool) {
       await pool.query(
         `UPDATE email_subject_configs 
-         SET prefix = ?, suffix = ?, subject_template = ?, is_active = 1, updated_at = NOW() 
+         SET prefix = ?, suffix = ?, subject_template = ?, body_intro = ?, body_template = ?, body_notes = ?, is_active = 1, updated_at = NOW() 
          WHERE id = ?`,
-        [defaultItem.prefix, defaultItem.suffix, defaultItem.subject_template, id]
+        [
+          defaultItem.prefix,
+          defaultItem.suffix,
+          defaultItem.subject_template,
+          defaultItem.body_intro || "",
+          defaultItem.body_template || "",
+          defaultItem.body_notes || "",
+          id,
+        ]
       );
     }
 
@@ -6736,7 +7088,7 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
 
     return res.json({
       success: true,
-      message: `✅ Reset '${defaultItem.name}' to default subject format!`,
+      message: `✅ Reset '${defaultItem.name}' to default email template!`,
       config: defaultItem,
     });
   } catch (err: any) {
@@ -6747,7 +7099,7 @@ app.post("/api/admin/email-subjects/reset/:id", authenticateAdmin, async (req, r
 
 // 4. Test render email subject preview
 app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res) => {
-  const { template, prefix, suffix, sampleData } = req.body;
+  const { template, prefix, suffix, body_intro, body_template, body_notes, sampleData } = req.body;
   try {
     let tpl = (template || "").trim();
     if (!tpl) {
@@ -6762,20 +7114,34 @@ app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res
       city: "Hyderabad",
     };
 
-    let result = tpl
-      .replace(/{event_name}/gi, sample.event_name || "HR RECALL 2K26")
-      .replace(/{delegate_name}/gi, sample.delegate_name || "Ascend Labs")
-      .replace(/{pass_id}/gi, sample.pass_id || "ETM-REG-697665-3996")
-      .replace(/{company}/gi, sample.company || "Ascend Labs")
-      .replace(/{category}/gi, sample.category || "Executive Delegate")
-      .replace(/{city}/gi, sample.city || "Hyderabad");
+    const replaceTokens = (text: string) => {
+      if (!text) return "";
+      return text
+        .replace(/{event_name}/gi, sample.event_name || "HR RECALL 2K26")
+        .replace(/{delegate_name}/gi, sample.delegate_name || "Ascend Labs")
+        .replace(/{pass_id}/gi, sample.pass_id || "ETM-REG-697665-3996")
+        .replace(/{company}/gi, sample.company || "Ascend Labs")
+        .replace(/{category}/gi, sample.category || "Executive Delegate")
+        .replace(/{city}/gi, sample.city || "Hyderabad");
+    };
 
+    let result = replaceTokens(tpl);
     if (prefix && !tpl.includes(prefix)) result = `${prefix}${result}`;
     if (suffix && !tpl.includes(suffix)) result = `${result}${suffix}`;
 
     result = result.replace(/\(\s*\)/g, "").replace(/\s+—\s*$/g, "").replace(/\s+-\s*$/g, "").replace(/\s{2,}/g, " ").trim();
 
-    return res.json({ success: true, preview: result });
+    const renderedIntro = replaceTokens(body_intro || `Dear ${sample.delegate_name},`);
+    const renderedBody = replaceTokens(body_template || "");
+    const renderedNotes = replaceTokens(body_notes || "");
+
+    return res.json({
+      success: true,
+      preview: result,
+      renderedIntro,
+      renderedBody,
+      renderedNotes,
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -7886,6 +8252,47 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
   }
 });
 
+// Admin update admin user
+app.put("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password, role } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ success: false, message: "Name and email are required" });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid official email address." });
+  }
+
+  if (!isValidName(name)) {
+    return res.status(400).json({ success: false, message: "Please enter a valid Admin Name." });
+  }
+
+  try {
+    if (pool) {
+      if (password && typeof password === "string" && password.trim().length > 0) {
+        if (password.length < 6) {
+          return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await pool.query(
+          "UPDATE admins SET name = ?, email = ?, password = ?, role = ? WHERE id = ?",
+          [name, email, hashedPassword, role || "admin", id]
+        );
+      } else {
+        await pool.query(
+          "UPDATE admins SET name = ?, email = ?, role = ? WHERE id = ?",
+          [name, email, role || "admin", id]
+        );
+      }
+    }
+    return res.json({ success: true, message: `Admin account '${name}' updated successfully!` });
+  } catch (err: any) {
+    console.error("Update Admin User Error:", err);
+    return res.status(500).json({ success: false, message: "Failed to update admin user" });
+  }
+});
+
 // Admin delete admin user
 app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
@@ -7927,16 +8334,20 @@ app.get("/api/settings", async (req, res) => {
 app.put("/api/admin/settings", authenticateAdmin, async (req, res) => {
   const settingsObj = req.body;
   try {
-    if (pool) {
+    if (pool && settingsObj && typeof settingsObj === "object") {
       await ensureNewAdminTables();
-      for (const [key, val] of Object.entries(settingsObj)) {
-        await pool.query(
-          "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-          [key, String(val), String(val)]
-        );
+      const entries = Object.entries(settingsObj);
+      for (const [key, val] of entries) {
+        if (key && val !== undefined && val !== null) {
+          await pool.query(
+            "INSERT INTO website_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+            [String(key), String(val), String(val)]
+          );
+        }
       }
     }
     io.emit("settings_updated", settingsObj);
+    return res.json({ success: true, message: "Website settings updated successfully!" });
   } catch (err: any) {
     console.error("Update Settings Error:", err);
     return res.status(500).json({ success: false, message: "Failed to update settings" });

@@ -123,6 +123,8 @@ import {
   Zap,
   Newspaper,
   Twitter,
+  Share2,
+  Info,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -302,6 +304,8 @@ type TabType =
   | "popup"
   | "qr-scanner"
   | "attendance"
+  | "certificates"
+  | "issued-certificates"
   | "database";
 
 // ==========================================
@@ -505,7 +509,7 @@ export default function AdminDashboardPage() {
     try {
       const saved = localStorage.getItem("etmedia_admin_theme");
       if (saved === "dark" || saved === "light") return saved;
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return "light"; // Default to clean white/light theme
     } catch (e) {
       return "light";
     }
@@ -814,6 +818,9 @@ export default function AdminDashboardPage() {
     prefix: string;
     suffix: string;
     subject_template: string;
+    body_intro?: string;
+    body_template?: string;
+    body_notes?: string;
     available_variables: string[];
     is_active: number;
     updated_at?: string;
@@ -823,7 +830,20 @@ export default function AdminDashboardPage() {
   const [loadingEmailSubjects, setLoadingEmailSubjects] = useState<boolean>(false);
   const [selectedEmailSubjectCategory, setSelectedEmailSubjectCategory] = useState<string>("all");
   const [emailSubjectSearchQuery, setEmailSubjectSearchQuery] = useState<string>("");
-  const [editingSubjectDrafts, setEditingSubjectDrafts] = useState<Record<string, { prefix: string; suffix: string; subject_template: string }>>({});
+  const [editingSubjectDrafts, setEditingSubjectDrafts] = useState<
+    Record<
+      string,
+      {
+        prefix: string;
+        suffix: string;
+        subject_template: string;
+        body_intro: string;
+        body_template: string;
+        body_notes: string;
+      }
+    >
+  >({});
+  const [emailCardSubTab, setEmailCardSubTab] = useState<Record<string, "subject" | "body" | "preview">>({});
   const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
   const [resettingSubjectId, setResettingSubjectId] = useState<string | null>(null);
   const [copiedSubjectId, setCopiedSubjectId] = useState<string | null>(null);
@@ -967,14 +987,24 @@ export default function AdminDashboardPage() {
     role: "admin",
   });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [userCreating, setUserCreating] = useState(false);
+  const [editingAdminUser, setEditingAdminUser] = useState<AdminUserItem | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
+  const [showEditUserPassword, setShowEditUserPassword] = useState(false);
+  const [userUpdating, setUserUpdating] = useState(false);
 
   // Website Settings State
   const [siteSettings, setSiteSettings] = useState<WebsiteSettings>({
     site_name: "Executive Talks Media Hub",
-    support_email: "partner.support@executivetalksmedia.in",
-    support_phone: "+91 98765 43210",
-    whatsapp_number: "+91 98765 43210",
+    support_email: "info@executivetalksmedia.in",
+    support_phone: "+91 91002 66777",
+    whatsapp_number: "+91 91002 66777",
     office_address: "Executive Talks Media Business Intelligence, Cyber City, Hyderabad, India",
     office_hours: "Mon - Fri: 9:00 AM - 6:00 PM IST",
     facebook_url: "https://facebook.com/executivetalksmedia",
@@ -1233,6 +1263,45 @@ export default function AdminDashboardPage() {
   const [previewCertAttendee, setPreviewCertAttendee] = useState<any | null>(null);
   const [sendingCertId, setSendingCertId] = useState<string | null>(null);
   const [bulkSendingCerts, setBulkSendingCerts] = useState(false);
+
+  // --- CERTIFICATE DESIGNER & NUMBERING STATE ---
+  const [selectedCertEventId, setSelectedCertEventId] = useState<string>("");
+  const [savingCertDesign, setSavingCertDesign] = useState(false);
+  const [certForm, setCertForm] = useState({
+    header_title: "CERTIFICATE",
+    header_subtitle: "OF APPRECIATION",
+    presented_to_text: "This certificate is Presented to",
+    event_title: "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026",
+    date_venue_text: "2026-06-19 | Radisson Hotel, Hyderabad",
+    body_line1: "In recognition of your valuable participation as an esteemed",
+    body_line2: "Delegate at the PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026.",
+    signatory_header: "Presented By:",
+    signatory_name: "Srikanth",
+    signatory_org: "Executive Talks Media",
+    cert_prefix: "ETM-PLS",
+    cert_start_seq: 1,
+    cert_padding: 3,
+    preview_candidate_name: "RAMA SRI",
+    preview_candidate_company: "Ascend Media Labs",
+  });
+
+  // --- ISSUED CERTIFICATES HUB STATE ---
+  const [issuedCertSearch, setIssuedCertSearch] = useState<string>("");
+  const [issuedCertEventFilter, setIssuedCertEventFilter] = useState<string>("all");
+  const [issuedCertStatusFilter, setIssuedCertStatusFilter] = useState<"all" | "issued" | "emailed" | "pending" | "checked_in">("all");
+  const [autoCertModalOpen, setAutoCertModalOpen] = useState(false);
+  const [autoCertConfig, setAutoCertConfig] = useState({
+    eventId: "all",
+    prefix: "ETM-HRR",
+    startSeq: 1,
+    padding: 3,
+    overwriteExisting: false,
+  });
+  const [generatingCertSeq, setGeneratingCertSeq] = useState(false);
+  const [editingCertIdReg, setEditingCertIdReg] = useState<{ id: string; name: string; currentCertId: string } | null>(null);
+  const [tempCertIdValue, setTempCertIdValue] = useState("");
+  const [savingSingleCertId, setSavingSingleCertId] = useState(false);
+  const [selectedIssuedCertIds, setSelectedIssuedCertIds] = useState<string[]>([]);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [selectedRegDetail, setSelectedRegDetail] = useState<Registration | null>(null);
   const [selectedCmsDelegateDetail, setSelectedCmsDelegateDetail] = useState<CmsDelegateRegistration | null>(null);
@@ -1517,6 +1586,9 @@ export default function AdminDashboardPage() {
               prefix: c.prefix || "",
               suffix: c.suffix || "",
               subject_template: c.subject_template || `${c.prefix || ""}{event_name}${c.suffix || ""}`,
+              body_intro: c.body_intro || "",
+              body_template: c.body_template || "",
+              body_notes: c.body_notes || "",
             };
           });
           setEditingSubjectDrafts((prev) => ({ ...initialDrafts, ...prev }));
@@ -1703,7 +1775,11 @@ export default function AdminDashboardPage() {
     }
     if (storedUser) {
       try {
-        setAdminUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setAdminUser(parsed);
+        if (parsed?.role === "scanner" || parsed?.role === "subadmin" || parsed?.role === "gate_staff") {
+          setActiveTab("qr-scanner");
+        }
       } catch (e) {
         console.warn("Invalid admin user json in storage", e);
       }
@@ -1829,6 +1905,15 @@ export default function AdminDashboardPage() {
       socket.off("event_registration_visibility_changed", onRegVisibility);
     };
   }, []);
+
+  // Restrict scanner role users strictly to QR scanner and Attendance views
+  const isScannerOnlyUser = adminUser?.role === "scanner" || adminUser?.role === "subadmin" || adminUser?.role === "gate_staff";
+
+  useEffect(() => {
+    if (isScannerOnlyUser && activeTab !== "qr-scanner" && activeTab !== "attendance") {
+      setActiveTab("qr-scanner");
+    }
+  }, [isScannerOnlyUser, activeTab]);
 
   // --- TESTIMONIALS CMS HANDLERS ---
   const handleSaveTestimonial = async (e: React.FormEvent) => {
@@ -2034,6 +2119,62 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOpenEditAdminUser = (user: AdminUserItem) => {
+    setEditingAdminUser(user);
+    setEditUserForm({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      role: user.role || "admin",
+    });
+    setShowEditUserPassword(false);
+  };
+
+  const handleUpdateAdminUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAdminUser) return;
+    if (!editUserForm.name.trim() || !editUserForm.email.trim()) {
+      toast.error("Name and email are required.");
+      return;
+    }
+    if (!validateEmail(editUserForm.email.trim())) {
+      toast.error("Please enter a valid official email address.");
+      return;
+    }
+    if (editUserForm.password && editUserForm.password.length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+    setUserUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/users/${editingAdminUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editUserForm.name.trim(),
+          email: editUserForm.email.trim(),
+          password: editUserForm.password || undefined,
+          role: editUserForm.role || "admin",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Admin user updated successfully!");
+        setEditingAdminUser(null);
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to update user.");
+      }
+    } catch (err) {
+      toast.error("Network error updating user.");
+    } finally {
+      setUserUpdating(false);
+    }
+  };
+
   // --- SECTOR FOCUS CMS HANDLERS ---
   const handleOpenAddSector = () => {
     setEditingSector(null);
@@ -2120,20 +2261,6 @@ export default function AdminDashboardPage() {
       const emailVal = validateEmail(siteSettings.support_email, "Support Email");
       if (!emailVal.isValid) {
         toast.error(emailVal.error);
-        return;
-      }
-    }
-    if (siteSettings.support_phone) {
-      const phoneVal = validatePhone(siteSettings.support_phone, "Support Phone");
-      if (!phoneVal.isValid) {
-        toast.error(phoneVal.error);
-        return;
-      }
-    }
-    if (siteSettings.whatsapp_number) {
-      const waVal = validatePhone(siteSettings.whatsapp_number, "WhatsApp Number");
-      if (!waVal.isValid) {
-        toast.error(waVal.error);
         return;
       }
     }
@@ -2748,6 +2875,262 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       toast.error("Network error undoing check-in.");
+    }
+  };
+
+  // --- CERTIFICATE DESIGNER LOGIC ---
+  useEffect(() => {
+    if (!selectedCertEventId && cmsEvents.length > 0) {
+      setSelectedCertEventId(cmsEvents[0].id);
+    }
+  }, [cmsEvents, selectedCertEventId]);
+
+  useEffect(() => {
+    if (!selectedCertEventId || cmsEvents.length === 0) return;
+    const evt = cmsEvents.find((e) => e.id === selectedCertEventId);
+    if (!evt) return;
+
+    let parsedSettings: any = null;
+    if (evt.certificate_settings) {
+      try {
+        parsedSettings = typeof evt.certificate_settings === "string" ? JSON.parse(evt.certificate_settings) : evt.certificate_settings;
+      } catch (e) {}
+    }
+
+    const defaultVenue = evt.venue ? `${evt.date || "2026-06-19"} | ${evt.venue}${evt.city ? `, ${evt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
+
+    // Calculate suggested prefix from event title, e.g. "HR RECALL 2K26" -> "ETM-HRR"
+    const words = (evt.title || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+    const suggestedPrefix = words.length >= 2
+      ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+      : "ETM-CERT";
+
+    setCertForm((prev) => ({
+      ...prev,
+      header_title: parsedSettings?.header_title || "CERTIFICATE",
+      header_subtitle: parsedSettings?.header_subtitle || "OF APPRECIATION",
+      presented_to_text: parsedSettings?.presented_to_text || "This certificate is Presented to",
+      event_title: parsedSettings?.event_title || evt.title || "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026",
+      date_venue_text: parsedSettings?.date_venue_text || defaultVenue,
+      body_line1: parsedSettings?.body_line1 || "In recognition of your valuable participation as an esteemed",
+      body_line2: parsedSettings?.body_line2 || `Delegate at the ${evt.title || "Executive Leadership Summit 2026"}.`,
+      signatory_header: parsedSettings?.signatory_header || "Presented By:",
+      signatory_name: parsedSettings?.signatory_name || "Srikanth",
+      signatory_org: parsedSettings?.signatory_org || "Executive Talks Media",
+      cert_prefix: parsedSettings?.cert_prefix || suggestedPrefix,
+      cert_start_seq: parsedSettings?.cert_start_seq || 1,
+      cert_padding: parsedSettings?.cert_padding || 3,
+      preview_candidate_name: prev.preview_candidate_name || "RAMA SRI",
+      preview_candidate_company: prev.preview_candidate_company || "Ascend Media Labs",
+    }));
+
+    setAutoCertConfig((prev) => ({
+      ...prev,
+      eventId: evt.id,
+      prefix: parsedSettings?.cert_prefix || suggestedPrefix,
+    }));
+  }, [selectedCertEventId, cmsEvents]);
+
+  // Handle Auto-Generate Certificate IDs for an Event / All Events
+  const handleAutoGenerateCertIds = async () => {
+    setGeneratingCertSeq(true);
+    try {
+      const res = await fetch("/api/admin/certificates/auto-generate-ids", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          eventId: autoCertConfig.eventId,
+          prefix: autoCertConfig.prefix,
+          startSeq: autoCertConfig.startSeq,
+          padding: autoCertConfig.padding,
+          overwriteExisting: autoCertConfig.overwriteExisting,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `Assigned ${data.updatedCount} Certificate IDs!`);
+        if (Array.isArray(data.assignments) && data.assignments.length > 0) {
+          const map = new Map(data.assignments.map((a: any) => [a.id, a.certificate_id]));
+          setRegistrations((prev) =>
+            prev.map((r) => (map.has(r.id) ? { ...r, certificate_id: map.get(r.id) as string } : r))
+          );
+        } else {
+          fetchDashboardData();
+        }
+        setAutoCertModalOpen(false);
+      } else {
+        toast.error(data.message || "Failed to generate Certificate IDs.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error while generating Certificate IDs.");
+    } finally {
+      setGeneratingCertSeq(false);
+    }
+  };
+
+  // Handle Save Single Certificate ID (Inline / Custom override)
+  const handleSaveSingleCertId = async () => {
+    if (!editingCertIdReg || !tempCertIdValue.trim()) return;
+    setSavingSingleCertId(true);
+    try {
+      const res = await fetch("/api/admin/certificates/assign-id", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          regId: editingCertIdReg.id,
+          certId: tempCertIdValue.trim().toUpperCase(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `Certificate ID set to ${data.certificate_id}!`);
+        setRegistrations((prev) =>
+          prev.map((r) => (r.id === editingCertIdReg.id ? { ...r, certificate_id: data.certificate_id } : r))
+        );
+        setEditingCertIdReg(null);
+      } else {
+        toast.error(data.message || "Failed to update Certificate ID.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error while updating Certificate ID.");
+    } finally {
+      setSavingSingleCertId(false);
+    }
+  };
+
+  // Export Issued Certificates to Excel
+  const handleExportIssuedCertsExcel = (filteredList: any[]) => {
+    if (!filteredList || filteredList.length === 0) {
+      toast.error("No certificate records found to export.");
+      return;
+    }
+    const rows = filteredList.map((r, idx) => ({
+      "S.No": idx + 1,
+      "Certificate ID / Number": r.certificate_id || "NOT ASSIGNED",
+      "Registration ID": r.id,
+      "Delegate Name": r.name || `${r.first_name || ""} ${r.last_name || ""}`.trim() || "N/A",
+      "Email Address": r.email || r.official_email || "N/A",
+      "Phone Number": r.phone || r.mobile_number || "N/A",
+      "Designation": r.designation || "N/A",
+      "Organization / Company": r.organization || r.company_name || "N/A",
+      "Conference / Event": r.event_title || "N/A",
+      "Gate Check-In Status": r.checkin_status?.toLowerCase() === "present" ? "Present (Verified)" : "Absent",
+      "Gate Checked-In At": r.checked_in_at ? new Date(r.checked_in_at).toLocaleString("en-IN") : "N/A",
+      "E-Certificate Emailed Date": r.certificate_sent_at ? new Date(r.certificate_sent_at).toLocaleString("en-IN") : "Pending / Not Sent",
+      "Public Verification Link": `https://executivetalksmedia.in/certificate/${r.id}`,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Issued_Certificates");
+    XLSX.writeFile(wb, `ETM_Issued_Certificates_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Issued certificates exported to Excel successfully!");
+  };
+
+  const handleSaveCertificateDesign = async () => {
+    if (!selectedCertEventId) {
+      toast.error("Please select an event to save certificate design.");
+      return;
+    }
+    setSavingCertDesign(true);
+    try {
+      const res = await fetch(`/api/admin/events/${selectedCertEventId}/certificate`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ certificate_settings: certForm }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Certificate design & content saved successfully!");
+        setCmsEvents((prev) =>
+          prev.map((e) => (e.id === selectedCertEventId ? { ...e, certificate_settings: certForm } : e))
+        );
+      } else {
+        toast.error(data.message || "Failed to save certificate design.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Network error while saving certificate design.");
+    } finally {
+      setSavingCertDesign(false);
+    }
+  };
+
+  const applyCertTemplatePreset = (presetType: "appreciation" | "participation" | "excellence" | "speaker") => {
+    const currentEvt = cmsEvents.find((e) => e.id === selectedCertEventId);
+    const evTitle = currentEvt?.title || "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026";
+    const evVenue = currentEvt?.venue ? `${currentEvt.date || "2026-06-19"} | ${currentEvt.venue}${currentEvt.city ? `, ${currentEvt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
+
+    if (presetType === "appreciation") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF APPRECIATION",
+        presented_to_text: "This certificate is Presented to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In recognition of your valuable participation as an esteemed",
+        body_line2: `Delegate at the ${evTitle}.`,
+        signatory_header: "Presented By:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Certificate of Appreciation' template preset!");
+    } else if (presetType === "participation") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF PARTICIPATION",
+        presented_to_text: "This is to certify that",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "For active attendance, strategic engagement and leadership presence at",
+        body_line2: `the national conclave of ${evTitle}.`,
+        signatory_header: "Organized & Certified By:",
+        signatory_name: "Srikanth Adusumalli",
+        signatory_org: "Executive Talks Media Business Intelligence",
+      }));
+      toast.info("Applied 'Certificate of Participation' template preset!");
+    } else if (presetType === "excellence") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF EXCELLENCE & HONOR",
+        presented_to_text: "Award of Distinction is Proudly Conferred to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In distinguished recognition of exceptional industry leadership and benchmark excellence at",
+        body_line2: `${evTitle}.`,
+        signatory_header: "Executive Jury & Advisory Board:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Certificate of Excellence' template preset!");
+    } else if (presetType === "speaker") {
+      setCertForm((prev) => ({
+        ...prev,
+        header_title: "CERTIFICATE",
+        header_subtitle: "OF KEYNOTE HONOR",
+        presented_to_text: "Presented with Gratitude & Esteem to",
+        event_title: evTitle,
+        date_venue_text: evVenue,
+        body_line1: "In honor of your distinguished keynote address and transformative domain insights at",
+        body_line2: `the annual edition of ${evTitle}.`,
+        signatory_header: "Summit Directorate:",
+        signatory_name: "Srikanth",
+        signatory_org: "Executive Talks Media",
+      }));
+      toast.info("Applied 'Speaker Keynote Honor' template preset!");
     }
   };
 
@@ -3413,7 +3796,7 @@ export default function AdminDashboardPage() {
           "Full Name": "Prasanna Kumar",
           "Email": "prasanna.kumar@example.com",
           "Phone": "+91 9848012345",
-          "Company": "ET Media Global",
+          "Company": "Executive Talks Media",
           "Designation": "VP Operations",
           "City": "Visakhapatnam",
           "Event": "Procurement Leadership Summit & Awards 2026",
@@ -5630,10 +6013,21 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // --- EMAIL SUBJECT CONFIGURATION CMS ACTION HANDLERS ---
-  const handleSubjectFieldChange = (configId: string, field: "prefix" | "suffix" | "subject_template", value: string) => {
+  // --- EMAIL SUBJECT & BODY CONFIGURATION CMS ACTION HANDLERS ---
+  const handleSubjectFieldChange = (
+    configId: string,
+    field: "prefix" | "suffix" | "subject_template" | "body_intro" | "body_template" | "body_notes",
+    value: string
+  ) => {
     setEditingSubjectDrafts((prev) => {
-      const existing = prev[configId] || { prefix: "", suffix: "", subject_template: "" };
+      const existing = prev[configId] || {
+        prefix: "",
+        suffix: "",
+        subject_template: "",
+        body_intro: "",
+        body_template: "",
+        body_notes: "",
+      };
       const updated = { ...existing, [field]: value };
       if (field === "prefix" || field === "suffix") {
         updated.subject_template = `${updated.prefix}{event_name}${updated.suffix}`;
@@ -5650,6 +6044,9 @@ export default function AdminDashboardPage() {
         prefix: currentConfig?.prefix || "",
         suffix: currentConfig?.suffix || "",
         subject_template: currentConfig?.subject_template || "",
+        body_intro: currentConfig?.body_intro || "",
+        body_template: currentConfig?.body_template || "",
+        body_notes: currentConfig?.body_notes || "",
       };
 
       const res = await fetch(`/api/admin/email-subjects/${configId}`, {
@@ -5662,21 +6059,24 @@ export default function AdminDashboardPage() {
           prefix: draft.prefix,
           suffix: draft.suffix,
           subject_template: draft.subject_template,
+          body_intro: draft.body_intro,
+          body_template: draft.body_template,
+          body_notes: draft.body_notes,
           is_active: currentConfig ? currentConfig.is_active : 1,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(`✅ Email subject for "${currentConfig?.name || configId}" saved successfully!`);
+        toast.success(`✅ Email template for "${currentConfig?.name || configId}" saved successfully!`);
         setEmailSubjectsList((prev) =>
           prev.map((c) => (c.id === configId ? { ...c, ...data.config } : c))
         );
       } else {
-        toast.error(data.message || "Failed to update email subject.");
+        toast.error(data.message || "Failed to update email template.");
       }
     } catch (err: any) {
-      console.error("Error saving email subject:", err);
+      console.error("Error saving email template:", err);
       toast.error(err.message || "An unexpected error occurred while saving.");
     } finally {
       setSavingSubjectId(null);
@@ -5705,13 +6105,16 @@ export default function AdminDashboardPage() {
             prefix: data.config.prefix || "",
             suffix: data.config.suffix || "",
             subject_template: data.config.subject_template || "",
+            body_intro: data.config.body_intro || "",
+            body_template: data.config.body_template || "",
+            body_notes: data.config.body_notes || "",
           },
         }));
       } else {
-        toast.error(data.message || "Failed to reset email subject.");
+        toast.error(data.message || "Failed to reset email template.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Error resetting email subject.");
+      toast.error(err.message || "Error resetting email template.");
     } finally {
       setResettingSubjectId(null);
     }
@@ -5725,6 +6128,9 @@ export default function AdminDashboardPage() {
         prefix: currentConfig?.prefix || "",
         suffix: currentConfig?.suffix || "",
         subject_template: currentConfig?.subject_template || "",
+        body_intro: currentConfig?.body_intro || "",
+        body_template: currentConfig?.body_template || "",
+        body_notes: currentConfig?.body_notes || "",
       };
 
       const res = await fetch(`/api/admin/email-subjects/${configId}`, {
@@ -5737,6 +6143,9 @@ export default function AdminDashboardPage() {
           prefix: draft.prefix,
           suffix: draft.suffix,
           subject_template: draft.subject_template,
+          body_intro: draft.body_intro,
+          body_template: draft.body_template,
+          body_notes: draft.body_notes,
           is_active: nextActive,
         }),
       });
@@ -5746,27 +6155,31 @@ export default function AdminDashboardPage() {
         setEmailSubjectsList((prev) =>
           prev.map((c) => (c.id === configId ? { ...c, is_active: nextActive } : c))
         );
-        toast.info(nextActive === 1 ? "Subject activated" : "Subject deactivated (fallback default will be used)");
+        toast.info(nextActive === 1 ? "Template activated" : "Template deactivated (fallback default will be used)");
       }
     } catch (err: any) {
       toast.error("Failed to toggle status");
     }
   };
 
-  const handleInsertSubjectVariable = (configId: string, variable: string) => {
-    const current = editingSubjectDrafts[configId] || {
-      prefix: "",
-      suffix: "",
-      subject_template: "",
-    };
-    const updatedTemplate = (current.subject_template || "") + variable;
-    setEditingSubjectDrafts((prev) => ({
-      ...prev,
-      [configId]: {
-        ...current,
-        subject_template: updatedTemplate,
-      },
-    }));
+  const handleInsertSubjectVariable = (configId: string, targetField: "subject_template" | "body_template", variable: string) => {
+    setEditingSubjectDrafts((prev) => {
+      const current = prev[configId] || {
+        prefix: "",
+        suffix: "",
+        subject_template: "",
+        body_intro: "",
+        body_template: "",
+        body_notes: "",
+      };
+      return {
+        ...prev,
+        [configId]: {
+          ...current,
+          [targetField]: (current[targetField] || "") + variable,
+        },
+      };
+    });
   };
 
   const computeSubjectLivePreview = (config: EmailSubjectItem) => {
@@ -5790,6 +6203,42 @@ export default function AdminDashboardPage() {
       .trim();
 
     return preview;
+  };
+
+  const computeIntroLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_intro !== undefined ? draft.body_intro : config.body_intro) || `Dear ${previewTestDelegateName || "Ascend Labs"},`;
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
+  };
+
+  const computeBodyLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_template !== undefined ? draft.body_template : config.body_template) || "";
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
+  };
+
+  const computeNotesLivePreview = (config: EmailSubjectItem) => {
+    const draft = editingSubjectDrafts[config.id];
+    const tpl = (draft?.body_notes !== undefined ? draft.body_notes : config.body_notes) || "";
+    return tpl
+      .replace(/{event_name}/gi, previewTestEventName || "HR RECALL 2K26")
+      .replace(/{delegate_name}/gi, previewTestDelegateName || "Ascend Labs")
+      .replace(/{pass_id}/gi, previewTestPassId || "ETM-REG-697665-3996")
+      .replace(/{company}/gi, "Ascend Labs Pvt Ltd")
+      .replace(/{category}/gi, "Executive Delegate")
+      .replace(/{city}/gi, "Hyderabad");
   };
 
   // --- TERMS & CONDITIONS CMS ACTION HANDLERS ---
@@ -6541,64 +6990,76 @@ export default function AdminDashboardPage() {
     items: NavItem[];
   }
 
-  const navGroups: NavGroup[] = [
-    {
-      title: "OVERVIEW",
-      items: [
-        { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
-      ],
-    },
-    {
-      title: "SUMMITS & CMS",
-      items: [
-        { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
-        { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
-        { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
-        { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
-      ],
-    },
-    {
-      title: "DELEGATES & PARTNERS",
-      items: [
-        { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
-        { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
-        { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
-        { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
-        { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-        { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
-        { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
-      ],
-    },
-    {
-      title: "EDITORIAL & MEDIA",
-      items: [
-        { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
-        { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
-        { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
-        { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
-      ],
-    },
-    {
-      title: "MEDIA & CXO VOICES",
-      items: [
-        { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
-        { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
-        { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
-      ],
-    },
-    {
-      title: "COMMUNICATIONS & SYSTEM",
-      items: [
-        { id: "email-subjects", label: "Email Subject Manager", icon: Mail, count: emailSubjectsList.length },
-        { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
-        { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
-        { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
-        { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
-        { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
-        { id: "settings", label: "Website Settings", icon: Settings },
-      ],
-    },
-  ];
+  const navGroups: NavGroup[] = isScannerOnlyUser
+    ? [
+        {
+          title: "GATE SCANNER ACCESS",
+          items: [
+            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+            { id: "attendance", label: "Event Attendance Roster", icon: UserCheck, count: attendancePresentCount },
+          ],
+        },
+      ]
+    : [
+        {
+          title: "OVERVIEW",
+          items: [
+            { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
+          ],
+        },
+        {
+          title: "SUMMITS & CMS",
+          items: [
+            { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+            { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
+            { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
+            { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
+          ],
+        },
+        {
+          title: "DELEGATES & PARTNERS",
+          items: [
+            { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+            { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
+            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+            { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
+            { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+            { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
+            { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
+          ],
+        },
+        {
+          title: "EDITORIAL & MEDIA",
+          items: [
+            { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
+            { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
+            { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
+            { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
+          ],
+        },
+        {
+          title: "MEDIA & CXO VOICES",
+          items: [
+            { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+            { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
+            { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
+          ],
+        },
+        {
+          title: "COMMUNICATIONS & SYSTEM",
+          items: [
+            { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
+            { id: "certificates", label: "Certificate Designer", icon: Sparkles },
+            { id: "email-subjects", label: "Email Subject & Body Manager", icon: Mail, count: emailSubjectsList.length },
+            { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
+            { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
+            { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
+            { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
+            { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
+            { id: "settings", label: "Website Settings", icon: Settings },
+          ],
+        },
+      ];
 
   const allNavItems = useMemo(() => navGroups.flatMap((g) => g.items), [navGroups]);
 
@@ -6725,23 +7186,38 @@ export default function AdminDashboardPage() {
           {!sidebarCollapsed ? (
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs">
-                  <Shield className="h-4 w-4" />
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
+                  isScannerOnlyUser
+                    ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
+                    : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
+                }`}>
+                  {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {adminUser?.name || "Super Admin"}
+                    {adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}
                   </p>
                   <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                    {adminUser?.email || "srikanth@executivetalksmedia.in"}
+                    {adminUser?.email || "staff@executivetalksmedia.in"}
                   </p>
+                  <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                    isScannerOnlyUser
+                      ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+                      : "bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300"
+                  }`}>
+                    {isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin"}
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/60 font-bold text-cyan-800 dark:text-cyan-300 text-xs" title={adminUser?.name || "Super Admin"}>
-                <Shield className="h-4 w-4" />
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs ${
+                isScannerOnlyUser
+                  ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
+                  : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
+              }`} title={adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}>
+                {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
               </div>
             </div>
           )}
@@ -6774,15 +7250,15 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
-        <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-xs w-full max-w-full overflow-visible min-w-0 gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+        <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-6 py-2 sm:py-3.5 shadow-2xs w-full max-w-full min-w-0 gap-1.5 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-hidden">
             {/* Mobile Open Sidebar Trigger */}
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1.5 sm:p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
               title="Open Navigation Drawer"
             >
-              <Menu className="h-4.5 w-4.5" />
+              <Menu className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </button>
 
             {/* Desktop Collapse / Expand Sidebar Trigger */}
@@ -6798,15 +7274,15 @@ export default function AdminDashboardPage() {
               const activeNav = allNavItems.find((n) => n.id === activeTab) || allNavItems[0] || { label: "Dashboard", icon: LayoutDashboard };
               const IconComp = activeNav.icon || LayoutDashboard;
               return (
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
-                  <div className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
+                  <div className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
                     <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-                    <h1 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0 flex-1">
+                    <h1 className="text-xs sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0">
                       {activeNav.label}
                     </h1>
-                    <span className="hidden xl:inline-flex items-center rounded-full bg-cyan-50 dark:bg-cyan-950/60 px-2.5 py-0.5 text-[10px] font-extrabold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 uppercase tracking-wider shrink-0">
+                    <span className="hidden xl:inline-flex items-center rounded-full bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 text-[10px] font-extrabold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 uppercase tracking-wider shrink-0">
                       Live CMS
                     </span>
                   </div>
@@ -6815,21 +7291,21 @@ export default function AdminDashboardPage() {
             })()}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {/* Universal Event Selector & Search Dropdown */}
             <div className="relative" ref={eventPickerRef}>
               <button
                 type="button"
                 onClick={() => setIsEventPickerOpen((prev) => !prev)}
-                className={`flex items-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
                   selectedDashboardEventId !== "all"
-                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-xs ring-1 ring-purple-400/30"
+                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-2xs ring-1 ring-purple-400/30"
                     : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
                 }`}
                 title="Filter entire dashboard by Event / Summit"
               >
                 <Ticket className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                <span className="max-w-[110px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
+                <span className="max-w-[90px] xs:max-w-[120px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
                   {selectedDashboardEventId === "all"
                     ? `All Events (${cmsEvents.length})`
                     : (activeSelectedEvent?.title || activeSelectedEvent?.name || selectedDashboardEventId)}
@@ -7086,7 +7562,7 @@ export default function AdminDashboardPage() {
                   <span>Platform Operations & Engagement Metrics</span>
                 </h3>
 
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
                   {/* Widget 1: Total Events (Live Counter) */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-cyan-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
@@ -7097,16 +7573,16 @@ export default function AdminDashboardPage() {
                         <Calendar className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all" ? 1 : cmsEvents.length}
                       </div>
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {selectedDashboardEventId !== "all" ? "Filtered" : "Live Counter"}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium truncate">
+                    <p className="mt-2 text-xs text-slate-500 font-medium truncate text-left">
                       {selectedDashboardEventId !== "all" ? (activeSelectedEvent?.title || "Selected summit") : "National C-suite summits published"}
                     </p>
                   </div>
@@ -7121,17 +7597,17 @@ export default function AdminDashboardPage() {
                         <Clock className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all"
                           ? (activeSelectedEvent && getEventStatus(activeSelectedEvent) !== "past" ? 1 : 0)
                           : cmsEvents.filter((e) => getEventStatus(e) !== "past").length}
                       </div>
-                      <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200">
+                      <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-purple-700 border border-purple-200 shrink-0">
                         Active Calendar
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Scheduled conferences & forums</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Scheduled conferences & forums</p>
                   </div>
 
                   {/* Widget 3: Total Registrations */}
@@ -7144,17 +7620,17 @@ export default function AdminDashboardPage() {
                         <Users className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {selectedDashboardEventId !== "all" && activeSelectedEvent
                           ? (registrations.filter((r) => doesRegistrationMatchEvent(r, activeSelectedEvent)).length)
                           : (stats.totalRegistrations || registrations.length)}
                       </div>
-                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200">
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200 shrink-0">
                         {selectedDashboardEventId !== "all" ? "Filtered" : "Auto-Synced"}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Executive delegates registered</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Executive delegates registered</p>
                   </div>
 
                   {/* Widget 4: Partner Requests Counter */}
@@ -7167,19 +7643,18 @@ export default function AdminDashboardPage() {
                         <Handshake className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {partnerSubmissions.length}
                       </div>
-                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+                      <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200 shrink-0">
                         Sponsorship
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Collaborators & brand partners</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Collaborators & brand partners</p>
                   </div>
 
-
-                  {/* Widget 6: Newsletter Subscribers Counter */}
+                  {/* Widget 5: Newsletter Subscribers Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7189,18 +7664,18 @@ export default function AdminDashboardPage() {
                         <MailCheck className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {newsletterSubscribers.length}
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         Verified Emails
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Weekly insights subscribers</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Weekly insights subscribers</p>
                   </div>
 
-                  {/* Widget 7: Gallery Images Counter */}
+                  {/* Widget 6: Gallery Images Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-indigo-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7210,18 +7685,18 @@ export default function AdminDashboardPage() {
                         <Film className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-extrabold text-slate-900">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight shrink-0">
                         {cmsGalleryItems.length}
                       </div>
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200 shrink-0">
                         Photos & Videos
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Media assets stored in CMS</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Media assets stored in CMS</p>
                   </div>
 
-                  {/* Widget 8: Total Revenue / Paid Collections Counter */}
+                  {/* Widget 7: Total Revenue / Paid Collections Counter */}
                   <div className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-400 hover:shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -7231,15 +7706,15 @@ export default function AdminDashboardPage() {
                         <IndianRupee className="h-5 w-5" />
                       </div>
                     </div>
-                    <div className="mt-3 flex items-baseline justify-between">
-                      <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="text-xl sm:text-2xl xl:text-3xl font-black text-slate-900 font-mono tracking-tight shrink-0">
                         ₹{dashboardPaidRevenue.toLocaleString("en-IN")}
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 shrink-0">
                         Paid Collections
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 font-medium">Gross delegate pass collections (incl. GST)</p>
+                    <p className="mt-2 text-xs text-slate-500 font-medium text-left">Gross delegate pass collections (incl. GST)</p>
                   </div>
                 </div>
               </div>
@@ -8757,7 +9232,7 @@ export default function AdminDashboardPage() {
                                 title="Resend Pass & Confirmation Email"
                                 disabled={resendingEmailId === reg.id}
                                 onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
-                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50/60 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-cyan-600 hover:border-cyan-300 hover:bg-cyan-50/60 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                               >
                                 {resendingEmailId === reg.id ? (
                                   <RefreshCw className="h-3 w-3 text-cyan-600 animate-spin" />
@@ -8769,7 +9244,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRegDetail(reg)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                               >
                                 <Eye className="h-3 w-3 text-cyan-600" />
                                 <span>View</span>
@@ -8855,7 +9330,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={generateSampleExcelTemplate}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
                     title="Download ready-to-fill sample template with standard columns"
                   >
                     <Download className="h-4 w-4 text-slate-500" />
@@ -9164,7 +9639,7 @@ export default function AdminDashboardPage() {
                                 title="Resend QR Ticket Pass Email"
                                 disabled={resendingEmailId === reg.id}
                                 onClick={() => handleResendRegistrationEmail(reg.id, reg.email)}
-                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/60 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/60 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
                               >
                                 {resendingEmailId === reg.id ? (
                                   <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
@@ -9176,7 +9651,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRegDetail(reg)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                               >
                                 <Eye className="h-3 w-3 text-blue-600" />
                                 <span>View</span>
@@ -9256,13 +9731,13 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full">
                   {/* View Mode Toggle: Overview vs Dedicated Full Page Attendee Roster */}
-                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-2xs">
+                  <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-2xs w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("overview")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
                         attendancePageView === "overview"
                           ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
@@ -9273,21 +9748,21 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("roster")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendancePageView === "roster"
                           ? "bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                       }`}
                     >
                       <Users className="h-3.5 w-3.5" />
-                      <span>Attendee Roster Page</span>
+                      <span>Attendee Roster</span>
                     </button>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => navigate("/admin/scanner")}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-cyan-600/25 transition-all cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-black shadow-md shadow-cyan-600/25 transition-all cursor-pointer shrink-0"
                   >
                     <Camera className="h-4 w-4" />
                     <span>Launch Camera Scanner 🚀</span>
@@ -9296,17 +9771,17 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={exportAttendanceSheet}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-xs font-black shadow-md shadow-emerald-600/25 transition-all cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-black shadow-md shadow-emerald-600/25 transition-all cursor-pointer shrink-0"
                     title="Export all filtered attendee records to Excel (.xlsx)"
                   >
                     <Download className="h-4 w-4" />
-                    <span>Download Attendance Excel (.xlsx)</span>
+                    <span className="hidden xs:inline">Download Attendance </span><span>Excel (.xlsx)</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => fetchDashboardData()}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 px-3 py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 sm:py-2.5 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
                     title="Refresh data from server"
                   >
                     <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
@@ -9318,7 +9793,7 @@ export default function AdminDashboardPage() {
               {attendancePageView === "overview" && (
                 <>
                   {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-850 dark:to-slate-900 p-5 shadow-xs space-y-4">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Left: Section Title & Real CMS Count Badge */}
                   <div className="space-y-1">
@@ -9345,7 +9820,7 @@ export default function AdminDashboardPage() {
                         id="attendance-event-dropdown"
                         value={attendanceEventFilter}
                         onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-white dark:bg-slate-800 px-4 py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
+                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 sm:py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
                       >
                         <option value="all">
                           🌐 All Summits & Conferences Combined ({registrations.length} Total Registered • {attendancePresentCount} Checked In)
@@ -9362,14 +9837,14 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* ACTIVE SELECTED SUMMIT BANNER CARD */}
-                <div className="rounded-xl border border-cyan-200/70 dark:border-cyan-900/50 bg-cyan-50/50 dark:bg-cyan-950/20 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                <div className="rounded-xl border border-cyan-200/80 dark:border-cyan-900/50 bg-cyan-50/60 dark:bg-cyan-950/30 p-3.5 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
                       {attendanceEventFilter === "all" ? "🌐" : "🎯"}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">
                           Active Event Scope:
                         </span>
                         <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
@@ -9396,14 +9871,14 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => {
                         setAttendanceRosterTab("present");
                         setAttendancePageView("roster");
                       }}
-                      className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                      className="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                       title="Open dedicated attendance roster page"
                     >
                       <Users className="h-3.5 w-3.5" />
@@ -9414,7 +9889,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setAttendanceEventFilter("all")}
-                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
                         <span>All Summits</span>
@@ -9426,26 +9901,25 @@ export default function AdminDashboardPage() {
 
               {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
               <div className="space-y-2">
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                   {/* Card 1: Total Registered */}
                   <div
                     onClick={() => {
                       setAttendanceRosterTab("all");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view all registered attendees in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
                       <span>Total Registered</span>
                       <Users className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
                     </span>
-                    <div className="text-2xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.total.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-slate-300 dark:text-slate-600 group-hover:text-cyan-600 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-cyan-600 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium block flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                       <span>View All Roster Page</span> <span>↗</span>
                     </span>
                   </div>
@@ -9456,18 +9930,18 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("present");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view who checked in (Present) in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
                       <span>Checked-In (Present)</span>
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.present.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-emerald-400/60 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-emerald-500/70 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold block flex items-center gap-1 group-hover:underline">
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:underline">
                       <span>{selectedEventAttendanceSummary.turnout}% turn-out • View Present</span> <span>↗</span>
                     </span>
                   </div>
@@ -9478,18 +9952,18 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("absent");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view who is absent / awaiting arrival in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center justify-between">
                       <span>Awaiting Arrival (Absent)</span>
                       <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                     </span>
-                    <div className="text-2xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                    <div className="text-2xl sm:text-3xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
                       <span>{selectedEventAttendanceSummary.absent.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-amber-400/60 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
+                      <ArrowUpRight className="h-4 w-4 text-amber-500/70 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
                     </div>
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium block flex items-center gap-1 group-hover:underline">
+                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1 group-hover:underline">
                       <span>Pending scan • View Absent</span> <span>↗</span>
                     </span>
                   </div>
@@ -9500,10 +9974,10 @@ export default function AdminDashboardPage() {
                       setAttendanceRosterTab("present");
                       setAttendancePageView("roster");
                     }}
-                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/70 dark:bg-cyan-950/20 p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
+                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/80 bg-cyan-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
                     title="Click to view turnout breakdown in dedicated page"
                   >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 flex items-center justify-between">
                       <span>Venue Turnout Rate</span>
                       <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                     </span>
@@ -9514,7 +9988,7 @@ export default function AdminDashboardPage() {
                           style={{ width: `${selectedEventAttendanceSummary.turnout}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                         <span>Attendance:</span>
                         <span className="text-cyan-700 dark:text-cyan-300 font-black flex items-center gap-1 group-hover:underline">
                           {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
@@ -9527,10 +10001,10 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* QUICK GATE CHECK-IN FORM */}
-              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-r from-cyan-50/60 via-white to-slate-50 dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <div className="flex items-center gap-2">
-                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
                       Quick Gate Check-In (Scanner Gun or Manual Pass ID)
                     </h3>
@@ -9545,7 +10019,7 @@ export default function AdminDashboardPage() {
                     e.preventDefault();
                     handleQuickCheckin();
                   }}
-                  className="flex gap-2"
+                  className="flex flex-col sm:flex-row gap-2"
                 >
                   <div className="relative flex-1">
                     <input
@@ -9553,13 +10027,13 @@ export default function AdminDashboardPage() {
                       value={quickScanInput}
                       onChange={(e) => setQuickScanInput(e.target.value)}
                       placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={quickScanLoading || !quickScanInput.trim()}
-                    className="flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm shrink-0"
                   >
                     {quickScanLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -9572,34 +10046,34 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* UNIVERSAL SEARCH & MULTI-FILTER SUITE */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 p-4 space-y-3.5">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-xs">
                 {/* Row 1: Universal Search & Attendance Status Tabs */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="relative min-w-[280px] flex-1 max-w-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="relative w-full sm:max-w-lg">
                     <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
                       value={attendanceSearchQuery}
                       onChange={(e) => setAttendanceSearchQuery(e.target.value)}
                       placeholder="Search attendee by Name, Mobile Number, Email, Pass ID, Company, Role, City..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
                     />
                     {attendanceSearchQuery && (
                       <button
                         type="button"
                         onClick={() => setAttendanceSearchQuery("")}
-                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>
 
-                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 text-xs font-bold shadow-xs">
+                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold shadow-xs w-full sm:w-auto justify-between">
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("all")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
                         attendanceStatusFilter === "all"
                           ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -9610,7 +10084,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("present")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendanceStatusFilter === "present"
                           ? "bg-emerald-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
@@ -9622,7 +10096,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendanceStatusFilter("absent")}
-                      className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                         attendanceStatusFilter === "absent"
                           ? "bg-amber-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-amber-600"
@@ -9635,7 +10109,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Row 2: Secondary Filter Controls (Category, Date Range, Date Basis, Reset) */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* Pass Category Filter */}
                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
@@ -9739,7 +10213,7 @@ export default function AdminDashboardPage() {
               {/* ATTENDANCE DELEGATE TABLE */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs custom-scrollbar">
                 <table className="w-full min-w-[1260px] text-left text-xs">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     <tr>
                       <th className="py-3.5 px-3 w-12 text-center">#</th>
                       <th className="py-3.5 px-3 min-w-[220px]">Attendee Profile</th>
@@ -9963,7 +10437,7 @@ export default function AdminDashboardPage() {
                                     });
                                     setShowThermalBadgeModal(true);
                                   }}
-                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
                                   title="Print TVS Thermal Badge Pass Slip"
                                 >
                                   <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
@@ -10031,13 +10505,13 @@ export default function AdminDashboardPage() {
               {attendancePageView === "roster" && (
                 <div className="w-full bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in duration-200">
                   {/* 1. PAGE HEADER */}
-                  <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-850 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
+                  <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-2 min-w-0">
                       <div className="flex items-center gap-2.5">
                         <button
                           type="button"
                           onClick={() => setAttendancePageView("overview")}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
                         >
                           <ArrowLeft className="h-3.5 w-3.5 text-cyan-600" />
                           <span>Back to Overview</span>
@@ -10118,7 +10592,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                     {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/50 space-y-3">
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-3">
                       {/* Tab Buttons */}
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700/60">
@@ -10360,7 +10834,7 @@ export default function AdminDashboardPage() {
                                 className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                                   isPresent
                                     ? "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10"
-                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700"
+                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
                                 }`}
                               >
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -10536,7 +11010,7 @@ export default function AdminDashboardPage() {
                                         });
                                         setShowThermalBadgeModal(true);
                                       }}
-                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
                                       title="Print TVS Thermal Badge Pass Slip"
                                     >
                                       <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
@@ -10562,7 +11036,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* 4. MODAL FOOTER */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold flex-wrap">
                         <span>
                           Total Roster: <strong className="text-slate-900 dark:text-white font-black">{eventScopedDelegates.length}</strong>
@@ -10603,7 +11077,7 @@ export default function AdminDashboardPage() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Modal Top Bar */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold shadow-2xs">
                           <Award className="h-4 w-4" />
@@ -10623,7 +11097,7 @@ export default function AdminDashboardPage() {
                           href={`/certificate/${previewCertAttendee.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Open Public Page</span>
@@ -10646,7 +11120,14 @@ export default function AdminDashboardPage() {
                           ? activeSelectedEvent
                           : (cmsEvents.find((e) => doesRegistrationMatchEvent(previewCertAttendee, e)) || null);
 
-                        const eventTitle = matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
+                        let parsedCertSettings: any = null;
+                        if (matchedEvent?.certificate_settings) {
+                          try {
+                            parsedCertSettings = typeof matchedEvent.certificate_settings === "string" ? JSON.parse(matchedEvent.certificate_settings) : matchedEvent.certificate_settings;
+                          } catch (e) {}
+                        }
+
+                        const eventTitle = parsedCertSettings?.event_title || matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
                         const eventDate = matchedEvent?.date || (previewCertAttendee.checked_in_at ? new Date(previewCertAttendee.checked_in_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "11th December 2026");
                         const eventVenue = (matchedEvent?.venue && matchedEvent?.city)
                           ? `${matchedEvent.venue}, ${matchedEvent.city}`
@@ -10658,9 +11139,18 @@ export default function AdminDashboardPage() {
                               candidateName={previewCertAttendee.name || `${previewCertAttendee.first_name || ""} ${previewCertAttendee.last_name || ""}`.trim() || "Executive Delegate"}
                               organization={previewCertAttendee.organization || (previewCertAttendee as any).company || ""}
                               designation={previewCertAttendee.designation || ""}
+                              headerTitle={parsedCertSettings?.header_title || "CERTIFICATE"}
+                              headerSubtitle={parsedCertSettings?.header_subtitle || "OF APPRECIATION"}
+                              presentedToText={parsedCertSettings?.presented_to_text || "This certificate is Presented to"}
                               eventTitle={eventTitle}
                               eventDate={eventDate}
                               eventVenue={eventVenue}
+                              dateVenueText={parsedCertSettings?.date_venue_text}
+                              bodyLine1={parsedCertSettings?.body_line1}
+                              bodyLine2={parsedCertSettings?.body_line2}
+                              signatoryHeader={parsedCertSettings?.signatory_header}
+                              signatoryName={parsedCertSettings?.signatory_name}
+                              signatoryOrg={parsedCertSettings?.signatory_org}
                               city={matchedEvent?.city || previewCertAttendee.city || "Hyderabad"}
                               certId={previewCertAttendee.certificate_id || `ETM-CERT-2026-${previewCertAttendee.id.replace(/[^0-9]/g, "").slice(-6) || "889921"}`}
                               showIdBadge={false}
@@ -10671,7 +11161,7 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Modal Footer with Single Click Send Button */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3">
                       <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                         Registered Email: <strong className="text-slate-900 dark:text-slate-100 font-mono">{previewCertAttendee.email || "No email available"}</strong>
                       </div>
@@ -10807,7 +11297,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedCmsDelegateDetail(del)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 dark:hover:bg-slate-750 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                           >
                             <Eye className="h-3 w-3 text-purple-600" />
                             <span>View</span>
@@ -11073,7 +11563,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedContactDetail(con);
-                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\npartner.support@executivetalksmedia.in`);
+                                  setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\ninfo@executivetalksmedia.in`);
                                 }}
                                 className="inline-flex items-center gap-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1.5 text-xs font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all cursor-pointer shadow-xs"
                                 title="Reply via Dashboard"
@@ -12747,7 +13237,7 @@ export default function AdminDashboardPage() {
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for ETMedia corporate events."}
+                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for Executive Talks Media corporate events."}
                                 </p>
                               </div>
                               <input
@@ -12811,7 +13301,7 @@ export default function AdminDashboardPage() {
                     const activeTpl =
                       termsTemplatesList.find((t) => t.id === eventForm.terms_id) ||
                       termsTemplatesList.find((t) => t.is_default) || {
-                        title: "Standard ETMedia Terms & Conditions",
+                        title: "Standard Executive Talks Media Terms & Conditions",
                         clauses: [
                           { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
                           { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
@@ -17832,51 +18322,72 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {adminUsers.map((u) => (
-                    <div
-                      key={u.id}
-                      className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-600" />
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-black uppercase text-cyan-800 border border-cyan-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-600 animate-pulse" />
-                          {u.role || "SUPER_ADMIN"}
-                        </span>
+                  {adminUsers.map((u) => {
+                    const isScanner = u.role === "scanner" || u.role === "subadmin" || u.role === "gate_staff";
+                    return (
+                      <div
+                        key={u.id}
+                        className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
+                      >
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${isScanner ? "bg-gradient-to-r from-amber-500 to-amber-600" : "bg-gradient-to-r from-cyan-500 to-blue-600"}`} />
+                        
+                        <div className="flex items-center justify-between">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase border ${
+                            isScanner
+                              ? "bg-amber-50 text-amber-900 border-amber-300"
+                              : "bg-cyan-50 text-cyan-800 border-cyan-200"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isScanner ? "bg-amber-600" : "bg-cyan-600"}`} />
+                            {isScanner ? "📱 GATE SCANNER STAFF" : "🛡️ SUPER ADMIN"}
+                          </span>
 
-                        {adminUsers.length > 1 && (
-                          <button
-                            onClick={() => handleDeleteAdminUser(u.id)}
-                            className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
-                            title="Revoke Admin Access"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditAdminUser(u)}
+                              className="rounded-xl p-2 text-slate-400 hover:bg-cyan-50 hover:text-cyan-600 transition-colors cursor-pointer"
+                              title="Edit Admin Account & Role"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </button>
 
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 text-white font-black text-base shadow-sm">
-                          {u.name.charAt(0).toUpperCase()}
+                            {adminUsers.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAdminUser(u.id)}
+                                className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                                title="Revoke Admin Access"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-sm font-extrabold text-slate-900">{u.name}</h4>
-                          <p className="truncate text-xs text-slate-500 font-medium">{u.email}</p>
+
+                        <div className="flex items-center gap-4">
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white font-black text-base shadow-sm ${
+                            isScanner ? "bg-gradient-to-br from-amber-600 to-amber-800" : "bg-gradient-to-br from-slate-800 to-slate-950"
+                          }`}>
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="truncate text-sm font-extrabold text-slate-900">{u.name}</h4>
+                            <p className="truncate text-xs text-slate-500 font-medium">{u.email}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] text-slate-400">
+                          <span className={`flex items-center gap-1 font-medium ${isScanner ? "text-amber-700" : "text-emerald-700"}`}>
+                            {isScanner ? <QrCode className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                            {isScanner ? "Gate QR Scanner Only" : "Full Privilege Access"}
+                          </span>
+                          <span className="font-mono">
+                            {new Date(u.created_at || Date.now()).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] text-slate-400">
-                        <span className="flex items-center gap-1 font-medium text-emerald-700">
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                          Full Privilege Access
-                        </span>
-                        <span className="font-mono">
-                          {new Date(u.created_at || Date.now()).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Security Overview Card */}
                   <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 space-y-3">
@@ -17893,7 +18404,7 @@ export default function AdminDashboardPage() {
                     <div className="space-y-1">
                       <h4 className="text-xs font-extrabold text-slate-900">Database Role Policies</h4>
                       <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                        Super Administrators retain full read, write, update, and delete access across all 15 CMS database tables.
+                        Super Administrators retain full read, write, update, and delete access across all 15 CMS database tables. Gate Scanner Staff accounts are strictly limited to QR attendance scanning.
                       </p>
                     </div>
 
@@ -17945,8 +18456,8 @@ export default function AdminDashboardPage() {
                         <UserPlus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-extrabold text-slate-900">Create Administrator</h3>
-                        <p className="text-xs text-slate-500 font-medium">Grant full CMS control panel privileges</p>
+                        <h3 className="text-base font-extrabold text-slate-900">Create Staff / Admin Account</h3>
+                        <p className="text-xs text-slate-500 font-medium">Create Super Admin or Gate QR Scanner Staff</p>
                       </div>
                     </div>
 
@@ -17961,7 +18472,7 @@ export default function AdminDashboardPage() {
                           value={newUserForm.name}
                           onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
                           className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="e.g. Executive Manager"
+                          placeholder="e.g. Gate Staff Volunteer"
                         />
                       </div>
 
@@ -17975,7 +18486,7 @@ export default function AdminDashboardPage() {
                           value={newUserForm.email}
                           onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
                           className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="admin@executivetalksmedia.in"
+                          placeholder="scanner@executivetalksmedia.in"
                         />
                       </div>
 
@@ -17983,14 +18494,43 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                           Account Password *
                         </label>
-                        <input
-                          type="password"
-                          required
-                          value={newUserForm.password}
-                          onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
-                          placeholder="••••••••••••"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showNewUserPassword ? "text" : "password"}
+                            required
+                            value={newUserForm.password}
+                            onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                            className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 pl-4 pr-11 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                            placeholder="••••••••••••"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewUserPassword((prev) => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer p-1"
+                            title={showNewUserPassword ? "Hide password" : "Show password"}
+                          >
+                            {showNewUserPassword ? <EyeOff className="h-4 w-4 text-slate-600" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Account Access Role / Privileges *
+                        </label>
+                        <select
+                          value={newUserForm.role}
+                          onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="admin">🛡️ Full Super Admin (Full CMS & System Access)</option>
+                          <option value="scanner">📱 Gate Scanner Staff (QR Scanner & Attendance Only)</option>
+                        </select>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {newUserForm.role === "scanner"
+                            ? "📱 Scanner Staff will ONLY see Gate QR Scanner and Attendance Check-In screens."
+                            : "🛡️ Super Admin has full administrative control over all events, data, and settings."}
+                        </p>
                       </div>
 
                       <div className="flex gap-3 pt-3">
@@ -18006,7 +18546,126 @@ export default function AdminDashboardPage() {
                           disabled={userCreating}
                           className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                         >
-                          {userCreating ? "Creating Account..." : "Create Admin Account"}
+                          {userCreating ? "Creating Account..." : "Create Account"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Admin User Modal */}
+              {editingAdminUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                  <div className="relative w-full max-w-md rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900 animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      onClick={() => setEditingAdminUser(null)}
+                      className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <Edit3 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-900">Edit Admin User Account</h3>
+                        <p className="text-xs text-slate-500 font-medium">Update account name, email, credentials, or role</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleUpdateAdminUser} className="space-y-4 pt-2">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editUserForm.name}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="e.g. Prasanna"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Official Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={editUserForm.email}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                          placeholder="admin@executivetalksmedia.in"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                            Reset / Change Password
+                          </label>
+                          <span className="text-[10px] text-slate-400 font-medium">(Optional)</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showEditUserPassword ? "text" : "password"}
+                            value={editUserForm.password}
+                            onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                            className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 pl-4 pr-11 py-2.5 text-xs text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs"
+                            placeholder="Leave blank to keep existing password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditUserPassword((prev) => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer p-1"
+                            title={showEditUserPassword ? "Hide password" : "Show password"}
+                          >
+                            {showEditUserPassword ? <EyeOff className="h-4 w-4 text-slate-600" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Leave empty if you only want to change the Name, Email, or Role.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                          Account Access Role / Privileges *
+                        </label>
+                        <select
+                          value={editUserForm.role}
+                          onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 bg-slate-50/50 px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none transition-all shadow-2xs cursor-pointer"
+                        >
+                          <option value="admin">🛡️ Full Super Admin (Full CMS & System Access)</option>
+                          <option value="scanner">📱 Gate Scanner Staff (QR Scanner & Attendance Only)</option>
+                        </select>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {editUserForm.role === "scanner"
+                            ? "📱 Scanner Staff will ONLY see Gate QR Scanner and Attendance Check-In screens."
+                            : "🛡️ Super Admin has full administrative control over all events, data, and settings."}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditingAdminUser(null)}
+                          className="flex-1 rounded-2xl border border-slate-300 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={userUpdating}
+                          className="flex-1 rounded-2xl gradient-brand py-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          {userUpdating ? "Saving Changes..." : "Save Changes"}
                         </button>
                       </div>
                     </form>
@@ -18235,11 +18894,19 @@ export default function AdminDashboardPage() {
                       prefix: item.prefix || "",
                       suffix: item.suffix || "",
                       subject_template: item.subject_template || "",
+                      body_intro: item.body_intro || "",
+                      body_template: item.body_template || "",
+                      body_notes: item.body_notes || "",
                     };
+                    const activeSubTab = emailCardSubTab[item.id] || "subject";
                     const isSaving = savingSubjectId === item.id;
                     const isResetting = resettingSubjectId === item.id;
                     const isCopied = copiedSubjectId === item.id;
                     const livePreviewText = computeSubjectLivePreview(item);
+                    const liveIntroText = computeIntroLivePreview(item);
+                    const liveBodyText = computeBodyLivePreview(item);
+                    const liveNotesText = computeNotesLivePreview(item);
+
                     const catLower = (item.category || "").toLowerCase();
                     const isCert = catLower.includes("certificate");
                     const isAttendee = catLower.includes("attendee");
@@ -18299,139 +18966,351 @@ export default function AdminDashboardPage() {
                                   item.is_active === 1 ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
                                 }`}
                               />
-                              {item.is_active === 1 ? "Subject Active" : "Default Fallback"}
+                              {item.is_active === 1 ? "Template Active" : "Default Fallback"}
                             </button>
                           </div>
                         </div>
 
-                        {/* Visual 3-Part Subject Builder Grid */}
-                        <div className="mt-6 space-y-4">
-                          <div>
-                            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                              Dynamic Component Builder (Prefix + Event Name + Suffix)
-                            </span>
-                            <div className="mt-2 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                              {/* Part 1: Prefix */}
-                              <div className="md:col-span-4">
-                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                  1. Before Event Name (Prefix)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={draft.prefix}
-                                  onChange={(e) => handleSubjectFieldChange(item.id, "prefix", e.target.value)}
-                                  placeholder="e.g. 🎓 Official Certificate of Participation: "
-                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                                />
-                              </div>
+                        {/* Sub-Tab Navigation Switcher */}
+                        <div className="mt-5 p-2 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-2 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "subject" }))}
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
+                              activeSubTab === "subject"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
+                            }`}
+                          >
+                            <Mail className="h-4 w-4" />
+                            <span>1. Subject Line Builder</span>
+                          </button>
 
-                              {/* Part 2: Dynamic Middle Event Token */}
-                              <div className="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-950/20 py-2.5 px-3 text-center">
-                                <span className="text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-400">
-                                  2. Dynamic Middle Token
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
+                              activeSubTab === "body"
+                                ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
+                                : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 hover:bg-cyan-50 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600"
+                            }`}
+                          >
+                            <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                            <span>2. Email Body & Message Matter 📝</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "preview" }))}
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
+                              activeSubTab === "preview"
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 scale-[1.02]"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
+                            }`}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span>3. Full Live Email Preview 👁️</span>
+                          </button>
+                        </div>
+
+                        {/* TAB 1: SUBJECT LINE BUILDER */}
+                        {activeSubTab === "subject" && (
+                          <div className="mt-5 space-y-4">
+                            {/* Quick Switch Banner to Email Body Editor */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800">
+                              <div className="text-xs">
+                                <span className="font-extrabold text-cyan-900 dark:text-cyan-200 block">
+                                  Want to customize the Email Body matter & greeting text?
                                 </span>
-                                <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-500 px-3 py-0.5 text-xs font-extrabold text-white shadow-sm shadow-cyan-500/30">
-                                  <span>{"{event_name}"}</span>
-                                </div>
-                                <span className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
-                                  Auto-replaced with Summit Title
-                                </span>
+                                <p className="text-[11px] text-cyan-700 dark:text-cyan-400">
+                                  Click below or select <strong>Tab 2 (Email Body)</strong> above to edit the intro line, recognition matter, and venue notes.
+                                </p>
                               </div>
-
-                              {/* Part 3: Suffix */}
-                              <div className="md:col-span-4">
-                                <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                  3. After Event Name (Suffix)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={draft.suffix}
-                                  onChange={(e) => handleSubjectFieldChange(item.id, "suffix", e.target.value)}
-                                  placeholder="e.g.  — {delegate_name}"
-                                  className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Full Subject Template Field & Variable Quick-Insert */}
-                          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                                Full Compiled Subject Template:
-                              </label>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[10px] font-bold text-slate-400">Insert Tag:</span>
-                                {item.available_variables?.map((v) => (
-                                  <button
-                                    key={v}
-                                    type="button"
-                                    onClick={() => handleInsertSubjectVariable(item.id, v)}
-                                    title={`Click to insert ${v} into template`}
-                                    className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
-                                  >
-                                    +{v}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <input
-                              type="text"
-                              value={draft.subject_template}
-                              onChange={(e) => handleSubjectFieldChange(item.id, "subject_template", e.target.value)}
-                              placeholder="{event_name}"
-                              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
-                            />
-                          </div>
-
-                          {/* Live Recipient Inbox Preview Simulation */}
-                          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 sm:p-4 shadow-inner">
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
-                                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-                                <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                                  Live Recipient Inbox View (Gmail / Outlook Simulation)
-                                </span>
-                              </div>
-
                               <button
                                 type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(livePreviewText);
-                                  setCopiedSubjectId(item.id);
-                                  toast.success("Subject line copied to clipboard!");
-                                  setTimeout(() => setCopiedSubjectId(null), 2000);
-                                }}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                                onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
+                                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                               >
-                                {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                                {isCopied ? "Copied" : "Copy Preview"}
+                                <FileText className="h-3.5 w-3.5" />
+                                <span>Switch to Email Body Editor 📝</span>
                               </button>
                             </div>
 
-                            <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2.5">
-                              <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
-                              <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
-                                  Executive Talks Media
-                                </span>
-                                <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
-                                <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 truncate">
-                                  {livePreviewText || "No subject specified"}
-                                </span>
-                                <span className="text-[11px] text-slate-400 truncate hidden md:inline">
-                                  - Official notification regarding {previewTestEventName}...
-                                </span>
+                            <div>
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                                Dynamic Component Builder (Prefix + Event Name + Suffix)
+                              </span>
+                              <div className="mt-2 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                                {/* Part 1: Prefix */}
+                                <div className="md:col-span-4">
+                                  <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                    1. Before Event Name (Prefix)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={draft.prefix}
+                                    onChange={(e) => handleSubjectFieldChange(item.id, "prefix", e.target.value)}
+                                    placeholder="e.g. 🎓 Official Certificate of Participation: "
+                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                  />
+                                </div>
+
+                                {/* Part 2: Dynamic Middle Event Token */}
+                                <div className="md:col-span-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-950/20 py-2.5 px-3 text-center">
+                                  <span className="text-[9px] font-extrabold uppercase text-cyan-600 dark:text-cyan-400">
+                                    2. Dynamic Middle Token
+                                  </span>
+                                  <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-500 px-3 py-0.5 text-xs font-extrabold text-white shadow-sm shadow-cyan-500/30">
+                                    <span>{"{event_name}"}</span>
+                                  </div>
+                                  <span className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                                    Auto-replaced with Summit Title
+                                  </span>
+                                </div>
+
+                                {/* Part 3: Suffix */}
+                                <div className="md:col-span-4">
+                                  <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                    3. After Event Name (Suffix)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={draft.suffix}
+                                    onChange={(e) => handleSubjectFieldChange(item.id, "suffix", e.target.value)}
+                                    placeholder="e.g.  — {delegate_name}"
+                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                                  />
+                                </div>
                               </div>
-                              <span className="text-[10px] font-semibold text-slate-400 shrink-0">Now</span>
+                            </div>
+
+                            {/* Full Subject Template Field & Variable Quick-Insert */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                  Full Compiled Subject Template:
+                                </label>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400">Insert Tag:</span>
+                                  {item.available_variables?.map((v) => (
+                                    <button
+                                      key={v}
+                                      type="button"
+                                      onClick={() => handleInsertSubjectVariable(item.id, "subject_template", v)}
+                                      title={`Click to insert ${v} into subject template`}
+                                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
+                                    >
+                                      +{v}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={draft.subject_template}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "subject_template", e.target.value)}
+                                placeholder="{event_name}"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+                            </div>
+
+                            {/* Live Recipient Inbox Preview Simulation */}
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 sm:p-4 shadow-inner">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                                  <span className="inline-block h-2 w-2 rounded-full bg-yellow-500" />
+                                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                  <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    Inbox Subject Line View (Gmail / Outlook Simulation)
+                                  </span>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(livePreviewText);
+                                    setCopiedSubjectId(item.id);
+                                    toast.success("Subject line copied to clipboard!");
+                                    setTimeout(() => setCopiedSubjectId(null), 2000);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                                >
+                                  {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                                  {isCopied ? "Copied" : "Copy Preview"}
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 px-3.5 py-2.5">
+                                <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+                                <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 shrink-0">
+                                    Executive Talks Media
+                                  </span>
+                                  <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                                  <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 truncate">
+                                    {livePreviewText || "No subject specified"}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400 truncate hidden md:inline">
+                                    - Official notification regarding {previewTestEventName}...
+                                  </span>
+                                </div>
+                                <span className="text-[10px] font-semibold text-slate-400 shrink-0">Now</span>
+                              </div>
                             </div>
                           </div>
+                        )}
 
-                          {/* Action Footer */}
-                          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        {/* TAB 2: EMAIL BODY & MESSAGE MATTER */}
+                        {activeSubTab === "body" && (
+                          <div className="mt-5 space-y-4">
+                            {/* Salutation / Intro Line */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-2">
+                              <label className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                1. Salutation / Greeting Line:
+                              </label>
+                              <input
+                                type="text"
+                                value={draft.body_intro}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_intro", e.target.value)}
+                                placeholder="Dear {delegate_name},"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                Shown at the top of the email body before the main message.
+                              </p>
+                            </div>
+
+                            {/* Main Message Body Textarea */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                  2. Main Email Body Matter & Recognition Content:
+                                </label>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-slate-400">Insert Variable:</span>
+                                  {item.available_variables?.map((v) => (
+                                    <button
+                                      key={v}
+                                      type="button"
+                                      onClick={() => handleInsertSubjectVariable(item.id, "body_template", v)}
+                                      title={`Click to insert ${v} into body matter`}
+                                      className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500 hover:text-white transition-all cursor-pointer"
+                                    >
+                                      +{v}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <textarea
+                                rows={7}
+                                value={draft.body_template}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_template", e.target.value)}
+                                placeholder="Enter custom message body matter here..."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3.5 text-xs font-sans leading-relaxed text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+                                <span>Separate paragraphs with empty lines. Tokens like <code>{"{delegate_name}"}</code> and <code>{"{event_name}"}</code> are dynamically replaced with real data.</span>
+                              </p>
+                            </div>
+
+                            {/* Footer Instructions / Notes */}
+                            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 space-y-2">
+                              <label className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                3. Additional Guidelines / Gate Instructions (Optional Note):
+                              </label>
+                              <input
+                                type="text"
+                                value={draft.body_notes}
+                                onChange={(e) => handleSubjectFieldChange(item.id, "body_notes", e.target.value)}
+                                placeholder="e.g. Please arrive 15 minutes prior to session commencement to collect your physical badge."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 3: FULL LIVE EMAIL PREVIEW */}
+                        {activeSubTab === "preview" && (
+                          <div className="mt-5 space-y-4">
+                            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 shadow-inner">
+                              <div className="max-w-2xl mx-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
+                                {/* Email Top Brand Header */}
+                                <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 p-5 text-white text-center border-b border-cyan-500/30">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                                    EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
+                                  </p>
+                                  <h4 className="mt-1 text-sm sm:text-base font-extrabold text-white">
+                                    {livePreviewText}
+                                  </h4>
+                                </div>
+
+                                {/* Email Body Box */}
+                                <div className="p-6 sm:p-8 space-y-4 text-slate-800 dark:text-slate-200">
+                                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                    {liveIntroText}
+                                  </p>
+
+                                  <div className="space-y-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                    {liveBodyText
+                                      ? liveBodyText.split("\n\n").map((para, pIdx) => (
+                                          <p key={pIdx} className="whitespace-pre-line">
+                                            {para}
+                                          </p>
+                                        ))
+                                      : (
+                                        <p className="italic text-slate-400">
+                                          (No message body entered. Default template will be dispatched.)
+                                        </p>
+                                      )}
+                                  </div>
+
+                                  {/* Highlight Info Card */}
+                                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50/60 dark:bg-cyan-950/40 p-4 space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Summit Event:</span>
+                                      <span className="font-extrabold text-cyan-700 dark:text-cyan-300">{previewTestEventName}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Reference / Pass ID:</span>
+                                      <span className="font-mono font-bold text-slate-900 dark:text-white">{previewTestPassId}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-slate-500 dark:text-slate-400">Executive Attendee:</span>
+                                      <span className="font-bold text-slate-800 dark:text-slate-200">{previewTestDelegateName}</span>
+                                    </div>
+                                  </div>
+
+                                  {liveNotesText && (
+                                    <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                                      <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                                      <span>{liveNotesText}</span>
+                                    </div>
+                                  )}
+
+                                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 space-y-1">
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">Warm regards,</p>
+                                    <p className="font-extrabold text-cyan-600 dark:text-cyan-400">Executive Talks Media Business Intelligence</p>
+                                    <p className="text-[11px] text-slate-400">Headquartered in Hyderabad, India • Connecting Leaders, Inspiring Excellence.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Footer */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Changes apply instantly to all future automated emails for this category.</span>
+                          </div>
+
+                          <div className="flex items-center gap-2.5">
                             <button
                               type="button"
                               onClick={() => handleResetEmailSubject(item.id)}
@@ -18446,14 +19325,19 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => handleSaveEmailSubject(item.id)}
                               disabled={isSaving}
-                              className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-2 rounded-2xl gradient-brand px-6 py-2.5 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
                             >
                               {isSaving ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <>
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                  <span>Saving Template...</span>
+                                </>
                               ) : (
-                                <Save className="h-4 w-4" />
+                                <>
+                                  <Save className="h-3.5 w-3.5" />
+                                  <span>Save Template (Subject & Body)</span>
+                                </>
                               )}
-                              Save Subject
                             </button>
                           </div>
                         </div>
@@ -18569,7 +19453,7 @@ export default function AdminDashboardPage() {
                       No Terms & Conditions Templates Found
                     </h3>
                     <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
-                      Click below to create your first template, or load the standard 10-clause corporate ETMedia terms.
+                      Click below to create your first template, or load the standard 10-clause corporate Executive Talks Media terms.
                     </p>
                     <button
                       onClick={handleOpenAddTerms}
@@ -18747,6 +19631,1308 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* ========================================== */}
+          {/* CERTIFICATE DESIGNER & CUSTOMIZER TAB      */}
+          {/* ========================================== */}
+          {activeTab === "certificates" && (
+            <div className="space-y-6">
+              {/* Header & Event Selector Card */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200/80 pb-6">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-xs">
+                      <Award className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                          E-Certificate Designer & Customizer
+                        </h2>
+                        <span className="rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 text-[11px] font-black text-amber-800 uppercase tracking-wider">
+                          Live Studio
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                        Customize certificate title, event body matter, venue address, and signature for each event with real-time live review.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Save Design Button */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveCertificateDesign}
+                      disabled={savingCertDesign || !selectedCertEventId}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingCertDesign ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Saving Design...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          <span>Save Certificate Design</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Event Selector & Quick Preset Templates */}
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                  {/* Event Select Dropdown */}
+                  <div className="lg:col-span-5 space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Select Target Event to Design Certificate:</span>
+                    </label>
+                    <select
+                      value={selectedCertEventId}
+                      onChange={(e) => setSelectedCertEventId(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all shadow-xs cursor-pointer"
+                    >
+                      {cmsEvents.length === 0 ? (
+                        <option value="">No events available</option>
+                      ) : (
+                        cmsEvents.map((evt) => (
+                          <option key={evt.id} value={evt.id}>
+                            🎪 {evt.title} ({evt.date || "Upcoming"} - {evt.venue || evt.city || "Venue TBA"})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Preset Template Quick Badges */}
+                  <div className="lg:col-span-7 space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Quick Preset Templates (1-Click Fill):</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("appreciation")}
+                        className="rounded-xl border border-amber-300/80 bg-amber-50/70 hover:bg-amber-100/80 px-3 py-1.5 text-xs font-bold text-amber-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Award className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Appreciation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("participation")}
+                        className="rounded-xl border border-blue-300/80 bg-blue-50/70 hover:bg-blue-100/80 px-3 py-1.5 text-xs font-bold text-blue-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Participation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("excellence")}
+                        className="rounded-xl border border-purple-300/80 bg-purple-50/70 hover:bg-purple-100/80 px-3 py-1.5 text-xs font-bold text-purple-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Crown className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Excellence & Honor</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCertTemplatePreset("speaker")}
+                        className="rounded-xl border border-emerald-300/80 bg-emerald-50/70 hover:bg-emerald-100/80 px-3 py-1.5 text-xs font-bold text-emerald-900 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Star className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Keynote Speaker</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2-Column Main Workspace: Editor Left, Live Preview Right */}
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                {/* LEFT COLUMN: Customization Inputs */}
+                <div className="xl:col-span-5 space-y-6">
+                  {/* Card 1: Certificate Headers */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <Award className="h-4 w-4 text-amber-500" />
+                      <span>1. Certificate Headings & Honor Type</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Main Header Text (Top Gold Title)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.header_title}
+                          onChange={(e) => setCertForm({ ...certForm, header_title: e.target.value })}
+                          placeholder="CERTIFICATE"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Subtitle / Honor Category
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.header_subtitle}
+                          onChange={(e) => setCertForm({ ...certForm, header_subtitle: e.target.value })}
+                          placeholder="OF APPRECIATION / OF PARTICIPATION"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Presented-To Introduction Line
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.presented_to_text}
+                          onChange={(e) => setCertForm({ ...certForm, presented_to_text: e.target.value })}
+                          placeholder="This certificate is Presented to"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Event Details & Venue Address */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <MapPin className="h-4 w-4 text-amber-500" />
+                      <span>2. Event Title & Venue / Address Line</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Event Title Displayed on Certificate
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.event_title}
+                          onChange={(e) => setCertForm({ ...certForm, event_title: e.target.value })}
+                          placeholder="PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Event Date & Venue / Full Address Line
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.date_venue_text}
+                          onChange={(e) => setCertForm({ ...certForm, date_venue_text: e.target.value })}
+                          placeholder="2026-06-19 | Radisson Hotel, Hyderabad"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Displayed below the event title on the certificate. Include date, hotel venue, and city.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Recognition Body Matter */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <FileText className="h-4 w-4 text-amber-500" />
+                      <span>3. Certificate Body Matter & Appreciation Text</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Body Text - Line 1 (Introductory recognition)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={certForm.body_line1}
+                          onChange={(e) => setCertForm({ ...certForm, body_line1: e.target.value })}
+                          placeholder="In recognition of your valuable participation as an esteemed"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Body Text - Line 2 (Role & Conclave closure)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={certForm.body_line2}
+                          onChange={(e) => setCertForm({ ...certForm, body_line2: e.target.value })}
+                          placeholder="Delegate at the PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026."
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Signatory & Issuing Details */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                      <span>4. Signatory & Organization Details</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Signatory Header
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_header}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_header: e.target.value })}
+                          placeholder="Presented By:"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Signatory Name (Under Signature)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_name}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_name: e.target.value })}
+                          placeholder="Srikanth"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Issuing Organization Name
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.signatory_org}
+                          onChange={(e) => setCertForm({ ...certForm, signatory_org: e.target.value })}
+                          placeholder="Executive Talks Media"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Certificate Serial Numbering & Format */}
+                  <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-700 tracking-wider border-b border-slate-100 pb-3">
+                      <Zap className="h-4 w-4 text-amber-500" />
+                      <span>5. Certificate Numbering Format & Sequence (e.g. ETM-HRR-001)</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Prefix (e.g. ETM-HRR)
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.cert_prefix}
+                          onChange={(e) => setCertForm({ ...certForm, cert_prefix: e.target.value.toUpperCase() })}
+                          placeholder="ETM-HRR"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Start Sequence No.
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={certForm.cert_start_seq}
+                          onChange={(e) => setCertForm({ ...certForm, cert_start_seq: parseInt(e.target.value, 10) || 1 })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                          Padding Digits
+                        </label>
+                        <select
+                          value={certForm.cert_padding}
+                          onChange={(e) => setCertForm({ ...certForm, cert_padding: parseInt(e.target.value, 10) || 3 })}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-xs font-bold font-mono text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none transition-all cursor-pointer"
+                        >
+                          <option value={2}>2 Digits (01)</option>
+                          <option value={3}>3 Digits (001)</option>
+                          <option value={4}>4 Digits (0001)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-3 rounded-2xl border border-amber-200/80 bg-amber-50/60 p-3 text-xs text-amber-900 space-y-0.5">
+                        <span className="font-extrabold text-[10px] uppercase tracking-wider text-amber-700">
+                          Live Numbering Format Example:
+                        </span>
+                        <p className="font-mono font-bold text-xs">
+                          {certForm.cert_prefix || "ETM-CERT"}-{String(certForm.cert_start_seq || 1).padStart(certForm.cert_padding || 3, "0")},{" "}
+                          {certForm.cert_prefix || "ETM-CERT"}-{String((certForm.cert_start_seq || 1) + 1).padStart(certForm.cert_padding || 3, "0")},{" "}
+                          {certForm.cert_prefix || "ETM-CERT"}-{String((certForm.cert_start_seq || 1) + 2).padStart(certForm.cert_padding || 3, "0")}...
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 6: Test Attendee Preview Controls */}
+                  <div className="rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase text-amber-900 tracking-wider border-b border-amber-200/80 pb-3">
+                      <Eye className="h-4 w-4 text-amber-600" />
+                      <span>6. Live Test Preview Delegate (Sample Data)</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">
+                          Sample Attendee Name
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.preview_candidate_name}
+                          onChange={(e) => setCertForm({ ...certForm, preview_candidate_name: e.target.value })}
+                          placeholder="RAMA SRI"
+                          className="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-amber-500 focus:outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">
+                          Sample Company / Affiliation
+                        </label>
+                        <input
+                          type="text"
+                          value={certForm.preview_candidate_company}
+                          onChange={(e) => setCertForm({ ...certForm, preview_candidate_company: e.target.value })}
+                          placeholder="Ascend Media Labs"
+                          className="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-amber-500 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Real-Time Live Certificate Preview Studio */}
+                <div className="xl:col-span-7 space-y-4 sticky top-6">
+                  <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5 sm:p-6 shadow-xl text-white">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
+                        <div>
+                          <h3 className="text-sm font-black text-white tracking-wide uppercase">
+                            Real-Time Live Certificate Preview
+                          </h3>
+                          <p className="text-[11px] text-slate-400">
+                            WYSIWYG: Exact gold-framed SVG certificate as seen by delegates and in emails.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewCertAttendee({
+                              id: "PREVIEW-DEMO",
+                              name: certForm.preview_candidate_name,
+                              first_name: certForm.preview_candidate_name,
+                              last_name: "",
+                              organization: certForm.preview_candidate_company,
+                              designation: "Executive Delegate",
+                              event_title: certForm.event_title,
+                              city: "Hyderabad",
+                              email: "delegate@executivetalksmedia.in",
+                              created_at: new Date().toISOString(),
+                              checked_in_at: new Date().toISOString(),
+                              certificate_sent_at: new Date().toISOString(),
+                              certificate_id: "ETM-CERT-2026-LIVE",
+                              pass_name: "Executive VIP Delegate",
+                              certificate_settings: certForm,
+                            } as any);
+                          }}
+                          className="rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 text-amber-400" />
+                          <span>Fullscreen Modal</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* LIVE CERTIFICATE CANVAS */}
+                    <div className="w-full overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-800/50">
+                      <ExecutiveCertificate
+                        candidateName={certForm.preview_candidate_name || "RAMA SRI"}
+                        organization={certForm.preview_candidate_company || "Ascend Media Labs"}
+                        designation="Executive Delegate"
+                        headerTitle={certForm.header_title}
+                        headerSubtitle={certForm.header_subtitle}
+                        presentedToText={certForm.presented_to_text}
+                        eventTitle={certForm.event_title}
+                        dateVenueText={certForm.date_venue_text}
+                        bodyLine1={certForm.body_line1}
+                        bodyLine2={certForm.body_line2}
+                        signatoryHeader={certForm.signatory_header}
+                        signatoryName={certForm.signatory_name}
+                        signatoryOrg={certForm.signatory_org}
+                        certId={`${certForm.cert_prefix || "ETM-CERT"}-${String(certForm.cert_start_seq || 1).padStart(certForm.cert_padding || 3, "0")}`}
+                        issueDate={new Date().toISOString()}
+                      />
+                    </div>
+
+                    {/* Bottom Status & Info Bar */}
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <span className="text-[11px] font-medium text-slate-300">
+                          Auto-adjusts typography for mobile, tablet, desktop, and print PDF.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveCertificateDesign}
+                        disabled={savingCertDesign || !selectedCertEventId}
+                        className="text-xs font-black text-amber-400 hover:text-amber-300 underline underline-offset-4 cursor-pointer"
+                      >
+                        Save this design to database →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* ISSUED CERTIFICATES & CREDENTIALS HUB TAB   */}
+          {/* ========================================== */}
+          {activeTab === "issued-certificates" && (() => {
+            // Filter delegates based on search, event filter, status, and universal date range
+            const filteredIssuedDelegates = registrations.filter((r) => {
+              // Universal Date Filter
+              if (!isDateInRange(r.created_at || r.checked_in_at)) return false;
+
+              // Event Filter
+              if (issuedCertEventFilter !== "all") {
+                const matchesEvent =
+                  r.event_id === issuedCertEventFilter ||
+                  r.event_title?.toLowerCase() === issuedCertEventFilter.toLowerCase() ||
+                  (r.event_title && r.event_title.toLowerCase().includes(issuedCertEventFilter.toLowerCase()));
+                if (!matchesEvent) return false;
+              }
+
+              // Status Filter
+              if (issuedCertStatusFilter === "issued" && !r.certificate_id) return false;
+              if (issuedCertStatusFilter === "emailed" && !r.certificate_sent_at) return false;
+              if (issuedCertStatusFilter === "pending" && r.certificate_id) return false;
+              if (issuedCertStatusFilter === "checked_in" && r.checkin_status?.toLowerCase() !== "present") return false;
+
+              // Search Filter
+              if (issuedCertSearch.trim()) {
+                const q = issuedCertSearch.trim().toLowerCase();
+                const certNum = (r.certificate_id || "").toLowerCase();
+                const regId = (r.id || "").toLowerCase();
+                const name = (r.name || `${r.first_name || ""} ${r.last_name || ""}`).toLowerCase();
+                const email = (r.email || r.official_email || "").toLowerCase();
+                const phone = (r.phone || "").toLowerCase();
+                const org = (r.organization || "").toLowerCase();
+                const eventTitle = (r.event_title || "").toLowerCase();
+
+                return (
+                  certNum.includes(q) ||
+                  regId.includes(q) ||
+                  name.includes(q) ||
+                  email.includes(q) ||
+                  phone.includes(q) ||
+                  org.includes(q) ||
+                  eventTitle.includes(q)
+                );
+              }
+
+              return true;
+            });
+
+            // Overall counts for quick stats cards
+            const totalScopedDelegates = registrations.length;
+            const certAssignedCount = registrations.filter((r) => Boolean(r.certificate_id && r.certificate_id.trim())).length;
+            const certEmailedCount = registrations.filter((r) => Boolean(r.certificate_sent_at)).length;
+            const gateCheckedInCount = registrations.filter((r) => r.checkin_status?.toLowerCase() === "present").length;
+            const certPendingCount = registrations.filter((r) => !r.certificate_id || !r.certificate_id.trim()).length;
+
+            return (
+              <div className="space-y-6">
+                {/* 1. Header & Actions Banner */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200/80 dark:border-slate-800 pb-6">
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                            Issued Certificates & Credential Hub
+                          </h2>
+                          <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider">
+                            Database Live
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                          Search by Certificate Number (e.g. <span className="font-mono font-bold text-amber-600 dark:text-amber-400">ETM-HRR-001</span>), auto-generate sequential certificate IDs per conference, view live SVG certificates, and dispatch emails.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Hub Buttons */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Auto-Generate Sequence Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentEvt = cmsEvents.find((e) => e.id === issuedCertEventFilter);
+                          const words = ((currentEvt ? currentEvt.title : "HR RECALL 2K26") || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+                          const autoPrefix = words.length >= 2
+                            ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+                            : "ETM-CERT";
+
+                          setAutoCertConfig({
+                            eventId: issuedCertEventFilter,
+                            prefix: autoPrefix,
+                            startSeq: 1,
+                            padding: 3,
+                            overwriteExisting: false,
+                          });
+                          setAutoCertModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-md shadow-amber-500/20 hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        <Zap className="h-4 w-4" />
+                        <span>Auto-Generate Certificate Numbers</span>
+                      </button>
+
+                      {/* Export to Excel */}
+                      <button
+                        type="button"
+                        onClick={() => handleExportIssuedCertsExcel(filteredIssuedDelegates)}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Export Excel</span>
+                      </button>
+
+                      {/* Bulk Send Unsent Certificates */}
+                      <button
+                        type="button"
+                        onClick={() => handleBulkSendCertificates(true)}
+                        disabled={bulkSendingCerts}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-cyan-600/20 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {bulkSendingCerts ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Dispatching...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4" />
+                            <span>Bulk Email Unsent</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Interactive Quick Stats Cards */}
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {/* Stat 1: Total Delegates */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("all")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "all"
+                          ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                          All Delegates
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{totalScopedDelegates}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 2: Certificate Numbers Assigned */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("issued")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "issued"
+                          ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 font-bold border border-amber-300 dark:border-amber-700">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                          Numbered / Assigned
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certAssignedCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 3: Certificates Emailed */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("emailed")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "emailed"
+                          ? "bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-300 dark:border-emerald-700">
+                        <MailCheck className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 truncate">
+                          E-Certificates Sent
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certEmailedCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 4: Gate Checked-In */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("checked_in")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "checked_in"
+                          ? "bg-blue-50 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-blue-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-400 font-bold border border-blue-300 dark:border-blue-700">
+                        <UserCheck className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 truncate">
+                          Gate Attendance
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{gateCheckedInCount}</span>
+                      </div>
+                    </button>
+
+                    {/* Stat 5: Missing Certificate Numbers */}
+                    <button
+                      type="button"
+                      onClick={() => setIssuedCertStatusFilter("pending")}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                        issuedCertStatusFilter === "pending"
+                          ? "bg-rose-50 dark:bg-rose-950/80 border-rose-500 ring-2 ring-rose-500/25 shadow-md"
+                          : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-rose-300"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-400 font-bold border border-rose-300 dark:border-rose-700">
+                        <AlertTriangle className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 truncate">
+                          Unassigned / Pending
+                        </p>
+                        <span className="text-lg font-black text-slate-900 dark:text-slate-100">{certPendingCount}</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Search & Conference Filter Bar */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    {/* Search Input */}
+                    <div className="sm:col-span-7 relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={issuedCertSearch}
+                        onChange={(e) => setIssuedCertSearch(e.target.value)}
+                        placeholder="Search by Certificate No (e.g. ETM-HRR-001), Delegate Name, Email, Organization..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all"
+                      />
+                      {issuedCertSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setIssuedCertSearch("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Conference Filter Dropdown */}
+                    <div className="sm:col-span-5">
+                      <select
+                        value={issuedCertEventFilter}
+                        onChange={(e) => setIssuedCertEventFilter(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all cursor-pointer"
+                      >
+                        <option value="all">🎪 All Conferences & Summits ({cmsEvents.length})</option>
+                        {cmsEvents.map((evt) => {
+                          const count = registrations.filter(
+                            (r) => r.event_id === evt.id || r.event_title === evt.title
+                          ).length;
+                          return (
+                            <option key={evt.id} value={evt.id}>
+                              🎪 {evt.title} ({count} delegates)
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Filter Status Pills */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Status:</span>
+                      {[
+                        { id: "all", label: "All Delegates", count: totalScopedDelegates },
+                        { id: "issued", label: "With Certificate No", count: certAssignedCount },
+                        { id: "emailed", label: "Emailed", count: certEmailedCount },
+                        { id: "checked_in", label: "Gate Checked-In", count: gateCheckedInCount },
+                        { id: "pending", label: "Missing Certificate No", count: certPendingCount },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setIssuedCertStatusFilter(tab.id as any)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            issuedCertStatusFilter === tab.id
+                              ? "bg-amber-500 text-slate-950 shadow-xs"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Showing <span className="text-slate-900 dark:text-slate-100 font-black">{filteredIssuedDelegates.length}</span> matching delegate records
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Issued Certificates Data Table */}
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                          <th className="py-3.5 px-4">Certificate ID / Number</th>
+                          <th className="py-3.5 px-4">Candidate / Delegate</th>
+                          <th className="py-3.5 px-4">Organization & City</th>
+                          <th className="py-3.5 px-4">Conference / Event</th>
+                          <th className="py-3.5 px-4 text-center">Gate Attendance</th>
+                          <th className="py-3.5 px-4 text-center">E-Certificate Email</th>
+                          <th className="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                        {filteredIssuedDelegates.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-16 text-center">
+                              <div className="max-w-md mx-auto space-y-3">
+                                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto text-xl">
+                                  🏆
+                                </div>
+                                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">
+                                  No certificate records match your filters
+                                </h4>
+                                <p className="text-xs text-slate-400">
+                                  Try adjusting your search query, event filter, or auto-generate certificate numbers for attendees.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredIssuedDelegates.map((reg) => {
+                            const hasCertId = Boolean(reg.certificate_id && reg.certificate_id.trim());
+                            const hasSentEmail = Boolean(reg.certificate_sent_at);
+                            const isCheckedIn = reg.checkin_status?.toLowerCase() === "present";
+                            const certDisplayId = reg.certificate_id || `ETM-CERT-2026-${reg.id.replace(/[^0-9]/g, "").slice(-6) || "001"}`;
+
+                            return (
+                              <tr
+                                key={reg.id}
+                                className="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors group"
+                              >
+                                {/* Certificate ID Column */}
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  {hasCertId ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono font-black text-xs text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-xl shadow-2xs">
+                                        {reg.certificate_id}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(reg.certificate_id || "");
+                                          toast.success(`Copied Certificate ID: ${reg.certificate_id}`);
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                                        title="Copy Certificate Number"
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCertIdReg({
+                                            id: reg.id,
+                                            name: reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Delegate",
+                                            currentCertId: reg.certificate_id || "",
+                                          });
+                                          setTempCertIdValue(reg.certificate_id || "");
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900 text-slate-400 hover:text-amber-600 transition-colors"
+                                        title="Edit Certificate Number"
+                                      >
+                                        <Edit3 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[11px] text-slate-400 italic">
+                                        Unassigned
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCertIdReg({
+                                            id: reg.id,
+                                            name: reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Delegate",
+                                            currentCertId: "",
+                                          });
+                                          setTempCertIdValue("");
+                                        }}
+                                        className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition-all cursor-pointer"
+                                      >
+                                        + Assign ID
+                                      </button>
+                                    </div>
+                                  )}
+                                  <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                    Ref: {reg.id}
+                                  </p>
+                                </td>
+
+                                {/* Candidate Details */}
+                                <td className="py-3.5 px-4">
+                                  <div className="font-black text-slate-900 dark:text-slate-100">
+                                    {reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate"}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {reg.designation || "Executive Delegate"}
+                                  </div>
+                                  <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span>{reg.email || reg.official_email || "No email"}</span>
+                                    {reg.phone && reg.phone !== "N/A" && <span>• {reg.phone}</span>}
+                                  </div>
+                                </td>
+
+                                {/* Organization */}
+                                <td className="py-3.5 px-4">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200">
+                                    {reg.organization || "Independent Leader"}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">
+                                    {reg.city || "Hyderabad"}, {reg.country || "India"}
+                                  </div>
+                                </td>
+
+                                {/* Conference */}
+                                <td className="py-3.5 px-4 max-w-[220px]">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate" title={reg.event_title}>
+                                    🎪 {reg.event_title || "Executive Leadership Summit"}
+                                  </div>
+                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                                    {reg.pass_name || reg.registration_category || "VIP Delegate"}
+                                  </span>
+                                </td>
+
+                                {/* Gate Attendance */}
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  {isCheckedIn ? (
+                                    <div>
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Present
+                                      </span>
+                                      {reg.checked_in_at && (
+                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                          {new Date(reg.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-500">
+                                      Absent / Not Scanned
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Email Status */}
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  {hasSentEmail ? (
+                                    <div>
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                        <MailCheck className="h-3 w-3" />
+                                        Emailed
+                                      </span>
+                                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                        {new Date(reg.certificate_sent_at!).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                      Pending Dispatch
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Action Hub Buttons */}
+                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    {/* 1. Review Live Certificate */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const matchingEvent = cmsEvents.find(
+                                          (e) => e.id === reg.event_id || e.title === reg.event_title
+                                        );
+                                        let parsedCertSettings = null;
+                                        if (matchingEvent?.certificate_settings) {
+                                          try {
+                                            parsedCertSettings = typeof matchingEvent.certificate_settings === "string"
+                                              ? JSON.parse(matchingEvent.certificate_settings)
+                                              : matchingEvent.certificate_settings;
+                                          } catch (e) {}
+                                        }
+
+                                        setPreviewCertAttendee({
+                                          ...reg,
+                                          certificate_id: reg.certificate_id || certDisplayId,
+                                          certificate_settings: parsedCertSettings,
+                                        } as any);
+                                      }}
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950 text-slate-700 dark:text-slate-200 hover:text-amber-700 transition-all cursor-pointer shadow-2xs"
+                                      title="Review Live Certificate"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </button>
+
+                                    {/* 2. Dispatch Email */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendCertificate(reg.id, reg.name)}
+                                      disabled={sendingCertId === reg.id || (!reg.email && !reg.official_email)}
+                                      className="p-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                      title={hasSentEmail ? "Resend E-Certificate Email" : "Send E-Certificate Email"}
+                                    >
+                                      {sendingCertId === reg.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Mail className="h-4 w-4" />
+                                      )}
+                                    </button>
+
+                                    {/* 3. Public Verification Link */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const certUrl = `https://executivetalksmedia.in/certificate/${encodeURIComponent(reg.id)}`;
+                                        navigator.clipboard.writeText(certUrl);
+                                        toast.success("Public verification URL copied to clipboard!");
+                                      }}
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      title="Copy Public Certificate Link"
+                                    >
+                                      <Share2 className="h-4 w-4" />
+                                    </button>
+
+                                    {/* 4. Open in New Tab */}
+                                    <a
+                                      href={`/certificate/${encodeURIComponent(reg.id)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      title="Open Public Certificate Page"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* MODAL: Auto-Generate Certificate IDs */}
+                {autoCertModalOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6 text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <Zap className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-black tracking-tight">Auto-Generate Certificate Numbers</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Batch assign sequential Certificate IDs to delegates
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAutoCertModalOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Target Event */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Target Conference / Event
+                          </label>
+                          <select
+                            value={autoCertConfig.eventId}
+                            onChange={(e) => {
+                              const evId = e.target.value;
+                              const selectedEvt = cmsEvents.find((evt) => evt.id === evId);
+                              const words = ((selectedEvt ? selectedEvt.title : "HR RECALL 2K26") || "").replace(/[^A-Za-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+                              const suggested = words.length >= 2
+                                ? `ETM-${words.map((w: string) => w[0]).join("").slice(0, 4).toUpperCase()}`
+                                : "ETM-CERT";
+                              setAutoCertConfig({ ...autoCertConfig, eventId: evId, prefix: suggested });
+                            }}
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer"
+                          >
+                            <option value="all">🎪 All Events & Registrations</option>
+                            {cmsEvents.map((evt) => (
+                              <option key={evt.id} value={evt.id}>
+                                🎪 {evt.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Certificate Prefix */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Certificate ID Prefix (e.g. ETM-HRR or ETM-PLS)
+                          </label>
+                          <input
+                            type="text"
+                            value={autoCertConfig.prefix}
+                            onChange={(e) => setAutoCertConfig({ ...autoCertConfig, prefix: e.target.value.toUpperCase() })}
+                            placeholder="ETM-HRR"
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        {/* Sequence Start & Padding */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                              Start Number
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={autoCertConfig.startSeq}
+                              onChange={(e) => setAutoCertConfig({ ...autoCertConfig, startSeq: parseInt(e.target.value, 10) || 1 })}
+                              className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                              Number Digits / Padding
+                            </label>
+                            <select
+                              value={autoCertConfig.padding}
+                              onChange={(e) => setAutoCertConfig({ ...autoCertConfig, padding: parseInt(e.target.value, 10) || 3 })}
+                              className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500 cursor-pointer"
+                            >
+                              <option value={2}>2 Digits (01, 02...)</option>
+                              <option value={3}>3 Digits (001, 002...)</option>
+                              <option value={4}>4 Digits (0001, 0002...)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Overwrite Checkbox */}
+                        <div className="flex items-center gap-2.5 pt-2">
+                          <input
+                            type="checkbox"
+                            id="overwriteCertIds"
+                            checked={autoCertConfig.overwriteExisting}
+                            onChange={(e) => setAutoCertConfig({ ...autoCertConfig, overwriteExisting: e.target.checked })}
+                            className="h-4 w-4 rounded-md text-amber-500 focus:ring-amber-400 border-slate-300 cursor-pointer"
+                          />
+                          <label htmlFor="overwriteCertIds" className="text-xs text-slate-600 dark:text-slate-300 font-medium cursor-pointer">
+                            Overwrite existing Certificate Numbers (if unchecked, only unassigned attendees receive numbers)
+                          </label>
+                        </div>
+
+                        {/* Format Preview Card */}
+                        <div className="rounded-2xl border border-amber-300/80 dark:border-amber-700/80 bg-amber-50/60 dark:bg-amber-950/40 p-3.5 text-xs text-amber-900 dark:text-amber-300 space-y-1">
+                          <p className="font-extrabold uppercase text-[10px] tracking-wider text-amber-700 dark:text-amber-400">
+                            Sequence Output Preview:
+                          </p>
+                          <p className="font-mono font-bold text-sm">
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq).padStart(autoCertConfig.padding, "0")},{" "}
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq + 1).padStart(autoCertConfig.padding, "0")},{" "}
+                            {autoCertConfig.prefix || "ETM-CERT"}-{String(autoCertConfig.startSeq + 2).padStart(autoCertConfig.padding, "0")}...
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setAutoCertModalOpen(false)}
+                          className="px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerateCertIds}
+                          disabled={generatingCertSeq}
+                          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                        >
+                          {generatingCertSeq ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Assigning Numbers...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="h-4 w-4" />
+                              <span>Assign Numbers Now</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL: Edit Single Candidate Certificate ID */}
+                {editingCertIdReg && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <Edit3 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black">Assign Certificate Number</h3>
+                            <p className="text-[11px] text-slate-400">{editingCertIdReg.name}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCertIdReg(null)}
+                          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Official Certificate ID / Serial Number
+                          </label>
+                          <input
+                            type="text"
+                            value={tempCertIdValue}
+                            onChange={(e) => setTempCertIdValue(e.target.value.toUpperCase())}
+                            placeholder="e.g. ETM-HRR-001"
+                            className="w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-xs font-bold font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                          This certificate ID is permanently saved to the attendee's database record and printed on their official verifiable certificate.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setEditingCertIdReg(null)}
+                          className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveSingleCertId}
+                          disabled={savingSingleCertId || !tempCertIdValue.trim()}
+                          className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 disabled:opacity-50"
+                        >
+                          {savingSingleCertId ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3.5 w-3.5" />
+                              <span>Save Number</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ========================================== */}
           {/* WEBSITE SETTINGS TAB                       */}
@@ -21633,7 +23819,7 @@ export default function AdminDashboardPage() {
                     required
                     value={termsForm.title}
                     onChange={(e) => setTermsForm({ ...termsForm, title: e.target.value })}
-                    placeholder="e.g. Standard ETMedia Terms & Conditions or CFO Summit Terms"
+                    placeholder="e.g. Standard Executive Talks Media Terms & Conditions or CFO Summit Terms"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs"
                   />
                 </div>

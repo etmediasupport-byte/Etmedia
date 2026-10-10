@@ -5,10 +5,19 @@ export interface ExecutiveCertificateProps {
   candidateName?: string;
   organization?: string;
   designation?: string;
+  headerTitle?: string;
+  headerSubtitle?: string;
+  presentedToText?: string;
   eventTitle?: string;
   eventDate?: string;
   eventVenue?: string;
+  dateVenueText?: string;
   city?: string;
+  bodyLine1?: string;
+  bodyLine2?: string;
+  signatoryHeader?: string;
+  signatoryName?: string;
+  signatoryOrg?: string;
   certId?: string;
   issueDate?: string;
   className?: string;
@@ -19,42 +28,56 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
   candidateName = "Executive Delegate",
   organization = "",
   designation = "",
-  eventTitle = "HR RECALL 2K26 – Hyderabad Annual Connect",
-  eventDate = "11th December 2026",
-  eventVenue,
+  headerTitle = "CERTIFICATE",
+  headerSubtitle = "OF APPRECIATION",
+  presentedToText = "This certificate is Presented to",
+  eventTitle = "PROCUREMENT LEADERSHIP SUMMIT & EXCELLENCE AWARDS 2026",
+  eventDate = "2026-06-19",
+  eventVenue = "Radisson Hotel, Hyderabad",
+  dateVenueText,
   city = "Hyderabad",
+  bodyLine1,
+  bodyLine2,
+  signatoryHeader = "Presented By:",
+  signatoryName = "Srikanth",
+  signatoryOrg = "Executive Talks Media",
   certId,
   className = "",
   showIdBadge = false,
 }) => {
-  // Format venue line: e.g. "11th December 2026 | Centenary Convention Centre, Hyderabad"
+  // Format venue line: e.g. "2026-06-19 | Radisson Hotel, Hyderabad"
   const formattedMeta = useMemo(() => {
+    if (dateVenueText && dateVenueText.trim()) return dateVenueText.trim();
     const venuePart = eventVenue || (city ? `${city}, India` : "Hyderabad, India");
     const datePart = eventDate || "11th December 2026";
     return `${datePart} | ${venuePart}`;
-  }, [eventDate, eventVenue, city]);
+  }, [dateVenueText, eventDate, eventVenue, city]);
 
-  // Clean event title fallback
-  const displayTitle = eventTitle || "HR RECALL 2K26 – Hyderabad Annual Connect";
-  const displayCandidate = candidateName && candidateName.trim() ? candidateName.trim() : "Executive Delegate";
+  const displayTitle = eventTitle && eventTitle.trim() ? eventTitle.trim() : "Executive Leadership Summit 2026";
+  const displayCandidate = candidateName && candidateName.trim() ? candidateName.trim().toUpperCase() : "EXECUTIVE DELEGATE";
   const displayOrganization = organization && organization.trim()
     ? organization.trim()
     : (designation && designation.trim() ? designation.trim() : "");
 
-  // Dynamic font sizing for long titles, names & organization to avoid any clipping
-  const titleFontSize = displayTitle.length > 55 ? 16 : displayTitle.length > 40 ? 18 : 20.5;
-  const nameFontSize = displayCandidate.length > 32 ? 22 : displayCandidate.length > 22 ? 26 : 30;
-  const orgFontSize = displayOrganization.length > 45 ? 13.5 : displayOrganization.length > 28 ? 15.5 : 17.5;
+  // Dynamic recognition body lines
+  const displayBodyLine1 = bodyLine1 && bodyLine1.trim()
+    ? bodyLine1.trim()
+    : "In recognition of your valuable participation as an esteemed";
+  
+  const displayBodyLine2 = bodyLine2 && bodyLine2.trim()
+    ? bodyLine2.trim()
+    : `Delegate at the ${displayTitle}.`;
 
-  // Split recognition line if event title is long
-  const secondParagraphLine = `Delegate at the ${displayTitle}.`;
+  // Dynamic font sizing for long titles, names & organization to avoid clipping
+  const titleFontSize = displayTitle.length > 55 ? 15.5 : displayTitle.length > 38 ? 17.5 : 20;
+  const nameFontSize = displayCandidate.length > 32 ? 22 : displayCandidate.length > 20 ? 25 : 28;
+  const orgFontSize = displayOrganization.length > 45 ? 13 : displayOrganization.length > 28 ? 15 : 17;
 
   return (
     <div className={`w-full max-w-[1024px] mx-auto select-none ${className}`}>
       {/* 
         Fixed A4 Landscape Ratio (1024 x 723).
-        SVG ViewBox guarantees 100% IDENTICAL layout and scaling across 
-        mobile (360px), tablet (768px), laptop (1366px), and desktop (1920px+).
+        SVG ViewBox guarantees 100% IDENTICAL layout and scaling across all devices.
       */}
       <div className="relative w-full aspect-[1024/723] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden bg-white border border-slate-200">
         <svg
@@ -86,7 +109,7 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
                 .cert-event-meta {
                   font-family: 'Montserrat', Inter, sans-serif;
                   font-weight: 600;
-                  fill: #334155;
+                  fill: #475569;
                 }
                 .cert-present-to {
                   font-family: 'Montserrat', Inter, sans-serif;
@@ -96,6 +119,7 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
                 .cert-name {
                   font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
                   font-weight: 800;
+                  letter-spacing: 1.5px;
                   fill: #0f172a;
                 }
                 .cert-company {
@@ -108,6 +132,16 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
                   font-family: 'Montserrat', Inter, sans-serif;
                   font-weight: 500;
                   fill: #1e293b;
+                }
+                .cert-signatory-hdr {
+                  font-family: 'Montserrat', Inter, sans-serif;
+                  font-weight: 700;
+                  fill: #0f172a;
+                }
+                .cert-signatory-org {
+                  font-family: 'Montserrat', Inter, sans-serif;
+                  font-weight: 800;
+                  fill: #0f172a;
                 }
               `}
             </style>
@@ -124,11 +158,11 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
           />
 
           {/* 2. HEADER: CERTIFICATE OF APPRECIATION */}
-          <text x="284" y="136" className="cert-heading" fontSize="42">
-            CERTIFICATE
+          <text x="284" y="136" className="cert-heading" fontSize="40">
+            {headerTitle}
           </text>
-          <text x="285" y="171" className="cert-subheading" fontSize="19">
-            OF APPRECIATION
+          <text x="285" y="171" className="cert-subheading" fontSize="18.5">
+            {headerSubtitle}
           </text>
 
           {/* 3. DYNAMIC EVENT NAME & DETAILS */}
@@ -140,13 +174,13 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
           >
             {displayTitle}
           </text>
-          <text x="285" y="252" className="cert-event-meta" fontSize="14.5">
+          <text x="285" y="252" className="cert-event-meta" fontSize="13.5">
             {formattedMeta}
           </text>
 
           {/* 4. PRESENTED TO HEADER */}
-          <text x="285" y="344" className="cert-present-to" fontSize="18.5">
-            This certificate is Presented to
+          <text x="285" y="344" className="cert-present-to" fontSize="17.5">
+            {presentedToText}
           </text>
 
           {/* 5. CANDIDATE NAME SITTING EXACTLY ABOVE THE GOLD LINE */}
@@ -182,28 +216,54 @@ export const ExecutiveCertificate: React.FC<ExecutiveCertificateProps> = ({
             </text>
           )}
 
-          {/* 7. APPRECIATION PARAGRAPH */}
-          <text x="285" y="495" className="cert-body" fontSize="14.5">
-            In recognition of your valuable participation as an esteemed
+          {/* 7. APPRECIATION / RECOGNITION PARAGRAPHS */}
+          <text x="285" y="495" className="cert-body" fontSize="14">
+            {displayBodyLine1}
           </text>
-          <text x="285" y="521" className="cert-body" fontSize="14.5">
-            {secondParagraphLine}
+          <text x="285" y="521" className="cert-body" fontSize="14">
+            {displayBodyLine2}
           </text>
 
-          {/* Optional Certificate ID Stamp in top-right area if requested */}
-          {showIdBadge && certId && (
+          {/* 8. OFFICIAL CERTIFICATE NUMBER & VERIFICATION STAMP */}
+          <g transform="translate(285, 595)">
+            <rect
+              x="0"
+              y="-16"
+              width="230"
+              height="26"
+              rx="6"
+              fill="#f8fafc"
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
             <text
-              x="970"
-              y="18"
-              textAnchor="end"
-              fontFamily="monospace"
-              fontSize="10"
-              fontWeight="bold"
-              fill="#94a3b8"
+              x="12"
+              y="2"
+              fontFamily="'Montserrat', monospace, sans-serif"
+              fontSize="11"
+              fontWeight="800"
+              fill="#475569"
+              letterSpacing="0.8"
             >
-              ID: {certId}
+              CERT NO:{" "}
+              <tspan fill="#0f172a" fontWeight="900">
+                {certId || "ETM-CERT-001"}
+              </tspan>
             </text>
-          )}
+          </g>
+
+          {/* Security & Issue Credential Microprint */}
+          <text
+            x="285"
+            y="635"
+            fontFamily="'Montserrat', sans-serif"
+            fontSize="9"
+            fontWeight="600"
+            fill="#94a3b8"
+            letterSpacing="0.5"
+          >
+            OFFICIAL ACCREDITED CREDENTIAL • VERIFIABLE AT EXECUTIVETALKSMEDIA.IN
+          </text>
         </svg>
       </div>
     </div>

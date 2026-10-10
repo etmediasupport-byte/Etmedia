@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHero } from "@/components/site/PageHero";
-import { GlowBackdrop, Reveal, SectionHeading } from "@/components/site/primitives";
+import { GlowBackdrop, Reveal } from "@/components/site/primitives";
 import { SEOHead } from "@/components/site/SEOHead";
 import { contact, images } from "@/lib/site-data";
 import { socket } from "@/lib/socket";
@@ -17,9 +17,7 @@ import {
   MapPin,
   Phone,
   Send,
-  CheckCircle2,
   Loader2,
-  Clock,
   MessageCircle,
   ExternalLink,
   Linkedin,
@@ -261,45 +259,45 @@ export default function ContactPage() {
       {/* ========================================================= */}
       {/* 1. EXECUTIVE CONCIERGE TRUST BAR                          */}
       {/* ========================================================= */}
-      <section className="border-y border-slate-200/90 bg-white py-4 shadow-2xs">
+      <section className="border-y border-slate-200/90 bg-white py-3 shadow-2xs">
         <div className="container-x">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-200/80">
-            <div className="flex items-center gap-3 px-2 py-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-100">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/80">
+            <div className="flex items-center gap-2.5 px-2 py-0.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 border border-cyan-100">
                 <Zap className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Rapid Response</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Rapid Response</div>
                 <div className="text-xs font-bold text-slate-900">&lt; 2 Hours Guaranteed</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-2 py-1 pt-3 md:pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+            <div className="flex items-center gap-2.5 px-2 py-0.5 pt-2.5 md:pt-0.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600 border border-purple-100">
                 <Globe className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Executive Reach</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Executive Reach</div>
                 <div className="text-xs font-bold text-slate-900">50,000+ C-Suite Leaders</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-2 py-1 pt-3 md:pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div className="flex items-center gap-2.5 px-2 py-0.5 pt-2.5 md:pt-0.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Data Privacy</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Data Privacy</div>
                 <div className="text-xs font-bold text-slate-900">100% Verified & Secure</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-2 py-1 pt-3 md:pt-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+            <div className="flex items-center gap-2.5 px-2 py-0.5 pt-2.5 md:pt-0.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
                 <Building2 className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Global Corporate HQ</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 font-display">Corporate HQ</div>
                 <div className="text-xs font-bold text-slate-900">Hyderabad, India</div>
               </div>
             </div>
@@ -308,67 +306,64 @@ export default function ContactPage() {
       </section>
 
       {/* Main Container */}
-      <div className="container-x relative pt-8 sm:pt-10 pb-12 space-y-12">
+      <div className="container-x relative pt-5 sm:pt-7 pb-8 space-y-7">
         
         {/* ========================================================= */}
         {/* 2. DEDICATED EXECUTIVE CHANNELS (4 PREMIUM CARDS)        */}
         {/* ========================================================= */}
         <section>
           <Reveal>
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-2">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.12em] text-cyan-800 uppercase font-btn shadow-2xs">
                   <Sparkles className="h-3 w-3 text-cyan-600 animate-pulse" />
                   <span>Direct Advisory Channels</span>
                 </div>
-                <h2 className="mt-1.5 text-xl sm:text-2xl lg:text-[1.85rem] font-extrabold font-display text-slate-900 tracking-tight leading-snug text-left">
+                <h2 className="mt-1 text-lg sm:text-xl lg:text-2xl font-extrabold font-display text-slate-900 tracking-tight leading-snug text-left">
                   Executive Concierge & Support Desks
                 </h2>
-                <p className="mt-1 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
-                  Connect directly with dedicated conference managers, sponsorship consultants, and editorial heads.
-                </p>
               </div>
 
               <div className="hidden sm:flex items-center gap-2 shrink-0">
-                <span className="flex h-2.5 w-2.5 relative">
+                <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Desk Online · 9 AM - 7 PM</span>
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Desk Online · 9 AM - 7 PM</span>
               </div>
             </div>
           </Reveal>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             {/* CARD 1: Corporate HQ */}
-            <Reveal delay={0.04}>
-              <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-xl hover:border-cyan-400 transition-all duration-300 h-full">
-                <div className="space-y-3.5">
+            <Reveal delay={0.03}>
+              <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-cyan-400 transition-all duration-300 h-full">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600 group-hover:scale-105 transition-transform">
-                      <MapPin className="h-5 w-5" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 group-hover:scale-105 transition-transform">
+                      <MapPin className="h-4.5 w-4.5" />
                     </div>
-                    <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-cyan-700 uppercase border border-cyan-200/60">
+                    <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-700 uppercase border border-cyan-200/60">
                       Corporate HQ
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold font-display text-slate-900 group-hover:text-cyan-600 transition-colors">
+                    <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-cyan-600 transition-colors">
                       Corporate Headquarters
                     </h3>
-                    <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium">
+                    <p className="mt-1 text-[11.5px] text-slate-600 leading-relaxed font-medium">
                       Unit No-1012, 10th Floor, Manjeera Trinity Corporate, JNTU-Hitech Road, KPHB, Hyderabad 500072.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                <div className="mt-3 pt-2.5 border-t border-slate-100">
                   <a
                     href={googleMapsDirectionsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 hover:text-cyan-700 transition-colors group-hover:translate-x-0.5"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 hover:text-cyan-700 transition-colors"
                   >
                     <span>View on Google Maps</span>
                     <ExternalLink className="h-3 w-3" />
@@ -378,33 +373,37 @@ export default function ContactPage() {
             </Reveal>
 
             {/* CARD 2: Delegate Passes & Registration */}
-            <Reveal delay={0.08}>
-              <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-400 transition-all duration-300 h-full">
-                <div className="space-y-3.5">
+            <Reveal delay={0.06}>
+              <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-purple-400 transition-all duration-300 h-full">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 group-hover:scale-105 transition-transform">
-                      <Ticket className="h-5 w-5" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 group-hover:scale-105 transition-transform">
+                      <Ticket className="h-4.5 w-4.5" />
                     </div>
-                    <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-purple-700 uppercase border border-purple-200/60">
+                    <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-purple-700 uppercase border border-purple-200/60">
                       Delegates & Passes
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold font-display text-slate-900 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-purple-600 transition-colors">
                       Delegate Registration Desk
                     </h3>
-                    <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium">
-                      Inquiries on delegate passes, group bookings, VIP passes, and registration status.
+                    <p className="mt-1 text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                      Passes, group bookings, VIP access, and verification inquiries.
                     </p>
-                    <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
+                    <div className="mt-1.5 text-[11.5px] font-bold text-slate-800 space-y-0.5">
                       <div>📞 +91 91002 66777</div>
-                      <div className="text-purple-700 truncate">✉️ registration@executivetalksmedia.in</div>
+                      <div className="text-purple-700 truncate">
+                        <a href="mailto:registration@executivetalksmedia.in" className="hover:underline">
+                          <span>✉️ registration@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                <div className="mt-3 pt-2.5 border-t border-slate-100">
                   <a
                     href="tel:+919100266777"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors"
@@ -417,79 +416,94 @@ export default function ContactPage() {
             </Reveal>
 
             {/* CARD 3: Sponsorship & Partnerships */}
-            <Reveal delay={0.12}>
-              <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-xl hover:border-emerald-400 transition-all duration-300 h-full">
-                <div className="space-y-3.5">
+            <Reveal delay={0.09}>
+              <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-emerald-400 transition-all duration-300 h-full">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform">
-                      <Award className="h-5 w-5" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform">
+                      <Award className="h-4.5 w-4.5" />
                     </div>
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-emerald-700 uppercase border border-emerald-200/60">
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-700 uppercase border border-emerald-200/60">
                       Sponsorships
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold font-display text-slate-900 group-hover:text-emerald-600 transition-colors">
+                    <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-emerald-600 transition-colors">
                       Corporate Alliances Desk
                     </h3>
-                    <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium">
-                      Summit sponsorships, exhibition booths, keynote speaking, and bespoke enterprise alliances.
+                    <p className="mt-1 text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                      Summit sponsorships, exhibition booths, keynote slots, and partnerships.
                     </p>
-                    <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
+                    <div className="mt-1.5 text-[11.5px] font-bold text-slate-800 space-y-0.5">
                       <div>💬 WhatsApp: +91 91002 66777</div>
-                      <div className="text-emerald-700 truncate">✉️ partner.support@executivetalksmedia.in</div>
+                      <div className="text-emerald-700 truncate">
+                        <a href="mailto:partners@executivetalksmedia.in" className="hover:underline">
+                          <span>✉️ partners@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                   <a
                     href={contact.whatsapp}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
-                    <span>Instant WhatsApp Chat</span>
+                    <span>WhatsApp Chat</span>
                     <MessageCircle className="h-3 w-3" />
+                  </a>
+                  <a
+                    href="mailto:partners@executivetalksmedia.in"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline"
+                  >
+                    <span>Email Alliances</span>
+                    <Mail className="h-3 w-3" />
                   </a>
                 </div>
               </div>
             </Reveal>
 
             {/* CARD 4: Media & Magazine Desk */}
-            <Reveal delay={0.16}>
-              <div className="group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-xl hover:border-amber-400 transition-all duration-300 h-full">
-                <div className="space-y-3.5">
+            <Reveal delay={0.12}>
+              <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-amber-400 transition-all duration-300 h-full">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 group-hover:scale-105 transition-transform">
-                      <Sparkles className="h-5 w-5" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 group-hover:scale-105 transition-transform">
+                      <Sparkles className="h-4.5 w-4.5" />
                     </div>
-                    <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-wider text-amber-700 uppercase border border-amber-200/60">
-                      Editorial Desk
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-amber-700 uppercase border border-amber-200/60">
+                      Official Inquiries
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold font-display text-slate-900 group-hover:text-amber-600 transition-colors">
+                    <h3 className="text-sm font-bold font-display text-slate-900 group-hover:text-amber-600 transition-colors">
                       Executive Talks Magazine
                     </h3>
-                    <p className="mt-1.5 text-xs text-slate-600 leading-relaxed font-medium">
-                      Leader interviews, cover story features, media accreditations, and editorial inquiries.
+                    <p className="mt-1 text-[11.5px] text-slate-600 leading-relaxed font-medium">
+                      Leader interviews, cover story features, PR, and official general inquiries.
                     </p>
-                    <div className="mt-2 text-xs font-bold text-slate-800 space-y-1">
+                    <div className="mt-1.5 text-[11.5px] font-bold text-slate-800 space-y-0.5">
                       <div>🕒 Mon – Sat: 9:00 AM – 7:00 PM</div>
-                      <div className="text-amber-700 truncate">✉️ contact@executivetalksmedia.in</div>
+                      <div className="text-amber-700 truncate">
+                        <a href="mailto:info@executivetalksmedia.in" className="hover:underline">
+                          <span>✉️ info@executivetalksmedia.in</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3.5 border-t border-slate-100">
+                <div className="mt-3 pt-2.5 border-t border-slate-100">
                   <a
-                    href="mailto:contact@executivetalksmedia.in"
+                    href="mailto:info@executivetalksmedia.in"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
                   >
-                    <span>Email Editorial Team</span>
+                    <span>Email Official Desk</span>
                     <Mail className="h-3 w-3" />
                   </a>
                 </div>
@@ -501,33 +515,27 @@ export default function ContactPage() {
         {/* ========================================================= */}
         {/* 3. MAIN INTERACTIVE EXECUTIVE ENQUIRY SECTION            */}
         {/* ========================================================= */}
-        <section className="grid gap-8 lg:grid-cols-12 items-start">
+        <section className="grid gap-6 lg:grid-cols-12 items-start">
           
-          {/* LEFT: THE LUXURY ENQUIRY FORM (7 COLS) */}
+          {/* LEFT: THE ENQUIRY FORM (7 COLS) */}
           <div className="lg:col-span-7">
             <Reveal>
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xl text-slate-900">
-                {/* Top Subtle Ambient Glow */}
-                <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+              <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm text-slate-900">
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
                   <div>
-                    <div className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-cyan-600 font-display">
-                      <Zap className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
+                    <div className="inline-flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-cyan-600 font-display">
+                      <Zap className="h-3 w-3 text-cyan-600 animate-pulse" />
                       <span>Executive Enquiry Desk</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold font-display text-slate-900 tracking-tight mt-0.5">
+                    <h2 className="text-lg sm:text-xl font-extrabold font-display text-slate-900 tracking-tight mt-0.5">
                       Send Direct Message
                     </h2>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Complete the form below to connect directly with the conference advisory desk.
-                    </p>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => navigate("/contact/form")}
-                    className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-2xs shrink-0"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer shadow-2xs shrink-0"
                   >
                     <span>Multi-Step Wizard</span>
                     <ArrowRight className="h-3 w-3" />
@@ -535,22 +543,22 @@ export default function ContactPage() {
                 </div>
 
                 {realtimeNotification && (
-                  <div className="mb-5 rounded-2xl bg-cyan-50/80 p-3 text-xs font-bold text-cyan-800 border border-cyan-200/80 flex items-center gap-2">
+                  <div className="mb-4 rounded-xl bg-cyan-50/80 p-2.5 text-xs font-bold text-cyan-800 border border-cyan-200/80 flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping shrink-0" />
                     <span>{realtimeNotification}</span>
                   </div>
                 )}
 
                 {submitted ? (
-                  <div className="rounded-3xl bg-gradient-to-b from-cyan-50/60 to-white p-8 text-center border border-cyan-200/80 my-4 shadow-sm">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 mb-4">
-                      <Check className="h-8 w-8 stroke-[2.5]" />
+                  <div className="rounded-2xl bg-gradient-to-b from-cyan-50/60 to-white p-6 text-center border border-cyan-200/80 my-2 shadow-xs">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-md mb-3">
+                      <Check className="h-6 w-6 stroke-[2.5]" />
                     </div>
-                    <h3 className="text-2xl font-black font-display text-slate-900">Enquiry Received!</h3>
-                    <p className="mt-2 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed font-medium">
+                    <h3 className="text-xl font-black font-display text-slate-900">Enquiry Received!</h3>
+                    <p className="mt-1.5 text-xs text-slate-600 max-w-md mx-auto leading-relaxed font-medium">
                       Thank you for contacting Executive Talks Media Business Intelligence. Your reference inquiry has been logged in our executive database and assigned to a coordinator.
                     </p>
-                    <div className="mt-6 flex justify-center gap-3">
+                    <div className="mt-4 flex justify-center gap-3">
                       <button
                         onClick={() => {
                           setSubmitted(false);
@@ -564,21 +572,21 @@ export default function ContactPage() {
                             message: "",
                           });
                         }}
-                        className="rounded-full gradient-brand px-6 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform cursor-pointer border-none"
+                        className="rounded-full gradient-brand px-5 py-2 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform cursor-pointer border-none"
                       >
                         Send Another Inquiry
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+                  <form onSubmit={handleSubmit} className="space-y-3.5 relative z-10">
                     
                     {/* Category Selection Chips */}
                     <div>
-                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+                      <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                         Select Inquiry Category *
                       </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                         {ENQUIRY_CATEGORIES.map((cat) => {
                           const isSelected = formData.subject === cat.id;
                           const IconComp = cat.icon;
@@ -587,13 +595,13 @@ export default function ContactPage() {
                               key={cat.id}
                               type="button"
                               onClick={() => setFormData({ ...formData, subject: cat.id })}
-                              className={`flex items-center gap-2 p-2.5 rounded-2xl border text-xs font-bold transition-all text-left cursor-pointer ${
+                              className={`flex items-center gap-1.5 p-2 rounded-xl border text-[11px] font-bold transition-all text-left cursor-pointer ${
                                 isSelected
-                                  ? "border-cyan-500 bg-cyan-50 text-cyan-900 ring-2 ring-cyan-500/20 shadow-xs"
-                                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 hover:bg-slate-100/80 hover:border-slate-300"
+                                  ? "border-cyan-500 bg-cyan-50 text-cyan-900 ring-1 ring-cyan-500/20 shadow-2xs"
+                                  : "border-slate-200/90 bg-slate-50/70 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
                               }`}
                             >
-                              <IconComp className={`h-3.5 w-3.5 shrink-0 ${isSelected ? "text-cyan-600" : "text-slate-400"}`} />
+                              <IconComp className={`h-3 w-3 shrink-0 ${isSelected ? "text-cyan-600" : "text-slate-400"}`} />
                               <span className="truncate">{cat.label}</span>
                             </button>
                           );
@@ -603,46 +611,44 @@ export default function ContactPage() {
 
                     {/* Name */}
                     <div>
-                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                         Full Name *
                       </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setFormData({ ...formData, name: val });
-                            if (touched.name) {
-                              const res = validateName(val, "Full Name");
-                              setFieldErrors((prev) => ({ ...prev, name: res.isValid ? "" : res.error }));
-                            }
-                          }}
-                          onBlur={() => {
-                            setTouched((prev) => ({ ...prev, name: true }));
-                            const res = validateName(formData.name, "Full Name");
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, name: val });
+                          if (touched.name) {
+                            const res = validateName(val, "Full Name");
                             setFieldErrors((prev) => ({ ...prev, name: res.isValid ? "" : res.error }));
-                          }}
-                          placeholder="e.g. Rajesh Sharma"
-                          className={`w-full rounded-2xl border px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
-                            touched.name && fieldErrors.name
-                              ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                              : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
-                          }`}
-                        />
-                      </div>
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, name: true }));
+                          const res = validateName(formData.name, "Full Name");
+                          setFieldErrors((prev) => ({ ...prev, name: res.isValid ? "" : res.error }));
+                        }}
+                        placeholder="e.g. Rajesh Sharma"
+                        className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                          touched.name && fieldErrors.name
+                            ? "border-rose-500 bg-rose-50/40 focus:ring-1 focus:ring-rose-500/20"
+                            : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
+                        }`}
+                      />
                       {touched.name && fieldErrors.name && (
-                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                        <p className="text-[10.5px] font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                           <span>⚠️</span> {fieldErrors.name}
                         </p>
                       )}
                     </div>
 
                     {/* Work Email & Phone Grid */}
-                    <div className="grid gap-3.5 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                           Work Email Address *
                         </label>
                         <input
@@ -663,21 +669,21 @@ export default function ContactPage() {
                             setFieldErrors((prev) => ({ ...prev, email: res.isValid ? "" : res.error }));
                           }}
                           placeholder="rajesh@company.com"
-                          className={`w-full rounded-2xl border px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                          className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
                             touched.email && fieldErrors.email
-                              ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                              : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                              ? "border-rose-500 bg-rose-50/40 focus:ring-1 focus:ring-rose-500/20"
+                              : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                           }`}
                         />
                         {touched.email && fieldErrors.email && (
-                          <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                          <p className="text-[10.5px] font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                             <span>⚠️</span> {fieldErrors.email}
                           </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                           Contact Phone Number *
                         </label>
                         <input
@@ -699,24 +705,24 @@ export default function ContactPage() {
                             setFieldErrors((prev) => ({ ...prev, phone: res.isValid ? "" : res.error }));
                           }}
                           placeholder="+91 98765 43210"
-                          className={`w-full rounded-2xl border px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                          className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
                             touched.phone && fieldErrors.phone
-                              ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                              : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                              ? "border-rose-500 bg-rose-50/40 focus:ring-1 focus:ring-rose-500/20"
+                              : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                           }`}
                         />
                         {touched.phone && fieldErrors.phone && (
-                          <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                          <p className="text-[10.5px] font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                             <span>⚠️</span> {fieldErrors.phone}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* Organization & Designation (Recommended) */}
-                    <div className="grid gap-3.5 sm:grid-cols-2">
+                    {/* Organization & Designation */}
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                           Company / Organization <span className="text-slate-400 lowercase font-normal">(optional)</span>
                         </label>
                         <input
@@ -724,12 +730,12 @@ export default function ContactPage() {
                           value={formData.organization}
                           onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
                           placeholder="e.g. Acme Enterprise Ltd"
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none transition-all"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none transition-all"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                           Designation / Role <span className="text-slate-400 lowercase font-normal">(optional)</span>
                         </label>
                         <input
@@ -737,14 +743,14 @@ export default function ContactPage() {
                           value={formData.designation}
                           onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                           placeholder="e.g. Chief Marketing Officer"
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none transition-all"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600 focus:outline-none transition-all"
                         />
                       </div>
                     </div>
 
                     {/* Detailed Message */}
                     <div>
-                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      <label className="block text-[10.5px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                         Detailed Message / Requirements *
                       </label>
                       <textarea
@@ -765,25 +771,25 @@ export default function ContactPage() {
                           setFieldErrors((prev) => ({ ...prev, message: res.isValid ? "" : res.error }));
                         }}
                         placeholder="Tell us about your requirements, delegate count, sponsorship interests, or summit queries..."
-                        className={`w-full rounded-2xl border px-4 py-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
+                        className={`w-full rounded-xl border px-3.5 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all ${
                           touched.message && fieldErrors.message
-                            ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                            : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20"
+                            ? "border-rose-500 bg-rose-50/40 focus:ring-1 focus:ring-rose-500/20"
+                            : "border-slate-200 bg-slate-50/70 focus:bg-white focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20"
                         }`}
                       />
                       {touched.message && fieldErrors.message && (
-                        <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
+                        <p className="text-[10.5px] font-semibold text-rose-600 mt-0.5 flex items-center gap-1">
                           <span>⚠️</span> {fieldErrors.message}
                         </p>
                       )}
                     </div>
 
                     {/* Submit Button */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <button
                         type="submit"
                         disabled={loading}
-                        className="gradient-brand w-full flex items-center justify-center gap-2 rounded-full py-3.5 text-xs sm:text-sm font-extrabold tracking-wide text-white shadow-[0_4px_20px_rgba(0,174,239,0.35)] hover:shadow-[0_6px_28px_rgba(0,174,239,0.55)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 disabled:opacity-50 cursor-pointer border-none"
+                        className="gradient-brand w-full flex items-center justify-center gap-2 rounded-full py-2.5 text-xs sm:text-sm font-extrabold tracking-wide text-white shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 disabled:opacity-50 cursor-pointer border-none"
                       >
                         {loading ? (
                           <>
@@ -793,13 +799,13 @@ export default function ContactPage() {
                         ) : (
                           <>
                             <span>Submit Executive Enquiry</span>
-                            <Send className="h-4 w-4" />
+                            <Send className="h-3.5 w-3.5" />
                           </>
                         )}
                       </button>
                     </div>
 
-                    <p className="text-center text-[10.5px] text-slate-500 font-medium">
+                    <p className="text-center text-[10px] text-slate-500 font-medium">
                       🔒 Your submission is encrypted and reviewed under standard enterprise confidentiality protocols.
                     </p>
                   </form>
@@ -809,37 +815,37 @@ export default function ContactPage() {
           </div>
 
           {/* RIGHT COLUMN: EXECUTIVE ADVISORY SIDEBAR (5 COLS) */}
-          <div className="lg:col-span-5 space-y-5">
+          <div className="lg:col-span-5 space-y-4">
             
             {/* CARD 1: OFFICIAL SOCIAL MEDIA HUB */}
-            <Reveal delay={0.06}>
-              <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-md">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
-                    <Globe className="h-4 w-4" />
+            <Reveal delay={0.05}>
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
+                    <Globe className="h-3.5 w-3.5" />
                   </div>
-                  <h3 className="text-base font-extrabold font-display text-slate-900">
+                  <h3 className="text-sm font-extrabold font-display text-slate-900">
                     Official Media & Social Hub
                   </h3>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+                <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium mb-3">
                   Follow Executive Talks Media across verified official channels for live C-Suite dialogue, speaker updates, and summit broadcasts.
                 </p>
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   {/* LinkedIn */}
                   <a
                     href={socialLinks.linkedin}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-[#0A66C2]/10 hover:border-[#0A66C2]/40 transition-all text-xs font-bold text-slate-800 group"
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-[#0A66C2]/10 hover:border-[#0A66C2]/40 transition-all text-xs font-bold text-slate-800 group"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0A66C2] text-white shadow-xs group-hover:scale-105 transition-transform">
-                      <Linkedin className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#0A66C2] text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <Linkedin className="h-3 w-3" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-display">LinkedIn</div>
-                      <div className="text-[10px] text-slate-500 font-normal truncate">@executivetalks</div>
+                      <div className="truncate font-display text-[11px]">LinkedIn</div>
+                      <div className="text-[9.5px] text-slate-500 font-normal truncate">@executivetalks</div>
                     </div>
                   </a>
 
@@ -848,14 +854,14 @@ export default function ContactPage() {
                     href={socialLinks.whatsapp}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-[#25D366]/10 hover:border-[#25D366]/40 transition-all text-xs font-bold text-slate-800 group"
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-[#25D366]/10 hover:border-[#25D366]/40 transition-all text-xs font-bold text-slate-800 group"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-xs group-hover:scale-105 transition-transform">
-                      <MessageCircle className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <MessageCircle className="h-3 w-3" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-display">WhatsApp</div>
-                      <div className="text-[10px] text-slate-500 font-normal truncate">+91 91002 66777</div>
+                      <div className="truncate font-display text-[11px]">WhatsApp</div>
+                      <div className="text-[9.5px] text-slate-500 font-normal truncate">+91 91002 66777</div>
                     </div>
                   </a>
 
@@ -864,14 +870,14 @@ export default function ContactPage() {
                     href={socialLinks.youtube}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-[#FF0000]/10 hover:border-[#FF0000]/40 transition-all text-xs font-bold text-slate-800 group"
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-[#FF0000]/10 hover:border-[#FF0000]/40 transition-all text-xs font-bold text-slate-800 group"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FF0000] text-white shadow-xs group-hover:scale-105 transition-transform">
-                      <Youtube className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#FF0000] text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <Youtube className="h-3 w-3" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-display">YouTube</div>
-                      <div className="text-[10px] text-slate-500 font-normal truncate">Executive Talks TV</div>
+                      <div className="truncate font-display text-[11px]">YouTube</div>
+                      <div className="text-[9.5px] text-slate-500 font-normal truncate">Executive Talks TV</div>
                     </div>
                   </a>
 
@@ -880,14 +886,14 @@ export default function ContactPage() {
                     href={socialLinks.instagram}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2.5 p-3 rounded-2xl border border-slate-100 bg-slate-50/80 hover:bg-rose-500/10 hover:border-rose-400 transition-all text-xs font-bold text-slate-800 group"
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-slate-50/80 hover:bg-rose-500/10 hover:border-rose-400 transition-all text-xs font-bold text-slate-800 group"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs group-hover:scale-105 transition-transform">
-                      <Instagram className="h-3.5 w-3.5" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <Instagram className="h-3 w-3" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-display">Instagram</div>
-                      <div className="text-[10px] text-slate-500 font-normal truncate">@executivetalks</div>
+                      <div className="truncate font-display text-[11px]">Instagram</div>
+                      <div className="text-[9.5px] text-slate-500 font-normal truncate">@executivetalks</div>
                     </div>
                   </a>
                 </div>
@@ -895,46 +901,46 @@ export default function ContactPage() {
             </Reveal>
 
             {/* CARD 2: VIP CONCIERGE ASSURANCES */}
-            <Reveal delay={0.1}>
-              <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-7 text-white shadow-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="inline-flex items-center gap-2 text-[10.5px] font-extrabold uppercase tracking-widest text-cyan-400 font-btn">
-                    <Sparkles className="h-3.5 w-3.5" />
+            <Reveal delay={0.08}>
+              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-900 to-slate-800 p-4 sm:p-5 text-white shadow-md">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 font-btn">
+                    <Sparkles className="h-3 w-3" />
                     <span>VIP Concierge Protocol</span>
                   </div>
-                  <span className="rounded-full bg-cyan-500/20 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 border border-cyan-400/30">
-                    B2B Enterprise Standard
+                  <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[9.5px] font-bold text-cyan-300 border border-cyan-400/30">
+                    B2B Standard
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold font-display text-white">
+                <h3 className="text-sm sm:text-base font-bold font-display text-white">
                   Why Global Leaders Partner With Executive Talks Media
                 </h3>
 
-                <ul className="mt-4 space-y-2.5 text-xs text-slate-300 font-medium">
-                  <li className="flex items-start gap-2.5">
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                <ul className="mt-3 space-y-2 text-[11.5px] text-slate-300 font-medium">
+                  <li className="flex items-start gap-2">
+                    <div className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
+                      <Check className="h-2 w-2 stroke-[3]" />
                     </div>
-                    <span><strong>Strictly Curated Attendance:</strong> Over 90% decision-making C-Suite & VP delegations.</span>
+                    <span><strong>Strictly Curated Attendance:</strong> Over 90% decision-making C-Suite delegations.</span>
                   </li>
-                  <li className="flex items-start gap-2.5">
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  <li className="flex items-start gap-2">
+                    <div className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
+                      <Check className="h-2 w-2 stroke-[3]" />
                     </div>
-                    <span><strong>Commercial Outcomes:</strong> Curated 1-on-1 enterprise match-making & brand impact.</span>
+                    <span><strong>Commercial Outcomes:</strong> Curated 1-on-1 enterprise matchmaking.</span>
                   </li>
-                  <li className="flex items-start gap-2.5">
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  <li className="flex items-start gap-2">
+                    <div className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5">
+                      <Check className="h-2 w-2 stroke-[3]" />
                     </div>
-                    <span><strong>Pan-India Intelligence:</strong> Flagship summits hosted across Hyderabad, Mumbai, Bengaluru & Delhi.</span>
+                    <span><strong>Pan-India Footprint:</strong> Flagship summits across Hyderabad, Mumbai, Bengaluru & Delhi.</span>
                   </li>
                 </ul>
 
-                <div className="mt-5 pt-4 border-t border-slate-700/80 flex items-center justify-between">
-                  <div className="text-[11px] text-slate-400">
-                    Need instant phone assistance?
+                <div className="mt-3.5 pt-2.5 border-t border-slate-700/80 flex items-center justify-between">
+                  <div className="text-[10.5px] text-slate-400">
+                    Instant phone assistance
                   </div>
                   <a
                     href="tel:+919100266777"
@@ -953,40 +959,37 @@ export default function ContactPage() {
         {/* ========================================================= */}
         {/* 4. DELEGATE & SPONSOR FAQS SECTION                        */}
         {/* ========================================================= */}
-        <section className="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-sm">
-          <div className="max-w-2xl mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-2xs">
+          <div className="max-w-2xl mb-4">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.12em] text-cyan-800 uppercase font-btn shadow-2xs">
               <Headphones className="h-3 w-3 text-cyan-600" />
               <span>Quick Assistance & Guidance</span>
             </div>
-            <h2 className="mt-1.5 text-xl sm:text-2xl font-extrabold font-display text-slate-900 tracking-tight text-left">
+            <h2 className="mt-1 text-lg sm:text-xl font-extrabold font-display text-slate-900 tracking-tight text-left">
               Frequently Asked Questions
             </h2>
-            <p className="mt-1 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
-              Key information regarding delegate registration, passes, tax invoices, and partnership deliverables.
-            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {FAQS.map((faq, idx) => {
               const isOpen = activeFaq === idx;
               return (
                 <div
                   key={idx}
-                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  className={`rounded-xl border transition-all duration-200 overflow-hidden ${
                     isOpen ? "border-cyan-400 bg-cyan-50/30 shadow-xs" : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50"
                   }`}
                 >
                   <button
                     type="button"
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between p-4 text-left font-bold text-xs sm:text-sm text-slate-900 cursor-pointer gap-3"
+                    className="flex w-full items-center justify-between p-3.5 text-left font-bold text-xs sm:text-sm text-slate-900 cursor-pointer gap-2.5"
                   >
                     <span>{faq.q}</span>
-                    <ChevronDown className={`h-4 w-4 shrink-0 text-cyan-600 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-cyan-600 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 text-xs text-slate-600 leading-relaxed font-medium border-t border-cyan-100/60 pt-2.5">
+                    <div className="px-3.5 pb-3 text-xs text-slate-600 leading-relaxed font-medium border-t border-cyan-100/60 pt-2">
                       {faq.a}
                     </div>
                   )}
@@ -999,43 +1002,38 @@ export default function ContactPage() {
         {/* ========================================================= */}
         {/* 5. GOOGLE MAPS EMBED & HEADQUARTERS NAVIGATION SECTION    */}
         {/* ========================================================= */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <Reveal>
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-50 px-3 py-0.5 text-[10.5px] sm:text-[11px] font-extrabold tracking-[0.15em] text-cyan-800 uppercase font-btn shadow-2xs">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/25 bg-cyan-50 px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.12em] text-cyan-800 uppercase font-btn shadow-2xs">
                   <Navigation className="h-3 w-3 text-cyan-600" />
                   <span>Corporate Location & Navigation</span>
                 </div>
-                <h2 className="mt-1.5 text-xl sm:text-2xl font-extrabold font-display text-slate-900 tracking-tight text-left">
+                <h2 className="mt-1 text-lg sm:text-xl font-extrabold font-display text-slate-900 tracking-tight text-left">
                   Visit Executive Talks Media Corporate Headquarters
                 </h2>
-                <p className="mt-1 text-slate-600 text-xs sm:text-sm font-sans font-medium text-left">
-                  Situated in the heart of Hyderabad's premier corporate and technological hub at Manjeera Trinity Corporate.
-                </p>
               </div>
 
               <a
                 href={googleMapsDirectionsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full gradient-brand px-6 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-5 py-2 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform shrink-0"
               >
-                <span>Get Turn-by-Turn Directions</span>
-                <ExternalLink className="h-3.5 w-3.5" />
+                <span>Get Directions</span>
+                <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </Reveal>
 
           <Reveal>
-            <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 shadow-2xl bg-white">
-              
-              {/* Responsive Iframe Container */}
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 shadow-md bg-white">
               <iframe
                 title="Executive Talks Media Business Intelligence Headquarters Map - Manjeera Trinity Corporate"
                 src={googleMapsEmbedUrl}
                 width="100%"
-                height="460"
+                height="360"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
@@ -1043,19 +1041,18 @@ export default function ContactPage() {
                 className="w-full transition-all duration-500"
               />
 
-              {/* Floating Location Information Badge Card */}
-              <div className="hidden sm:block absolute bottom-5 left-5 max-w-sm rounded-2xl bg-white/95 backdrop-blur-md p-4 border border-slate-200/90 shadow-xl text-slate-900 z-10">
-                <div className="flex items-center gap-2 text-cyan-700 font-extrabold text-[11px] uppercase tracking-wider mb-1">
-                  <MapPin className="h-3.5 w-3.5" />
+              <div className="hidden sm:block absolute bottom-4 left-4 max-w-sm rounded-xl bg-white/95 backdrop-blur-md p-3.5 border border-slate-200/90 shadow-lg text-slate-900 z-10">
+                <div className="flex items-center gap-1.5 text-cyan-700 font-extrabold text-[10.5px] uppercase tracking-wider mb-0.5">
+                  <MapPin className="h-3 w-3" />
                   <span>Executive Talks Media HQ</span>
                 </div>
                 <div className="font-bold text-xs text-slate-900">
                   Unit No-1012, 10th Floor, Manjeera Trinity Corporate
                 </div>
                 <div className="text-[11px] text-slate-600 mt-0.5">
-                  JNTU - HITEC City Road, KPHB Phase 3, Hyderabad, Telangana 500072
+                  JNTU - HITEC City Road, KPHB Phase 3, Hyderabad 500072
                 </div>
-                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+                <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
                   <span className="font-semibold text-emerald-600">● 5 Min from JNTU Metro</span>
                   <a
                     href={googleMapsDirectionsUrl}
@@ -1068,7 +1065,6 @@ export default function ContactPage() {
                   </a>
                 </div>
               </div>
-
             </div>
           </Reveal>
         </section>

@@ -127,7 +127,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
         "@type": "ContactPoint",
         "telephone": "+91-9100266777",
         "contactType": "customer service",
-        "email": "contact@executivetalksmedia.in",
+        "email": "info@executivetalksmedia.in",
         "areaServed": "IN"
       },
       {

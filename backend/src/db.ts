@@ -453,6 +453,7 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_free_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN terms_id VARCHAR(100);"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN show_pricing TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN certificate_settings LONGTEXT;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
     try {
       await pool.query("UPDATE events SET allow_paid_registration = 1 WHERE allow_paid_registration IS NULL");
@@ -1100,7 +1101,7 @@ export async function seedNewAdminTables() {
         { setting_key: "site_title", setting_value: "Executive Talks Media Business Intelligence" },
         { setting_key: "support_phone_1", setting_value: "+91 91002 66777" },
         { setting_key: "support_phone_2", setting_value: "+91 94930 87788" },
-        { setting_key: "support_email_1", setting_value: "contact@executivetalksmedia.in" },
+        { setting_key: "support_email_1", setting_value: "info@executivetalksmedia.in" },
         { setting_key: "support_email_2", setting_value: "registration@executivetalksmedia.in" },
         { setting_key: "whatsapp_link", setting_value: "https://wa.me/919100266777" },
         { setting_key: "office_address", setting_value: "Unit No-1012, 10th Floor, Manjeera Trinity Corporate, JNTU-Hitech Road, KPHB, Hyderabad, Telangana 500072, India" },
@@ -1625,6 +1626,9 @@ export interface EmailSubjectConfig {
   prefix: string;
   suffix: string;
   subject_template: string;
+  body_intro?: string;
+  body_template?: string;
+  body_notes?: string;
   available_variables: string[];
   is_active: number;
   updated_at?: string;
@@ -1640,6 +1644,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "🎓 Official Certificate of Participation: ",
     suffix: " — {delegate_name}",
     subject_template: "🎓 Official Certificate of Participation: {event_name} — {delegate_name}",
+    body_intro: "Dear {delegate_name},",
+    body_template: `We are delighted to present your official Certificate of Participation for attending the prestigious {event_name} organized by Executive Talks Media Business Intelligence.\n\nYour active participation, executive insights, and contribution were invaluable in making the summit an impactful platform for industry leadership.\n\nYour official certificate is attached to this email and can also be verified online anytime using your Certificate Number / Registration ID: {pass_id}.\n\nWe look forward to welcoming you at our upcoming national summits!`,
+    body_notes: "This is a computer-generated official credential issued by Executive Talks Media Business Intelligence.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{city}"],
     is_active: 1,
   },
@@ -1652,6 +1659,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "🎉 Official Delegate Pass: ",
     suffix: " ({pass_id})",
     subject_template: "🎉 Official Delegate Pass: {event_name} ({pass_id})",
+    body_intro: "Dear {delegate_name},",
+    body_template: `Thank you for registering for {event_name}! We are pleased to confirm your {category} delegate pass.\n\nYour official gate pass and scannable QR admission ticket are attached to this email. Please present the QR code at the registration desk for express check-in and access to keynote sessions, panel discussions, and executive networking luncheons.\n\nRegistration ID: {pass_id}\nOrganization: {company}`,
+    body_notes: "Please arrive 15 minutes prior to session commencement to collect your physical badge.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
     is_active: 1,
   },
@@ -1664,6 +1674,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "⏳ Free Pass Application (Under Review): ",
     suffix: " ({pass_id})",
     subject_template: "⏳ Free Pass Application (Under Review): {event_name} ({pass_id})",
+    body_intro: "Dear {delegate_name},",
+    body_template: `Thank you for applying for a complimentary executive pass for {event_name}.\n\nYour application (Reference ID: {pass_id}) is currently under review by our executive admissions committee based on corporate quota, designation seniority, and seat availability.\n\nYou will receive a confirmation email with your QR entry pass once your pass is approved.`,
+    body_notes: "Complimentary passes are subject to verification and limited to verified industry executives.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}"],
     is_active: 1,
   },
@@ -1676,6 +1689,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "🎟️ Official Complimentary Pass: ",
     suffix: " ({pass_id})",
     subject_template: "🎟️ Official Complimentary Pass: {event_name} ({pass_id})",
+    body_intro: "Dear {delegate_name},",
+    body_template: `We are pleased to inform you that your complimentary VIP pass application for {event_name} has been APPROVED!\n\nYour official VIP entry barcode and QR ticket are attached to this email. Please display your QR ticket at the executive admissions counter for priority check-in.\n\nPass ID: {pass_id}\nCategory: {category}`,
+    body_notes: "VIP Pass includes full access to keynote presentations, sector breakout sessions, and networking.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
     is_active: 1,
   },
@@ -1688,6 +1704,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "📢 [New Delegate Registration] ",
     suffix: " - {event_name}",
     subject_template: "📢 [New Delegate Registration] {delegate_name} ({category}) - {event_name}",
+    body_intro: "Hello Admin Team,",
+    body_template: `A new delegate has registered on Executive Talks Media platform:\n\n- Delegate Name: {delegate_name}\n- Summit: {event_name}\n- Pass Tier: {category}\n- Pass ID: {pass_id}\n- Organization: {company}`,
+    body_notes: "Access the Admin Control Hub to review invoice status and delegate roster.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}", "{category}"],
     is_active: 1,
   },
@@ -1700,6 +1719,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "⏳ [New Free Pass Application] ",
     suffix: " - {event_name}",
     subject_template: "⏳ [New Free Pass Application] {delegate_name} ({company}) - {event_name}",
+    body_intro: "Hello Admin Team,",
+    body_template: `A new complimentary pass request has been submitted:\n\n- Applicant: {delegate_name}\n- Company: {company}\n- Target Summit: {event_name}\n- Application Ref: {pass_id}`,
+    body_notes: "Please review and approve/reject the application from the Admin Dashboard.",
     available_variables: ["{event_name}", "{delegate_name}", "{pass_id}", "{company}"],
     is_active: 1,
   },
@@ -1712,6 +1734,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "🤝 Partnership Interest Received: ",
     suffix: " - Executive Talks Media Business Intelligence",
     subject_template: "🤝 Partnership Interest Received: {company} - Executive Talks Media Business Intelligence",
+    body_intro: "Dear {delegate_name},",
+    body_template: `Thank you for reaching out regarding corporate partnership opportunities with Executive Talks Media Business Intelligence for {company}.\n\nOur Corporate Partnerships team has received your proposal (Inquiry Ref: {pass_id}). A dedicated partnership manager will connect with you within 24 hours to discuss partnership packages, branding deliverables, and CXO attendee demographics.`,
+    body_notes: "Executive Talks Media Business Intelligence — Connecting Leaders, Inspiring Excellence.",
     available_variables: ["{company}", "{delegate_name}", "{pass_id}"],
     is_active: 1,
   },
@@ -1724,6 +1749,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "🤝 New Partner Proposal Submitted: ",
     suffix: " ({pass_id})",
     subject_template: "🤝 New Partner Proposal Submitted: {company} ({pass_id})",
+    body_intro: "Hello Admin Team,",
+    body_template: `A corporate organization has submitted a partnership proposal:\n\n- Partner Company: {company}\n- Contact Person: {delegate_name}\n- Reference ID: {pass_id}`,
+    body_notes: "Review full lead details in the Partner Requests section of the Admin Dashboard.",
     available_variables: ["{company}", "{delegate_name}", "{pass_id}"],
     is_active: 1,
   },
@@ -1736,6 +1764,9 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     prefix: "📩 New Contact Enquiry: ",
     suffix: " ({category})",
     subject_template: "📩 New Contact Enquiry: {delegate_name} ({category})",
+    body_intro: "Hello Admin Team,",
+    body_template: `A new contact enquiry has been received via the website contact form:\n\n- Sender Name: {delegate_name}\n- Category / Subject: {category}`,
+    body_notes: "Please reply to the user from the Contact Inbox in Admin Dashboard.",
     available_variables: ["{delegate_name}", "{category}"],
     is_active: 1,
   },
@@ -1754,6 +1785,9 @@ export async function ensureEmailSubjectConfigsTable() {
         prefix VARCHAR(255) DEFAULT '',
         suffix VARCHAR(255) DEFAULT '',
         subject_template TEXT NOT NULL,
+        body_intro VARCHAR(500),
+        body_template LONGTEXT,
+        body_notes LONGTEXT,
         available_variables JSON,
         is_active TINYINT(1) DEFAULT 1,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -1766,6 +1800,9 @@ export async function ensureEmailSubjectConfigsTable() {
     try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN prefix VARCHAR(255) DEFAULT '';"); } catch (e) {}
     try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN suffix VARCHAR(255) DEFAULT '';"); } catch (e) {}
     try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN subject_template TEXT NOT NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN body_intro VARCHAR(500);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN body_template LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN body_notes LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN available_variables JSON;"); } catch (e) {}
     try { await pool.query("ALTER TABLE email_subject_configs ADD COLUMN is_active TINYINT(1) DEFAULT 1;"); } catch (e) {}
     console.log("[MySQL] email_subject_configs table verified and up-to-date!");
@@ -1778,11 +1815,11 @@ export async function seedDefaultEmailSubjects() {
   if (!pool) return;
   try {
     for (const item of DEFAULT_EMAIL_SUBJECT_CONFIGS) {
-      const [existing]: any = await pool.query("SELECT id FROM email_subject_configs WHERE id = ? LIMIT 1", [item.id]);
+      const [existing]: any = await pool.query("SELECT id, body_template FROM email_subject_configs WHERE id = ? LIMIT 1", [item.id]);
       if (!existing || existing.length === 0) {
         await pool.query(
-          `INSERT INTO email_subject_configs (id, category, name, description, recipient_type, prefix, suffix, subject_template, available_variables, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO email_subject_configs (id, category, name, description, recipient_type, prefix, suffix, subject_template, body_intro, body_template, body_notes, available_variables, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             item.id,
             item.category,
@@ -1792,13 +1829,26 @@ export async function seedDefaultEmailSubjects() {
             item.prefix,
             item.suffix,
             item.subject_template,
+            item.body_intro || "",
+            item.body_template || "",
+            item.body_notes || "",
             JSON.stringify(item.available_variables),
             item.is_active,
           ]
         );
+      } else if (!existing[0].body_template && item.body_template) {
+        // Seed default body if column is empty
+        await pool.query(
+          `UPDATE email_subject_configs 
+           SET body_intro = COALESCE(NULLIF(body_intro, ''), ?), 
+               body_template = COALESCE(NULLIF(body_template, ''), ?), 
+               body_notes = COALESCE(NULLIF(body_notes, ''), ?) 
+           WHERE id = ?`,
+          [item.body_intro || "", item.body_template || "", item.body_notes || "", item.id]
+        );
       }
     }
-    console.log("[MySQL] Default email subject configurations verified in database.");
+    console.log("[MySQL] Default email subject & body configurations verified in database.");
   } catch (err) {
     console.error("[MySQL] Error seeding email subject configs:", err);
   }
