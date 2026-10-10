@@ -29,46 +29,62 @@ export interface PresenceState {
 
 export const presenceStates: PresenceState[] = [
   {
-    id: "INJK",
-    code: "JK",
-    name: "Jammu & Kashmir",
-    capital: "Srinagar / Jammu",
-    rawPinX: 297,
-    rawPinY: 156,
-    labelX: 160,
-    labelY: 155,
+    id: "INDL",
+    code: "DL",
+    name: "Delhi",
+    capital: "New Delhi",
+    rawPinX: 345,
+    rawPinY: 320,
+    labelX: 230,
+    labelY: 300,
     labelAlign: "right",
-    venues: "SKICC Srinagar & Radisson Blu Jammu",
-    annualSummits: "2 Annual Conclaves",
-    delegates: "3,500+ CXO Leaders",
-    focus: "Himalayan Commerce, Infrastructure & Clean Energy",
-    tag: "Northern Hub",
+    venues: "Bharat Mandapam (IECC) & Yashobhoomi (IICC)",
+    annualSummits: "4 Flagship Summits",
+    delegates: "12,000+ CXO Leaders",
+    focus: "National Policy, Governance & Enterprise Tech",
+    tag: "National Capital",
   },
   {
-    id: "INUP",
-    code: "UP",
-    name: "Uttar Pradesh",
-    capital: "Lucknow / Noida",
-    rawPinX: 430,
-    rawPinY: 380,
-    labelX: 525,
-    labelY: 345,
-    labelAlign: "left",
-    venues: "Taj Mahal Hotel Lucknow & India Expo Centre",
-    annualSummits: "3 Flagship Conclaves",
-    delegates: "8,000+ CXO Leaders",
-    focus: "Industrial Corridors, Defense Tech & Governance",
-    tag: "Industrial Corridor",
+    id: "INRJ",
+    code: "RJ",
+    name: "Rajasthan",
+    capital: "Jaipur",
+    rawPinX: 285,
+    rawPinY: 395,
+    labelX: 160,
+    labelY: 375,
+    labelAlign: "right",
+    venues: "JECC Jaipur & Rambagh Palace",
+    annualSummits: "2 Annual Conclaves",
+    delegates: "4,500+ CXO Leaders",
+    focus: "Clean Energy, MSME Enterprise & Heritage Leadership",
+    tag: "Heritage & Business Hub",
+  },
+  {
+    id: "INGJ",
+    code: "GJ",
+    name: "Gujarat",
+    capital: "Ahmedabad",
+    rawPinX: 200,
+    rawPinY: 495,
+    labelX: 95,
+    labelY: 470,
+    labelAlign: "right",
+    venues: "Mahatma Mandir & GIFT City Club",
+    annualSummits: "3 Flagship Summits",
+    delegates: "9,000+ CXO Leaders",
+    focus: "GIFT City FinTech, Petrochem & Global Trade",
+    tag: "Fintech & Trade Hub",
   },
   {
     id: "INMH",
     code: "MH",
     name: "Maharashtra",
-    capital: "Mumbai / Pune",
+    capital: "Mumbai & Pune",
     rawPinX: 275,
     rawPinY: 575,
-    labelX: 150,
-    labelY: 575,
+    labelX: 140,
+    labelY: 565,
     labelAlign: "right",
     venues: "Jio World Convention Centre & St. Regis Mumbai",
     annualSummits: "5 Major Summits",
@@ -82,11 +98,11 @@ export const presenceStates: PresenceState[] = [
     name: "Telangana",
     capital: "Hyderabad",
     isHq: true,
-    rawPinX: 400,
+    rawPinX: 405,
     rawPinY: 645,
-    labelX: 165,
-    labelY: 645,
-    labelAlign: "right",
+    labelX: 520,
+    labelY: 625,
+    labelAlign: "left",
     venues: "HICC Novotel & HITEX City Convention Centre",
     annualSummits: "6 Flagship Summits",
     delegates: "15,000+ CXO Leaders",
@@ -97,17 +113,49 @@ export const presenceStates: PresenceState[] = [
     id: "INAP",
     code: "AP",
     name: "Andhra Pradesh",
-    capital: "Visakhapatnam / Amaravati",
-    rawPinX: 440,
-    rawPinY: 715,
-    labelX: 525,
-    labelY: 715,
+    capital: "Visakhapatnam (Vizag) & Vijayawada",
+    rawPinX: 450,
+    rawPinY: 695,
+    labelX: 535,
+    labelY: 700,
     labelAlign: "left",
     venues: "Radisson Blu Resort & Novotel Varun Beach",
-    annualSummits: "2 Annual Conclaves",
-    delegates: "5,000+ CXO Leaders",
+    annualSummits: "3 Annual Conclaves",
+    delegates: "6,000+ CXO Leaders",
     focus: "Maritime Logistics, Port Corridors & Pharma Tech",
     tag: "Maritime Hub",
+  },
+  {
+    id: "INGA",
+    code: "GA",
+    name: "Goa",
+    capital: "Panaji / Goa",
+    rawPinX: 260,
+    rawPinY: 714,
+    labelX: 150,
+    labelY: 690,
+    labelAlign: "right",
+    venues: "Grand Hyatt Goa & Cidade de Goa Horizon",
+    annualSummits: "2 Executive Retreats",
+    delegates: "3,500+ CXO Leaders",
+    focus: "Executive Retreats, Founder Circles & Global Networking",
+    tag: "Executive Retreat Hub",
+  },
+  {
+    id: "INKA",
+    code: "KA",
+    name: "Karnataka",
+    capital: "Bengaluru",
+    rawPinX: 335,
+    rawPinY: 745,
+    labelX: 170,
+    labelY: 770,
+    labelAlign: "right",
+    venues: "BIEC Bengaluru & The Leela Palace",
+    annualSummits: "5 Flagship Summits",
+    delegates: "14,000+ CXO Leaders",
+    focus: "Silicon Valley of India, Deep Tech & Global R&D GCCs",
+    tag: "Tech Capital",
   },
   {
     id: "INTN",
@@ -115,15 +163,31 @@ export const presenceStates: PresenceState[] = [
     name: "Tamil Nadu",
     capital: "Chennai",
     rawPinX: 380,
-    rawPinY: 833,
-    labelX: 475,
-    labelY: 833,
+    rawPinY: 830,
+    labelX: 480,
+    labelY: 825,
     labelAlign: "left",
     venues: "ITC Grand Chola Guindy & Le Royal Méridien",
-    annualSummits: "3 Conclaves / Year",
-    delegates: "8,500+ CXO Leaders",
+    annualSummits: "4 Conclaves / Year",
+    delegates: "9,000+ CXO Leaders",
     focus: "Procurement Leadership, SCM 4.0 & Automotive GCCs",
     tag: "Industrial Hub",
+  },
+  {
+    id: "INKL",
+    code: "KL",
+    name: "Kerala",
+    capital: "Kochin",
+    rawPinX: 320,
+    rawPinY: 855,
+    labelX: 175,
+    labelY: 865,
+    labelAlign: "right",
+    venues: "Lulu Bolgatty International Convention Centre & Grand Hyatt Kochi",
+    annualSummits: "2 Annual Conclaves",
+    delegates: "4,000+ CXO Leaders",
+    focus: "Digital Health, Maritime Trade & IT Services Innovation",
+    tag: "Maritime & Tech Hub",
   },
 ];
 
@@ -133,7 +197,7 @@ export function InteractiveIndiaMapSection() {
 
   const activeStateId = hoveredStateId || selectedStateId;
   const activeState = useMemo(() => {
-    return presenceStates.find((s) => s.id === activeStateId) || presenceStates[3];
+    return presenceStates.find((s) => s.id === activeStateId) || presenceStates[4];
   }, [activeStateId]);
 
   // Fast mapping of state IDs to SVG paths
@@ -145,15 +209,15 @@ export function InteractiveIndiaMapSection() {
     return map;
   }, []);
 
-  // Compact Map scale and translation: fits standard viewport in 1440x550 canvas
-  const mapScale = 0.56;
-  const mapOffsetX = 50;
+  // Map scale and translation: fits standard viewport in 1440x640 canvas
+  const mapScale = 0.62;
+  const mapOffsetX = 20;
   const mapOffsetY = 15;
 
   // Middle cards column position & exact compact top coordinates
-  const cardsStartX = 740;
-  const cardHeight = 52;
-  const cardTops = [30, 118, 206, 294, 382, 470];
+  const cardsStartX = 710;
+  const cardHeight = 46;
+  const cardTops = [30, 88, 146, 204, 262, 320, 378, 436, 494, 552];
 
   return (
     <section
@@ -186,11 +250,10 @@ export function InteractiveIndiaMapSection() {
         </div>
 
         {/* ========================================================= */}
-        {/* 2. DESKTOP VIEWPORT-OPTIMIZED 1440x550 SVG CANVAS         */}
-        {/* Fits completely inside normal screen height!              */}
+        {/* 2. DESKTOP VIEWPORT-OPTIMIZED 1440x640 SVG CANVAS         */}
         {/* ========================================================= */}
-        <div className="hidden lg:block relative w-full aspect-[1440/550] max-h-[550px] mx-auto filter drop-shadow-[0_12px_28px_rgba(0,51,102,0.07)]">
-          <svg viewBox="0 0 1440 550" className="w-full h-full">
+        <div className="hidden lg:block relative w-full aspect-[1440/640] max-h-[640px] mx-auto filter drop-shadow-[0_12px_28px_rgba(0,51,102,0.07)]">
+          <svg viewBox="0 0 1440 640" className="w-full h-full">
             <defs>
               {/* Highlighted State Blue Gradient */}
               <linearGradient id="stateBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -400,8 +463,8 @@ export function InteractiveIndiaMapSection() {
               })}
             </g>
 
-            {/* C. MIDDLE COLUMN: 6 STATE PILL CARDS (COMPACT HEIGHT 52px) */}
-            <foreignObject x={cardsStartX} y="0" width="280" height="550">
+            {/* C. MIDDLE COLUMN: 10 STATE PILL CARDS (COMPACT HEIGHT 46px) */}
+            <foreignObject x={cardsStartX} y="0" width="295" height="640">
               <div className="relative w-full h-full select-none">
                 {presenceStates.map((st, idx) => {
                   const isSelected = activeState.id === st.id;
@@ -420,9 +483,9 @@ export function InteractiveIndiaMapSection() {
                           : "border border-slate-100 hover:border-blue-300 hover:shadow hover:translate-x-1"
                       }`}
                     >
-                      {/* State Code Badge (e.g. TG, MH, UP, AP, TN, JK) */}
+                      {/* State Code Badge (e.g. DL, RJ, GJ, MH, TG, AP, GA, KA, TN, KL) */}
                       <div
-                        className={`relative h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-mono font-black text-xs tracking-wider transition-all duration-300 ${
+                        className={`relative h-8 w-8 rounded-xl flex items-center justify-center shrink-0 font-mono font-black text-xs tracking-wider transition-all duration-300 ${
                           isSelected
                             ? "bg-gradient-to-br from-[#0052cc] to-[#002f80] text-white shadow-sm ring-1 ring-white/80"
                             : "bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] text-[#0052cc] border border-blue-200/80"
@@ -434,7 +497,7 @@ export function InteractiveIndiaMapSection() {
                       {/* State Name */}
                       <div className="min-w-0 flex-1 pr-1">
                         <h4
-                          className={`text-[13px] font-extrabold font-display truncate transition-colors leading-tight ${
+                          className={`text-[12.5px] font-extrabold font-display truncate transition-colors leading-tight ${
                             isSelected ? "text-[#003366]" : "text-slate-800"
                           }`}
                         >
@@ -457,8 +520,8 @@ export function InteractiveIndiaMapSection() {
               </div>
             </foreignObject>
 
-            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL (COMPACT HEIGHT) */}
-            <foreignObject x="1060" y="25" width="350" height="505">
+            {/* D. RIGHT COLUMN: "OUR SERVICE STATES" PREVIEW PANEL */}
+            <foreignObject x="1035" y="24" width="375" height="585">
               <div className="h-full rounded-2xl bg-gradient-to-b from-white via-white to-[#f5f9ff] border border-blue-100 p-4 sm:p-5 shadow-lg flex flex-col justify-between">
                 {/* Header Pill */}
                 <div className="flex items-center justify-between mb-2">
@@ -466,15 +529,19 @@ export function InteractiveIndiaMapSection() {
                     <MapPin className="h-3.5 w-3.5 text-white" />
                     <span>Our Service States</span>
                   </div>
-                  {activeState.isHq && (
+                  {activeState.isHq ? (
                     <span className="text-[9px] font-mono font-bold text-[#0052cc] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                       GLOBAL HQ
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+                      {activeState.tag}
                     </span>
                   )}
                 </div>
 
                 {/* Mini Preview Map */}
-                <div className="relative w-full aspect-[1/1] max-h-[145px] mx-auto flex items-center justify-center my-0.5">
+                <div className="relative w-full aspect-[1/1] max-h-[165px] mx-auto flex items-center justify-center my-0.5">
                   <svg viewBox="0 0 1000 1000" className="w-full h-full object-contain">
                     {/* Entire Outer Outline */}
                     <g stroke="#60a5fa" strokeWidth="2.5" strokeLinejoin="round" fill="none">
@@ -529,7 +596,7 @@ export function InteractiveIndiaMapSection() {
                     <p className="text-[11px] text-slate-500 font-medium">{activeState.capital} Hub</p>
                   </div>
 
-                  <div className="bg-[#f2f7fd] rounded-xl p-2.5 space-y-1 border border-blue-50 text-[11px]">
+                  <div className="bg-[#f2f7fd] rounded-xl p-2.5 space-y-1.5 border border-blue-50 text-[11px]">
                     <div className="flex items-start gap-1.5">
                       <Building2 className="h-3.5 w-3.5 text-[#0052cc] shrink-0 mt-0.5" />
                       <span className="text-slate-700 leading-tight">
@@ -615,16 +682,16 @@ export function InteractiveIndiaMapSection() {
             </svg>
           </div>
 
-          {/* Mobile State Pills Grid */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* Mobile State Pills Grid (5x2 grid) */}
+          <div className="grid grid-cols-2 gap-2">
             {presenceStates.map((st) => {
               const isSelected = activeState.id === st.id;
               return (
                 <button
                   key={`mob-pill-${st.id}`}
                   onClick={() => setSelectedStateId(st.id)}
-                  className={`flex items-center gap-2.5 p-2 rounded-2xl border text-left transition-all ${
-                    isSelected ? "bg-blue-50 border-[#0052cc] shadow-md" : "bg-white border-slate-100"
+                  className={`flex items-center gap-2 p-2 rounded-2xl border text-left transition-all ${
+                    isSelected ? "bg-blue-50 border-[#0052cc] shadow-md ring-1 ring-[#0052cc]" : "bg-white border-slate-100 hover:border-blue-200"
                   }`}
                 >
                   <div
@@ -636,7 +703,10 @@ export function InteractiveIndiaMapSection() {
                   >
                     <span>{st.code}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-800 truncate">{st.name}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold text-slate-800 truncate block">{st.name}</span>
+                    <span className="text-[10px] text-slate-500 truncate block">{st.isHq ? "★ Corporate HQ" : st.capital}</span>
+                  </div>
                 </button>
               );
             })}
@@ -645,17 +715,25 @@ export function InteractiveIndiaMapSection() {
           {/* Mobile Details Box */}
           <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-md space-y-2.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-extrabold text-[#002f6c]">{activeState.name}</h3>
-              <span className="text-xs font-bold text-[#0052cc] bg-blue-50 px-2.5 py-0.5 rounded-full">
-                {activeState.tag}
+              <div>
+                <h3 className="text-base font-extrabold text-[#002f6c]">{activeState.name}</h3>
+                <p className="text-xs text-slate-500 font-medium">{activeState.capital} Hub</p>
+              </div>
+              <span className="text-xs font-bold text-[#0052cc] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                {activeState.isHq ? "★ Corporate HQ" : activeState.tag}
               </span>
             </div>
             <p className="text-xs text-slate-600 font-medium">📍 {activeState.venues}</p>
+            <div className="flex items-center gap-3 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+              <span>{activeState.annualSummits}</span>
+              <span>•</span>
+              <span>{activeState.delegates}</span>
+            </div>
             <Link
               to="/events"
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0052cc] py-2 text-xs font-bold text-white shadow"
             >
-              <span>Explore Summits</span>
+              <span>Explore {activeState.name} Summits</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>

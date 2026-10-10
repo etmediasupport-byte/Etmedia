@@ -452,10 +452,12 @@ export async function ensureEventsTable() {
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_paid_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN allow_free_registration TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events ADD COLUMN terms_id VARCHAR(100);"); } catch (colErr) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN show_pricing TINYINT(1) DEFAULT 1;"); } catch (colErr) {}
     try { await pool.query("ALTER TABLE events MODIFY COLUMN image LONGTEXT;"); } catch (colErr) {}
     try {
       await pool.query("UPDATE events SET allow_paid_registration = 1 WHERE allow_paid_registration IS NULL");
       await pool.query("UPDATE events SET allow_free_registration = 1 WHERE allow_free_registration IS NULL");
+      await pool.query("UPDATE events SET show_pricing = 1 WHERE show_pricing IS NULL");
     } catch (e) {}
     try {
       await pool.query("UPDATE events SET image = '/assets/event-hr.jpg' WHERE (slug LIKE '%hr%' OR title LIKE '%hr%' OR title LIKE '%recall%') AND (image IS NULL OR image = '' OR image LIKE '%BjslOJNi%' OR image LIKE '%Cswpuq5H%')");

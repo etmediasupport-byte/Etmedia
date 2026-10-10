@@ -5420,6 +5420,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
     sponsors_count,
     allow_paid_registration,
     allow_free_registration,
+    show_pricing,
     terms_id,
   } = req.body;
 
@@ -5442,14 +5443,15 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
   const effectiveSponsorsCount = sponsors_count || "25+";
   const allowPaid = allow_paid_registration !== undefined ? (allow_paid_registration ? 1 : 0) : 1;
   const allowFree = allow_free_registration !== undefined ? (allow_free_registration ? 1 : 0) : 1;
+  const showPricing = show_pricing !== undefined ? (show_pricing ? 1 : 0) : 1;
 
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
         `INSERT INTO events (
-          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration, terms_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, slug, title, category, date, time, city, venue, locations, description, full_description, about_content, image, about_image, speakers, status, is_featured, speakers_list, sponsors_list, gallery_list, agenda_list, map_url, venue_address, delegates_count, speakers_count, sponsors_count, allow_paid_registration, allow_free_registration, show_pricing, terms_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           slug,
@@ -5479,6 +5481,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
           effectiveSponsorsCount,
           allowPaid,
           allowFree,
+          showPricing,
           terms_id || null,
         ]
       );
@@ -5513,6 +5516,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
       sponsors_count: effectiveSponsorsCount,
       allow_paid_registration: allowPaid,
       allow_free_registration: allowFree,
+      show_pricing: showPricing,
       terms_id: terms_id || null,
     };
     invalidateFastCache("events_");
@@ -5556,6 +5560,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
     sponsors_count,
     allow_paid_registration,
     allow_free_registration,
+    show_pricing,
     terms_id,
   } = req.body;
 
@@ -5570,13 +5575,14 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   const effectiveSponsorsCount = sponsors_count || "25+";
   const allowPaid = allow_paid_registration !== undefined ? (allow_paid_registration ? 1 : 0) : 1;
   const allowFree = allow_free_registration !== undefined ? (allow_free_registration ? 1 : 0) : 1;
+  const showPricing = show_pricing !== undefined ? (show_pricing ? 1 : 0) : 1;
 
   try {
     if (pool) {
       await ensureEventsTable();
       await pool.query(
         `UPDATE events SET 
-          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?, terms_id = ?
+          title = ?, category = ?, date = ?, time = ?, city = ?, venue = ?, locations = ?, description = ?, full_description = ?, about_content = ?, image = ?, about_image = ?, speakers = ?, status = ?, is_featured = ?, speakers_list = ?, sponsors_list = ?, gallery_list = ?, agenda_list = ?, map_url = ?, venue_address = ?, delegates_count = ?, speakers_count = ?, sponsors_count = ?, allow_paid_registration = ?, allow_free_registration = ?, show_pricing = ?, terms_id = ?
          WHERE id = ?`,
         [
           title,
@@ -5605,6 +5611,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
           effectiveSponsorsCount,
           allowPaid,
           allowFree,
+          showPricing,
           terms_id || null,
           id,
         ]
@@ -5639,6 +5646,7 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       sponsors_count: effectiveSponsorsCount,
       allow_paid_registration: allowPaid,
       allow_free_registration: allowFree,
+      show_pricing: showPricing,
       terms_id: terms_id || null,
     };
     invalidateFastCache("events_");
@@ -5804,7 +5812,7 @@ app.delete("/api/admin/terms-conditions/:id", authenticateAdmin, async (req, res
 // Quick toggle registration buttons visibility
 app.patch("/api/admin/events/:id/registration-visibility", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { allow_paid_registration, allow_free_registration } = req.body;
+  const { allow_paid_registration, allow_free_registration, show_pricing } = req.body;
 
   try {
     if (pool) {
@@ -5819,6 +5827,10 @@ app.patch("/api/admin/events/:id/registration-visibility", authenticateAdmin, as
         updates.push("allow_free_registration = ?");
         values.push(allow_free_registration ? 1 : 0);
       }
+      if (show_pricing !== undefined) {
+        updates.push("show_pricing = ?");
+        values.push(show_pricing ? 1 : 0);
+      }
       if (updates.length > 0) {
         values.push(id);
         await pool.query(`UPDATE events SET ${updates.join(", ")} WHERE id = ?`, values);
@@ -5826,7 +5838,7 @@ app.patch("/api/admin/events/:id/registration-visibility", authenticateAdmin, as
     }
     invalidateFastCache("events_");
     invalidateFastCache("event_slug_");
-    io.emit("event_registration_visibility_changed", { id, allow_paid_registration, allow_free_registration });
+    io.emit("event_registration_visibility_changed", { id, allow_paid_registration, allow_free_registration, show_pricing });
     return res.json({ success: true, message: "Registration buttons visibility updated!" });
   } catch (err: any) {
     console.error("Visibility toggle error:", err);

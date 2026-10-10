@@ -122,6 +122,7 @@ import {
   Printer,
   Zap,
   Newspaper,
+  Twitter,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -1260,7 +1261,11 @@ export default function AdminDashboardPage() {
     organization: "",
     photo: "",
     topic: "",
+    website_url: "",
     linkedin_url: "",
+    youtube_url: "",
+    instagram_url: "",
+    twitter_url: "",
   });
   const [uploadingSpeakerImg, setUploadingSpeakerImg] = useState(false);
 
@@ -1318,6 +1323,7 @@ export default function AdminDashboardPage() {
     venue_address: string;
     allow_paid_registration: number;
     allow_free_registration: number;
+    show_pricing: number;
     terms_id?: string;
   }>({
     title: "",
@@ -1351,6 +1357,7 @@ export default function AdminDashboardPage() {
     venue_address: "",
     allow_paid_registration: 1,
     allow_free_registration: 1,
+    show_pricing: 1,
     terms_id: "",
   });
 
@@ -4237,7 +4244,11 @@ export default function AdminDashboardPage() {
       organization: "",
       photo: "",
       topic: "",
+      website_url: "",
       linkedin_url: "",
+      youtube_url: "",
+      instagram_url: "",
+      twitter_url: "",
     });
     setSpeakerModalOpen(true);
   };
@@ -4248,7 +4259,11 @@ export default function AdminDashboardPage() {
       setEditingSpeakerIndex(index);
       setSpeakerForm({
         ...spk,
+        website_url: spk.website_url || spk.websiteUrl || "",
         linkedin_url: spk.linkedin_url || spk.linkedinUrl || "",
+        youtube_url: spk.youtube_url || spk.youtubeUrl || "",
+        instagram_url: spk.instagram_url || spk.instagramUrl || "",
+        twitter_url: spk.twitter_url || spk.twitterUrl || "",
       });
       setSpeakerModalOpen(true);
     }
@@ -4610,6 +4625,7 @@ export default function AdminDashboardPage() {
       venue_address: "",
       allow_paid_registration: 1,
       allow_free_registration: 1,
+      show_pricing: 1,
       terms_id: "",
     });
     setOpenLocationSlots([0]);
@@ -4699,6 +4715,7 @@ export default function AdminDashboardPage() {
       venue_address: evt.venue_address || "",
       allow_paid_registration: evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? 1 : 0,
       allow_free_registration: evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? 1 : 0,
+      show_pricing: evt.show_pricing !== 0 && evt.show_pricing !== false ? 1 : 0,
       terms_id: evt.terms_id || "",
     });
     setOpenLocationSlots([0]);
@@ -4902,13 +4919,15 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleToggleRegistrationVisibility = async (evt: any, type: "paid" | "free") => {
+  const handleToggleRegistrationVisibility = async (evt: any, type: "paid" | "free" | "pricing") => {
     if (!token) return;
     const currentPaid = evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false ? 1 : 0;
     const currentFree = evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? 1 : 0;
+    const currentPricing = evt.show_pricing !== 0 && evt.show_pricing !== false ? 1 : 0;
 
     const newPaid = type === "paid" ? (currentPaid ? 0 : 1) : currentPaid;
     const newFree = type === "free" ? (currentFree ? 0 : 1) : currentFree;
+    const newPricing = type === "pricing" ? (currentPricing ? 0 : 1) : currentPricing;
 
     try {
       const res = await fetch(`/api/admin/events/${evt.id}/registration-visibility`, {
@@ -4920,6 +4939,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           allow_paid_registration: newPaid,
           allow_free_registration: newFree,
+          show_pricing: newPricing,
         }),
       });
       const data = await res.json();
@@ -4927,12 +4947,14 @@ export default function AdminDashboardPage() {
         toast.success(
           type === "paid"
             ? `Paid Registration ("Register Now") ${newPaid ? "Enabled" : "Hidden"}`
-            : `Free Registration ("Register Free") ${newFree ? "Enabled" : "Hidden"}`
+            : type === "free"
+            ? `Free Registration ("Register Free") ${newFree ? "Enabled" : "Hidden"}`
+            : `Price Details & Pass Tiers ${newPricing ? "Enabled / Visible" : "Hidden"}`
         );
         setCmsEvents((prev) =>
           prev.map((e) =>
             e.id === evt.id
-              ? { ...e, allow_paid_registration: newPaid, allow_free_registration: newFree }
+              ? { ...e, allow_paid_registration: newPaid, allow_free_registration: newFree, show_pricing: newPricing }
               : e
           )
         );
@@ -11452,6 +11474,25 @@ export default function AdminDashboardPage() {
                                   <Sparkles className="h-3 w-3 text-emerald-500 shrink-0" />
                                   <span>Free: {evt.allow_free_registration !== 0 && evt.allow_free_registration !== false ? "ON" : "OFF"}</span>
                                 </button>
+
+                                {/* Toggle Pricing Tiers */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRegistrationVisibility(evt, "pricing")}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
+                                    evt.show_pricing !== 0 && evt.show_pricing !== false
+                                      ? "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+                                      : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
+                                  }`}
+                                  title={
+                                    evt.show_pricing !== 0 && evt.show_pricing !== false
+                                      ? "Price Details & Pass Tiers are Visible (Click to Hide)"
+                                      : "Price Details & Pass Tiers are Hidden (Click to Show)"
+                                  }
+                                >
+                                  <Ticket className="h-3 w-3 text-purple-600 shrink-0" />
+                                  <span>Pricing: {evt.show_pricing !== 0 && evt.show_pricing !== false ? "ON" : "OFF"}</span>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -11654,7 +11695,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         {/* Toggle 1: Paid Registration Button */}
                         <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
                           eventForm.allow_paid_registration !== 0
@@ -11697,6 +11738,29 @@ export default function AdminDashboardPage() {
                             </span>
                             <p className="text-[11px] text-slate-500 mt-0.5">
                               {eventForm.allow_free_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Toggle 3: Registration Pass Price Details */}
+                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                          eventForm.show_pricing !== 0
+                            ? "bg-white border-purple-300 ring-2 ring-purple-500/10 shadow-xs"
+                            : "bg-slate-50/90 border-slate-200 opacity-70"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={eventForm.show_pricing !== 0}
+                            onChange={(e) => setEventForm({ ...eventForm, show_pricing: e.target.checked ? 1 : 0 })}
+                            className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          />
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                              <Ticket className="h-3.5 w-3.5 text-purple-600" />
+                              Show Price Details & Pass Tiers
+                            </span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {eventForm.show_pricing !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
                             </p>
                           </div>
                         </label>
@@ -12350,8 +12414,20 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
+                            {(spk.website_url || spk.websiteUrl) && (
+                              <a
+                                href={spk.website_url || spk.websiteUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-cyan-700 hover:opacity-80 shrink-0"
+                                title="Website"
+                              >
+                                <Globe className="h-3.5 w-3.5" />
+                              </a>
+                            )}
                             {(spk.linkedin_url || spk.linkedinUrl) && (
                               <a
                                 href={spk.linkedin_url || spk.linkedinUrl}
@@ -12362,6 +12438,42 @@ export default function AdminDashboardPage() {
                                 title="LinkedIn Profile"
                               >
                                 <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
+                              </a>
+                            )}
+                            {(spk.youtube_url || spk.youtubeUrl) && (
+                              <a
+                                href={spk.youtube_url || spk.youtubeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-red-600 hover:opacity-80 shrink-0"
+                                title="YouTube Channel"
+                              >
+                                <Youtube className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {(spk.instagram_url || spk.instagramUrl) && (
+                              <a
+                                href={spk.instagram_url || spk.instagramUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-pink-600 hover:opacity-80 shrink-0"
+                                title="Instagram"
+                              >
+                                <Instagram className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {(spk.twitter_url || spk.twitterUrl) && (
+                              <a
+                                href={spk.twitter_url || spk.twitterUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-sky-500 hover:opacity-80 shrink-0"
+                                title="Twitter / X"
+                              >
+                                <Twitter className="h-3.5 w-3.5" />
                               </a>
                             )}
                           </div>
@@ -12819,7 +12931,7 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       {speakerModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h4 className="font-extrabold text-slate-900 text-sm font-display">
                 {editingSpeakerIndex !== null ? "Edit Keynote Speaker" : "Add Keynote Speaker"}
@@ -12906,18 +13018,86 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-bold mb-1 flex items-center gap-1.5">
-                  <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
-                  <span>LinkedIn Profile URL</span>
-                </label>
-                <input
-                  type="url"
-                  value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
-                  onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
-                  placeholder="e.g. https://www.linkedin.com/in/username"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none"
-                />
+              {/* Speaker Custom URLs Section */}
+              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-slate-800 font-extrabold text-xs">
+                    Speaker Links & Social URLs (Optional)
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    Only provided URLs will appear on user side
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                    <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Website / Portfolio URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={speakerForm.website_url || speakerForm.websiteUrl || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, website_url: e.target.value })}
+                    placeholder="e.g. https://www.speakerwebsite.com"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                    <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                    <span>LinkedIn Profile URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
+                    placeholder="e.g. https://www.linkedin.com/in/username"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                    <Youtube className="h-3.5 w-3.5 text-red-600" />
+                    <span>YouTube Channel / Video URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={speakerForm.youtube_url || speakerForm.youtubeUrl || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, youtube_url: e.target.value })}
+                    placeholder="e.g. https://www.youtube.com/@username"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                    <Instagram className="h-3.5 w-3.5 text-pink-600" />
+                    <span>Instagram Profile URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={speakerForm.instagram_url || speakerForm.instagramUrl || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, instagram_url: e.target.value })}
+                    placeholder="e.g. https://www.instagram.com/username"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                    <Twitter className="h-3.5 w-3.5 text-sky-500" />
+                    <span>Twitter / X Profile URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={speakerForm.twitter_url || speakerForm.twitterUrl || ""}
+                    onChange={(e) => setSpeakerForm({ ...speakerForm, twitter_url: e.target.value })}
+                    placeholder="e.g. https://x.com/username"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

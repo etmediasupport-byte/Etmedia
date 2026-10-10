@@ -16,6 +16,9 @@ import {
   Award,
   ExternalLink,
   Linkedin,
+  Youtube,
+  Instagram,
+  Twitter,
   ArrowRight,
   Zap,
   Target,
@@ -114,17 +117,34 @@ export default function EventDetailPage() {
 
     // Listen for socket real-time update if event changes
     const onEventUpdate = (updatedEvent: any) => {
-      if (updatedEvent && (updatedEvent.slug === slug || updatedEvent.id === slug)) {
+      if (updatedEvent && (updatedEvent.slug === slug || updatedEvent.id === slug || updatedEvent.id === event?.id)) {
         invalidateClientCache(`/api/events/${slug}`);
         setEvent(updatedEvent);
         toast.info("Event details updated live by event organizers!");
       }
     };
 
+    const onVisibilityUpdate = (data: any) => {
+      if (data && (data.id === slug || data.id === event?.id)) {
+        invalidateClientCache(`/api/events/${slug}`);
+        setEvent((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            allow_paid_registration: data.allow_paid_registration !== undefined ? data.allow_paid_registration : prev.allow_paid_registration,
+            allow_free_registration: data.allow_free_registration !== undefined ? data.allow_free_registration : prev.allow_free_registration,
+            show_pricing: data.show_pricing !== undefined ? data.show_pricing : prev.show_pricing,
+          };
+        });
+      }
+    };
+
     socket.on("event_updated", onEventUpdate);
+    socket.on("event_registration_visibility_changed", onVisibilityUpdate);
     return () => {
       isMounted = false;
       socket.off("event_updated", onEventUpdate);
+      socket.off("event_registration_visibility_changed", onVisibilityUpdate);
     };
   }, [slug]);
 
@@ -309,7 +329,7 @@ export default function EventDetailPage() {
   const venueText = primaryLoc.venue || event.venue || "The Procurement Leadership";
   const cityText = primaryLoc.city || event.city || "Dubai";
 
-  // Parse Speakers or Fallback to Curated Featured Speakers
+  // Parse Speakers (ONLY admin provided speakers; empty if not provided)
   let speakersList: any[] = [];
   try {
     if (typeof event.speakers_list === "string") {
@@ -319,89 +339,8 @@ export default function EventDetailPage() {
     }
   } catch (e) {}
 
-  if (!speakersList || speakersList.length === 0) {
-    speakersList = [
-      {
-        id: "spk-1",
-        name: "Nazime Tuncay",
-        designation: "Individual Researcher",
-        company: "Educator",
-        location: "Cyprus",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/tcs.com",
-        photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-2",
-        name: "Egor Kraev",
-        designation: "Co-Founder and CTO",
-        company: "Motley",
-        location: "Switzerland",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/microsoft.com",
-        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-3",
-        name: "Armand",
-        designation: "VP",
-        company: "DFCG",
-        location: "France",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/google.com",
-        photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-4",
-        name: "Priya Sharma",
-        designation: "VP – People & Culture",
-        company: "Microsoft",
-        location: "India",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/amazon.com",
-        photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-5",
-        name: "Arjun Mehta",
-        designation: "Head of HR",
-        company: "Google",
-        location: "United States",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/infosys.com",
-        photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-6",
-        name: "Sneha Reddy",
-        designation: "Director – Talent",
-        company: "Amazon",
-        location: "United Kingdom",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/deloitte.com",
-        photo: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-7",
-        name: "Vikram Sinha",
-        designation: "CHRO",
-        company: "Infosys",
-        location: "India",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/infosys.com",
-        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
-      },
-      {
-        id: "spk-8",
-        name: "Ananya Rao",
-        designation: "People Partner",
-        company: "Deloitte",
-        location: "France",
-        linkedin_url: "https://linkedin.com",
-        companyLogo: "https://logo.clearbit.com/deloitte.com",
-        photo: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400",
-      },
-    ];
+  if (!Array.isArray(speakersList)) {
+    speakersList = [];
   }
 
   // Parse Agenda or Fallback to Curated Agenda
@@ -978,151 +917,177 @@ export default function EventDetailPage() {
         {/* ========================================================= */}
         {/* SECTION 3: FEATURED SPEAKERS                              */}
         {/* ========================================================= */}
-        <section id="speakers" className="scroll-mt-36 space-y-6">
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-3">
-              <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
-              <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
-                Featured Speakers
-              </h3>
+        {speakersList.length > 0 && (
+          <section id="speakers" className="scroll-mt-36 space-y-6">
+            <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center gap-3">
+                <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
+                <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
+                  Featured Speakers
+                </h3>
+              </div>
+              <button
+                onClick={() => toast.info(`Displaying ${speakersList.length} executive speaker${speakersList.length > 1 ? "s" : ""}`)}
+                className="text-xs font-bold text-cyan-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                View All Speakers <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <button
-              onClick={() => toast.info("Displaying all executive speakers")}
-              className="text-xs font-bold text-cyan-600 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              View All Speakers <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
 
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {speakersList.map((spk: any, idx: number) => {
-              const profileLink = spk.linkedin_url || spk.linkedinUrl || spk.url || spk.link || "https://linkedin.com";
-              return (
-                <div
-                  key={idx}
-                  className="rounded-[28px] bg-slate-50/70 p-5 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col items-center text-center relative group overflow-hidden"
-                >
-                  {/* Top Right Linked Page Badge */}
-                  <a
-                    href={profileLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`View ${spk.name}'s Profile`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute top-4 right-4 h-8 w-8 rounded-full bg-purple-100/70 text-purple-700 hover:bg-purple-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer z-10"
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {speakersList.map((spk: any, idx: number) => {
+                const websiteLink = spk.website_url || spk.websiteUrl || spk.website || spk.url || "";
+                const linkedinLink = spk.linkedin_url || spk.linkedinUrl || "";
+                const youtubeLink = spk.youtube_url || spk.youtubeUrl || "";
+                const instagramLink = spk.instagram_url || spk.instagramUrl || "";
+                const twitterLink = spk.twitter_url || spk.twitterUrl || spk.x_url || spk.xUrl || "";
+
+                const socialLinks: { type: string; url: string; label: string; icon: any; colorClass: string }[] = [];
+                if (websiteLink) socialLinks.push({ type: "website", url: websiteLink, label: "Website", icon: Globe, colorClass: "hover:text-cyan-300" });
+                if (linkedinLink) socialLinks.push({ type: "linkedin", url: linkedinLink, label: "LinkedIn", icon: Linkedin, colorClass: "hover:text-sky-300" });
+                if (youtubeLink) socialLinks.push({ type: "youtube", url: youtubeLink, label: "YouTube", icon: Youtube, colorClass: "hover:text-red-400" });
+                if (instagramLink) socialLinks.push({ type: "instagram", url: instagramLink, label: "Instagram", icon: Instagram, colorClass: "hover:text-pink-400" });
+                if (twitterLink) socialLinks.push({ type: "twitter", url: twitterLink, label: "Twitter / X", icon: Twitter, colorClass: "hover:text-sky-400" });
+
+                const primaryLink = socialLinks.length > 0 ? socialLinks[0].url : "";
+
+                return (
+                  <div
+                    key={spk.id || idx}
+                    className="rounded-[28px] bg-slate-50/70 p-5 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col items-center text-center relative group overflow-hidden"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-
-                  {/* Circular Avatar Container with Hover Social Bar Overlay */}
-                  <div className="relative mb-3 pt-1">
-                    <div className="p-1 rounded-full bg-purple-100/60 group-hover:bg-purple-200/80 transition-colors duration-300">
-                      <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden relative bg-slate-100">
-                        <img
-                          src={
-                            spk.photo ||
-                            "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400"
-                          }
-                          alt={spk.name}
-                          className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Floating Social Pill Badge on Hover */}
-                    <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
-                      <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2.5 backdrop-blur-md">
-                        <a
-                          href={profileLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="hover:scale-125 transition-transform text-white p-0.5"
-                          title="LinkedIn Profile"
-                        >
-                          <Linkedin className="h-3.5 w-3.5 fill-current" />
-                        </a>
-                        <a
-                          href={spk.url || spk.website || profileLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="hover:scale-125 transition-transform text-white p-0.5"
-                          title="Official Link"
-                        >
-                          <Globe className="h-3.5 w-3.5" />
-                        </a>
-                        <a
-                          href={profileLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="hover:scale-125 transition-transform text-white p-0.5"
-                          title="Linked Page"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Speaker Details */}
-                  <div className="space-y-1 mt-2 w-full">
-                    <h4 className="font-extrabold text-slate-900 text-base sm:text-lg font-display line-clamp-1 group-hover:text-purple-700 transition-colors">
+                    {/* Top Right Linked Page Badge (ONLY if a link exists) */}
+                    {primaryLink && (
                       <a
-                        href={profileLink}
+                        href={primaryLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:underline"
+                        title={`View ${spk.name}'s Profile`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute top-4 right-4 h-8 w-8 rounded-full bg-purple-100/70 text-purple-700 hover:bg-purple-600 hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer z-10"
                       >
-                        {spk.name}
+                        <ExternalLink className="h-4 w-4" />
                       </a>
-                    </h4>
+                    )}
 
-                    <p className="text-xs font-bold text-violet-600 line-clamp-1">
-                      {spk.designation || "Executive Speaker"}
-                    </p>
+                    {/* Circular Avatar Container with Hover Social Bar Overlay */}
+                    <div className="relative mb-3 pt-1">
+                      <div className="p-1 rounded-full bg-purple-100/60 group-hover:bg-purple-200/80 transition-colors duration-300">
+                        <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden relative bg-slate-100 flex items-center justify-center">
+                          {spk.photo ? (
+                            <img
+                              src={spk.photo}
+                              alt={spk.name}
+                              className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700 font-extrabold text-3xl">
+                              {spk.name ? spk.name.charAt(0).toUpperCase() : "S"}
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="w-6 h-0.5 bg-slate-200/80 mx-auto my-2 rounded-full group-hover:w-10 group-hover:bg-purple-300 transition-all duration-300" />
-
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 line-clamp-1">
-                      <Building className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                      <span>{spk.company || spk.organization || "Executive Talks Media"}</span>
+                      {/* Floating Social Pill Badge on Hover (ONLY if URLs were provided by Admin) */}
+                      {socialLinks.length > 0 && (
+                        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
+                          <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2 backdrop-blur-md">
+                            {socialLinks.map((sl) => {
+                              const IconComponent = sl.icon;
+                              return (
+                                <a
+                                  key={sl.type}
+                                  href={sl.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`hover:scale-125 transition-transform text-white p-0.5 ${sl.colorClass}`}
+                                  title={`${sl.label} Link`}
+                                >
+                                  <IconComponent className="h-3.5 w-3.5" />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {(spk.location || spk.country || spk.city) && (
-                      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400 line-clamp-1 mt-0.5">
-                        <MapPin className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-                        <span>{spk.location || spk.country || spk.city}</span>
-                      </div>
-                    )}
+                    {/* Speaker Details */}
+                    <div className="space-y-1 mt-2 w-full">
+                      <h4 className="font-extrabold text-slate-900 text-base sm:text-lg font-display line-clamp-1 group-hover:text-purple-700 transition-colors">
+                        {primaryLink ? (
+                          <a
+                            href={primaryLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {spk.name}
+                          </a>
+                        ) : (
+                          <span>{spk.name}</span>
+                        )}
+                      </h4>
+
+                      <p className="text-xs font-bold text-violet-600 line-clamp-1">
+                        {spk.designation || "Executive Speaker"}
+                      </p>
+
+                      <div className="w-6 h-0.5 bg-slate-200/80 mx-auto my-2 rounded-full group-hover:w-10 group-hover:bg-purple-300 transition-all duration-300" />
+
+                      {(spk.company || spk.organization) && (
+                        <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 line-clamp-1">
+                          <Building className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                          <span>{spk.company || spk.organization}</span>
+                        </div>
+                      )}
+
+                      {(spk.location || spk.country || spk.city) && (
+                        <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400 line-clamp-1 mt-0.5">
+                          <MapPin className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                          <span>{spk.location || spk.country || spk.city}</span>
+                        </div>
+                      )}
+
+                      {spk.topic && (
+                        <p className="text-[11px] text-slate-500 italic pt-1 line-clamp-2">
+                          "{spk.topic}"
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ========================================================= */}
         {/* SECTION 4: REGISTRATION PLANS & OUR SPONSORS              */}
         {/* ========================================================= */}
         <section id="pricing" className="scroll-mt-36 space-y-10">
-          {/* REGISTRATION PLANS TIER CARDS GRID */}
-          <RegistrationPlansGrid
-            pricingAvailable={isPricingAvailable}
-            plans={
-              typeof eventPaymentConfig?.pricing_plans === "string"
-                ? JSON.parse(eventPaymentConfig.pricing_plans || "[]")
-                : eventPaymentConfig?.pricing_plans || []
-            }
-            earlyBirdEnabled={eventPaymentConfig?.early_bird_enabled}
-            earlyBirdStartDate={eventPaymentConfig?.early_bird_start_date}
-            earlyBirdEndDate={eventPaymentConfig?.early_bird_end_date}
-            theme="light"
-            onSelectPlan={(selectedPlan) =>
-              handleOpenRegister(isPricingAvailable ? "paid" : "free", selectedPlan?.name)
-            }
-          />
+          {/* REGISTRATION PLANS TIER CARDS GRID (Visible only when Paid Registration is enabled AND Show Pricing is enabled) */}
+          {(event as any)?.allow_paid_registration !== 0 &&
+            (event as any)?.allow_paid_registration !== false &&
+            (event as any)?.show_pricing !== 0 &&
+            (event as any)?.show_pricing !== false && (
+              <RegistrationPlansGrid
+                pricingAvailable={isPricingAvailable}
+                plans={
+                  typeof eventPaymentConfig?.pricing_plans === "string"
+                    ? JSON.parse(eventPaymentConfig.pricing_plans || "[]")
+                    : eventPaymentConfig?.pricing_plans || []
+                }
+                earlyBirdEnabled={eventPaymentConfig?.early_bird_enabled}
+                earlyBirdStartDate={eventPaymentConfig?.early_bird_start_date}
+                earlyBirdEndDate={eventPaymentConfig?.early_bird_end_date}
+                theme="light"
+                onSelectPlan={(selectedPlan) =>
+                  handleOpenRegister(isPricingAvailable ? "paid" : "free", selectedPlan?.name)
+                }
+              />
+          )}
 
           {/* OUR SPONSORS & PARTNERS AUTO-SCROLLING ROW */}
           <div id="sponsors" className="scroll-mt-36 rounded-3xl bg-slate-50/60 p-6 sm:p-8 space-y-6">

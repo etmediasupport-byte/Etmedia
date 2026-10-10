@@ -295,8 +295,16 @@ export type Speaker = {
   photo: string;
   bio?: string;
   topic?: string;
+  website_url?: string;
+  websiteUrl?: string;
   linkedin_url?: string;
   linkedinUrl?: string;
+  youtube_url?: string;
+  youtubeUrl?: string;
+  instagram_url?: string;
+  instagramUrl?: string;
+  twitter_url?: string;
+  twitterUrl?: string;
 };
 
 export type Sponsor = {
@@ -350,6 +358,9 @@ export type EventItem = {
   gallery_list?: string | GalleryItem[];
   agenda_list?: string | AgendaItem[];
   map_url?: string;
+  allow_paid_registration?: number | boolean;
+  allow_free_registration?: number | boolean;
+  show_pricing?: number | boolean;
 };
 
 export const getDefaultSpeakers = (category: string = ""): Speaker[] => [
