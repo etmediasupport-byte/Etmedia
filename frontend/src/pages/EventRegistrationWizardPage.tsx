@@ -39,6 +39,7 @@ import {
   images,
   getValidImageUrl,
   getDefaultEventImage,
+  getEventStatus,
   type PricingPlanTier,
 } from "@/lib/site-data";
 import { SEOHead } from "@/components/site/SEOHead";
@@ -320,6 +321,15 @@ export default function EventRegistrationWizardPage() {
     eventData?.early_bird_end_date || "2026-12-31"
   );
   const isEarlyBirdActive = ebStatus.isActive;
+
+  const isEventClosed =
+    eventData?.status === "past" ||
+    eventData?.status === "completed" ||
+    eventData?.status === "concluded" ||
+    eventData?.status === "closed" ||
+    getEventStatus(eventData) === "past" ||
+    (eventData as any)?.allow_paid_registration === 0 ||
+    (eventData as any)?.allow_paid_registration === false;
 
   // Recalculate Payment when Plan or Coupon changes
   useEffect(() => {
@@ -934,8 +944,42 @@ export default function EventRegistrationWizardPage() {
           </div>
         )}
 
-        {/* Responsive Grid Layout */}
-        <div className={`grid gap-8 items-start ${currentStep === 4 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"}`}>
+        {isEventClosed ? (
+          <div className="max-w-2xl mx-auto my-12 rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 text-center shadow-lg space-y-5">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 border border-slate-200">
+              <CheckCircle2 className="h-8 w-8 text-slate-500" />
+            </div>
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                Event Concluded
+              </span>
+              <h2 className="text-2xl font-black font-display text-slate-900">
+                Registrations & Passes Closed
+              </h2>
+              <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                Registrations for <strong>{eventData?.title}</strong> have concluded. Delegate passes and pricing tiers are no longer available for booking.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to={`/events/${eventData?.slug || slug || ""}`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-xs font-bold text-white hover:opacity-95 shadow-md shadow-purple-500/20 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Return to Event Overview</span>
+              </Link>
+              <Link
+                to="/events"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all border border-slate-200"
+              >
+                <span>Browse Upcoming Events</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Responsive Grid Layout */}
+            <div className={`grid gap-8 items-start ${currentStep === 4 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"}`}>
           
           {/* LEFT COLUMN: Event Overview & Order Summary (Shown on Steps 1, 2, 3, 5, 6, 7) */}
           {currentStep !== 4 && (
@@ -2287,6 +2331,8 @@ export default function EventRegistrationWizardPage() {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
 
         {/* ================= FULLSCREEN IMAGE MODAL ================= */}

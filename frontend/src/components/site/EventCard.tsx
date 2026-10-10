@@ -1,11 +1,19 @@
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap, Clock } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, ArrowUpRight, Zap, Clock, CheckCircle2 } from "lucide-react";
 import { MouseTiltCard } from "@/components/ui/MouseTiltCard";
 import { MagneticButton } from "@/components/ui/MagneticButton";
-import { images, getValidImageUrl } from "@/lib/site-data";
+import { images, getValidImageUrl, getEventStatus } from "@/lib/site-data";
 
 export function EventCard({ event, onRegister }: { event: any; onRegister?: (event: any, mode?: "paid" | "free") => void }) {
   const navigate = useNavigate();
+
+  const isPast =
+    event?.status === "past" ||
+    event?.status === "completed" ||
+    event?.status === "concluded" ||
+    event?.status === "closed" ||
+    getEventStatus(event) === "past";
+
   let parsedLocations: any[] = [];
   try {
     if (typeof event.locations === "string") {
@@ -27,6 +35,7 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
   const handleRegisterClick = (e: React.MouseEvent, mode: "paid" | "free") => {
     e.stopPropagation();
     e.preventDefault();
+    if (isPast) return;
     if (onRegister) {
       onRegister(event, mode);
     } else {
@@ -103,11 +112,15 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
               <span className="truncate text-[11px] sm:text-xs">{venueText}</span>
             </span>
             <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 whitespace-nowrap ${
-              (event as any).allow_paid_registration === 0 && (event as any).allow_free_registration === 0
+              isPast
+                ? "text-slate-600 bg-slate-100 border-slate-300"
+                : (event as any).allow_paid_registration === 0 && (event as any).allow_free_registration === 0
                 ? "text-amber-800 bg-amber-50 border-amber-200"
                 : "text-emerald-700 bg-emerald-50 border-emerald-200"
             }`}>
-              {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
+              {isPast
+                ? "Event Concluded"
+                : (event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false
                 ? "Free & Paid Passes"
                 : (event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false
                 ? "Paid Passes"
@@ -121,41 +134,53 @@ export function EventCard({ event, onRegister }: { event: any; onRegister?: (eve
 
       {/* Card Action Footer: Responsive Buttons Stack on Mobile */}
       <div className="p-3 sm:p-4 pt-0 flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full">
-        {/* Button 1: Register Now (Paid Pass) */}
-        {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (
-          <button
-            type="button"
-            onClick={(e) => handleRegisterClick(e, "paid")}
-            className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+        {isPast ? (
+          <Link
+            to={`/events/${event.slug || event.id}`}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-2xs"
           >
-            <Zap className="h-3.5 w-3.5 text-white shrink-0" />
-            <span className="truncate">Register Now</span>
-          </button>
-        )}
+            <CheckCircle2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+            <span>Event Concluded • View Details</span>
+          </Link>
+        ) : (
+          <>
+            {/* Button 1: Register Now (Paid Pass) */}
+            {(event as any).allow_paid_registration !== 0 && (event as any).allow_paid_registration !== false && (
+              <button
+                type="button"
+                onClick={(e) => handleRegisterClick(e, "paid")}
+                className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Zap className="h-3.5 w-3.5 text-white shrink-0" />
+                <span className="truncate">Register Now</span>
+              </button>
+            )}
 
-        {/* Button 2: Register Free Interest */}
-        {(event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false && (
-          <button
-            type="button"
-            onClick={(e) => handleRegisterClick(e, "free")}
-            className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
-            <span className="truncate">Register Free</span>
-          </button>
-        )}
+            {/* Button 2: Register Free Interest */}
+            {(event as any).allow_free_registration !== 0 && (event as any).allow_free_registration !== false && (
+              <button
+                type="button"
+                onClick={(e) => handleRegisterClick(e, "free")}
+                className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 rounded-xl py-2.5 px-3 text-xs font-extrabold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-white shrink-0" />
+                <span className="truncate">Register Free</span>
+              </button>
+            )}
 
-        {/* If both are hidden */}
-        {((event as any).allow_paid_registration === 0 || (event as any).allow_paid_registration === false) &&
-          ((event as any).allow_free_registration === 0 || (event as any).allow_free_registration === false) && (
-            <Link
-              to={`/events/${event.slug || event.id}`}
-              className="w-full bg-amber-50/80 hover:bg-amber-100/90 text-amber-900 border border-amber-200/80 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-2xs"
-            >
-              <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-              <span>Passes Releasing Soon • View Details</span>
-            </Link>
-          )}
+            {/* If both are hidden */}
+            {((event as any).allow_paid_registration === 0 || (event as any).allow_paid_registration === false) &&
+              ((event as any).allow_free_registration === 0 || (event as any).allow_free_registration === false) && (
+                <Link
+                  to={`/events/${event.slug || event.id}`}
+                  className="w-full bg-amber-50/80 hover:bg-amber-100/90 text-amber-900 border border-amber-200/80 rounded-xl py-2.5 px-3 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span>Passes Releasing Soon • View Details</span>
+                </Link>
+              )}
+          </>
+        )}
       </div>
     </MouseTiltCard>
   );

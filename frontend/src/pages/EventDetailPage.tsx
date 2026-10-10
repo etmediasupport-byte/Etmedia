@@ -51,6 +51,7 @@ import {
   AgendaItem,
   images,
   getValidImageUrl,
+  getEventStatus,
 } from "@/lib/site-data";
 import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { RegisterModal } from "@/components/site/RegisterModal";
@@ -193,7 +194,14 @@ export default function EventDetailPage() {
 
       let currentStatus: EventStatus = "upcoming";
 
-      if (now > endDate) {
+      const isExplicitClosed =
+        event?.status === "past" ||
+        event?.status === "completed" ||
+        event?.status === "concluded" ||
+        event?.status === "closed" ||
+        getEventStatus(event) === "past";
+
+      if (isExplicitClosed || now > endDate) {
         currentStatus = "ended";
       } else if (now >= startDate && now <= endDate) {
         currentStatus = "live";
@@ -225,7 +233,15 @@ export default function EventDetailPage() {
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [event?.date, event?.time, event?.locations]);
+  }, [event?.date, event?.time, event?.locations, event?.status]);
+
+  const isEventClosed =
+    liveEventStatus === "ended" ||
+    event?.status === "past" ||
+    event?.status === "completed" ||
+    event?.status === "concluded" ||
+    event?.status === "closed" ||
+    getEventStatus(event) === "past";
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -236,6 +252,10 @@ export default function EventDetailPage() {
   };
 
   const handleOpenRegister = (mode: "paid" | "free", passName?: string) => {
+    if (isEventClosed) {
+      toast.info("This event has already concluded. Registrations and price passes are closed.");
+      return;
+    }
     const targetSlug = slug || "hr-recall-2k26";
     if (mode === "free") {
       navigate(`/events/${targetSlug}/register-free`);
@@ -609,7 +629,7 @@ export default function EventDetailPage() {
           <div className="lg:col-span-4 rounded-3xl bg-white p-4 sm:p-5 shadow-xl border border-slate-100 flex flex-col justify-between space-y-3 sm:space-y-3.5 text-slate-900">
             {/* Top Header: Badge & Share */}
             <div className="flex items-center justify-between">
-              {liveEventStatus === "ended" ? (
+              {isEventClosed ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-[11px] font-bold text-slate-700">
                   <CheckCircle2 className="h-3 w-3 text-slate-500" /> Event Concluded
                 </span>
@@ -691,7 +711,7 @@ export default function EventDetailPage() {
 
             {/* Buttons */}
             <div className="space-y-2 pt-1">
-              {liveEventStatus === "ended" ? (
+              {isEventClosed ? (
                 <button
                   type="button"
                   disabled
@@ -1067,8 +1087,9 @@ export default function EventDetailPage() {
         {/* SECTION 4: REGISTRATION PLANS & OUR SPONSORS              */}
         {/* ========================================================= */}
         <section id="pricing" className="scroll-mt-36 space-y-10">
-          {/* REGISTRATION PLANS TIER CARDS GRID (Visible only when Paid Registration is enabled AND Show Pricing is enabled) */}
-          {(event as any)?.allow_paid_registration !== 0 &&
+          {/* REGISTRATION PLANS TIER CARDS GRID (Visible only when Event is active and NOT closed, Paid Registration is enabled, and Show Pricing is enabled) */}
+          {!isEventClosed &&
+            (event as any)?.allow_paid_registration !== 0 &&
             (event as any)?.allow_paid_registration !== false &&
             (event as any)?.show_pricing !== 0 &&
             (event as any)?.show_pricing !== false && (
@@ -1087,6 +1108,22 @@ export default function EventDetailPage() {
                   handleOpenRegister(isPricingAvailable ? "paid" : "free", selectedPlan?.name)
                 }
               />
+          )}
+
+          {/* If Event is Concluded / Closed, display clean Concluded Notice instead of price tier cards */}
+          {isEventClosed && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 sm:p-6 text-center space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold text-slate-700">
+                <CheckCircle2 className="h-3.5 w-3.5 text-slate-500" />
+                <span>Event Concluded</span>
+              </div>
+              <h4 className="text-base sm:text-lg font-black text-slate-900 font-display">
+                Registrations & Pricing Passes Closed
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                This event has successfully concluded. Delegate registration passes and pricing tiers are now closed.
+              </p>
+            </div>
           )}
 
           {/* OUR SPONSORS & PARTNERS AUTO-SCROLLING ROW */}
