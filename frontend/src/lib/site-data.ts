@@ -49,7 +49,10 @@ export function getValidImageUrl(url?: string, title?: string, category?: string
       trimmed.startsWith("http://") ||
       trimmed.startsWith("https://") ||
       trimmed.startsWith("data:") ||
-      trimmed.startsWith("blob:")
+      trimmed.startsWith("blob:") ||
+      trimmed.startsWith("/api/") ||
+      trimmed.startsWith("/uploads/") ||
+      trimmed.startsWith("/assets/")
     ) {
       return trimmed;
     }

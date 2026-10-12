@@ -15,7 +15,7 @@ import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
-import { initDatabase, pool, ensureEventsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureMediaUploadsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES } from "./db.js";
 
 dotenv.config();
 
@@ -1537,16 +1537,101 @@ function sanitizeText(input: any): string {
   return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").trim();
 }
 
-// Convert Base64 Image to Disk File in uploads directory
+// Save Base64 Image permanently to MySQL uploaded_media table and mirror to disk
+async function saveBase64MediaToDb(dataStr: string, originalFilename?: string): Promise<{ id: string; url: string; mime_type: string }> {
+  if (!dataStr || typeof dataStr !== "string" || !dataStr.startsWith("data:image/")) {
+    return { id: "", url: dataStr, mime_type: "image/png" };
+  }
+
+  try {
+    const match = dataStr.match(/^data:(image\/[a-zA-Z0-9\+\-]+);base64,(.+)$/s);
+    const mimeType = match ? match[1] : "image/png";
+    const ext = mimeType.split("/")[1]?.replace(/\+xml/, "") || "png";
+    const base64Data = match ? match[2] : dataStr.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, "");
+
+    const id = `med_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const uniqueFilename = `${id}.${ext}`;
+    const cleanFilename = originalFilename ? sanitizeText(originalFilename) : uniqueFilename;
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // 1. Permanently store into MySQL database
+    if (pool) {
+      try {
+        await ensureMediaUploadsTable();
+        await pool.query(
+          `INSERT INTO uploaded_media (id, filename, mime_type, data_base64, size_bytes)
+           VALUES (?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE data_base64 = VALUES(data_base64), size_bytes = VALUES(size_bytes)`,
+          [id, cleanFilename, mimeType, dataStr, buffer.length]
+        );
+      } catch (dbErr) {
+        console.error("[MySQL] Media upload database insert error:", dbErr);
+      }
+    }
+
+    // 2. Also write to disk mirror directories
+    try {
+      const dir1 = path.join(__dirname, "../public/uploads");
+      const dir2 = path.resolve(process.cwd(), "public", "uploads");
+      const dir3 = path.resolve(process.cwd(), "uploads");
+
+      [dir1, dir2, dir3].forEach((d) => {
+        if (!fs.existsSync(d)) {
+          try { fs.mkdirSync(d, { recursive: true }); } catch (e) {}
+        }
+      });
+
+      [dir1, dir2, dir3].forEach((d) => {
+        try {
+          fs.writeFileSync(path.join(d, uniqueFilename), buffer);
+          if (cleanFilename !== uniqueFilename) {
+            fs.writeFileSync(path.join(d, cleanFilename), buffer);
+          }
+        } catch (e) {}
+      });
+    } catch (diskErr) {}
+
+    return {
+      id,
+      url: `/api/media/${id}`,
+      mime_type: mimeType,
+    };
+  } catch (err) {
+    console.error("Error in saveBase64MediaToDb:", err);
+    return { id: "", url: dataStr, mime_type: "image/png" };
+  }
+}
+
+// Synchronous wrapper that initiates database storage and returns permanent /api/media URL
 function saveBase64Image(dataStr: string): string {
   if (!dataStr || typeof dataStr !== "string" || !dataStr.startsWith("data:image/")) {
     return dataStr;
   }
   try {
-    const match = dataStr.match(/^data:image\/([a-zA-Z0-9]+);base64,/);
-    const ext = match ? match[1] : "png";
-    const base64Data = dataStr.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, "");
+    const match = dataStr.match(/^data:(image\/[a-zA-Z0-9\+\-]+);base64,(.+)$/s);
+    const mimeType = match ? match[1] : "image/png";
+    const ext = mimeType.split("/")[1]?.replace(/\+xml/, "") || "png";
+    const base64Data = match ? match[2] : dataStr.replace(/^data:image\/[a-zA-Z0-9]+;base64,/, "");
 
+    const id = `med_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const uniqueFilename = `${id}.${ext}`;
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // Async persist to MySQL database
+    if (pool) {
+      ensureMediaUploadsTable()
+        .then(() => {
+          return pool.query(
+            `INSERT INTO uploaded_media (id, filename, mime_type, data_base64, size_bytes)
+             VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE data_base64 = VALUES(data_base64), size_bytes = VALUES(size_bytes)`,
+            [id, uniqueFilename, mimeType, dataStr, buffer.length]
+          );
+        })
+        .catch((e) => console.error("[MySQL] Error async saving media:", e));
+    }
+
+    // Disk write mirror
     const dir1 = path.join(__dirname, "../public/uploads");
     const dir2 = path.resolve(process.cwd(), "public", "uploads");
     const dir3 = path.resolve(process.cwd(), "uploads");
@@ -1557,27 +1642,207 @@ function saveBase64Image(dataStr: string): string {
       }
     });
 
-    const uniqueFilename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const buffer = Buffer.from(base64Data, "base64");
-
     [dir1, dir2, dir3].forEach((d) => {
       try {
         fs.writeFileSync(path.join(d, uniqueFilename), buffer);
       } catch (e) {}
     });
 
-    return `/uploads/${uniqueFilename}`;
+    return `/api/media/${id}`;
   } catch (err) {
     console.error("Error saving base64 image:", err);
     return dataStr;
   }
 }
 
+// Automatically scans event fields (speakers, zura, sponsors, gallery, banners)
+// and ensures any base64 images are stored in MySQL uploaded_media and replaced with /api/media/ URLs
+async function processEventMediaFields(eventData: any): Promise<void> {
+  if (!eventData) return;
+
+  if (eventData.image && typeof eventData.image === "string" && eventData.image.startsWith("data:image/")) {
+    const res = await saveBase64MediaToDb(eventData.image, "event_banner");
+    eventData.image = res.url;
+  }
+  if (eventData.about_image && typeof eventData.about_image === "string" && eventData.about_image.startsWith("data:image/")) {
+    const res = await saveBase64MediaToDb(eventData.about_image, "about_image");
+    eventData.about_image = res.url;
+  }
+
+  // Speakers
+  if (eventData.speakers_list) {
+    try {
+      const list = typeof eventData.speakers_list === "string" ? JSON.parse(eventData.speakers_list) : eventData.speakers_list;
+      if (Array.isArray(list)) {
+        let modified = false;
+        for (const spk of list) {
+          if (spk && spk.photo && typeof spk.photo === "string" && spk.photo.startsWith("data:image/")) {
+            const res = await saveBase64MediaToDb(spk.photo, `${spk.name || "speaker"}_photo`);
+            spk.photo = res.url;
+            modified = true;
+          }
+        }
+        if (modified) {
+          eventData.speakers_list = typeof eventData.speakers_list === "string" ? JSON.stringify(list) : list;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Zura & Jury Board
+  if (eventData.zura_list) {
+    try {
+      const list = typeof eventData.zura_list === "string" ? JSON.parse(eventData.zura_list) : eventData.zura_list;
+      if (Array.isArray(list)) {
+        let modified = false;
+        for (const z of list) {
+          if (z && z.photo && typeof z.photo === "string" && z.photo.startsWith("data:image/")) {
+            const res = await saveBase64MediaToDb(z.photo, `${z.name || "zura"}_photo`);
+            z.photo = res.url;
+            modified = true;
+          }
+        }
+        if (modified) {
+          eventData.zura_list = typeof eventData.zura_list === "string" ? JSON.stringify(list) : list;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Sponsors
+  if (eventData.sponsors_list) {
+    try {
+      const list = typeof eventData.sponsors_list === "string" ? JSON.parse(eventData.sponsors_list) : eventData.sponsors_list;
+      if (Array.isArray(list)) {
+        let modified = false;
+        for (const sp of list) {
+          if (sp && sp.logo && typeof sp.logo === "string" && sp.logo.startsWith("data:image/")) {
+            const res = await saveBase64MediaToDb(sp.logo, `${sp.name || "sponsor"}_logo`);
+            sp.logo = res.url;
+            modified = true;
+          }
+        }
+        if (modified) {
+          eventData.sponsors_list = typeof eventData.sponsors_list === "string" ? JSON.stringify(list) : list;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Gallery
+  if (eventData.gallery_list) {
+    try {
+      const list = typeof eventData.gallery_list === "string" ? JSON.parse(eventData.gallery_list) : eventData.gallery_list;
+      if (Array.isArray(list)) {
+        let modified = false;
+        for (const g of list) {
+          if (g && g.url && typeof g.url === "string" && g.url.startsWith("data:image/")) {
+            const res = await saveBase64MediaToDb(g.url, "gallery_photo");
+            g.url = res.url;
+            modified = true;
+          }
+        }
+        if (modified) {
+          eventData.gallery_list = typeof eventData.gallery_list === "string" ? JSON.stringify(list) : list;
+        }
+      }
+    } catch (e) {}
+  }
+}
 
 // Serve static assets from public folder (including compiled frontend build)
 const publicPath = path.join(__dirname, "../public");
 const uploadsPath = path.join(publicPath, "uploads");
 const assetsPath = path.join(publicPath, "assets");
+
+// Permanent Database Media Serving Endpoint
+app.get("/api/media/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (pool) {
+      await ensureMediaUploadsTable();
+      const [rows]: any = await pool.query(
+        "SELECT mime_type, data_base64 FROM uploaded_media WHERE id = ? OR filename = ? LIMIT 1",
+        [id, id]
+      );
+      if (rows && rows.length > 0) {
+        const item = rows[0];
+        let base64Data = item.data_base64;
+        if (base64Data.startsWith("data:")) {
+          base64Data = base64Data.replace(/^data:[^;]+;base64,/, "");
+        }
+        const imgBuffer = Buffer.from(base64Data, "base64");
+        res.setHeader("Content-Type", item.mime_type || "image/png");
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        res.setHeader("ETag", `"${id}"`);
+        return res.send(imgBuffer);
+      }
+    }
+
+    // Disk fallback
+    const possiblePaths = [
+      path.join(__dirname, "../public/uploads", id),
+      path.resolve(process.cwd(), "public", "uploads", id),
+      path.resolve(process.cwd(), "uploads", id),
+    ];
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        return res.sendFile(p);
+      }
+    }
+
+    return res.status(404).json({ success: false, message: "Media not found." });
+  } catch (err) {
+    console.error("Serve media error:", err);
+    return res.status(500).json({ success: false, message: "Error serving media." });
+  }
+});
+
+// Robust Uploads Handler with Database Lookup
+const serveUploadsHandler = async (req: any, res: any, next: any) => {
+  const filename = req.params.filename || req.params[0];
+  if (!filename) return next();
+
+  // 1. Try disk
+  const possiblePaths = [
+    path.join(__dirname, "../public/uploads", filename),
+    path.resolve(process.cwd(), "public", "uploads", filename),
+    path.resolve(process.cwd(), "uploads", filename),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+
+  // 2. Try Database uploaded_media
+  try {
+    if (pool) {
+      await ensureMediaUploadsTable();
+      const cleanId = filename.replace(/\.[a-zA-Z0-9]+$/, "");
+      const [rows]: any = await pool.query(
+        "SELECT mime_type, data_base64 FROM uploaded_media WHERE filename = ? OR id = ? OR id = ? LIMIT 1",
+        [filename, filename, cleanId]
+      );
+      if (rows && rows.length > 0) {
+        const item = rows[0];
+        let base64Data = item.data_base64;
+        if (base64Data.startsWith("data:")) {
+          base64Data = base64Data.replace(/^data:[^;]+;base64,/, "");
+        }
+        const imgBuffer = Buffer.from(base64Data, "base64");
+        res.setHeader("Content-Type", item.mime_type || "image/png");
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        return res.send(imgBuffer);
+      }
+    }
+  } catch (e) {}
+
+  return res.status(404).send("File not found");
+};
+
+app.get("/api/uploads/:filename", serveUploadsHandler);
+app.get("/uploads/:filename", serveUploadsHandler);
 
 app.use("/uploads", express.static(uploadsPath));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "public", "uploads")));
@@ -2213,10 +2478,10 @@ function sortBackendEventsChronologically(eventList: any[]): any[] {
   return [...live, ...upcoming, ...past];
 }
 
-// 2. Events listing (Public API with DB query, fast cache & static fallback)
+// 2. Events listing (Public API with DB query, fast cache & dynamic multi-filter support)
 app.get("/api/events", async (req, res) => {
-  const { status, featured } = req.query;
-  const cacheKey = `events_list_${status || "all"}_${featured || "all"}`;
+  const { status, featured, category, city, search } = req.query;
+  const cacheKey = `events_list_${status || "all"}_${featured || "all"}_${category || "all"}_${city || "all"}_${search || ""}`;
   const cached = getFastCache(cacheKey);
   if (cached) {
     return res.json(cached);
@@ -2224,6 +2489,7 @@ app.get("/api/events", async (req, res) => {
 
   try {
     if (pool) {
+      await ensureEventsTable();
       let query = "SELECT * FROM events WHERE (status != 'archived' AND status != 'draft')";
       const params: any[] = [];
 
@@ -2236,6 +2502,19 @@ app.get("/api/events", async (req, res) => {
         if (featured === "true" || featured === "1") {
           query += " AND is_featured = 1";
         }
+      }
+      if (category && category !== "all") {
+        query += " AND (LOWER(category) LIKE ? OR LOWER(title) LIKE ?)";
+        params.push(`%${String(category).toLowerCase()}%`, `%${String(category).toLowerCase()}%`);
+      }
+      if (city && city !== "all") {
+        query += " AND (LOWER(city) LIKE ? OR LOWER(locations) LIKE ?)";
+        params.push(`%${String(city).toLowerCase()}%`, `%${String(city).toLowerCase()}%`);
+      }
+      if (search && String(search).trim()) {
+        const q = `%${String(search).toLowerCase().trim()}%`;
+        query += " AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(venue) LIKE ? OR LOWER(city) LIKE ?)";
+        params.push(q, q, q, q);
       }
 
       const [rows]: any = await pool.query(query, params);
@@ -5329,16 +5608,22 @@ app.delete("/api/admin/contacts/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
-// 0. Image File Upload Handler
+// 0. Image File Upload Handler (Permanently Stored in MySQL uploaded_media Table)
 app.post("/api/admin/upload", authenticateAdmin, async (req, res) => {
-  const { imageBase64 } = req.body;
+  const { imageBase64, filename } = req.body;
   if (!imageBase64) {
     return res.status(400).json({ success: false, message: "No image data provided." });
   }
 
   try {
-    const relativeUrl = saveBase64Image(imageBase64);
-    return res.json({ success: true, url: relativeUrl, message: "Image stored successfully!" });
+    const media = await saveBase64MediaToDb(imageBase64, filename);
+    return res.json({
+      success: true,
+      id: media.id,
+      url: media.url,
+      mime_type: media.mime_type,
+      message: "Image permanently stored in database!",
+    });
   } catch (err: any) {
     console.error("Upload error:", err);
     return res.status(500).json({ success: false, message: "Failed to process image data." });
@@ -5684,6 +5969,7 @@ app.get("/api/event-payments/event/:eventId", async (req, res) => {
 
 // 2. Create new event
 app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
+  await processEventMediaFields(req.body);
   const {
     title,
     category,
@@ -5828,6 +6114,7 @@ app.post("/api/admin/events", authenticateAdmin, async (req, res) => {
 // 3. Update existing event
 app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
   const { id } = req.params;
+  await processEventMediaFields(req.body);
   const {
     title,
     category,

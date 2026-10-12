@@ -162,6 +162,26 @@ export default function EventsPage() {
     return Array.from(citySet).sort();
   }, [eventList]);
 
+  // Compute dynamic category tabs from database events merged with default sectors
+  const dynamicCategories = useMemo(() => {
+    const list = [...CATEGORY_TABS];
+    eventList.forEach((e) => {
+      if (e.category && typeof e.category === "string" && e.category.trim()) {
+        const cat = e.category.trim();
+        const id = cat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const exists = list.some((c) => c.id === id || c.label.toLowerCase() === cat.toLowerCase());
+        if (!exists) {
+          list.push({
+            id,
+            label: cat,
+            icon: Sparkles,
+          });
+        }
+      }
+    });
+    return list;
+  }, [eventList]);
+
   // Categorize and sort events chronologically
   const { liveEvents, upcomingEvents, pastEvents, allEvents } = useMemo(() => {
     const live: EventItem[] = [];
@@ -225,20 +245,21 @@ export default function EventsPage() {
         const titleLower = (event.title || "").toLowerCase();
         const combined = `${catLower} ${titleLower}`;
 
-        if (categoryFilter === "hr" && !combined.includes("hr") && !combined.includes("talent") && !combined.includes("people") && !combined.includes("recall")) {
-          return false;
-        }
-        if (categoryFilter === "cfo" && !combined.includes("cfo") && !combined.includes("finance") && !combined.includes("treasury") && !combined.includes("capital")) {
-          return false;
-        }
-        if (categoryFilter === "tech" && !combined.includes("tech") && !combined.includes("ai") && !combined.includes("enterprise") && !combined.includes("creator")) {
-          return false;
-        }
-        if (categoryFilter === "awards" && !combined.includes("award") && !combined.includes("excellence") && !combined.includes("honor") && !combined.includes("recognition")) {
-          return false;
-        }
-        if (categoryFilter === "global" && !combined.includes("global") && !combined.includes("gcc") && !combined.includes("leadership") && !combined.includes("perth")) {
-          return false;
+        if (categoryFilter === "hr") {
+          if (!combined.includes("hr") && !combined.includes("talent") && !combined.includes("people") && !combined.includes("recall")) return false;
+        } else if (categoryFilter === "cfo") {
+          if (!combined.includes("cfo") && !combined.includes("finance") && !combined.includes("treasury") && !combined.includes("capital")) return false;
+        } else if (categoryFilter === "tech") {
+          if (!combined.includes("tech") && !combined.includes("ai") && !combined.includes("enterprise") && !combined.includes("creator")) return false;
+        } else if (categoryFilter === "awards") {
+          if (!combined.includes("award") && !combined.includes("excellence") && !combined.includes("honor") && !combined.includes("recognition")) return false;
+        } else if (categoryFilter === "global") {
+          if (!combined.includes("global") && !combined.includes("gcc") && !combined.includes("leadership") && !combined.includes("perth")) return false;
+        } else {
+          const cleanFilter = categoryFilter.replace(/-/g, " ").toLowerCase();
+          if (!catLower.includes(cleanFilter) && !titleLower.includes(cleanFilter)) {
+            return false;
+          }
         }
       }
 
@@ -442,7 +463,7 @@ export default function EventsPage() {
 
           {/* Row 3: Category Chips Carousel */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar w-full">
-            {CATEGORY_TABS.map((tab) => {
+            {dynamicCategories.map((tab) => {
               const Icon = tab.icon;
               const isActive = categoryFilter === tab.id;
               return (

@@ -28,6 +28,7 @@ import {
   images,
   getValidImageUrl,
 } from "@/lib/site-data";
+import { compressImageFile } from "@/lib/image-utils";
 import {
   LayoutDashboard,
   Users,
@@ -4515,40 +4516,34 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingImage(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
-      // Set instant base64 preview
+    try {
+      const base64Data = await compressImageFile(file, 1600, 0.85);
       setEventForm((prev) => ({ ...prev, image: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
 
-        const data = await res.json();
-        if (data.success && data.url) {
-          setEventForm((prev) => ({ ...prev, image: data.url }));
-          toast.success("Image banner uploaded & synced successfully!");
-        } else {
-          // Keep base64Data if upload endpoint has error so user still gets image
-          toast.success("Image loaded into event form preview.");
-        }
-      } catch (err) {
-        toast.success("Image banner loaded into form preview.");
-      } finally {
-        setUploadingImage(false);
+      const data = await res.json();
+      if (data.success && data.url) {
+        setEventForm((prev) => ({ ...prev, image: data.url }));
+        toast.success("Image banner uploaded & saved to database!");
+      } else {
+        toast.success("Image loaded into event form preview.");
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("Image banner loaded into form preview.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const [uploadingAboutImage, setUploadingAboutImage] = useState(false);
@@ -4563,38 +4558,34 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingAboutImage(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
+    try {
+      const base64Data = await compressImageFile(file, 1600, 0.85);
       setEventForm((prev) => ({ ...prev, about_image: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
 
-        const data = await res.json();
-        if (data.success && data.url) {
-          setEventForm((prev) => ({ ...prev, about_image: data.url }));
-          toast.success("About event image uploaded & synced successfully!");
-        } else {
-          toast.success("About event image loaded into form preview.");
-        }
-      } catch (err) {
+      const data = await res.json();
+      if (data.success && data.url) {
+        setEventForm((prev) => ({ ...prev, about_image: data.url }));
+        toast.success("About event image uploaded & saved to database!");
+      } else {
         toast.success("About event image loaded into form preview.");
-      } finally {
-        setUploadingAboutImage(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("About event image loaded into form preview.");
+    } finally {
+      setUploadingAboutImage(false);
+    }
   };
 
 
@@ -4682,37 +4673,33 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingSpeakerImg(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
+    try {
+      const base64Data = await compressImageFile(file, 800, 0.85);
       setSpeakerForm((prev) => ({ ...prev, photo: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          setSpeakerForm((prev) => ({ ...prev, photo: data.url }));
-          toast.success("Speaker photo uploaded!");
-        } else {
-          toast.success("Speaker photo loaded into preview!");
-        }
-      } catch (err) {
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setSpeakerForm((prev) => ({ ...prev, photo: data.url }));
+        toast.success("Speaker photo uploaded & stored in database!");
+      } else {
         toast.success("Speaker photo loaded into preview!");
-      } finally {
-        setUploadingSpeakerImg(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("Speaker photo loaded into preview!");
+    } finally {
+      setUploadingSpeakerImg(false);
+    }
   };
 
   const handleSaveSpeakerModal = (e: React.FormEvent) => {
@@ -4789,37 +4776,33 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingZuraImg(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
+    try {
+      const base64Data = await compressImageFile(file, 800, 0.85);
       setZuraForm((prev) => ({ ...prev, photo: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          setZuraForm((prev) => ({ ...prev, photo: data.url }));
-          toast.success("Zura photo uploaded!");
-        } else {
-          toast.success("Zura photo loaded into preview!");
-        }
-      } catch (err) {
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setZuraForm((prev) => ({ ...prev, photo: data.url }));
+        toast.success("Zura photo uploaded & stored in database!");
+      } else {
         toast.success("Zura photo loaded into preview!");
-      } finally {
-        setUploadingZuraImg(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("Zura photo loaded into preview!");
+    } finally {
+      setUploadingZuraImg(false);
+    }
   };
 
   const handleSaveZuraModal = (e: React.FormEvent) => {
@@ -4883,37 +4866,33 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingSponsorLogo(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
+    try {
+      const base64Data = await compressImageFile(file, 800, 0.85);
       setSponsorForm((prev) => ({ ...prev, logo: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          setSponsorForm((prev) => ({ ...prev, logo: data.url }));
-          toast.success("Sponsor logo uploaded!");
-        } else {
-          toast.success("Sponsor logo loaded into preview!");
-        }
-      } catch (err) {
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setSponsorForm((prev) => ({ ...prev, logo: data.url }));
+        toast.success("Sponsor logo uploaded & stored in database!");
+      } else {
         toast.success("Sponsor logo loaded into preview!");
-      } finally {
-        setUploadingSponsorLogo(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("Sponsor logo loaded into preview!");
+    } finally {
+      setUploadingSponsorLogo(false);
+    }
   };
 
   const handleSaveSponsorModal = (e: React.FormEvent) => {
@@ -5036,37 +5015,33 @@ export default function AdminDashboardPage() {
     }
 
     setUploadingGalleryImg(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
+    try {
+      const base64Data = await compressImageFile(file, 1600, 0.85);
       setGalleryForm((prev) => ({ ...prev, url: base64Data }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            filename: file.name,
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          setGalleryForm((prev) => ({ ...prev, url: data.url }));
-          toast.success("✅ Gallery image uploaded successfully!");
-        } else {
-          toast.success("Gallery image loaded into form preview!");
-        }
-      } catch (err) {
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          filename: file.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setGalleryForm((prev) => ({ ...prev, url: data.url }));
+        toast.success("✅ Gallery image uploaded & stored in database!");
+      } else {
         toast.success("Gallery image loaded into form preview!");
-      } finally {
-        setUploadingGalleryImg(false);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      toast.success("Gallery image loaded into form preview!");
+    } finally {
+      setUploadingGalleryImg(false);
+    }
   };
 
   const handleSaveGalleryModal = (e: React.FormEvent) => {
@@ -12216,7 +12191,7 @@ export default function AdminDashboardPage() {
                 { id: "basic", label: `1. Basic & Venues (${(eventForm.locations || []).length})` },
                 { id: "agenda", label: `2. Agenda (${(eventForm.agenda_list || []).length})` },
                 { id: "speakers", label: `3. Speakers (${(eventForm.speakers_list || []).length})` },
-                { id: "zura", label: `4. Zura (${(eventForm.zura_list || []).length})` },
+                { id: "zura", label: `4. Jury Members (${(eventForm.zura_list || []).length})` },
                 { id: "sponsors", label: `5. Sponsors (${(eventForm.sponsors_list || []).length})` },
                 { id: "gallery", label: `6. Gallery (${(eventForm.gallery_list || []).length})` },
                 { id: "venue", label: "7. Primary Map" },
@@ -13147,10 +13122,10 @@ export default function AdminDashboardPage() {
                     <div>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-bold text-amber-800">
                         <CheckCircle2 className="h-4 w-4 text-amber-600" />
-                        <span>✅ {(eventForm.zura_list || []).length} Zura Added</span>
+                        <span>✅ {(eventForm.zura_list || []).length} Jury Members Added</span>
                       </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Zura & Jury Board</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Zura" to open modal popup, upload photo, and save.</p>
+                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Our Jury Members</h4>
+                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Jury Member" to open modal popup, upload photo, and save.</p>
                     </div>
 
                     <button
@@ -13159,7 +13134,7 @@ export default function AdminDashboardPage() {
                       className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                     >
                       <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Zura</span>
+                      <span>+ Add Jury Member</span>
                     </button>
                   </div>
 
@@ -13268,7 +13243,7 @@ export default function AdminDashboardPage() {
 
                     {(eventForm.zura_list || []).length === 0 && (
                       <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No zura members added yet. Click "+ Add Zura" above.
+                        No jury members added yet. Click "+ Add Jury Member" above.
                       </div>
                     )}
                   </div>
@@ -13898,7 +13873,7 @@ export default function AdminDashboardPage() {
           <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h4 className="font-extrabold text-slate-900 text-base font-display">
-                {editingZuraIndex !== null ? "Edit Zura Member" : "Add Zura Member"}
+                {editingZuraIndex !== null ? "Edit Jury Member" : "Add Jury Member"}
               </h4>
               <button
                 type="button"
@@ -13913,7 +13888,7 @@ export default function AdminDashboardPage() {
               {/* 2-column inputs for main zura information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-slate-700 font-bold mb-1">Zura Name *</label>
+                  <label className="block text-slate-700 font-bold mb-1">Jury Member Name *</label>
                   <input
                     type="text"
                     required
@@ -13986,11 +13961,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Zura Custom URLs Section - 2 Columns */}
+              {/* Jury Custom URLs Section - 2 Columns */}
               <div className="space-y-2 pt-3 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block text-slate-800 font-extrabold text-xs">
-                    Zura Links & Social URLs (Optional)
+                    Jury Member Links & Social URLs (Optional)
                   </label>
                   <span className="text-[10px] text-slate-400">
                     Only provided URLs will appear on user side
@@ -14082,7 +14057,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
                 >
-                  Save Zura
+                  Save Jury Member
                 </button>
               </div>
             </form>

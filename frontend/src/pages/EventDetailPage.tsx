@@ -1010,15 +1010,27 @@ export default function EventDetailPage() {
                         <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden relative bg-slate-100 flex items-center justify-center">
                           {spk.photo ? (
                             <img
-                              src={spk.photo}
+                              src={spk.photo.startsWith("/uploads/") ? `/api/uploads/${spk.photo.replace(/^\/uploads\//, "")}` : spk.photo}
                               alt={spk.name}
+                              onError={(e: any) => {
+                                const target = e.currentTarget;
+                                if (target.src.includes("/api/uploads/")) {
+                                  target.src = spk.photo;
+                                } else {
+                                  target.style.display = "none";
+                                  const fallback = target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = "flex";
+                                }
+                              }}
                               className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500"
                             />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700 font-extrabold text-3xl">
-                              {spk.name ? spk.name.charAt(0).toUpperCase() : "S"}
-                            </div>
-                          )}
+                          ) : null}
+                          <div
+                            style={{ display: spk.photo ? "none" : "flex" }}
+                            className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-100 text-purple-700 font-extrabold text-3xl"
+                          >
+                            {spk.name ? spk.name.charAt(0).toUpperCase() : "S"}
+                          </div>
                         </div>
                       </div>
 
@@ -1107,16 +1119,16 @@ export default function EventDetailPage() {
                 <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-amber-500 to-rose-600" />
                 <div>
                   <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
-                    Zura & Jury Board
+                    Our Jury Members
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">Distinguished industry evaluators, jury panel & executive advisors</p>
                 </div>
               </div>
               <button
-                onClick={() => toast.info(`Displaying ${zuraList.length} zura member${zuraList.length > 1 ? "s" : ""}`)}
+                onClick={() => toast.info(`Displaying ${zuraList.length} jury member${zuraList.length > 1 ? "s" : ""}`)}
                 className="text-xs font-bold text-amber-600 hover:underline flex items-center gap-1 cursor-pointer"
               >
-                View All Zura <ArrowRight className="h-3.5 w-3.5" />
+                View All Jury Members <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
 
@@ -1162,15 +1174,27 @@ export default function EventDetailPage() {
                         <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full overflow-hidden relative bg-slate-100 flex items-center justify-center">
                           {zura.photo ? (
                             <img
-                              src={zura.photo}
+                              src={zura.photo.startsWith("/uploads/") ? `/api/uploads/${zura.photo.replace(/^\/uploads\//, "")}` : zura.photo}
                               alt={zura.name}
+                              onError={(e: any) => {
+                                const target = e.currentTarget;
+                                if (target.src.includes("/api/uploads/")) {
+                                  target.src = zura.photo;
+                                } else {
+                                  target.style.display = "none";
+                                  const fallback = target.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = "flex";
+                                }
+                              }}
                               className="h-full w-full object-cover group-hover:scale-108 transition-transform duration-500"
                             />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-amber-100 to-rose-100 text-amber-700 font-extrabold text-3xl">
-                              {zura.name ? zura.name.charAt(0).toUpperCase() : "Z"}
-                            </div>
-                          )}
+                          ) : null}
+                          <div
+                            style={{ display: zura.photo ? "none" : "flex" }}
+                            className="h-full w-full flex items-center justify-center bg-gradient-to-br from-amber-100 to-rose-100 text-amber-700 font-extrabold text-3xl"
+                          >
+                            {zura.name ? zura.name.charAt(0).toUpperCase() : "J"}
+                          </div>
                         </div>
                       </div>
 

@@ -184,6 +184,7 @@ export async function initDatabase() {
 
     // Create events table for Dynamic CMS management
     await ensureEventsTable();
+    await ensureMediaUploadsTable();
 
     // Create partners and partner_submissions tables
     await ensurePartnersTables();
@@ -399,6 +400,26 @@ export async function ensurePopupTables() {
     }
   } catch (e) {
     console.error("[MySQL] Popup tables setup error:", e);
+  }
+}
+
+export async function ensureMediaUploadsTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS uploaded_media (
+        id VARCHAR(100) PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        data_base64 LONGTEXT NOT NULL,
+        size_bytes INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    try { await pool.query("ALTER TABLE uploaded_media ADD INDEX idx_created_at (created_at);"); } catch (e) {}
+    try { await pool.query("ALTER TABLE uploaded_media ADD INDEX idx_filename (filename);"); } catch (e) {}
+  } catch (err) {
+    console.error("[MySQL] Error auto-creating uploaded_media table:", err);
   }
 }
 
