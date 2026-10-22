@@ -31,9 +31,10 @@ const razorpayClient = new Razorpay({
 // Hostinger SMTP Mailer Credentials & Nodemailer Setup
 const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
-const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
-const smtpPass = (process.env.SMTP_PASS || "ETalks@202602").trim();
+const smtpUser = (process.env.SMTP_USER || "registration@etmedia.in").trim();
+const smtpPass = (process.env.SMTP_PASS || "Sri@199004").trim();
 const smtpFrom = process.env.SMTP_FROM || `"Executive Talks Media Business Intelligence" <${smtpUser}>`;
+const replyToEmail = (process.env.REPLY_TO || "registration@executivetalksmedia.in").trim();
 const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in, srikanth@executivetalksmedia.in").trim();
 const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
@@ -48,6 +49,14 @@ const mailTransporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false, // Prevents SSL certificate validation issues on web hosts
   },
+});
+
+mailTransporter.verify((err, success) => {
+  if (err) {
+    console.error("[Nodemailer] ⚠️ Mailer verification error:", err.message);
+  } else {
+    console.log(`[Nodemailer] ✅ SMTP transporter ready (${smtpHost}:${smtpPort} as ${smtpUser})`);
+  }
 });
 
 // --- CENTRALIZED BACKEND VALIDATION HELPERS ---
@@ -473,7 +482,7 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   // 1. EMAIL TO DELEGATE (PERSONALIZED INBOX DELIVERY)
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
-    replyTo: smtpUser,
+    replyTo: replyToEmail || supportEmail || smtpUser,
     to: userEmail,
     subject: dynamicUserSubject,
     text: `
@@ -598,7 +607,7 @@ www.executivetalksmedia.in
     new Set([
       "registration@executivetalksmedia.in",
       "srikanth@executivetalksmedia.in",
-      adminEmail,
+      ...adminEmail.split(",").map((e) => e.trim()),
     ].filter(Boolean))
   );
 
@@ -797,7 +806,7 @@ async function sendFreeApplicationNotificationEmails(data: {
 
   const userMailOptions: any = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
-    replyTo: smtpUser,
+    replyTo: replyToEmail || supportEmail || smtpUser,
     to: userEmail,
     subject: dynamicFreePassSubject,
     text: `
@@ -909,7 +918,7 @@ www.executivetalksmedia.in
     new Set([
       "registration@executivetalksmedia.in",
       "srikanth@executivetalksmedia.in",
-      adminEmail,
+      ...adminEmail.split(",").map((e) => e.trim()),
     ].filter(Boolean))
   );
 
@@ -4097,7 +4106,7 @@ app.post("/api/admin/certificate/send", authenticateAdmin, async (req, res) => {
 
     const mailOptions = {
       from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
-      replyTo: smtpUser,
+      replyTo: replyToEmail || supportEmail || smtpUser,
       to: candidateEmail,
       subject: dynamicCertSubject,
       html: emailHtml,
@@ -4156,7 +4165,14 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
         let reg: any = null;
         if (pool) {
           const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [id]);
-          if (rows && rows.length > 0) reg = rows[0];
+          if (rows && rows.length > 0) {
+            reg = rows[0];
+          } else {
+            const [delRows]: any = await pool.query("SELECT * FROM delegate_registrations WHERE id = ? LIMIT 1", [id]);
+            if (delRows && delRows.length > 0) {
+              reg = delRows[0];
+            }
+          }
         }
 
         if (!reg) continue;
@@ -4197,7 +4213,7 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
 
         await mailTransporter.sendMail({
           from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
-          replyTo: smtpUser,
+          replyTo: replyToEmail || supportEmail || smtpUser,
           to: candidateEmail,
           subject: dynamicBulkCertSubject,
           html: emailHtml,
@@ -4206,6 +4222,10 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
         if (pool) {
           await pool.query(
             "UPDATE registrations SET certificate_sent_at = NOW(), certificate_id = ? WHERE id = ?",
+            [certId, reg.id]
+          );
+          await pool.query(
+            "UPDATE delegate_registrations SET certificate_sent_at = NOW(), certificate_id = ? WHERE id = ?",
             [certId, reg.id]
           );
         }
@@ -4225,6 +4245,54 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
   } catch (err: any) {
     console.error("[API] Bulk Certificate Error:", err);
     return res.status(500).json({ success: false, message: err.message || "Failed to process bulk certificates." });
+  }
+});
+
+// Test SMTP Mail Delivery Endpoint
+app.post("/api/admin/mail/test-delivery", authenticateAdmin, async (req, res) => {
+  const { testEmail } = req.body;
+  const recipient = (testEmail || smtpUser).trim();
+
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+      replyTo: replyToEmail || supportEmail || smtpUser,
+      to: recipient,
+      subject: `✅ SMTP Diagnostic Delivery Test — ${new Date().toLocaleTimeString("en-IN")}`,
+      text: `Hello,
+
+This is a confirmation test email dispatched from Executive Talks Media Business Intelligence system.
+SMTP Server: ${smtpHost}:${smtpPort}
+Sender: ${smtpUser}
+Recipient: ${recipient}
+Timestamp: ${new Date().toISOString()}
+
+All mail dispatch services (registration tickets, passes, invoice receipts, and certificates) are operating normally.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
+          <h2 style="color: #0891b2; margin-top: 0;">✅ SMTP Diagnostic Delivery Test</h2>
+          <p style="color: #334155; font-size: 14px;">This test confirms that your outbound Hostinger SMTP configuration is active, authorized, and delivering messages.</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;">
+            <tr><td style="padding: 6px 0; color: #64748b;">Host:</td><td style="font-weight: bold;">${smtpHost}:${smtpPort}</td></tr>
+            <tr><td style="padding: 6px 0; color: #64748b;">Sender:</td><td style="font-weight: bold;">${smtpUser}</td></tr>
+            <tr><td style="padding: 6px 0; color: #64748b;">Recipient:</td><td style="font-weight: bold;">${recipient}</td></tr>
+          </table>
+          <p style="color: #16a34a; font-weight: bold; font-size: 13px; margin-bottom: 0;">All automated notifications, passes, and certificate dispatches are active.</p>
+        </div>
+      `,
+    });
+
+    return res.json({
+      success: true,
+      message: `Test email successfully dispatched to ${recipient}!`,
+      messageId: info.messageId,
+    });
+  } catch (err: any) {
+    console.error("[API] Test Mail Send Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: `Failed to deliver test email: ${err.message}`,
+    });
   }
 });
 
