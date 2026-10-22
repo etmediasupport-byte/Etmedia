@@ -31,8 +31,8 @@ const razorpayClient = new Razorpay({
 // Hostinger SMTP Mailer Credentials & Nodemailer Setup
 const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
-const smtpUser = (process.env.SMTP_USER || "registration@etmedia.in").trim();
-const smtpPass = (process.env.SMTP_PASS || "Sri@199004").trim();
+const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
+const smtpPass = (process.env.SMTP_PASS || "Revansh@201709").trim();
 const smtpFrom = process.env.SMTP_FROM || `"Executive Talks Media Business Intelligence" <${smtpUser}>`;
 const replyToEmail = (process.env.REPLY_TO || "registration@executivetalksmedia.in").trim();
 const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in, srikanth@executivetalksmedia.in").trim();
