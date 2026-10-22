@@ -262,36 +262,47 @@ function EventNetwork() {
 // SECTION 3: ABOUT EXECUTIVE TALKS MEDIA SNAPSHOT
 function AboutSnapshot() {
   return (
-    <section className="py-6 sm:py-8 relative overflow-hidden bg-background">
+    <section className="py-8 sm:py-12 relative overflow-hidden bg-background">
       <FloatingShapes />
-      <div className="container-x relative z-10 grid items-center gap-8 lg:grid-cols-2">
-        <Reveal>
-          <ImageZoomCard src={images.aboutOffice} alt="Executive Talks Media Executive Office" className="aspect-[4/3] rounded-3xl shadow-xl">
-            <div className="gradient-soft absolute inset-0 pointer-events-none" />
-          </ImageZoomCard>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <span className="text-brand-blue text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase font-btn">
-            About Executive Talks Media
-          </span>
-          <h2 className="mt-2 text-2xl sm:text-3xl lg:text-[1.85rem] font-bold font-display leading-tight">
-            Building India's Premier Corporate Platforms
-          </h2>
-          <div className="text-muted-foreground mt-3 space-y-2.5 leading-relaxed text-xs sm:text-sm">
-            <p>
-              Executive Talks Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
-            </p>
-            <p>
-              From CFO leadership summits to national HR excellence awards and GCC expansion conclaves, our events connect more than 50,000 corporate delegates each year.
-            </p>
+      <div className="container-x relative z-10 grid items-stretch gap-8 lg:gap-12 lg:grid-cols-2">
+        <Reveal className="h-full">
+          <div className="relative h-full w-full min-h-[320px] sm:min-h-[360px] rounded-3xl overflow-hidden shadow-xl border border-border/50">
+            <ImageZoomCard
+              src={images.aboutOffice}
+              alt="Executive Talks Media Corporate Leadership Conclave"
+              className="h-full w-full rounded-3xl"
+              imgClassName="h-full w-full object-cover object-top"
+            >
+              <div className="gradient-soft absolute inset-0 pointer-events-none" />
+            </ImageZoomCard>
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <MagneticButton strength={15} className="gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md">
-              <Link to="/about">Learn Our Story</Link>
-            </MagneticButton>
-            <MagneticButton strength={15} className="hover:bg-accent rounded-full border border-border px-6 py-2.5 text-xs sm:text-sm font-semibold transition-colors">
-              <Link to="/events/partner">Partner With Us</Link>
-            </MagneticButton>
+        </Reveal>
+        <Reveal delay={0.1} className="h-full flex flex-col justify-center">
+          <div className="space-y-4">
+            <div>
+              <span className="text-brand-blue text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase font-btn">
+                About Executive Talks Media
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl lg:text-[1.85rem] font-bold font-display leading-tight">
+                Building India's Premier Corporate Platforms
+              </h2>
+            </div>
+            <div className="text-muted-foreground space-y-3 leading-relaxed text-xs sm:text-sm text-justify">
+              <p>
+                Executive Talks Media Business Intelligence is a corporate media and conference enterprise headquartered in Hyderabad. We curate high-trust platforms where India's foremost C-Suite executives exchange actionable business intelligence.
+              </p>
+              <p>
+                From CFO leadership summits to national HR excellence awards and GCC expansion conclaves, our events connect more than 50,000 corporate delegates each year across India.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap gap-3">
+              <MagneticButton strength={15} className="gradient-brand rounded-full px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md">
+                <Link to="/about">Learn Our Story</Link>
+              </MagneticButton>
+              <MagneticButton strength={15} className="hover:bg-accent rounded-full border border-border px-6 py-2.5 text-xs sm:text-sm font-semibold transition-colors">
+                <Link to="/events/partner">Partner With Us</Link>
+              </MagneticButton>
+            </div>
           </div>
         </Reveal>
       </div>
