@@ -43,7 +43,7 @@ import {
   type PricingPlanTier,
 } from "@/lib/site-data";
 import { SEOHead } from "@/components/site/SEOHead";
-import { fetchWithCache } from "@/lib/api-cache";
+import { fetchWithCache, getCachedData } from "@/lib/api-cache";
 import {
   validateEmail,
   validatePhone,
@@ -121,11 +121,30 @@ export default function EventRegistrationWizardPage() {
            cleanTargetSlug.includes((e.slug || "").toLowerCase())
   ) || defaultEvents[0]!;
 
-  const initialPlans = getDefaultPricingPlans();
+  // Check if admin-defined payment settings & pricing plans are already cached
+  const cachedPayment =
+    getCachedData<any>(`/api/event-payments/event/${targetSlug}`)?.payment ||
+    getCachedData<any>(`/api/event-payments/event/${cleanTargetSlug}`)?.payment ||
+    getCachedData<any>(`/api/events/${targetSlug}`)?.event ||
+    getCachedData<any>(`/api/events/${cleanTargetSlug}`)?.event;
+
+  let cachedParsedPlans: PricingPlanTier[] = [];
+  if (cachedPayment?.pricing_plans) {
+    if (typeof cachedPayment.pricing_plans === "string") {
+      try {
+        cachedParsedPlans = JSON.parse(cachedPayment.pricing_plans);
+      } catch (e) {}
+    } else if (Array.isArray(cachedPayment.pricing_plans)) {
+      cachedParsedPlans = cachedPayment.pricing_plans;
+    }
+  }
+
+  // Use admin's dynamic plans by default (never force hardcoded 3-tier defaults)
+  const initialPlans: PricingPlanTier[] = cachedParsedPlans.length > 0 ? cachedParsedPlans : [];
   const reqPass = searchParams.get("pass") || searchParams.get("plan");
   const initialSelectedPlan = reqPass
-    ? initialPlans.find((p) => p.name.toLowerCase().includes(reqPass.toLowerCase())) || initialPlans[0]
-    : initialPlans.find((p) => p.is_featured) || initialPlans[0];
+    ? initialPlans.find((p) => p.name.toLowerCase().includes(reqPass.toLowerCase())) || initialPlans[0] || null
+    : initialPlans.find((p) => p.is_featured) || initialPlans[0] || null;
 
   // Selected event state (instant 0ms initialization)
   const [eventData, setEventData] = useState<EventData>({
@@ -266,11 +285,43 @@ export default function EventRegistrationWizardPage() {
     };
   }, []);
 
-  // SWR: Fetch fresh Event Data in background and update seamlessly
+  // SWR: Fetch fresh Event Data and Payment Config in background and update seamlessly
   useEffect(() => {
     let isMounted = true;
     const activeSlug = slug || searchParams.get("event") || "hr-recall-2k26";
+    const cleanActiveSlug = activeSlug.replace(/-\d+$/, "");
 
+    const applyPricingPlans = (rawPlans: any) => {
+      let parsed: PricingPlanTier[] = [];
+      if (typeof rawPlans === "string") {
+        try {
+          parsed = JSON.parse(rawPlans);
+        } catch (e) {}
+      } else if (Array.isArray(rawPlans)) {
+        parsed = rawPlans;
+      }
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+        setPricingPlans(parsed);
+        const reqPass1 = searchParams.get("pass") || searchParams.get("plan");
+        setSelectedPlan((prevSelected) => {
+          if (prevSelected) {
+            const existingMatch = parsed.find(
+              (p) => p.name.toLowerCase() === prevSelected.name.toLowerCase()
+            );
+            if (existingMatch) return existingMatch;
+          }
+          if (reqPass1) {
+            const matchedParam = parsed.find((p) =>
+              p.name.toLowerCase().includes(reqPass1.toLowerCase())
+            );
+            if (matchedParam) return matchedParam;
+          }
+          return parsed.find((p) => p.is_featured) || parsed[0] || null;
+        });
+      }
+    };
+
+    // 1. Fetch Event details & attached payment config
     fetchWithCache(`/api/events/${activeSlug}`)
       .then((json) => {
         if (!isMounted) return;
@@ -281,32 +332,54 @@ export default function EventRegistrationWizardPage() {
             ev.title,
             ev.category
           );
-          setEventData({
+          setEventData((prev) => ({
+            ...prev,
             ...ev,
             image: resolvedImg,
-          });
+          }));
 
-          // Parse plans
-          let parsed: PricingPlanTier[] = [];
-          if (typeof ev.pricing_plans === "string") {
-            try {
-              parsed = JSON.parse(ev.pricing_plans);
-            } catch (e) {}
-          } else if (Array.isArray(ev.pricing_plans)) {
-            parsed = ev.pricing_plans;
-          }
-          if (parsed && parsed.length > 0) {
-            setPricingPlans(parsed);
-            const reqPass1 = searchParams.get("pass") || searchParams.get("plan");
-            const matchedPlan1 = reqPass1
-              ? parsed.find((p) => p.name.toLowerCase().includes(reqPass1.toLowerCase()))
-              : null;
-            setSelectedPlan(matchedPlan1 || parsed.find((p) => p.is_featured) || parsed[0] || null);
+          if (ev.pricing_plans) {
+            applyPricingPlans(ev.pricing_plans);
           }
         }
       })
       .catch((err) => {
         console.warn("[Wizard] Operating in offline/fast mode with default data:", err);
+      });
+
+    // 2. Fetch specific Event Payment Config (Dynamic Pricing Packages from Admin)
+    fetchWithCache(`/api/event-payments/event/${activeSlug}`)
+      .then((json) => {
+        if (!isMounted) return;
+        if (json.success && json.payment) {
+          const payment = json.payment;
+          setEventData((prev) => ({
+            ...prev,
+            early_bird_enabled: payment.early_bird_enabled,
+            early_bird_price: payment.early_bird_price,
+            early_bird_start_date: payment.early_bird_start_date,
+            early_bird_end_date: payment.early_bird_end_date,
+            gst_percentage: payment.gst_percentage,
+            gst_included: payment.gst_included,
+            registration_fee: payment.registration_fee,
+          }));
+
+          if (payment.pricing_plans) {
+            applyPricingPlans(payment.pricing_plans);
+          }
+        } else if (cleanActiveSlug !== activeSlug) {
+          fetchWithCache(`/api/event-payments/event/${cleanActiveSlug}`)
+            .then((cleanJson) => {
+              if (!isMounted) return;
+              if (cleanJson.success && cleanJson.payment && cleanJson.payment.pricing_plans) {
+                applyPricingPlans(cleanJson.payment.pricing_plans);
+              }
+            })
+            .catch(() => {});
+        }
+      })
+      .catch((err) => {
+        console.warn("[Wizard] Could not fetch event payment settings:", err);
       });
 
     return () => {
@@ -1628,173 +1701,195 @@ export default function EventRegistrationWizardPage() {
                   )}
 
                   {/* Luxury Pricing Cards Grid */}
-                  <div className="grid gap-6 md:grid-cols-3 pt-2 items-stretch">
-                    {pricingPlans.map((plan, idx) => {
-                      const isSelected = selectedPlan?.name === plan.name;
-                      const isPopular = plan.is_featured || idx === 1;
-                      const originalPrice = Number(plan.price) || 8000;
-                      const ebPrice = typeof plan.early_bird_price === "number" && plan.early_bird_price > 0 ? plan.early_bird_price : originalPrice;
-                      const activePrice = isEarlyBirdActive ? ebPrice : originalPrice;
-                      const savings = Math.max(0, originalPrice - activePrice);
+                  {pricingPlans.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                      <div className="w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm font-semibold">Loading delegate pass tiers...</span>
+                    </div>
+                  ) : (
+                    <div className={`grid gap-6 pt-2 items-stretch ${
+                      pricingPlans.length === 1
+                        ? "grid-cols-1 max-w-md mx-auto"
+                        : pricingPlans.length === 2
+                        ? "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto"
+                        : "grid-cols-1 md:grid-cols-3"
+                    }`}>
+                      {pricingPlans.map((plan, idx) => {
+                        const isSelected = selectedPlan?.name === plan.name;
+                        const isPopular = Boolean(plan.is_featured || plan.badge?.toLowerCase().includes("popular"));
+                        const originalPrice = Number(plan.price) || 0;
+                        const ebPrice = typeof plan.early_bird_price === "number" && plan.early_bird_price > 0 ? plan.early_bird_price : originalPrice;
+                        const activePrice = isEarlyBirdActive && ebPrice < originalPrice ? ebPrice : originalPrice;
+                        const savings = Math.max(0, originalPrice - activePrice);
 
-                      const isGold = idx === 0 || plan.name.toLowerCase().includes("gold") || plan.name.toLowerCase().includes("standard");
-                      const isVip = isPopular || plan.name.toLowerCase().includes("premium") || plan.name.toLowerCase().includes("vip");
-                      const isPlatinum = idx === 2 || plan.name.toLowerCase().includes("platinum") || plan.name.toLowerCase().includes("diamond") || plan.name.toLowerCase().includes("cxo");
+                        const nameLower = (plan.name || "").toLowerCase();
+                        const isPlatinum = nameLower.includes("platinum") || nameLower.includes("diamond") || nameLower.includes("cxo") || (pricingPlans.length === 2 && idx === 1);
+                        const isGold = nameLower.includes("gold") || nameLower.includes("standard") || (!isPlatinum && idx === 0);
+                        const isVip = !isPlatinum && !isGold;
 
-                      return (
-                        <div
-                          key={plan.name || idx}
-                          onClick={() => setSelectedPlan(plan)}
-                          className={`relative rounded-3xl p-6 sm:p-7 transition-all duration-300 flex flex-col justify-between cursor-pointer border backdrop-blur-md group ${
-                            isSelected
-                              ? isVip
-                                ? "bg-gradient-to-b from-cyan-50/80 via-white to-white border-cyan-500 ring-4 ring-cyan-500/30 shadow-2xl shadow-cyan-500/20 scale-[1.03] z-20"
-                                : isPlatinum
-                                ? "bg-gradient-to-b from-purple-50/80 via-white to-white border-purple-500 ring-4 ring-purple-500/30 shadow-2xl shadow-purple-500/20 scale-[1.03] z-20"
-                                : "bg-gradient-to-b from-amber-50/80 via-white to-white border-amber-500 ring-4 ring-amber-500/30 shadow-2xl shadow-amber-500/20 scale-[1.03] z-20"
-                              : isVip
-                              ? "bg-white border-cyan-200/90 hover:border-cyan-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5 z-10"
-                              : isPlatinum
-                              ? "bg-white border-purple-200/90 hover:border-purple-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
-                              : "bg-white border-amber-200/90 hover:border-amber-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
-                          }`}
-                        >
-                          {/* Top Floating Badge for VIP / Featured */}
-                          {isVip && (
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-wider shadow-lg shadow-cyan-500/30 flex items-center gap-1.5 whitespace-nowrap z-30">
-                              <Star className="w-3 h-3 fill-current" />
-                              <span>Most Popular • Recommended</span>
-                            </div>
-                          )}
-
-                          <div>
-                            {/* Header Badge & Selection Indicator */}
-                            <div className="flex items-center justify-between gap-2 mb-4">
-                              <div className="flex items-center gap-2">
-                                <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shadow-sm ${
-                                  isPlatinum
-                                    ? "bg-purple-100 text-purple-700"
-                                    : isVip
-                                    ? "bg-cyan-100 text-cyan-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}>
-                                  {isPlatinum ? <Zap className="w-4 h-4" /> : isVip ? <Crown className="w-4 h-4" /> : <Award className="w-4 h-4" />}
-                                </div>
-                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  isPlatinum
-                                    ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                    : isVip
-                                    ? "bg-cyan-50 text-cyan-800 border border-cyan-200"
-                                    : "bg-amber-50 text-amber-800 border border-amber-200"
-                                }`}>
-                                  {isPlatinum ? "💎 Diamond Elite" : isVip ? "👑 Executive VIP" : "⭐ Gold Access"}
-                                </span>
-                              </div>
-
-                              <div className={`h-6 w-6 rounded-full flex items-center justify-center transition-all ${
-                                isSelected
-                                  ? isPlatinum
-                                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
-                                    : isVip
-                                    ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                                    : "bg-amber-500 text-white shadow-md shadow-amber-500/30"
-                                  : "border border-slate-300 bg-slate-50 text-transparent"
-                              }`}>
-                                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                              </div>
-                            </div>
-
-                            {/* Pass Name */}
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-                              {isPlatinum
-                                ? "C-Suite masterclasses & exclusive gala access"
+                        return (
+                          <div
+                            key={plan.name || plan.id || idx}
+                            onClick={() => setSelectedPlan(plan)}
+                            className={`relative rounded-3xl p-6 sm:p-7 transition-all duration-300 flex flex-col justify-between cursor-pointer border backdrop-blur-md group ${
+                              isSelected
+                                ? isVip
+                                  ? "bg-gradient-to-b from-cyan-50/80 via-white to-white border-cyan-500 ring-4 ring-cyan-500/30 shadow-2xl shadow-cyan-500/20 scale-[1.03] z-20"
+                                  : isPlatinum
+                                  ? "bg-gradient-to-b from-purple-50/80 via-white to-white border-purple-500 ring-4 ring-purple-500/30 shadow-2xl shadow-purple-500/20 scale-[1.03] z-20"
+                                  : "bg-gradient-to-b from-amber-50/80 via-white to-white border-amber-500 ring-4 ring-amber-500/30 shadow-2xl shadow-amber-500/20 scale-[1.03] z-20"
                                 : isVip
-                                ? "Front-row seating & VIP lounge networking"
-                                : "Full keynote tracks & standard conclave pass"}
-                            </p>
-
-                            {/* Price Presentation */}
-                            <div className="mt-5 p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5">
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-3xl sm:text-4xl font-black font-display text-slate-900 tracking-tight">
-                                  ₹{activePrice.toLocaleString("en-IN")}
-                                </span>
-                                <span className="text-xs font-bold text-slate-400">/ delegate</span>
+                                ? "bg-white border-cyan-200/90 hover:border-cyan-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5 z-10"
+                                : isPlatinum
+                                ? "bg-white border-purple-200/90 hover:border-purple-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
+                                : "bg-white border-amber-200/90 hover:border-amber-400 shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
+                            }`}
+                          >
+                            {/* Top Floating Badge for Most Popular / Featured / Admin Badge */}
+                            {(isPopular || plan.badge) && (
+                              <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5 whitespace-nowrap z-30 ${
+                                isPlatinum
+                                  ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 shadow-purple-500/30"
+                                  : isVip
+                                  ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 shadow-cyan-500/30"
+                                  : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 shadow-amber-500/30"
+                              }`}>
+                                <Star className="w-3 h-3 fill-current" />
+                                <span>{plan.badge || (isPopular ? "Most Popular • Recommended" : "Featured Pass")}</span>
                               </div>
+                            )}
 
-                              {isEarlyBirdActive && savings > 0 && (
-                                <div className="flex items-center gap-2 pt-1">
-                                  <span className="text-xs text-slate-400 font-bold line-through">
-                                    ₹{originalPrice.toLocaleString("en-IN")}
-                                  </span>
-                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                    Save ₹{savings.toLocaleString("en-IN")}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="text-[10px] text-slate-400 font-semibold pt-1">
-                                + 18% GST • Official GST Tax Invoice Included
-                              </div>
-                            </div>
-
-                            {/* Features Checklist */}
-                            <div className="space-y-2.5 pt-5">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                                Pass Inclusions:
-                              </span>
-                              {(plan.features || [
-                                "Access to all Keynotes & Panel Discussions",
-                                "Executive Networking Lunch & Coffee Breaks",
-                                "Delegate Registration Kit & Souvenir",
-                                "Official Certificate of Participation",
-                              ]).map((feat, fIdx) => (
-                                <div key={fIdx} className="flex items-start gap-2.5 text-xs font-semibold text-slate-700">
-                                  <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${
+                            <div>
+                              {/* Header Badge & Selection Indicator */}
+                              <div className="flex items-center justify-between gap-2 mb-4">
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shadow-sm ${
                                     isPlatinum
-                                      ? "text-purple-600"
+                                      ? "bg-purple-100 text-purple-700"
                                       : isVip
-                                      ? "text-cyan-600"
-                                      : "text-amber-500"
-                                  }`} />
-                                  <span className="leading-snug">{feat}</span>
+                                      ? "bg-cyan-100 text-cyan-700"
+                                      : "bg-amber-100 text-amber-700"
+                                  }`}>
+                                    {isPlatinum ? <Zap className="w-4 h-4" /> : isVip ? <Crown className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+                                  </div>
+                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    isPlatinum
+                                      ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                      : isVip
+                                      ? "bg-cyan-50 text-cyan-800 border border-cyan-200"
+                                      : "bg-amber-50 text-amber-800 border border-amber-200"
+                                  }`}>
+                                    {plan.badge || (isPlatinum ? "💎 Diamond Elite" : isVip ? "👑 Executive VIP" : "⭐ Gold Access")}
+                                  </span>
                                 </div>
-                              ))}
+
+                                <div className={`h-6 w-6 rounded-full flex items-center justify-center transition-all ${
+                                  isSelected
+                                    ? isPlatinum
+                                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                                      : isVip
+                                      ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
+                                      : "bg-amber-500 text-white shadow-md shadow-amber-500/30"
+                                    : "border border-slate-300 bg-slate-50 text-transparent"
+                                }`}>
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </div>
+                              </div>
+
+                              {/* Pass Name */}
+                              <h3 className="text-xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                                {plan.description || (
+                                  isPlatinum
+                                    ? "C-Suite masterclasses & exclusive gala access"
+                                    : isGold
+                                    ? "Full keynote tracks & standard conclave pass"
+                                    : "Front-row seating & VIP lounge networking"
+                                )}
+                              </p>
+
+                              {/* Price Presentation */}
+                              <div className="mt-5 p-4 rounded-2xl bg-slate-50/80 border border-slate-100 space-y-1.5">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-3xl sm:text-4xl font-black font-display text-slate-900 tracking-tight">
+                                    ₹{activePrice.toLocaleString("en-IN")}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-400">/ delegate</span>
+                                </div>
+
+                                {isEarlyBirdActive && savings > 0 && (
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <span className="text-xs text-slate-400 font-bold line-through">
+                                      ₹{originalPrice.toLocaleString("en-IN")}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                      Save ₹{savings.toLocaleString("en-IN")}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-slate-400 font-semibold pt-1">
+                                  + 18% GST • Official GST Tax Invoice Included
+                                </div>
+                              </div>
+
+                              {/* Features Checklist */}
+                              <div className="space-y-2.5 pt-5">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                                  Pass Inclusions:
+                                </span>
+                                {(Array.isArray(plan.features) && plan.features.length > 0 ? plan.features : [
+                                  "Access to all Keynotes & Panel Discussions",
+                                  "Executive Networking Lunch & Coffee Breaks",
+                                  "Delegate Registration Kit & Souvenir",
+                                  "Official Certificate of Participation",
+                                ]).map((feat, fIdx) => (
+                                  <div key={fIdx} className="flex items-start gap-2.5 text-xs font-semibold text-slate-700">
+                                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                      isPlatinum
+                                        ? "text-purple-600"
+                                        : isVip
+                                        ? "text-cyan-600"
+                                        : "text-amber-500"
+                                    }`} />
+                                    <span className="leading-snug">{feat}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* CTA Button */}
+                            <div className="pt-6 mt-4 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPlan(plan)}
+                                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                                  isSelected
+                                    ? isPlatinum
+                                      ? "bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-lg shadow-purple-600/30"
+                                      : isVip
+                                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30"
+                                      : "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30"
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white"
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <Check className="w-4 h-4 stroke-[3]" />
+                                    <span>Selected Pass Tier</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Select This Pass</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                  </>
+                                )}
+                              </button>
                             </div>
                           </div>
-
-                          {/* CTA Button */}
-                          <div className="pt-6 mt-4 border-t border-slate-100">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedPlan(plan)}
-                              className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                                isSelected
-                                  ? isPlatinum
-                                    ? "bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-lg shadow-purple-600/30"
-                                    : isVip
-                                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/30"
-                                    : "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30"
-                                  : "bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white"
-                              }`}
-                            >
-                              {isSelected ? (
-                                <>
-                                  <Check className="w-4 h-4 stroke-[3]" />
-                                  <span>Selected Pass Tier</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span>Select This Pass</span>
-                                  <ArrowRight className="w-4 h-4" />
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Step Navigation Buttons */}
                   <div className="flex items-center justify-between pt-6 border-t border-slate-100">

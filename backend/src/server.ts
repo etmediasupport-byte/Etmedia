@@ -16,6 +16,7 @@ import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
 import { initDatabase, pool, ensureEventsTable, ensureMediaUploadsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES } from "./db.js";
+import { Resvg } from "@resvg/resvg-js";
 
 dotenv.config();
 
@@ -2788,6 +2789,33 @@ app.get("/api/events/:slug", async (req, res) => {
           else foundEvt.image = "/assets/event-hr.jpg";
         }
         foundEvt.terms_data = await getEventTerms(foundEvt.id);
+
+        // Attach dynamic pricing plans and payment settings configured by Admin
+        try {
+          const cleanSlugStr = slug.replace(/-\d+$/, "");
+          const [paymentRows]: any = await pool.query(
+            "SELECT * FROM event_payment_settings WHERE event_id = ? OR event_slug = ? OR event_id = ? OR event_slug = ? OR event_slug LIKE ? LIMIT 1",
+            [foundEvt.id, foundEvt.slug, cleanSlugStr, cleanSlugStr, `${cleanSlugStr}%`]
+          );
+          if (paymentRows && paymentRows.length > 0) {
+            const pay = paymentRows[0];
+            foundEvt.pricing_plans = pay.pricing_plans;
+            foundEvt.early_bird_enabled = pay.early_bird_enabled;
+            foundEvt.early_bird_price = pay.early_bird_price;
+            foundEvt.early_bird_start_date = pay.early_bird_start_date;
+            foundEvt.early_bird_end_date = pay.early_bird_end_date;
+            foundEvt.gst_percentage = pay.gst_percentage;
+            foundEvt.gst_included = pay.gst_included;
+            foundEvt.registration_fee = pay.registration_fee;
+            foundEvt.payment_status = pay.payment_status;
+            foundEvt.coupons = pay.coupons;
+            foundEvt.coupons_enabled = pay.coupons_enabled;
+            foundEvt.pricing_available = String(pay.payment_status || "Enabled").toLowerCase() === "enabled" || String(pay.payment_status || "Enabled").toLowerCase() === "published";
+          }
+        } catch (payErr) {
+          console.warn("[/api/events/:slug] Failed to attach payment settings:", payErr);
+        }
+
         const resData = { success: true, event: foundEvt };
         setFastCache(cacheKey, resData, 60);
         return res.json(resData);
@@ -3908,7 +3936,98 @@ app.get("/api/admin/checkin/search", authenticateAdmin, async (req, res) => {
 // E-CERTIFICATE DISPATCH & VERIFICATION SERVICES
 // ============================================================================
 
-// Helper to generate rich Letterhead E-Certificate HTML Email
+// Cache Certificate Background Base64
+let cachedCertBgDataUri: string = "";
+function getCertificateBgDataUri(): string {
+  if (cachedCertBgDataUri) return cachedCertBgDataUri;
+  const candidatePaths = [
+    path.join(__dirname, "../public/certificate-frame-bg.png"),
+    path.resolve(process.cwd(), "public", "certificate-frame-bg.png"),
+    path.resolve(process.cwd(), "backend", "public", "certificate-frame-bg.png"),
+    path.resolve(process.cwd(), "../frontend/public", "certificate-frame-bg.png"),
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const b64 = fs.readFileSync(p).toString("base64");
+        cachedCertBgDataUri = `data:image/png;base64,${b64}`;
+        return cachedCertBgDataUri;
+      } catch (e) {
+        console.error("[Certificate] Error reading frame bg at", p, e);
+      }
+    }
+  }
+  return "";
+}
+
+// Helper to generate HD PNG Certificate Buffer matching CertificatePage exactly
+function generateCertificatePngBuffer(candidate: {
+  name: string;
+  organization?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventVenue?: string;
+  city?: string;
+  certId: string;
+}): Buffer | null {
+  try {
+    const bgDataUri = getCertificateBgDataUri();
+    const displayTitle = candidate.eventTitle && candidate.eventTitle.trim() ? candidate.eventTitle.trim() : "Executive Leadership Summit 2026";
+    const displayCandidate = candidate.name && candidate.name.trim() ? candidate.name.trim().toUpperCase() : "EXECUTIVE DELEGATE";
+    const displayOrg = candidate.organization && candidate.organization.trim() ? candidate.organization.trim() : "";
+    
+    const venuePart = candidate.eventVenue || (candidate.city ? `${candidate.city}, India` : "Hyderabad, India");
+    const datePart = candidate.eventDate || "22 October 2026";
+    const formattedMeta = `${datePart} | ${venuePart}`;
+
+    const titleFontSize = displayTitle.length > 55 ? 15.5 : displayTitle.length > 38 ? 17.5 : 20;
+    const nameFontSize = displayCandidate.length > 32 ? 22 : displayCandidate.length > 20 ? 25 : 28;
+    const orgFontSize = displayOrg.length > 45 ? 13 : displayOrg.length > 28 ? 15 : 17;
+
+    const svg = `
+<svg viewBox="0 0 1024 723" width="1024" height="723" xmlns="http://www.w3.org/2000/svg">
+  ${bgDataUri ? `<image href="${bgDataUri}" x="0" y="0" width="1024" height="723" preserveAspectRatio="none" />` : ''}
+  
+  <text x="284" y="136" font-family="'Cinzel', Georgia, serif" font-weight="900" font-size="40" fill="#111827" letter-spacing="4">CERTIFICATE</text>
+  <text x="285" y="171" font-family="'Montserrat', Arial, sans-serif" font-weight="700" font-size="18.5" fill="#1f2937" letter-spacing="3">OF APPRECIATION</text>
+  
+  <text x="285" y="226" font-family="'Montserrat', Arial, sans-serif" font-weight="800" font-size="${titleFontSize}" fill="#0f172a">${displayTitle}</text>
+  <text x="285" y="252" font-family="'Montserrat', Arial, sans-serif" font-weight="600" font-size="13.5" fill="#475569">${formattedMeta}</text>
+  
+  <text x="285" y="344" font-family="'Montserrat', Arial, sans-serif" font-weight="800" font-size="17.5" fill="#0f172a">This certificate is Presented to</text>
+  
+  <text x="285" y="404" font-family="'Cinzel', Georgia, serif" font-weight="800" font-size="${nameFontSize}" fill="#0f172a" letter-spacing="1">${displayCandidate}</text>
+  <line x1="285" y1="418" x2="775" y2="418" stroke="#c89e34" stroke-width="2.5" stroke-linecap="round" />
+  
+  ${displayOrg ? `<text x="285" y="446" font-family="'Montserrat', Arial, sans-serif" font-weight="700" font-size="${orgFontSize}" fill="#334155">${displayOrg}</text>` : ''}
+  
+  <text x="285" y="495" font-family="'Montserrat', Arial, sans-serif" font-weight="500" font-size="14" fill="#1e293b">In recognition of your valuable participation as an esteemed</text>
+  <text x="285" y="521" font-family="'Montserrat', Arial, sans-serif" font-weight="500" font-size="14" fill="#1e293b">Delegate at the ${displayTitle}.</text>
+  
+  <g transform="translate(285, 580)">
+    <rect x="0" y="0" width="230" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+    <text x="12" y="17" font-family="monospace, Arial, sans-serif" font-size="11" font-weight="800" fill="#475569">
+      CERT NO: <tspan fill="#0f172a" font-weight="900">${candidate.certId}</tspan>
+    </text>
+  </g>
+  
+  <text x="285" y="635" font-family="'Montserrat', Arial, sans-serif" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.5">
+    OFFICIAL ACCREDITED CREDENTIAL • VERIFIABLE AT EXECUTIVETALKSMEDIA.IN
+  </text>
+</svg>
+`;
+
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: "width", value: 1024 },
+    });
+    return resvg.render().asPng();
+  } catch (err) {
+    console.error("[Certificate] Error generating HD PNG buffer:", err);
+    return null;
+  }
+}
+
+// Helper to generate rich E-Certificate HTML Email displaying the exact certificate artwork
 function buildECertificateEmailHtml(candidate: {
   name: string;
   designation?: string;
@@ -3919,118 +4038,78 @@ function buildECertificateEmailHtml(candidate: {
   certId: string;
   certUrl: string;
 }) {
-  const { name, designation, organization, eventTitle, eventDate, eventCity, certId, certUrl } = candidate;
+  const { name, organization, eventTitle, eventDate, eventCity, certId, certUrl } = candidate;
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Official Certificate of Attendance</title>
+  <title>Official Certificate of Appreciation — Executive Talks Media</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <div style="background-color: #f1f5f9; padding: 30px 12px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <div style="max-width: 660px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.12); border: 1px solid #e2e8f0;">
+<body style="margin: 0; padding: 0; background-color: #0b1329; font-family: 'Segoe UI', Arial, sans-serif;">
+  <div style="background-color: #0b1329; padding: 32px 14px; color: #ffffff;">
+    <div style="max-width: 760px; margin: 0 auto; background-color: #0f172a; border-radius: 20px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 25px 60px rgba(0,0,0,0.55);">
       
-      <!-- LETTERHEAD TOP BANNER -->
-      <div style="background: linear-gradient(135deg, #0b192c 0%, #1e3a8a 55%, #0891b2 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
-        <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #fbbf24; font-weight: 800; margin-bottom: 6px;">
+      <!-- TOP STATUS BAR -->
+      <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #4338ca 100%); padding: 22px 20px; text-align: center; color: #ffffff;">
+        <span style="display: inline-block; background-color: rgba(255,255,255,0.2); color: #ffffff; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.3);">
+          ⭐ OFFICIAL AUTHENTICATED CREDENTIAL
+        </span>
+        <h1 style="margin: 10px 0 2px 0; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">
           EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
-        </div>
-        <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">
-          CERTIFICATE OF PARTICIPATION & EXCELLENCE
         </h1>
-        <p style="margin: 6px 0 0 0; font-size: 12px; color: #cbd5e1; letter-spacing: 1px; text-transform: uppercase;">
-          Accredited Executive Leadership & Industry Contribution
+        <p style="margin: 0; font-size: 12px; color: #e0f2fe; letter-spacing: 0.5px;">
+          Certificate of Participation & Appreciation • ${eventTitle}
         </p>
       </div>
 
-      <!-- LETTERHEAD BODY -->
-      <div style="padding: 32px 24px; background: #ffffff;">
-        <!-- CERTIFICATE FRAME WITH ROYAL GOLD ACCENTS -->
-        <div style="border: 2px solid #d97706; padding: 28px 18px; border-radius: 14px; background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%); text-align: center;">
-          
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #64748b; margin-bottom: 12px;">
-            THIS IS TO PROUDLY CERTIFY THAT
-          </div>
+      <!-- EXACT HD CERTIFICATE ARTWORK VIEW (IDENTICAL TO PORTAL) -->
+      <div style="padding: 24px 20px 28px 20px; text-align: center; background-color: #0f172a;">
+        
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #e2e8f0;">
+          Dear <strong>${name}</strong>, your official executive certificate has been generated and validated:
+        </p>
 
-          <!-- CANDIDATE PROPER NAME -->
-          <h2 style="margin: 12px 0 6px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #fbbf24; display: inline-block; padding-bottom: 6px;">
-            ${name}
-          </h2>
+        <!-- CERTIFICATE DISPLAY CONTAINER (100% IDENTICAL TO PORTAL DOWNLOAD CANVAS) -->
+        <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 12px 35px rgba(0,0,0,0.5); border: 2px solid #334155; display: inline-block; max-width: 100%; background: #ffffff;">
+          <a href="${certUrl}" target="_blank" style="display: block;" title="Click to view and download full HD / PDF Certificate">
+            <img src="cid:official-certificate-image" alt="Official Certificate of Appreciation - ${name}" style="width: 100%; max-width: 720px; height: auto; display: block;" />
+          </a>
+        </div>
 
-          <!-- CANDIDATE TITLE & COMPANY -->
-          <p style="margin: 6px 0 18px 0; font-size: 14px; font-weight: 700; color: #334155;">
-            ${designation ? `${designation}, ` : ""}${organization || "Executive Delegate"}
-          </p>
+        <!-- ACTION BUTTON FOR HD PDF / PRINT -->
+        <div style="margin-top: 26px;">
+          <a href="${certUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; text-decoration: none; font-size: 14px; font-weight: 900; padding: 14px 34px; border-radius: 12px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
+            🎓 PRINT / DOWNLOAD OFFICIAL CERTIFICATE (HD / PDF)
+          </a>
+        </div>
 
-          <p style="margin: 0 auto 16px auto; font-size: 13px; color: #475569; max-width: 480px; line-height: 1.6;">
-            has actively participated and contributed as an Executive Delegate in the prestigious
-          </p>
-
-          <!-- EVENT TITLE -->
-          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin: 0 auto 20px auto; max-width: 500px;">
-            <h3 style="margin: 0; font-size: 17px; font-weight: 900; color: #0891b2; text-transform: uppercase; letter-spacing: 0.5px;">
-              ${eventTitle}
-            </h3>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-weight: 600;">
-              ${eventDate ? `Conducted on ${eventDate}` : "Executive Summit"} • ${eventCity || "India"}
-            </p>
-          </div>
-
-          <!-- VERIFICATION SEAL & SIGNATORIES -->
-          <table style="width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 12px;">
+        <!-- VERIFICATION METADATA CHIPS -->
+        <div style="margin-top: 20px; padding: 14px 18px; background-color: #1e293b; border-radius: 12px; display: inline-block; max-width: 90%;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #94a3b8;">
             <tr>
-              <td style="width: 35%; text-align: center; vertical-align: bottom;">
-                <div style="font-family: Georgia, serif; font-size: 15px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #94a3b8; padding-bottom: 4px; display: inline-block;">
-                  Srikanth
-                </div>
-                <div style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 4px;">Founder & Managing Director</div>
-                <div style="font-size: 10px; color: #64748b;">Executive Talks Media</div>
+              <td style="text-align: left; padding: 4px 12px 4px 0;">
+                Certificate ID: <strong style="color: #fbbf24; font-family: monospace; font-size: 13px;">${certId}</strong>
               </td>
-              <td style="width: 30%; text-align: center; vertical-align: middle;">
-                <div style="display: inline-block; border: 2px dashed #d97706; border-radius: 50%; width: 72px; height: 72px; padding-top: 14px; box-sizing: border-box; background-color: #fffbeb;">
-                  <span style="font-size: 8px; font-weight: 900; color: #b45309; text-transform: uppercase; display: block; letter-spacing: 0.5px;">OFFICIAL</span>
-                  <span style="font-size: 10px; font-weight: 900; color: #92400e; display: block;">VERIFIED</span>
-                  <span style="font-size: 8px; font-weight: 700; color: #b45309; display: block;">ATTENDANCE</span>
-                </div>
+              <td style="text-align: right; padding: 4px 0 4px 12px; color: #34d399; font-weight: 700;">
+                ✓ Real Database Verified Gate Attendance
               </td>
-              <td style="width: 35%; text-align: center; vertical-align: bottom;">
-                <div style="font-family: Georgia, serif; font-size: 15px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #94a3b8; padding-bottom: 4px; display: inline-block;">
-                  Executive Council
-                </div>
-                <div style="font-size: 11px; font-weight: 700; color: #334155; margin-top: 4px;">Conference Convenor</div>
-                <div style="font-size: 10px; color: #64748b;">Summit & Awards Board</div>
+            </tr>
+            <tr>
+              <td colspan="2" style="text-align: center; padding-top: 8px; border-top: 1px solid #334155; color: #94a3b8; font-size: 11px;">
+                Direct Verification Link: <a href="${certUrl}" style="color: #38bdf8; text-decoration: none; font-weight: 600;">${certUrl}</a>
               </td>
             </tr>
           </table>
-
-          <!-- CERTIFICATE METADATA FOOTER -->
-          <div style="margin-top: 22px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 11px; color: #94a3b8;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="text-align: left; color: #64748b;">Certificate ID: <strong style="color: #0f172a; font-family: monospace;">${certId}</strong></td>
-                <td style="text-align: right; color: #059669; font-weight: bold;">✓ Verified Gate Admission</td>
-              </tr>
-            </table>
-          </div>
         </div>
 
-        <!-- ACTION BUTTON -->
-        <div style="text-align: center; margin-top: 28px;">
-          <a href="${certUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 14px 30px; border-radius: 12px; box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
-            🎓 View & Download Official Certificate (HD / PDF)
-          </a>
-          <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748b;">
-            This credential can be verified directly at <a href="${certUrl}" style="color: #0891b2; text-decoration: none; font-weight: 600;">${certUrl}</a>
-          </p>
-        </div>
       </div>
 
       <!-- FOOTER -->
-      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 24px; text-align: center; font-size: 11px; color: #94a3b8;">
-        <p style="margin: 0;">© 2026 Executive Talks Media Business Intelligence. All rights reserved.</p>
-        <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://executivetalksmedia.in" style="color: #0891b2; text-decoration: none;">www.executivetalksmedia.in</a></p>
+      <div style="background-color: #090d16; border-top: 1px solid #1e293b; padding: 18px 20px; text-align: center; color: #64748b; font-size: 11px;">
+        <p style="margin: 0; color: #94a3b8; font-weight: 600;">Executive Talks Media Business Intelligence Directorate</p>
+        <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">www.executivetalksmedia.in</a></p>
       </div>
 
     </div>
@@ -4104,12 +4183,30 @@ app.post("/api/admin/certificate/send", authenticateAdmin, async (req, res) => {
       city: eventCity,
     }, `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`);
 
-    const mailOptions = {
+    // Generate HD Certificate PNG Buffer identical to CertificatePage
+    const certPngBuffer = generateCertificatePngBuffer({
+      name: candidateName,
+      organization,
+      eventTitle,
+      eventDate,
+      eventVenue: reg.venue || eventCity,
+      city: eventCity,
+      certId,
+    });
+
+    const mailOptions: any = {
       from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
       replyTo: replyToEmail || supportEmail || smtpUser,
       to: candidateEmail,
       subject: dynamicCertSubject,
       html: emailHtml,
+      attachments: certPngBuffer ? [
+        {
+          filename: `Certificate-${candidateName.replace(/[^a-zA-Z0-9]/g, "_")}-${certId}.png`,
+          content: certPngBuffer,
+          cid: "official-certificate-image",
+        }
+      ] : [],
     };
 
     const info = await mailTransporter.sendMail(mailOptions);
@@ -4211,12 +4308,30 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
           city: eventCity,
         }, `🎓 Official Certificate of Participation: ${eventTitle} — ${candidateName}`);
 
+        // Generate HD Certificate PNG Buffer identical to CertificatePage
+        const certPngBuffer = generateCertificatePngBuffer({
+          name: candidateName,
+          organization,
+          eventTitle,
+          eventDate,
+          eventVenue: reg.venue || eventCity,
+          city: eventCity,
+          certId,
+        });
+
         await mailTransporter.sendMail({
           from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
           replyTo: replyToEmail || supportEmail || smtpUser,
           to: candidateEmail,
           subject: dynamicBulkCertSubject,
           html: emailHtml,
+          attachments: certPngBuffer ? [
+            {
+              filename: `Certificate-${candidateName.replace(/[^a-zA-Z0-9]/g, "_")}-${certId}.png`,
+              content: certPngBuffer,
+              cid: "official-certificate-image",
+            }
+          ] : [],
         });
 
         if (pool) {

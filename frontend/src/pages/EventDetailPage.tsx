@@ -88,6 +88,7 @@ export default function EventDetailPage() {
 
   // Video / Highlight Modal State
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedLocationIndex, setSelectedLocationIndex] = useState<number>(0);
 
   // Hook 1: Fetch fresh event data in background
   useEffect(() => {
@@ -329,25 +330,66 @@ export default function EventDetailPage() {
   } catch (e) {}
 
   parsedLocations = (parsedLocations || []).filter(
-    (loc: any) => loc && (loc.city || loc.venue || loc.date || loc.time)
+    (loc: any) => loc && (loc.city || loc.venue || loc.date || loc.time || loc.address || loc.map_url)
   );
 
-  if (parsedLocations.length === 0 && (event.city || event.venue || event.date || event.time)) {
+  if (parsedLocations.length === 0 && (event.city || event.venue || event.date || event.time || event.venue_address || event.map_url)) {
     parsedLocations = [
       {
         city: event.city || "",
         venue: event.venue || "",
         date: event.date || "",
         time: event.time || "",
+        address: event.venue_address || "",
+        map_url: event.map_url || "",
       },
     ];
   }
 
   const primaryLoc = parsedLocations[0] || {};
-  const dateText = primaryLoc.date || event.date || "14 October 2026";
-  const timeText = primaryLoc.time || event.time || "10:00 AM – 4:00 PM";
-  const venueText = primaryLoc.venue || event.venue || "The Procurement Leadership";
-  const cityText = primaryLoc.city || event.city || "Dubai";
+  const activeLoc = parsedLocations[selectedLocationIndex] || primaryLoc;
+
+  const dateText = activeLoc.date || event.date || primaryLoc.date || "14 October 2026";
+  const timeText = activeLoc.time || event.time || primaryLoc.time || "10:00 AM – 4:00 PM";
+  const venueText = activeLoc.venue || event.venue || primaryLoc.venue || "Venue To Be Announced";
+  const cityText = activeLoc.city || event.city || primaryLoc.city || "";
+  const addressText =
+    activeLoc.address ||
+    (activeLoc === primaryLoc ? event.venue_address : "") ||
+    (venueText && cityText ? `${venueText}, ${cityText}` : venueText || cityText || "Official venue details");
+  const rawMapUrl = activeLoc.map_url || (activeLoc === primaryLoc ? event.map_url : "");
+
+  const getGoogleMapsEmbedSrc = (rawMap?: string, v?: string, addr?: string, c?: string) => {
+    if (rawMap && typeof rawMap === "string") {
+      let clean = rawMap.trim();
+      if (clean.includes("<iframe") && clean.includes("src=")) {
+        const match = clean.match(/src=["']([^"']+)["']/);
+        if (match && match[1]) clean = match[1];
+      }
+      if (clean.startsWith("http") && (clean.includes("google.com/maps") || clean.includes("maps.google.com"))) {
+        return clean;
+      }
+    }
+    const queryParts = [v, addr, c].filter((p) => p && typeof p === "string" && p.trim() !== "");
+    const queryStr = Array.from(new Set(queryParts)).join(", ");
+    return `https://maps.google.com/maps?q=${encodeURIComponent(queryStr || "Hyderabad, India")}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  };
+
+  const getDirectionsUrl = (rawMap?: string, v?: string, addr?: string, c?: string) => {
+    if (rawMap && typeof rawMap === "string") {
+      let clean = rawMap.trim();
+      if (clean.includes("<iframe") && clean.includes("src=")) {
+        const match = clean.match(/src=["']([^"']+)["']/);
+        if (match && match[1]) clean = match[1];
+      }
+      if (clean.startsWith("http") && !clean.includes("/embed")) {
+        return clean;
+      }
+    }
+    const queryParts = [v, addr, c].filter((p) => p && typeof p === "string" && p.trim() !== "");
+    const queryStr = Array.from(new Set(queryParts)).join(", ");
+    return `https://maps.google.com/?q=${encodeURIComponent(queryStr || "Hyderabad, India")}`;
+  };
 
   // Parse Speakers (ONLY admin provided speakers; empty if not provided)
   let speakersList: any[] = [];
@@ -1399,40 +1441,104 @@ export default function EventDetailPage() {
           <div className="grid gap-8 lg:grid-cols-12 items-stretch">
             {/* Left Venue Box */}
             <div id="venue-box" className="lg:col-span-8 rounded-3xl bg-slate-50/60 p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
                 <div className="flex items-center gap-3">
                   <div className="h-7 w-1.5 rounded-full bg-gradient-to-b from-cyan-500 to-purple-600" />
-                  <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
-                    Venue Details & Map
-                  </h3>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black font-display text-slate-900">
+                      Venue Details & Map
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">Official summit venue and live navigation coordinates</p>
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-slate-500">{cityText}</span>
+                {cityText && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 text-xs font-black self-start sm:self-auto">
+                    <MapPin className="h-3.5 w-3.5 text-cyan-700" />
+                    {cityText}
+                  </span>
+                )}
               </div>
 
+              {/* If Multi-City Tour / Multiple Locations exist, show location switcher tabs */}
+              {parsedLocations.length > 1 && (
+                <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 px-2 flex items-center gap-1.5">
+                    <Building className="h-3.5 w-3.5 text-cyan-600" />
+                    <span>Select Event Location:</span>
+                  </span>
+                  {parsedLocations.map((loc, idx) => {
+                    const isSelected = selectedLocationIndex === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedLocationIndex(idx)}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
+                        }`}
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>{loc.city || `Location #${idx + 1}`}</span>
+                        {idx === 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${isSelected ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"}`}>
+                            Primary
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="grid gap-6 md:grid-cols-2 items-center">
-                <div className="space-y-3">
-                  <h4 className="text-lg font-black text-slate-900 font-display">{venueText}</h4>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    Novotel & HICC Complex, HITEC City, Hyderabad, Telangana 500081, India
-                  </p>
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(`${venueText}, ${cityText}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-5 py-2.5 text-xs font-extrabold text-white hover:opacity-95 transition-all"
-                  >
-                    <span>Get Directions</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </a>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 font-display">{venueText}</h4>
+                    <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed mt-1">
+                      {addressText}
+                    </p>
+                  </div>
+
+                  {(activeLoc.date || activeLoc.time) && (
+                    <div className="inline-flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200/80 text-xs font-semibold text-slate-700">
+                      {activeLoc.date && (
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>{dateText}</span>
+                        </span>
+                      )}
+                      {activeLoc.time && (
+                        <span className="flex items-center gap-1.5 text-slate-500">
+                          <Clock className="h-3.5 w-3.5 text-purple-600" />
+                          <span>{timeText}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <a
+                      href={getDirectionsUrl(rawMapUrl, venueText, addressText, cityText)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 px-5 py-2.5 text-xs font-extrabold text-white hover:opacity-95 transition-all shadow-md shadow-cyan-500/20"
+                    >
+                      <span>Get Directions</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
                 </div>
 
                 {/* Map iframe */}
-                <div className="overflow-hidden rounded-2xl h-48 bg-slate-100 relative">
+                <div className="overflow-hidden rounded-2xl h-56 bg-slate-100 relative shadow-inner border border-slate-200">
                   <iframe
-                    title="Venue Google Map"
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(`${venueText}, ${cityText}`)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    title={`Venue Google Map - ${venueText}`}
+                    src={getGoogleMapsEmbedSrc(rawMapUrl, venueText, addressText, cityText)}
                     className="w-full h-full border-0"
                     loading="lazy"
+                    allowFullScreen
                   />
                 </div>
               </div>

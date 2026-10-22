@@ -49,3 +49,8 @@ export function invalidateClientCache(pattern?: string): void {
 export function setCachedData(url: string, data: any): void {
   clientCache.set(url, { data, timestamp: Date.now() });
 }
+
+export function getCachedData<T = any>(url: string): T | null {
+  const entry = clientCache.get(url);
+  return entry ? (entry.data as T) : null;
+}
