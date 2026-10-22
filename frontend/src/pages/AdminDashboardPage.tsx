@@ -126,6 +126,10 @@ import {
   Twitter,
   Share2,
   Info,
+  BellRing,
+  Send,
+  Megaphone,
+  AlarmClock,
 } from "lucide-react";
 import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
 import { toast } from "sonner";
@@ -168,6 +172,7 @@ interface Registration {
   official_email?: string;
   certificate_sent_at?: string;
   certificate_id?: string;
+  alert_sent_at?: string;
 }
 
 interface ContactSubmission {
@@ -288,6 +293,7 @@ type TabType =
   | "partners"
   | "partner-requests"
   | "event-registrations"
+  | "remember"
   | "offline-registrations"
   | "cms-delegates"
   | "career-jobs"
@@ -851,6 +857,21 @@ export default function AdminDashboardPage() {
   const [previewTestEventName, setPreviewTestEventName] = useState<string>("HR RECALL 2K26");
   const [previewTestDelegateName, setPreviewTestDelegateName] = useState<string>("Ascend Labs");
   const [previewTestPassId, setPreviewTestPassId] = useState<string>("ETM-REG-697665-3996");
+
+  // REMEMBER & EVENT ALERT NOTIFICATIONS STATE
+  const [selectedRememberEventId, setSelectedRememberEventId] = useState<string>("");
+  const [rememberSearchQuery, setRememberSearchQuery] = useState<string>("");
+  const [selectedRememberUserIds, setSelectedRememberUserIds] = useState<string[]>([]);
+  const [rememberCustomSubject, setRememberCustomSubject] = useState<string>("");
+  const [rememberCustomBodyIntro, setRememberCustomBodyIntro] = useState<string>("");
+  const [rememberCustomBodyTemplate, setRememberCustomBodyTemplate] = useState<string>("");
+  const [rememberCustomBodyNotes, setRememberCustomBodyNotes] = useState<string>("");
+  const [isEditingRememberTemplate, setIsEditingRememberTemplate] = useState<boolean>(false);
+  const [isSavingRememberTemplate, setIsSavingRememberTemplate] = useState<boolean>(false);
+  const [sendingAlertId, setSendingAlertId] = useState<string | null>(null);
+  const [isBulkSendingAlerts, setIsBulkSendingAlerts] = useState<boolean>(false);
+  const [showRememberPreviewModal, setShowRememberPreviewModal] = useState<boolean>(false);
+  const [previewAlertDelegate, setPreviewAlertDelegate] = useState<Registration | null>(null);
 
   // Terms & Conditions CMS State
   interface TermsClause {
@@ -6375,6 +6396,281 @@ export default function AdminDashboardPage() {
       .replace(/{city}/gi, "Hyderabad");
   };
 
+  // ==========================================
+  // REMEMBER (EVENT ALERTS) ACTION HANDLERS
+  // ==========================================
+
+  // Sync template from emailSubjectsList (event_remember_alert)
+  useEffect(() => {
+    const alertConfig = emailSubjectsList.find((c) => c.id === "event_remember_alert");
+    if (alertConfig) {
+      if (!rememberCustomSubject) {
+        setRememberCustomSubject(
+          alertConfig.subject_template || `${alertConfig.prefix || ""}{event_name}${alertConfig.suffix || ""}`
+        );
+      }
+      if (!rememberCustomBodyIntro) {
+        setRememberCustomBodyIntro(
+          alertConfig.body_intro || "We have an important announcement and reminder regarding your upcoming attendance."
+        );
+      }
+      if (!rememberCustomBodyTemplate) {
+        setRememberCustomBodyTemplate(alertConfig.body_template || "");
+      }
+      if (!rememberCustomBodyNotes) {
+        setRememberCustomBodyNotes(alertConfig.body_notes || "");
+      }
+    }
+  }, [emailSubjectsList]);
+
+  // Default selected event
+  useEffect(() => {
+    if (!selectedRememberEventId && cmsEvents.length > 0) {
+      setSelectedRememberEventId(String(cmsEvents[0].id || cmsEvents[0].slug || ""));
+    }
+  }, [cmsEvents, selectedRememberEventId]);
+
+  // Current selected event object
+  const currentRememberEvent = useMemo(() => {
+    if (!selectedRememberEventId && cmsEvents.length > 0) return cmsEvents[0];
+    return (
+      cmsEvents.find(
+        (e: any) =>
+          String(e.id) === selectedRememberEventId ||
+          String(e.slug) === selectedRememberEventId
+      ) || cmsEvents[0] || null
+    );
+  }, [cmsEvents, selectedRememberEventId]);
+
+  // Delegates registered for current selected event
+  const rememberDelegates = useMemo(() => {
+    if (!currentRememberEvent) return [];
+    const eventIdStr = String(currentRememberEvent.id || "").toLowerCase();
+    const eventSlugStr = String(currentRememberEvent.slug || "").toLowerCase();
+    const eventTitleStr = String(currentRememberEvent.title || currentRememberEvent.name || "").toLowerCase().trim();
+
+    return registrations.filter((r) => {
+      const rEventId = String(r.event_id || "").toLowerCase();
+      const rEventTitle = String(r.event_title || "").toLowerCase().trim();
+
+      return (
+        rEventId === eventIdStr ||
+        rEventId === eventSlugStr ||
+        (eventSlugStr && rEventId.includes(eventSlugStr)) ||
+        (eventIdStr && rEventId.includes(eventIdStr)) ||
+        (eventTitleStr && rEventTitle.includes(eventTitleStr)) ||
+        (eventTitleStr && eventTitleStr.includes(rEventTitle))
+      );
+    });
+  }, [registrations, currentRememberEvent]);
+
+  // Filtered delegates based on search query
+  const filteredRememberDelegates = useMemo(() => {
+    if (!rememberSearchQuery.trim()) return rememberDelegates;
+    const q = rememberSearchQuery.toLowerCase().trim();
+    return rememberDelegates.filter((d) => {
+      const fullName = `${d.first_name || ""} ${d.last_name || ""} ${d.name || ""}`.toLowerCase();
+      const email = (d.email || d.official_email || "").toLowerCase();
+      const org = (d.organization || "").toLowerCase();
+      const phone = (d.phone || "").toLowerCase();
+      const passId = (d.id || "").toLowerCase();
+      return (
+        fullName.includes(q) ||
+        email.includes(q) ||
+        org.includes(q) ||
+        phone.includes(q) ||
+        passId.includes(q)
+      );
+    });
+  }, [rememberDelegates, rememberSearchQuery]);
+
+  // Send alert to single delegate
+  const handleSendSingleAlert = async (delegate: Registration) => {
+    const targetEmail = delegate.email || delegate.official_email;
+    if (!targetEmail) {
+      toast.error("Delegate does not have a valid email address.");
+      return;
+    }
+    const token = localStorage.getItem("etmedia_admin_token");
+    if (!token) {
+      toast.error("Please login as admin first.");
+      return;
+    }
+
+    setSendingAlertId(delegate.id);
+    try {
+      const res = await fetch("/api/admin/remember/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          registration_id: delegate.id,
+          event_id: currentRememberEvent?.id || currentRememberEvent?.slug || delegate.event_id,
+          custom_subject: rememberCustomSubject,
+          custom_body_intro: rememberCustomBodyIntro,
+          custom_body_template: rememberCustomBodyTemplate,
+          custom_body_notes: rememberCustomBodyNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || `Alert sent successfully to ${targetEmail}!`);
+        const sentTime = data.alert_sent_at || new Date().toISOString();
+        setRegistrations((prev) =>
+          prev.map((r) => (r.id === delegate.id ? { ...r, alert_sent_at: sentTime } : r))
+        );
+      } else {
+        toast.error(data.message || "Failed to send alert email.");
+      }
+    } catch (err: any) {
+      console.error("Error sending alert email:", err);
+      toast.error(err.message || "Network error while sending alert.");
+    } finally {
+      setSendingAlertId(null);
+    }
+  };
+
+  // Bulk send alerts
+  const handleSendBulkAlerts = async (targetIds?: string[]) => {
+    const idsToSend =
+      targetIds && targetIds.length > 0
+        ? targetIds
+        : selectedRememberUserIds.length > 0
+        ? selectedRememberUserIds
+        : filteredRememberDelegates.map((d) => d.id);
+
+    if (idsToSend.length === 0) {
+      toast.error("No registered delegates found to send alerts.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Send event reminder alert emails to ${idsToSend.length} registered delegate(s) for "${currentRememberEvent?.title || currentRememberEvent?.name || "this event"}"?`
+    );
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("etmedia_admin_token");
+    if (!token) {
+      toast.error("Please login as admin first.");
+      return;
+    }
+
+    setIsBulkSendingAlerts(true);
+    try {
+      const res = await fetch("/api/admin/remember/bulk-send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          registration_ids: idsToSend,
+          event_id: currentRememberEvent?.id || currentRememberEvent?.slug,
+          custom_subject: rememberCustomSubject,
+          custom_body_intro: rememberCustomBodyIntro,
+          custom_body_template: rememberCustomBodyTemplate,
+          custom_body_notes: rememberCustomBodyNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(
+          data.message || `Alert dispatch completed: ${data.successful} sent successfully!`
+        );
+        const sentIds = new Set(
+          (data.results || []).filter((r: any) => r.status === "sent").map((r: any) => r.registration_id)
+        );
+        const nowStr = new Date().toISOString();
+        setRegistrations((prev) =>
+          prev.map((r) => (sentIds.has(r.id) ? { ...r, alert_sent_at: nowStr } : r))
+        );
+        setSelectedRememberUserIds([]);
+      } else {
+        toast.error(data.message || "Failed to bulk send alert emails.");
+      }
+    } catch (err: any) {
+      console.error("Error bulk sending alerts:", err);
+      toast.error(err.message || "Network error in bulk dispatch.");
+    } finally {
+      setIsBulkSendingAlerts(false);
+    }
+  };
+
+  // Save template to Email Subject & Body Manager
+  const handleSaveRememberTemplateToManager = async () => {
+    const token = localStorage.getItem("etmedia_admin_token");
+    if (!token) {
+      toast.error("Please login as admin first.");
+      return;
+    }
+
+    setIsSavingRememberTemplate(true);
+    try {
+      const res = await fetch("/api/admin/email-subjects/event_remember_alert", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prefix: "",
+          suffix: "",
+          subject_template: rememberCustomSubject,
+          body_intro: rememberCustomBodyIntro,
+          body_template: rememberCustomBodyTemplate,
+          body_notes: rememberCustomBodyNotes,
+          is_active: 1,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Alert template saved to Email Subject & Body Manager successfully!");
+        setEmailSubjectsList((prev) =>
+          prev.map((c) =>
+            c.id === "event_remember_alert"
+              ? {
+                  ...c,
+                  subject_template: rememberCustomSubject,
+                  body_intro: rememberCustomBodyIntro,
+                  body_template: rememberCustomBodyTemplate,
+                  body_notes: rememberCustomBodyNotes,
+                }
+              : c
+          )
+        );
+      } else {
+        toast.error(data.message || "Failed to update alert template in manager.");
+      }
+    } catch (err: any) {
+      toast.error("Error saving template to manager: " + err.message);
+    } finally {
+      setIsSavingRememberTemplate(false);
+    }
+  };
+
+  // Reset to default manager template
+  const handleResetRememberTemplate = () => {
+    const alertConfig = emailSubjectsList.find((c) => c.id === "event_remember_alert");
+    if (alertConfig) {
+      setRememberCustomSubject(
+        alertConfig.subject_template || `${alertConfig.prefix || ""}{event_name}${alertConfig.suffix || ""}`
+      );
+      setRememberCustomBodyIntro(
+        alertConfig.body_intro || "We have an important announcement and reminder regarding your upcoming attendance."
+      );
+      setRememberCustomBodyTemplate(alertConfig.body_template || "");
+      setRememberCustomBodyNotes(alertConfig.body_notes || "");
+      toast.info("Alert template reset to Email Subject & Body Manager values.");
+    } else {
+      toast.info("Default template restored.");
+    }
+  };
+
   // --- TERMS & CONDITIONS CMS ACTION HANDLERS ---
   const handleOpenAddTerms = () => {
     setEditingTermsTemplate(null);
@@ -7154,6 +7450,7 @@ export default function AdminDashboardPage() {
           title: "DELEGATES & PARTNERS",
           items: [
             { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+            { id: "remember", label: "Remember (Event Alerts)", icon: BellRing },
             { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
             { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
             { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
@@ -9418,6 +9715,695 @@ export default function AdminDashboardPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: REMEMBER (EVENT ALERTS & NOTICES) */}
+          {activeTab === "remember" && (
+            <div className="space-y-6">
+              {/* Top Banner Card */}
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-600 text-white shadow-md">
+                      <BellRing className="h-6 w-6 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 font-display">
+                          Remember — Event Alerts & Delegate Notices
+                        </h2>
+                        <span className="rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                          Live Alerts
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                        Send important announcements, venue directions, and personalized reminder emails to registered delegates anytime.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingRememberTemplate((prev) => !prev)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                      <SlidersHorizontal className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                      <span>{isEditingRememberTemplate ? "Hide Template Editor" : "Customize Message Template"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewAlertDelegate(rememberDelegates[0] || null);
+                        setShowRememberPreviewModal(true);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl gradient-brand px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>Live Email Preview</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Event Selector & Quick Details Banner */}
+                <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                  <div className="lg:col-span-5">
+                    <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                      Select Event / Summit:
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedRememberEventId}
+                        onChange={(e) => {
+                          setSelectedRememberEventId(e.target.value);
+                          setSelectedRememberUserIds([]);
+                        }}
+                        className="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-10 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-xs focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 cursor-pointer"
+                      >
+                        {cmsEvents.map((evt: any) => (
+                          <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
+                            {evt.title || evt.name} ({evt.date || "Date TBD"} • {evt.city || evt.location || "India"})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    </div>
+                  </div>
+
+                  {/* Quick Info Grid for Selected Event */}
+                  <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 p-2.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <Calendar className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Date</span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
+                        {currentRememberEvent?.date || "To be announced"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 p-2.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Time</span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
+                        {currentRememberEvent?.time || "Standard Schedule"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 p-2.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <MapPin className="h-3.5 w-3.5 text-rose-600" />
+                        <span>Venue & City</span>
+                      </div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate" title={currentRememberEvent?.venue || currentRememberEvent?.location || ""}>
+                        {currentRememberEvent?.city ? `${currentRememberEvent.city} • ` : ""}{currentRememberEvent?.venue || currentRememberEvent?.location || "Main Convention"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-cyan-200 dark:border-cyan-800/60 bg-cyan-50/60 dark:bg-cyan-950/30 p-2.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-cyan-800 dark:text-cyan-400">
+                        <Users className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Registered</span>
+                      </div>
+                      <div className="text-sm font-extrabold text-cyan-900 dark:text-cyan-300 mt-0.5">
+                        {rememberDelegates.length} delegates
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collapsible Email Subject & Body Customizer (Syncs with Email Subject & Body Manager) */}
+              {isEditingRememberTemplate && (
+                <div className="rounded-3xl border border-cyan-200 dark:border-cyan-900/60 bg-linear-to-b from-cyan-50/40 to-white dark:from-slate-900 dark:to-slate-900 p-5 sm:p-6 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-cyan-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-5 w-5 text-cyan-700 dark:text-cyan-400" />
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                        Alert Email Subject & Body Composer
+                      </h3>
+                      <span className="rounded-md bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 text-[10px] font-bold">
+                        Linked with Email Subject & Body Manager
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleResetRememberTemplate}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Reset Defaults</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSavingRememberTemplate}
+                        onClick={handleSaveRememberTemplateToManager}
+                        className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-1.5 text-xs font-extrabold text-white shadow-xs hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {isSavingRememberTemplate ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-3.5 w-3.5" />
+                            <span>Save to Email Subject & Body Manager</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Variable Chips */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                      Click to insert dynamic variables:
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: "{delegate_name}", desc: "Delegate Name" },
+                        { label: "{event_name}", desc: "Event Title" },
+                        { label: "{date}", desc: "Event Date" },
+                        { label: "{time}", desc: "Event Time" },
+                        { label: "{venue}", desc: "Venue Address" },
+                        { label: "{city}", desc: "City" },
+                        { label: "{pass_id}", desc: "Pass / Reg ID" },
+                      ].map((v) => (
+                        <button
+                          key={v.label}
+                          type="button"
+                          onClick={() => {
+                            setRememberCustomBodyTemplate((prev) => prev + " " + v.label);
+                            toast.info(`Inserted ${v.label} into message body`);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-mono font-bold text-cyan-800 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 hover:border-cyan-300 transition-colors cursor-pointer"
+                          title={`Insert ${v.desc}`}
+                        >
+                          <span>{v.label}</span>
+                          <span className="text-[9px] text-slate-500 font-sans">({v.desc})</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Subject Line */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Email Subject:
+                    </label>
+                    <input
+                      type="text"
+                      value={rememberCustomSubject}
+                      onChange={(e) => setRememberCustomSubject(e.target.value)}
+                      placeholder="e.g. IMPORTANT NOTICE: {event_name} - Exclusive Details & Guidelines"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-cyan-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Body Intro */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Body Intro Greeting / Subheading:
+                    </label>
+                    <input
+                      type="text"
+                      value={rememberCustomBodyIntro}
+                      onChange={(e) => setRememberCustomBodyIntro(e.target.value)}
+                      placeholder="e.g. We have an important announcement and reminder regarding your upcoming attendance."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 focus:border-cyan-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Message Body Template */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Alert Message Body Template (Supports new lines & variables):
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={rememberCustomBodyTemplate}
+                      onChange={(e) => setRememberCustomBodyTemplate(e.target.value)}
+                      placeholder="Type your alert message here..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-normal text-slate-900 dark:text-slate-100 leading-relaxed font-mono focus:border-cyan-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Body Notes / Important Guidelines */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Important Guidelines & Notes (Displayed in alert callout box):
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={rememberCustomBodyNotes}
+                      onChange={(e) => setRememberCustomBodyNotes(e.target.value)}
+                      placeholder="• Bring valid photo ID matching your pass name&#10;• Arrive 30 minutes before keynote session"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-normal text-slate-900 dark:text-slate-100 leading-relaxed focus:border-cyan-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Registered Users Table Card */}
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-4">
+                {/* Search & Bulk Dispatch Actions */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 max-w-md">
+                    <div className="relative w-full">
+                      <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={rememberSearchQuery}
+                        onChange={(e) => setRememberSearchQuery(e.target.value)}
+                        placeholder="Search by name, email, organization, pass ID..."
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-10 pr-4 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 focus:border-cyan-600 focus:bg-white dark:focus:bg-slate-800 focus:outline-none"
+                      />
+                    </div>
+                    {rememberSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setRememberSearchQuery("")}
+                        className="text-xs text-rose-600 hover:underline font-bold shrink-0 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Bulk Dispatch Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedRememberUserIds.length > 0 && (
+                      <button
+                        type="button"
+                        disabled={isBulkSendingAlerts}
+                        onClick={() => handleSendBulkAlerts()}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {isBulkSendingAlerts ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Sending...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-3.5 w-3.5" />
+                            <span>Send to Selected ({selectedRememberUserIds.length})</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={isBulkSendingAlerts || filteredRememberDelegates.length === 0}
+                      onClick={() => handleSendBulkAlerts(filteredRememberDelegates.map((d) => d.id))}
+                      className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-extrabold text-white shadow-xs hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                      {isBulkSendingAlerts ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Dispatching Alerts...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Megaphone className="h-3.5 w-3.5" />
+                          <span>Send Alert to All ({filteredRememberDelegates.length})</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selection Counter Bar */}
+                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      Showing {filteredRememberDelegates.length} registered delegates
+                    </span>
+                    {selectedRememberUserIds.length > 0 && (
+                      <span className="text-amber-700 dark:text-amber-400 font-extrabold">
+                        ({selectedRememberUserIds.length} selected)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px]">
+                    Alerts Sent:{" "}
+                    <strong className="text-emerald-700 dark:text-emerald-400">
+                      {rememberDelegates.filter((d) => Boolean(d.alert_sent_at)).length}
+                    </strong>{" "}
+                    / {rememberDelegates.length}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                        <th className="p-3 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            checked={
+                              filteredRememberDelegates.length > 0 &&
+                              selectedRememberUserIds.length === filteredRememberDelegates.length
+                            }
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRememberUserIds(filteredRememberDelegates.map((d) => d.id));
+                              } else {
+                                setSelectedRememberUserIds([]);
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                          />
+                        </th>
+                        <th className="p-3">Delegate Name & Reg ID</th>
+                        <th className="p-3">Email & Contact</th>
+                        <th className="p-3">Organization & Role</th>
+                        <th className="p-3">Ticket / Pass Type</th>
+                        <th className="p-3">Alert Status</th>
+                        <th className="p-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                      {filteredRememberDelegates.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <BellRing className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">
+                                No registered delegates found for this event
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {rememberSearchQuery
+                                  ? "Try searching with a different term."
+                                  : "Delegates will appear here once they register for this summit."}
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredRememberDelegates.map((delegate) => {
+                          const isSelected = selectedRememberUserIds.includes(delegate.id);
+                          const isSending = sendingAlertId === delegate.id;
+                          const dName = delegate.name || `${delegate.first_name || ""} ${delegate.last_name || ""}`.trim() || "Delegate";
+                          const dEmail = delegate.email || delegate.official_email || "No email";
+                          const isSent = Boolean(delegate.alert_sent_at);
+
+                          return (
+                            <tr
+                              key={delegate.id}
+                              className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${
+                                isSelected ? "bg-amber-50/50 dark:bg-amber-950/20" : ""
+                              }`}
+                            >
+                              <td className="p-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedRememberUserIds((prev) => [...prev, delegate.id]);
+                                    } else {
+                                      setSelectedRememberUserIds((prev) => prev.filter((id) => id !== delegate.id));
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer"
+                                />
+                              </td>
+
+                              <td className="p-3">
+                                <div className="font-extrabold text-slate-900 dark:text-slate-100">
+                                  {dName}
+                                </div>
+                                <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                  ID: {delegate.id}
+                                </div>
+                              </td>
+
+                              <td className="p-3">
+                                <div className="text-slate-800 dark:text-slate-200 font-medium">
+                                  {dEmail}
+                                </div>
+                                {delegate.phone && (
+                                  <div className="text-[11px] text-slate-500 mt-0.5">
+                                    {delegate.phone}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="p-3">
+                                <div className="text-slate-800 dark:text-slate-200 font-bold">
+                                  {delegate.organization || "Independent / General"}
+                                </div>
+                                {delegate.designation && (
+                                  <div className="text-[11px] text-slate-500">
+                                    {delegate.designation}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="p-3">
+                                <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                  {delegate.pass_name || delegate.registration_category || "Delegate Pass"}
+                                </span>
+                              </td>
+
+                              <td className="p-3">
+                                {isSent ? (
+                                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    <span>
+                                      Sent: {new Date(delegate.alert_sent_at!).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                    <Clock className="h-3 w-3 text-slate-500" />
+                                    <span>Not sent yet</span>
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="p-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreviewAlertDelegate(delegate);
+                                      setShowRememberPreviewModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Preview alert email for this delegate"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={isSending || isBulkSendingAlerts}
+                                    onClick={() => handleSendSingleAlert(delegate)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:scale-102 active:scale-98 disabled:opacity-50 transition-all cursor-pointer"
+                                  >
+                                    {isSending ? (
+                                      <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        <span>Sending...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Send className="h-3.5 w-3.5" />
+                                        <span>Send Alert</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* REMEMBER EMAIL LIVE PREVIEW MODAL */}
+          {showRememberPreviewModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-slate-50 dark:bg-slate-800/60 shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white font-bold">
+                      <BellRing className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                        Live Alert Email Preview
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Recipient: {previewAlertDelegate?.email || "delegate@organization.com"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowRememberPreviewModal(false)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Email Body Preview Container */}
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-950 font-sans">
+                  {/* Email Subject Bar */}
+                  <div className="mb-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Subject Line:
+                    </div>
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                      {(rememberCustomSubject || "IMPORTANT NOTICE: {event_name}")
+                        .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                        .replace(/{delegate_name}/gi, previewAlertDelegate?.name || `${previewAlertDelegate?.first_name || ""} ${previewAlertDelegate?.last_name || ""}`.trim() || "Delegate")
+                        .replace(/{date}/gi, currentRememberEvent?.date || "Upcoming")
+                        .replace(/{time}/gi, currentRememberEvent?.time || "Schedule")
+                        .replace(/{venue}/gi, currentRememberEvent?.venue || currentRememberEvent?.location || "Venue")
+                        .replace(/{city}/gi, currentRememberEvent?.city || "Hyderabad")
+                        .replace(/{pass_id}/gi, previewAlertDelegate?.id || "ETM-REG-0000")}
+                    </div>
+                  </div>
+
+                  {/* HTML Card Container mimicking recipient inbox */}
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-md overflow-hidden text-slate-800">
+                    {/* Brand Banner */}
+                    <div className="bg-linear-to-r from-slate-950 via-slate-900 to-cyan-950 px-6 py-6 text-center text-white">
+                      <div className="inline-block text-xl font-black tracking-widest uppercase text-cyan-400 font-display">
+                        ET MEDIA & EVENTS
+                      </div>
+                      <div className="text-[10px] uppercase tracking-widest text-slate-300 mt-1">
+                        Official Event Notification & Reminder
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                      {/* Greeting */}
+                      <div className="text-sm font-extrabold text-slate-900">
+                        Dear {previewAlertDelegate?.name || `${previewAlertDelegate?.first_name || ""} ${previewAlertDelegate?.last_name || ""}`.trim() || "Valued Delegate"},
+                      </div>
+
+                      {/* Intro */}
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {(rememberCustomBodyIntro || "We have an important announcement and reminder regarding your upcoming attendance.")
+                          .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                          .replace(/{delegate_name}/gi, previewAlertDelegate?.name || "Delegate")}
+                      </p>
+
+                      {/* Event Details Card */}
+                      <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2">
+                        <div className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                          <AlarmClock className="h-4 w-4 text-amber-700" />
+                          <span>{currentRememberEvent?.title || currentRememberEvent?.name || "Summit"} Details</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-500 font-medium">📅 Date:</span>{" "}
+                            <strong className="text-slate-900">{currentRememberEvent?.date || "To be announced"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 font-medium">⏰ Time:</span>{" "}
+                            <strong className="text-slate-900">{currentRememberEvent?.time || "Standard Schedule"}</strong>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-slate-500 font-medium">📍 Venue:</span>{" "}
+                            <strong className="text-slate-900">{currentRememberEvent?.venue || currentRememberEvent?.location || "Main Convention Center"}, {currentRememberEvent?.city || "Hyderabad"}</strong>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-slate-500 font-medium">🎟️ Pass / Reg ID:</span>{" "}
+                            <code className="bg-white px-2 py-0.5 rounded font-mono font-bold text-cyan-800 border border-amber-200">
+                              {previewAlertDelegate?.id || "ETM-REG-000000"}
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Message Body Content */}
+                      <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line py-1">
+                        {(rememberCustomBodyTemplate || "We look forward to welcoming you to the summit!\n\nPlease keep this email handy for smooth check-in at the venue registration desk.")
+                          .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                          .replace(/{delegate_name}/gi, previewAlertDelegate?.name || "Delegate")
+                          .replace(/{date}/gi, currentRememberEvent?.date || "Upcoming")
+                          .replace(/{time}/gi, currentRememberEvent?.time || "Schedule")
+                          .replace(/{venue}/gi, currentRememberEvent?.venue || currentRememberEvent?.location || "Venue")
+                          .replace(/{city}/gi, currentRememberEvent?.city || "Hyderabad")
+                          .replace(/{pass_id}/gi, previewAlertDelegate?.id || "ETM-REG-0000")}
+                      </div>
+
+                      {/* Notes / Guidelines Box */}
+                      {rememberCustomBodyNotes && (
+                        <div className="rounded-xl border border-cyan-200 bg-cyan-50/70 p-3.5 space-y-1">
+                          <div className="text-[11px] font-black uppercase tracking-wider text-cyan-900 flex items-center gap-1.5">
+                            <Info className="h-3.5 w-3.5 text-cyan-700" />
+                            <span>Important Guidelines for Attendees</span>
+                          </div>
+                          <div className="text-xs text-cyan-950 whitespace-pre-line leading-relaxed font-normal">
+                            {rememberCustomBodyNotes}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sign-off */}
+                      <div className="pt-2 border-t border-slate-100 text-xs text-slate-600">
+                        <div>Warm regards,</div>
+                        <div className="font-extrabold text-slate-900">ET Media & Events Team</div>
+                        <div className="text-[11px] text-slate-500">support@etmedia.in • https://etmedia.in</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 px-6 py-4 bg-slate-50 dark:bg-slate-800/60 shrink-0">
+                  <div className="text-xs text-slate-500 font-medium">
+                    Rendered with live Hostinger SMTP dynamic tags
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRememberPreviewModal(false)}
+                      className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Close Preview
+                    </button>
+                    {previewAlertDelegate && (
+                      <button
+                        type="button"
+                        disabled={sendingAlertId === previewAlertDelegate.id}
+                        onClick={() => {
+                          setShowRememberPreviewModal(false);
+                          handleSendSingleAlert(previewAlertDelegate);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-95 transition-all cursor-pointer"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        <span>Send to this Delegate Now</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

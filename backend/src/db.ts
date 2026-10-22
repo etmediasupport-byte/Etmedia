@@ -1793,6 +1793,21 @@ export const DEFAULT_EMAIL_SUBJECT_CONFIGS: EmailSubjectConfig[] = [
     available_variables: ["{delegate_name}", "{category}"],
     is_active: 1,
   },
+  {
+    id: "event_remember_alert",
+    category: "Event Alerts & Reminders",
+    name: "Event Reminder & Broadcast Alert",
+    description: "Custom reminder and operational alert dispatched by admin to registered delegates of an event.",
+    recipient_type: "Registered Event Delegate",
+    prefix: "⏰ Important Alert: ",
+    suffix: " — {event_name}",
+    subject_template: "⏰ Important Alert: {event_name} — {delegate_name}",
+    body_intro: "Dear {delegate_name},",
+    body_template: `We are reaching out with an important update regarding {event_name} organized by Executive Talks Media Business Intelligence.\n\nPlease find the vital summit details below:\n- Event: {event_name}\n- Date: {date}\n- Timing: {time}\n- Venue: {venue}\n- Location: {city}\n- Registration ID: {pass_id}\n\nPlease arrive on time to collect your delegate badge and network with fellow executive leaders.\n\nWe look forward to hosting you!`,
+    body_notes: "Executive Talks Media Business Intelligence — Event Operations Directorate.",
+    available_variables: ["{event_name}", "{delegate_name}", "{date}", "{time}", "{venue}", "{city}", "{pass_id}", "{company}"],
+    is_active: 1,
+  },
 ];
 
 export async function ensureEmailSubjectConfigsTable() {

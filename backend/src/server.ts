@@ -250,16 +250,33 @@ export async function getDynamicEmailContent(
     const company = (variables.company || variables.organization || variables.company_name || "").trim();
     const category = (variables.category || variables.registrationCategory || variables.regCategory || "Delegate").trim();
     const city = (variables.city || "Hyderabad").trim();
+    const date = (variables.date || variables.eventDate || "Upcoming Summit").trim();
+    const time = (variables.time || variables.eventTime || "09:00 AM — 06:00 PM IST").trim();
+    const venue = (variables.venue || variables.venue_address || variables.eventVenue || "Convention Centre").trim();
 
     const replaceTokens = (text: string) => {
       if (!text) return "";
       return text
         .replace(/{event_name}/gi, eventName)
+        .replace(/{{event_name}}/gi, eventName)
         .replace(/{delegate_name}/gi, delegateName)
+        .replace(/{{delegate_name}}/gi, delegateName)
+        .replace(/{name}/gi, delegateName)
+        .replace(/{{name}}/gi, delegateName)
         .replace(/{pass_id}/gi, passId)
+        .replace(/{{pass_id}}/gi, passId)
         .replace(/{company}/gi, company)
+        .replace(/{{company}}/gi, company)
         .replace(/{category}/gi, category)
-        .replace(/{city}/gi, city);
+        .replace(/{{category}}/gi, category)
+        .replace(/{city}/gi, city)
+        .replace(/{{city}}/gi, city)
+        .replace(/{date}/gi, date)
+        .replace(/{{date}}/gi, date)
+        .replace(/{time}/gi, time)
+        .replace(/{{time}}/gi, time)
+        .replace(/{venue}/gi, venue)
+        .replace(/{{venue}}/gi, venue);
     };
 
     // 1. Subject
@@ -4356,6 +4373,318 @@ app.post("/api/admin/certificate/bulk-send", authenticateAdmin, async (req, res)
     console.error("[API] Bulk Certificate Error:", err);
     return res.status(500).json({ success: false, message: err.message || "Failed to process bulk certificates." });
   }
+});
+
+// ==========================================
+// REMEMBER & EVENT BROADCAST ALERTS ENDPOINTS
+// ==========================================
+async function sendEventAlertEmail(params: {
+  registrationId: string;
+  customSubject?: string;
+  customBody?: string;
+  customIntro?: string;
+  customNotes?: string;
+  eventId?: string;
+}): Promise<{ success: boolean; email: string; subject: string; sentAt: string }> {
+  if (!pool) {
+    throw new Error("Database connection is not available.");
+  }
+
+  // 1. Fetch Registration
+  const [regRows]: any = await pool.query(
+    "SELECT * FROM registrations WHERE id = ? LIMIT 1",
+    [params.registrationId]
+  );
+  if (!regRows || regRows.length === 0) {
+    throw new Error(`Delegate registration #${params.registrationId} not found.`);
+  }
+  const reg = regRows[0];
+  const candidateEmail = (reg.email || "").trim();
+  if (!candidateEmail) {
+    throw new Error(`Delegate #${params.registrationId} does not have a registered email.`);
+  }
+
+  // 2. Fetch Associated Event
+  let event: any = null;
+  const eventTarget = params.eventId || reg.event_id || reg.event_title;
+  if (eventTarget) {
+    const [eventRows]: any = await pool.query(
+      "SELECT * FROM events WHERE id = ? OR slug = ? OR title = ? OR slug LIKE ? LIMIT 1",
+      [eventTarget, eventTarget, eventTarget, `${eventTarget}%`]
+    );
+    if (eventRows && eventRows.length > 0) {
+      event = eventRows[0];
+    }
+  }
+
+  const eventTitle = event?.title || reg.event_title || "Executive Talks Media Summit";
+  const candidateName = reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate";
+  const eventDate = event?.date || "Upcoming Summit";
+  const eventTime = event?.time || "09:00 AM — 06:00 PM IST";
+  const eventVenue = event?.venue_address || event?.venue || reg.venue || "Centenary Convention Centre";
+  const eventCity = event?.city || reg.registering_city || reg.city || "Hyderabad, India";
+  const passId = reg.id;
+  const organization = reg.organization || reg.company || "Corporate Organization";
+  const category = reg.pass_name || reg.registration_category || "Executive Delegate";
+
+  // 3. Resolve Dynamic Subject and Body Content from Manager or Custom Input
+  const emailContent = await getDynamicEmailContent(
+    "event_remember_alert",
+    {
+      event_name: eventTitle,
+      delegate_name: candidateName,
+      date: eventDate,
+      time: eventTime,
+      venue: eventVenue,
+      city: eventCity,
+      pass_id: passId,
+      company: organization,
+      category: category,
+    },
+    {
+      subject: params.customSubject,
+      intro: params.customIntro,
+      body: params.customBody,
+      notes: params.customNotes,
+    }
+  );
+
+  // 4. Construct Branded Responsive HTML
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${emailContent.subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #cbd5e1;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0b1120; padding: 25px 12px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #0f172a; border-radius: 18px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 45px rgba(0,0,0,0.6);">
+          
+          <!-- BRAND TOP BAR -->
+          <tr>
+            <td style="padding: 22px 28px; background: linear-gradient(135deg, #090d16 0%, #0f172a 100%); border-bottom: 1px solid #1e293b;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <img src="https://executivetalksmedia.in/assets/executivetalks-logo-Br69z8Hu.jpeg" alt="Executive Talks Media" height="38" style="height: 38px; max-width: 175px; object-fit: contain; display: block;" />
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; background: rgba(0, 174, 239, 0.12); border: 1px solid rgba(0, 174, 239, 0.4); color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 5px 12px; border-radius: 20px;">
+                      ⏰ EVENT ALERT
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- EVENT BANNER -->
+          <tr>
+            <td style="padding: 26px 28px 18px 28px; background: linear-gradient(180deg, rgba(0, 174, 239, 0.08) 0%, transparent 100%);">
+              <span style="display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #00aeef; margin-bottom: 6px;">
+                EXECUTIVE BRIEFING & ATTENDANCE UPDATE
+              </span>
+              <h1 style="margin: 0 0 6px 0; color: #ffffff; font-size: 21px; font-weight: 800; line-height: 1.3;">
+                ${eventTitle}
+              </h1>
+              <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 500;">
+                Personalized delegate update for <strong style="color: #ffffff;">${candidateName}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- CONTENT BODY -->
+          <tr>
+            <td style="padding: 0 28px 24px 28px;">
+              <p style="margin: 0 0 16px 0; color: #ffffff; font-size: 15px; font-weight: 700;">
+                ${emailContent.intro}
+              </p>
+              
+              <div style="color: #cbd5e1; font-size: 14px; line-height: 1.65;">
+                ${emailContent.bodyHtml}
+              </div>
+
+              <!-- KEY LOGISTICS CARD -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 22px 0; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+                <tr>
+                  <td style="padding: 12px 18px; border-bottom: 1px solid #334155; background-color: #151e2e;">
+                    <span style="color: #38bdf8; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                      📍 Official Summit Details & Pass Coordinates
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 16px 18px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #cbd5e1;">
+                      <tr>
+                        <td style="padding: 6px 0; width: 34%; color: #94a3b8; font-weight: 600;">📅 Summit Date:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: 700;">${eventDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">⏰ Timing:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: 700;">${eventTime}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🏢 Venue:</td>
+                        <td style="padding: 6px 0; color: #38bdf8; font-weight: 700;">${eventVenue}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">📍 City:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: 600;">${eventCity}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🎫 Delegate ID:</td>
+                        <td style="padding: 6px 0; color: #fbbf24; font-family: monospace; font-weight: 800; font-size: 13px;">${passId}</td>
+                      </tr>
+                      ${organization ? `
+                      <tr>
+                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🏢 Organization:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: 600;">${organization}</td>
+                      </tr>` : ""}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              ${emailContent.notes ? `
+              <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px; font-style: italic; border-left: 2px solid #0284c7; padding-left: 10px;">
+                ${emailContent.notes}
+              </p>` : ""}
+
+              <!-- PORTAL CTA -->
+              <div style="text-align: center; margin-top: 26px;">
+                <a href="https://www.executivetalksmedia.in/events" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #00aeef 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
+                  🌐 View Official Event Portal
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background-color: #090d16; border-top: 1px solid #1e293b; padding: 20px; text-align: center; color: #64748b; font-size: 11px;">
+              <p style="margin: 0; color: #94a3b8; font-weight: 600;">Executive Talks Media Business Intelligence Directorate</p>
+              <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">www.executivetalksmedia.in</a></p>
+              <p style="margin: 6px 0 0 0; color: #475569;">For registration inquiries or venue assistance: <a href="mailto:registration@executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">registration@executivetalksmedia.in</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  // 5. Send via Hostinger SMTP Mailer
+  const mailOptions = {
+    from: `"Executive Talks Media Business Intelligence" <${smtpUser}>`,
+    replyTo: replyToEmail || supportEmail || smtpUser,
+    to: candidateEmail,
+    subject: emailContent.subject,
+    html: emailHtml,
+  };
+
+  const info = await mailTransporter.sendMail(mailOptions);
+  console.log(`[Alert] Sent to ${candidateEmail} for event ${eventTitle} (MessageId: ${info.messageId})`);
+
+  // 6. Record Timestamp in Database
+  const sentAt = new Date().toISOString();
+  await pool.query("UPDATE registrations SET alert_sent_at = NOW() WHERE id = ?", [reg.id]);
+
+  return {
+    success: true,
+    email: candidateEmail,
+    subject: emailContent.subject,
+    sentAt,
+  };
+}
+
+// 1. Single Alert Dispatch Endpoint
+app.post("/api/admin/remember/send", authenticateAdmin, async (req, res) => {
+  const { registrationId, eventId, customSubject, customBody, customIntro, customNotes } = req.body;
+  if (!registrationId) {
+    return res.status(400).json({ success: false, message: "Registration ID is required." });
+  }
+
+  try {
+    const result = await sendEventAlertEmail({
+      registrationId,
+      eventId,
+      customSubject,
+      customBody,
+      customIntro,
+      customNotes,
+    });
+
+    if (io) {
+      io.emit("admin_activity", {
+        type: "event_alert_sent",
+        registrationId,
+        email: result.email,
+        timestamp: result.sentAt,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `✅ Alert email successfully dispatched to ${result.email}!`,
+      sentAt: result.sentAt,
+      subject: result.subject,
+    });
+  } catch (err: any) {
+    console.error("[API] Remember Send Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to dispatch alert email." });
+  }
+});
+
+// 2. Bulk Alert Dispatch Endpoint
+app.post("/api/admin/remember/bulk-send", authenticateAdmin, async (req, res) => {
+  const { registrationIds, eventId, customSubject, customBody, customIntro, customNotes } = req.body;
+  if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+    return res.status(400).json({ success: false, message: "List of registration IDs is required." });
+  }
+
+  let sentCount = 0;
+  let failedCount = 0;
+  const errors: string[] = [];
+
+  for (const id of registrationIds) {
+    try {
+      await sendEventAlertEmail({
+        registrationId: id,
+        eventId,
+        customSubject,
+        customBody,
+        customIntro,
+        customNotes,
+      });
+      sentCount++;
+    } catch (err: any) {
+      failedCount++;
+      errors.push(`ID ${id}: ${err.message}`);
+    }
+  }
+
+  if (io && sentCount > 0) {
+    io.emit("admin_activity", {
+      type: "event_bulk_alerts_sent",
+      count: sentCount,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: `🎉 Successfully dispatched alerts to ${sentCount} registered delegate(s)!${failedCount > 0 ? ` (${failedCount} failed)` : ""}`,
+    sentCount,
+    failedCount,
+    errors: errors.slice(0, 5),
+  });
 });
 
 // Test SMTP Mail Delivery Endpoint
