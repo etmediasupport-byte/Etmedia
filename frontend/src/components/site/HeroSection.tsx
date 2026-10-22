@@ -221,27 +221,28 @@ export function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-18 sm:pt-20 lg:pt-22 pb-3 sm:pb-4">
       
-      {/* 6 Real Summit Photos Carousel Background - Vivid & Clearly Visible */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* 6 Real Summit Photos Carousel Background - Perfectly Aligned Below Navbar without Cropping Heads */}
+      <div className="absolute inset-x-0 bottom-0 top-16 sm:top-18 lg:top-20 overflow-hidden pointer-events-none z-0">
         <AnimatePresence mode="sync">
           <motion.img
             key={bgImageIndex}
             src={heroBackgroundImages[bgImageIndex].url}
             alt={heroBackgroundImages[bgImageIndex].title}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 0.82, scale: 1.0 }}
+            initial={{ opacity: 0, scale: 1.03 }}
+            animate={{ opacity: 0.86, scale: 1.0 }}
             exit={{ opacity: 0 }}
             transition={{
               opacity: { duration: 1.0, ease: "easeInOut" },
               scale: { duration: 6, ease: "linear" },
             }}
-            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05]"
+            style={{ transformOrigin: "center top" }}
+            className="absolute inset-0 w-full h-full object-cover object-top filter brightness-[0.96] contrast-[1.05]"
           />
         </AnimatePresence>
 
         {/* Lightweight translucent gradient for pristine text readability without hiding the photos */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/25 z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/25 z-1" />
         <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.04)_1px,transparent_1px)] [background-size:32px_32px] z-1" />
       </div>
 
