@@ -6542,11 +6542,17 @@ export default function AdminDashboardPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          registrationId: delegate.id,
           registration_id: delegate.id,
+          eventId: currentRememberEvent?.id || currentRememberEvent?.slug || delegate.event_id,
           event_id: currentRememberEvent?.id || currentRememberEvent?.slug || delegate.event_id,
+          customSubject: rememberCustomSubject,
           custom_subject: rememberCustomSubject,
-          custom_body_intro: rememberCustomBodyIntro,
+          customBody: rememberCustomBodyTemplate,
           custom_body_template: rememberCustomBodyTemplate,
+          customIntro: rememberCustomBodyIntro,
+          custom_body_intro: rememberCustomBodyIntro,
+          customNotes: rememberCustomBodyNotes,
           custom_body_notes: rememberCustomBodyNotes,
         }),
       });
@@ -6554,7 +6560,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(data.message || `Alert sent successfully to ${targetEmail}!`);
-        const sentTime = data.alert_sent_at || new Date().toISOString();
+        const sentTime = data.alert_sent_at || data.sentAt || new Date().toISOString();
         setRegistrations((prev) =>
           prev.map((r) => (r.id === delegate.id ? { ...r, alert_sent_at: sentTime } : r))
         );
@@ -6603,11 +6609,17 @@ export default function AdminDashboardPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          registrationIds: idsToSend,
           registration_ids: idsToSend,
+          eventId: currentRememberEvent?.id || currentRememberEvent?.slug,
           event_id: currentRememberEvent?.id || currentRememberEvent?.slug,
+          customSubject: rememberCustomSubject,
           custom_subject: rememberCustomSubject,
-          custom_body_intro: rememberCustomBodyIntro,
+          customBody: rememberCustomBodyTemplate,
           custom_body_template: rememberCustomBodyTemplate,
+          customIntro: rememberCustomBodyIntro,
+          custom_body_intro: rememberCustomBodyIntro,
+          customNotes: rememberCustomBodyNotes,
           custom_body_notes: rememberCustomBodyNotes,
         }),
       });
@@ -6615,7 +6627,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(
-          data.message || `Alert dispatch completed: ${data.successful} sent successfully!`
+          data.message || `Alert dispatch completed: ${data.sentCount ?? data.successful ?? idsToSend.length} sent successfully!`
         );
         const sentIds = new Set(
           (data.results || []).filter((r: any) => r.status === "sent").map((r: any) => r.registration_id)

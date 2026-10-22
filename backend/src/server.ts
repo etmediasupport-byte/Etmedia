@@ -4606,7 +4606,13 @@ async function sendEventAlertEmail(params: {
 
 // 1. Single Alert Dispatch Endpoint
 app.post("/api/admin/remember/send", authenticateAdmin, async (req, res) => {
-  const { registrationId, eventId, customSubject, customBody, customIntro, customNotes } = req.body;
+  const registrationId = req.body.registrationId || req.body.registration_id;
+  const eventId = req.body.eventId || req.body.event_id;
+  const customSubject = req.body.customSubject || req.body.custom_subject;
+  const customBody = req.body.customBody || req.body.custom_body || req.body.custom_body_template;
+  const customIntro = req.body.customIntro || req.body.custom_intro || req.body.custom_body_intro;
+  const customNotes = req.body.customNotes || req.body.custom_notes || req.body.custom_body_notes;
+
   if (!registrationId) {
     return res.status(400).json({ success: false, message: "Registration ID is required." });
   }
@@ -4644,8 +4650,15 @@ app.post("/api/admin/remember/send", authenticateAdmin, async (req, res) => {
 
 // 2. Bulk Alert Dispatch Endpoint
 app.post("/api/admin/remember/bulk-send", authenticateAdmin, async (req, res) => {
-  const { registrationIds, eventId, customSubject, customBody, customIntro, customNotes } = req.body;
-  if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+  const rawIds = req.body.registrationIds || req.body.registration_ids;
+  const eventId = req.body.eventId || req.body.event_id;
+  const customSubject = req.body.customSubject || req.body.custom_subject;
+  const customBody = req.body.customBody || req.body.custom_body || req.body.custom_body_template;
+  const customIntro = req.body.customIntro || req.body.custom_intro || req.body.custom_body_intro;
+  const customNotes = req.body.customNotes || req.body.custom_notes || req.body.custom_body_notes;
+
+  const registrationIds = Array.isArray(rawIds) ? rawIds : [];
+  if (registrationIds.length === 0) {
     return res.status(400).json({ success: false, message: "List of registration IDs is required." });
   }
 
