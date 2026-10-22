@@ -4622,7 +4622,14 @@ export default function AdminDashboardPage() {
       if (existing) {
         updated[index] = { ...existing, [field]: val };
       }
-      return { ...prev, locations: updated };
+      const syncObj: any = { locations: updated };
+      if (index === 0) {
+        if (field === "address") syncObj.venue_address = val;
+        if (field === "map_url") syncObj.map_url = val;
+        if (field === "venue") syncObj.venue = val;
+        if (field === "city") syncObj.city = val;
+      }
+      return { ...prev, ...syncObj };
     });
   };
 
@@ -5272,7 +5279,21 @@ export default function AdminDashboardPage() {
     }
 
     setSubmittingEvent(true);
-    const primaryLoc = eventForm.locations[0] || { city: "", venue: "", date: "", time: "", address: "", map_url: "" };
+    const effectiveVenueAddress = (eventForm.venue_address || eventForm.locations[0]?.address || "").trim();
+    const effectiveMapUrl = (eventForm.map_url || eventForm.locations[0]?.map_url || "").trim();
+
+    const normalizedLocations = eventForm.locations.map((loc, idx) => {
+      if (idx === 0) {
+        return {
+          ...loc,
+          address: effectiveVenueAddress || loc.address || "",
+          map_url: effectiveMapUrl || loc.map_url || "",
+        };
+      }
+      return loc;
+    });
+
+    const primaryLoc = normalizedLocations[0] || { city: "", venue: "", date: "", time: "", address: "", map_url: "" };
     const targetStatus = overrideStatus || eventForm.status || "published";
 
     const payload = {
@@ -5288,14 +5309,14 @@ export default function AdminDashboardPage() {
       venue: primaryLoc.venue.trim(),
       date: primaryLoc.date,
       time: primaryLoc.time,
-      locations: JSON.stringify(eventForm.locations),
+      locations: JSON.stringify(normalizedLocations),
       speakers_list: JSON.stringify(eventForm.speakers_list),
       zura_list: JSON.stringify(eventForm.zura_list),
       sponsors_list: JSON.stringify(eventForm.sponsors_list),
       gallery_list: JSON.stringify(eventForm.gallery_list),
       agenda_list: JSON.stringify(eventForm.agenda_list),
-      map_url: (primaryLoc.map_url || eventForm.map_url).trim(),
-      venue_address: (primaryLoc.address || eventForm.venue_address).trim(),
+      map_url: effectiveMapUrl,
+      venue_address: effectiveVenueAddress,
     };
 
     try {
@@ -5331,6 +5352,7 @@ export default function AdminDashboardPage() {
         if (data.data) {
           setEditingEvent(data.data);
         }
+        invalidateClientCache();
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to save event.");
@@ -13409,7 +13431,16 @@ export default function AdminDashboardPage() {
                       <input
                         type="text"
                         value={eventForm.venue_address}
-                        onChange={(e) => setEventForm({ ...eventForm, venue_address: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEventForm((prev) => {
+                            const locs = [...prev.locations];
+                            if (locs.length > 0 && locs[0]) {
+                              locs[0] = { ...locs[0], address: val };
+                            }
+                            return { ...prev, venue_address: val, locations: locs };
+                          });
+                        }}
                         placeholder="e.g. The St. Regis, Lower Parel, Mumbai, Maharashtra 400013"
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900"
                       />
@@ -13420,7 +13451,20 @@ export default function AdminDashboardPage() {
                       <textarea
                         rows={3}
                         value={eventForm.map_url}
-                        onChange={(e) => setEventForm({ ...eventForm, map_url: e.target.value })}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val.includes("<iframe") && val.includes("src=")) {
+                            const match = val.match(/src=["']([^"']+)["']/);
+                            if (match && match[1]) val = match[1];
+                          }
+                          setEventForm((prev) => {
+                            const locs = [...prev.locations];
+                            if (locs.length > 0 && locs[0]) {
+                              locs[0] = { ...locs[0], map_url: val };
+                            }
+                            return { ...prev, map_url: val, locations: locs };
+                          });
+                        }}
                         placeholder="Paste Google Maps iframe src URL..."
                         className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
                       />
@@ -13638,10 +13682,11 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (editingEvent?.slug) {
-                        window.open(`/events/${editingEvent.slug}`, "_blank");
+                      const eventSlug = editingEvent?.slug || eventForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                      if (eventSlug) {
+                        window.open(`/events/${eventSlug}?preview=true`, "_blank");
                       } else {
-                        toast.info("Please save event first to preview page.");
+                        toast.info("Please enter an event title or save event first to preview.");
                       }
                     }}
                     className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer flex items-center gap-1.5"

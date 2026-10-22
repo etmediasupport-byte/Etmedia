@@ -63,9 +63,15 @@ export default function EventDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const targetSlug = (slug || "hr-recall-2k26").replace(/-\d+$/, "").toLowerCase();
+  const rawParamSlug = slug || "hr-recall-2k26";
+  const decodedSlug = decodeURIComponent(rawParamSlug).trim();
+  const normalizedSlug = decodedSlug.toLowerCase().replace(/\s+/g, "-");
+  const targetSlug = normalizedSlug.replace(/-\d+$/, "");
+
   const initialMatched = defaultEvents.find(
-    (e) => (e.slug || "").toLowerCase() === targetSlug ||
+    (e) => (e.slug || "").toLowerCase() === normalizedSlug ||
+           (e.slug || "").toLowerCase() === targetSlug ||
+           (e.id || "").toLowerCase() === normalizedSlug ||
            (e.id || "").toLowerCase() === targetSlug ||
            (e.slug || "").toLowerCase().includes(targetSlug) ||
            targetSlug.includes((e.slug || "").toLowerCase())
@@ -96,17 +102,21 @@ export default function EventDetailPage() {
 
     const loadEventData = async () => {
       try {
-        if (slug) {
-          const data = await fetchWithCache(`/api/events/${slug}`);
+        if (normalizedSlug) {
+          const isPreview = window.location.search.includes("preview=true") || Boolean(localStorage.getItem("adminToken"));
+          const querySuffix = isPreview ? "?preview=true" : "";
+          
+          let data = await fetchWithCache(`/api/events/${encodeURIComponent(normalizedSlug)}${querySuffix}`);
+          if ((!data || !data.success) && targetSlug !== normalizedSlug) {
+            data = await fetchWithCache(`/api/events/${encodeURIComponent(targetSlug)}${querySuffix}`);
+          }
+
           if (data && data.success && data.event && isMounted) {
-            if (data.event.status === "draft" || data.event.status === "archived") {
+            if ((data.event.status === "draft" || data.event.status === "archived") && !isPreview) {
               setEvent(null);
               return;
             }
             setEvent(data.event);
-            return;
-          } else if (data && !data.success && isMounted) {
-            setEvent(null);
             return;
           }
         }

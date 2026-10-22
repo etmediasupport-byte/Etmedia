@@ -2741,43 +2741,38 @@ app.get("/api/events/:slug", async (req, res) => {
 
   try {
     if (pool) {
-      // 1. Exact match
+      const rawSlug = String(slug || "").trim();
+      const decodedSlug = decodeURIComponent(rawSlug).trim();
+      const normalizedSlug = decodedSlug.toLowerCase().replace(/\s+/g, "-");
+      const cleanSlug = normalizedSlug.replace(/-\d+$/, "");
+
+      // 1. Exact match across slug variants, ID, and stripped suffix
       let [rows]: any = await pool.query(
-        "SELECT * FROM events WHERE slug = ? OR id = ? LIMIT 1",
-        [slug, slug]
+        `SELECT * FROM events 
+         WHERE slug = ? OR slug = ? OR slug = ? OR id = ? OR id = ? OR slug = ? OR slug LIKE ?
+         ORDER BY (status = 'published') DESC, id DESC LIMIT 1`,
+        [rawSlug, decodedSlug, normalizedSlug, rawSlug, decodedSlug, cleanSlug, `${cleanSlug}%`]
       );
 
-      // 2. If not found, strip trailing numeric suffix (e.g. -8399 or -123)
+      // 2. If still not found, try fuzzy prefix & title matching
       if (rows.length === 0) {
-        const strippedSlug = slug.replace(/-\d+$/, "");
-        if (strippedSlug !== slug) {
-          const [strippedRows]: any = await pool.query(
-            "SELECT * FROM events WHERE slug = ? OR id = ? OR slug LIKE ? LIMIT 1",
-            [strippedSlug, strippedSlug, `${strippedSlug}%`]
-          );
-          if (strippedRows.length > 0) {
-            rows = strippedRows;
-          }
-        }
-      }
-
-      // 3. If still not found, try fuzzy prefix match
-      if (rows.length === 0) {
-        const firstWords = slug.replace(/-\d+$/, "").split("-").slice(0, 3).join("-");
-        if (firstWords) {
-          const [fuzzyRows]: any = await pool.query(
-            "SELECT * FROM events WHERE slug LIKE ? OR title LIKE ? LIMIT 1",
-            [`%${firstWords}%`, `%${firstWords.replace(/-/g, " ")}%`]
-          );
-          if (fuzzyRows.length > 0) {
-            rows = fuzzyRows;
-          }
+        const firstWords = cleanSlug.split("-").slice(0, 3).join("-");
+        const titleWords = cleanSlug.replace(/-/g, " ");
+        const [fuzzyRows]: any = await pool.query(
+          `SELECT * FROM events 
+           WHERE slug LIKE ? OR title LIKE ? OR slug LIKE ?
+           ORDER BY (status = 'published') DESC, id DESC LIMIT 1`,
+          [`%${firstWords}%`, `%${titleWords}%`, `%${cleanSlug}%`]
+        );
+        if (fuzzyRows.length > 0) {
+          rows = fuzzyRows;
         }
       }
 
       if (rows.length > 0) {
         const foundEvt = rows[0];
-        if (foundEvt.status === "draft" || foundEvt.status === "archived") {
+        const isAdmin = Boolean(req.headers.authorization || req.query.preview === "true");
+        if ((foundEvt.status === "draft" || foundEvt.status === "archived") && !isAdmin) {
           return res.status(404).json({ success: false, message: "This event is currently unpublished." });
         }
         if (!foundEvt.image || typeof foundEvt.image !== "string" || !foundEvt.image.trim()) {
@@ -6386,43 +6381,54 @@ app.put("/api/admin/events/:id", authenticateAdmin, async (req, res) => {
       );
     }
 
-    const updatedEvent = {
-      id,
-      title,
-      category,
-      date,
-      time,
-      city,
-      venue,
-      locations: locationsStr,
-      description,
-      full_description,
-      about_content: about_content || full_description || description,
-      image,
-      about_image: about_image || "",
-      speakers,
-      status,
-      is_featured,
-      speakers_list: speakersListStr,
-      zura_list: zuraListStr,
-      sponsors_list: sponsorsListStr,
-      gallery_list: galleryListStr,
-      agenda_list: agendaListStr,
-      map_url,
-      venue_address,
-      delegates_count: effectiveDelegatesCount,
-      speakers_count: effectiveSpeakersCount,
-      sponsors_count: effectiveSponsorsCount,
-      allow_paid_registration: allowPaid,
-      allow_free_registration: allowFree,
-      show_pricing: showPricing,
-      terms_id: terms_id || null,
-    };
+    let finalEventData: any = null;
+    if (pool) {
+      const [rows]: any = await pool.query("SELECT * FROM events WHERE id = ? LIMIT 1", [id]);
+      if (rows && rows.length > 0) {
+        finalEventData = rows[0];
+      }
+    }
+
+    if (!finalEventData) {
+      finalEventData = {
+        id,
+        title,
+        category,
+        date,
+        time,
+        city,
+        venue,
+        locations: locationsStr,
+        description,
+        full_description,
+        about_content: about_content || full_description || description,
+        image,
+        about_image: about_image || "",
+        speakers,
+        status,
+        is_featured,
+        speakers_list: speakersListStr,
+        zura_list: zuraListStr,
+        sponsors_list: sponsorsListStr,
+        gallery_list: galleryListStr,
+        agenda_list: agendaListStr,
+        map_url,
+        venue_address,
+        delegates_count: effectiveDelegatesCount,
+        speakers_count: effectiveSpeakersCount,
+        sponsors_count: effectiveSponsorsCount,
+        allow_paid_registration: allowPaid,
+        allow_free_registration: allowFree,
+        show_pricing: showPricing,
+        terms_id: terms_id || null,
+      };
+    }
+
     invalidateFastCache("events_");
     invalidateFastCache("event_slug_");
-    io.emit("event_updated", updatedEvent);
+    io.emit("event_updated", finalEventData);
 
-    return res.json({ success: true, message: "Event updated successfully!", data: updatedEvent });
+    return res.json({ success: true, message: "Event updated successfully!", data: finalEventData });
   } catch (err: any) {
     console.error("Update Event DB Error:", err);
     return res.status(500).json({ success: false, message: "Failed to update event." });
