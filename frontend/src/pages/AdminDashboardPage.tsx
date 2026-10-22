@@ -859,7 +859,7 @@ export default function AdminDashboardPage() {
   const [previewTestPassId, setPreviewTestPassId] = useState<string>("ETM-REG-697665-3996");
 
   // REMEMBER & EVENT ALERT NOTIFICATIONS STATE
-  const [selectedRememberEventId, setSelectedRememberEventId] = useState<string>("");
+  const [selectedRememberEventId, setSelectedRememberEventId] = useState<string>("all");
   const [rememberSearchQuery, setRememberSearchQuery] = useState<string>("");
   const [selectedRememberUserIds, setSelectedRememberUserIds] = useState<string[]>([]);
   const [rememberCustomSubject, setRememberCustomSubject] = useState<string>("");
@@ -6425,14 +6425,26 @@ export default function AdminDashboardPage() {
 
   // Default selected event
   useEffect(() => {
-    if (!selectedRememberEventId && cmsEvents.length > 0) {
-      setSelectedRememberEventId(String(cmsEvents[0].id || cmsEvents[0].slug || ""));
+    if (!selectedRememberEventId) {
+      setSelectedRememberEventId("all");
     }
-  }, [cmsEvents, selectedRememberEventId]);
+  }, [selectedRememberEventId]);
 
   // Current selected event object
   const currentRememberEvent = useMemo(() => {
-    if (!selectedRememberEventId && cmsEvents.length > 0) return cmsEvents[0];
+    if (selectedRememberEventId === "all" || !selectedRememberEventId) {
+      return {
+        id: "all",
+        slug: "all",
+        title: "All Events & Summits",
+        name: "All Events & Summits",
+        date: "Respective Event Dates",
+        time: "Event Specific Schedule",
+        venue: "Official Convention Venues",
+        location: "Across All Cities",
+        city: "All Cities",
+      };
+    }
     return (
       cmsEvents.find(
         (e: any) =>
@@ -6442,8 +6454,11 @@ export default function AdminDashboardPage() {
     );
   }, [cmsEvents, selectedRememberEventId]);
 
-  // Delegates registered for current selected event
+  // Delegates registered for current selected event (or all events)
   const rememberDelegates = useMemo(() => {
+    if (selectedRememberEventId === "all" || !selectedRememberEventId) {
+      return registrations;
+    }
     if (!currentRememberEvent) return [];
     const eventIdStr = String(currentRememberEvent.id || "").toLowerCase();
     const eventSlugStr = String(currentRememberEvent.slug || "").toLowerCase();
@@ -6462,7 +6477,28 @@ export default function AdminDashboardPage() {
         (eventTitleStr && eventTitleStr.includes(rEventTitle))
       );
     });
-  }, [registrations, currentRememberEvent]);
+  }, [registrations, currentRememberEvent, selectedRememberEventId]);
+
+  // Preview Event Resolver for modal (resolves specific event for the delegate even when 'all' is selected)
+  const previewDelegateEvent = useMemo(() => {
+    if (previewAlertDelegate) {
+      const dEventId = String(previewAlertDelegate.event_id || "").toLowerCase();
+      const dEventTitle = String(previewAlertDelegate.event_title || "").toLowerCase().trim();
+      const found = cmsEvents.find((e: any) => {
+        const eId = String(e.id || "").toLowerCase();
+        const eSlug = String(e.slug || "").toLowerCase();
+        const eTitle = String(e.title || e.name || "").toLowerCase().trim();
+        return (
+          eId === dEventId ||
+          eSlug === dEventId ||
+          (dEventId && (eId.includes(dEventId) || eSlug.includes(dEventId))) ||
+          (dEventTitle && (eTitle === dEventTitle || eTitle.includes(dEventTitle) || dEventTitle.includes(eTitle)))
+        );
+      });
+      if (found) return found;
+    }
+    return currentRememberEvent && currentRememberEvent.id !== "all" ? currentRememberEvent : (cmsEvents[0] || currentRememberEvent);
+  }, [previewAlertDelegate, cmsEvents, currentRememberEvent]);
 
   // Filtered delegates based on search query
   const filteredRememberDelegates = useMemo(() => {
@@ -9783,6 +9819,9 @@ export default function AdminDashboardPage() {
                         }}
                         className="w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-10 text-xs font-bold text-slate-900 dark:text-slate-100 shadow-xs focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 cursor-pointer"
                       >
+                        <option value="all">
+                          🌟 All Events & Summits ({registrations.length} Total Delegates • {cmsEvents.length} Events)
+                        </option>
                         {cmsEvents.map((evt: any) => (
                           <option key={evt.id || evt.slug} value={evt.id || evt.slug}>
                             {evt.title || evt.name} ({evt.date || "Date TBD"} • {evt.city || evt.location || "India"})
@@ -9801,7 +9840,7 @@ export default function AdminDashboardPage() {
                         <span>Date</span>
                       </div>
                       <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
-                        {currentRememberEvent?.date || "To be announced"}
+                        {selectedRememberEventId === "all" ? "Across All Dates" : (currentRememberEvent?.date || "To be announced")}
                       </div>
                     </div>
 
@@ -9811,7 +9850,7 @@ export default function AdminDashboardPage() {
                         <span>Time</span>
                       </div>
                       <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">
-                        {currentRememberEvent?.time || "Standard Schedule"}
+                        {selectedRememberEventId === "all" ? "Respective Timing" : (currentRememberEvent?.time || "Standard Schedule")}
                       </div>
                     </div>
 
@@ -9820,8 +9859,8 @@ export default function AdminDashboardPage() {
                         <MapPin className="h-3.5 w-3.5 text-rose-600" />
                         <span>Venue & City</span>
                       </div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate" title={currentRememberEvent?.venue || currentRememberEvent?.location || ""}>
-                        {currentRememberEvent?.city ? `${currentRememberEvent.city} • ` : ""}{currentRememberEvent?.venue || currentRememberEvent?.location || "Main Convention"}
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 truncate" title={selectedRememberEventId === "all" ? "Respective Event Venues" : (currentRememberEvent?.venue || currentRememberEvent?.location || "")}>
+                        {selectedRememberEventId === "all" ? "Respective Event Venues" : `${currentRememberEvent?.city ? `${currentRememberEvent.city} • ` : ""}${currentRememberEvent?.venue || currentRememberEvent?.location || "Main Convention"}`}
                       </div>
                     </div>
 
@@ -9831,7 +9870,7 @@ export default function AdminDashboardPage() {
                         <span>Registered</span>
                       </div>
                       <div className="text-sm font-extrabold text-cyan-900 dark:text-cyan-300 mt-0.5">
-                        {rememberDelegates.length} delegates
+                        {rememberDelegates.length} delegates {selectedRememberEventId === "all" ? "(All)" : ""}
                       </div>
                     </div>
                   </div>
@@ -10277,12 +10316,12 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
                       {(rememberCustomSubject || "IMPORTANT NOTICE: {event_name}")
-                        .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                        .replace(/{event_name}/gi, previewDelegateEvent?.title || previewDelegateEvent?.name || "Event")
                         .replace(/{delegate_name}/gi, previewAlertDelegate?.name || `${previewAlertDelegate?.first_name || ""} ${previewAlertDelegate?.last_name || ""}`.trim() || "Delegate")
-                        .replace(/{date}/gi, currentRememberEvent?.date || "Upcoming")
-                        .replace(/{time}/gi, currentRememberEvent?.time || "Schedule")
-                        .replace(/{venue}/gi, currentRememberEvent?.venue || currentRememberEvent?.location || "Venue")
-                        .replace(/{city}/gi, currentRememberEvent?.city || "Hyderabad")
+                        .replace(/{date}/gi, previewDelegateEvent?.date || "Upcoming")
+                        .replace(/{time}/gi, previewDelegateEvent?.time || "Schedule")
+                        .replace(/{venue}/gi, previewDelegateEvent?.venue || previewDelegateEvent?.location || "Venue")
+                        .replace(/{city}/gi, previewDelegateEvent?.city || "Hyderabad")
                         .replace(/{pass_id}/gi, previewAlertDelegate?.id || "ETM-REG-0000")}
                     </div>
                   </div>
@@ -10308,7 +10347,7 @@ export default function AdminDashboardPage() {
                       {/* Intro */}
                       <p className="text-xs text-slate-700 leading-relaxed font-medium">
                         {(rememberCustomBodyIntro || "We have an important announcement and reminder regarding your upcoming attendance.")
-                          .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                          .replace(/{event_name}/gi, previewDelegateEvent?.title || previewDelegateEvent?.name || "Event")
                           .replace(/{delegate_name}/gi, previewAlertDelegate?.name || "Delegate")}
                       </p>
 
@@ -10316,20 +10355,20 @@ export default function AdminDashboardPage() {
                       <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2">
                         <div className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
                           <AlarmClock className="h-4 w-4 text-amber-700" />
-                          <span>{currentRememberEvent?.title || currentRememberEvent?.name || "Summit"} Details</span>
+                          <span>{previewDelegateEvent?.title || previewDelegateEvent?.name || "Summit"} Details</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-slate-500 font-medium">📅 Date:</span>{" "}
-                            <strong className="text-slate-900">{currentRememberEvent?.date || "To be announced"}</strong>
+                            <strong className="text-slate-900">{previewDelegateEvent?.date || "To be announced"}</strong>
                           </div>
                           <div>
                             <span className="text-slate-500 font-medium">⏰ Time:</span>{" "}
-                            <strong className="text-slate-900">{currentRememberEvent?.time || "Standard Schedule"}</strong>
+                            <strong className="text-slate-900">{previewDelegateEvent?.time || "Standard Schedule"}</strong>
                           </div>
                           <div className="col-span-2">
                             <span className="text-slate-500 font-medium">📍 Venue:</span>{" "}
-                            <strong className="text-slate-900">{currentRememberEvent?.venue || currentRememberEvent?.location || "Main Convention Center"}, {currentRememberEvent?.city || "Hyderabad"}</strong>
+                            <strong className="text-slate-900">{previewDelegateEvent?.venue || previewDelegateEvent?.location || "Main Convention Center"}, {previewDelegateEvent?.city || "Hyderabad"}</strong>
                           </div>
                           <div className="col-span-2">
                             <span className="text-slate-500 font-medium">🎟️ Pass / Reg ID:</span>{" "}
@@ -10343,12 +10382,12 @@ export default function AdminDashboardPage() {
                       {/* Message Body Content */}
                       <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line py-1">
                         {(rememberCustomBodyTemplate || "We look forward to welcoming you to the summit!\n\nPlease keep this email handy for smooth check-in at the venue registration desk.")
-                          .replace(/{event_name}/gi, currentRememberEvent?.title || currentRememberEvent?.name || "Event")
+                          .replace(/{event_name}/gi, previewDelegateEvent?.title || previewDelegateEvent?.name || "Event")
                           .replace(/{delegate_name}/gi, previewAlertDelegate?.name || "Delegate")
-                          .replace(/{date}/gi, currentRememberEvent?.date || "Upcoming")
-                          .replace(/{time}/gi, currentRememberEvent?.time || "Schedule")
-                          .replace(/{venue}/gi, currentRememberEvent?.venue || currentRememberEvent?.location || "Venue")
-                          .replace(/{city}/gi, currentRememberEvent?.city || "Hyderabad")
+                          .replace(/{date}/gi, previewDelegateEvent?.date || "Upcoming")
+                          .replace(/{time}/gi, previewDelegateEvent?.time || "Schedule")
+                          .replace(/{venue}/gi, previewDelegateEvent?.venue || previewDelegateEvent?.location || "Venue")
+                          .replace(/{city}/gi, previewDelegateEvent?.city || "Hyderabad")
                           .replace(/{pass_id}/gi, previewAlertDelegate?.id || "ETM-REG-0000")}
                       </div>
 

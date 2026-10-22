@@ -4406,7 +4406,7 @@ async function sendEventAlertEmail(params: {
 
   // 2. Fetch Associated Event
   let event: any = null;
-  const eventTarget = params.eventId || reg.event_id || reg.event_title;
+  const eventTarget = (params.eventId && params.eventId !== "all") ? params.eventId : (reg.event_id || reg.event_title);
   if (eventTarget) {
     const [eventRows]: any = await pool.query(
       "SELECT * FROM events WHERE id = ? OR slug = ? OR title = ? OR slug LIKE ? LIMIT 1",
