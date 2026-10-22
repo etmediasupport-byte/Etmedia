@@ -221,45 +221,44 @@ export function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-18 sm:pt-20 lg:pt-22 pb-3 sm:pb-4">
       
-      {/* 5 Real Summit Photos Carousel Background with smooth cross-fade & Ken-Burns motion */}
+      {/* 6 Real Summit Photos Carousel Background - Vivid & Clearly Visible */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <AnimatePresence mode="sync">
           <motion.img
             key={bgImageIndex}
             src={heroBackgroundImages[bgImageIndex].url}
             alt={heroBackgroundImages[bgImageIndex].title}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 0.38, scale: 1.0 }}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 0.82, scale: 1.0 }}
             exit={{ opacity: 0 }}
             transition={{
-              opacity: { duration: 1.2, ease: "easeInOut" },
+              opacity: { duration: 1.0, ease: "easeInOut" },
               scale: { duration: 6, ease: "linear" },
             }}
-            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.80] contrast-[1.12]"
+            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05]"
           />
         </AnimatePresence>
 
-        {/* Multi-layered cinematic dark gradients for pristine readability & sleek ambiance */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/65 z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 z-1" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(0,174,239,0.22)_0%,transparent_60%)] z-1" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.08)_1px,transparent_1px)] [background-size:28px_28px] z-1" />
+        {/* Lightweight translucent gradient for pristine text readability without hiding the photos */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/25 z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 z-1" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.04)_1px,transparent_1px)] [background-size:32px_32px] z-1" />
       </div>
 
       {/* Floating Live Summit Photo Indicator */}
-      <div className="absolute top-20 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-xs text-slate-300 shadow-xl">
+      <div className="absolute top-20 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-slate-200 shadow-xl">
         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="text-[11px] font-bold text-slate-200 truncate max-w-[220px]">
           {heroBackgroundImages[bgImageIndex].title}
         </span>
-        <div className="flex items-center gap-1 ml-1 pl-2 border-l border-white/10">
+        <div className="flex items-center gap-1 ml-1 pl-2 border-l border-white/15">
           {heroBackgroundImages.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setBgImageIndex(i)}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                bgImageIndex === i ? "w-4 bg-cyan-400 shadow-[0_0_8px_rgba(0,174,239,0.8)]" : "w-1.5 bg-white/20 hover:bg-white/40"
+                bgImageIndex === i ? "w-4 bg-cyan-400 shadow-[0_0_8px_rgba(0,174,239,0.8)]" : "w-1.5 bg-white/30 hover:bg-white/60"
               }`}
               title={`View summit photo ${i + 1}`}
             />
@@ -267,11 +266,11 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Background Radial Atmosphere Glow behind Globe & Content */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.25)_0%,rgba(75,31,167,0.18)_45%,transparent_75%)] pointer-events-none blur-3xl z-1" />
+      {/* Subtle, soft ambient glow - lightened so photo is never washed out or blurred */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.08)_0%,rgba(75,31,167,0.05)_45%,transparent_70%)] pointer-events-none blur-3xl z-1" />
 
       {/* BOTTOM GLOBAL CITY SKYLINE GRAPHIC BACKGROUND */}
-      <div className="absolute bottom-0 inset-x-0 h-20 sm:h-28 pointer-events-none overflow-hidden opacity-30 select-none z-1">
+      <div className="absolute bottom-0 inset-x-0 h-16 sm:h-24 pointer-events-none overflow-hidden opacity-20 select-none z-1">
         <svg className="w-full h-full text-zinc-800" viewBox="0 0 1200 120" preserveAspectRatio="none" fill="currentColor">
           <path d="M0 120 V100 H15 V120 H30 V90 H45 V120 H60 V80 H75 V120 H90 V105 H105 V120 H120 V70 L135 60 L150 70 V120 H165 V95 H180 V120 H200 V85 H220 V120 H240 V60 H255 V50 H270 V60 H285 V120 H310 V90 H330 V120 H360 V40 L375 20 L390 40 V120 H420 V85 H440 V120 H470 V65 H490 V120 H520 V30 L535 15 L550 30 V120 H580 V75 H600 V120 H630 V50 H645 V35 H660 V50 H675 V120 H700 V85 H720 V120 H750 V20 L765 10 L780 20 V120 H810 V70 H830 V120 H860 V55 H875 V45 H890 V55 H905 V120 H930 V90 H950 V120 H980 V35 L995 20 L1010 35 V120 H1040 V80 H1060 V120 H1090 V60 H1110 V120 H1140 V95 H1160 V120 H1200 V120 Z" />
         </svg>
