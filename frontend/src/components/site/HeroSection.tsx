@@ -221,38 +221,39 @@ export function HeroSection() {
   return (
     <section className="relative w-full min-h-[92vh] lg:min-h-screen flex flex-col justify-between overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-20 sm:pt-24 lg:pt-26 pb-4 sm:pb-6">
       
-      {/* 6 Real Summit Photos Carousel Background - 1920x1080 Widescreen Full-Screen Fit */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* 6 Real Summit Photos Carousel Background - Shifted Down Below Navbar with Full Headroom */}
+      <div className="absolute inset-x-0 bottom-0 top-16 sm:top-20 overflow-hidden pointer-events-none z-0">
         <AnimatePresence mode="sync">
           <motion.img
             key={bgImageIndex}
             src={heroBackgroundImages[bgImageIndex].url}
             alt={heroBackgroundImages[bgImageIndex].title}
             initial={{ opacity: 0, scale: 1.02 }}
-            animate={{ opacity: 0.90, scale: 1.0 }}
+            animate={{ opacity: 0.95, scale: 1.0 }}
             exit={{ opacity: 0 }}
             transition={{
-              opacity: { duration: 0.9, ease: "easeInOut" },
+              opacity: { duration: 0.8, ease: "easeInOut" },
               scale: { duration: 6, ease: "linear" },
             }}
-            style={{ transformOrigin: "center center" }}
-            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.94] contrast-[1.04]"
+            style={{ objectPosition: "center top" }}
+            className="absolute inset-0 w-full h-full object-cover object-top filter brightness-[0.98] contrast-[1.04]"
           />
         </AnimatePresence>
 
-        {/* Lightweight translucent gradient for pristine text readability without hiding the photos */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/55 to-black/20 z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 z-1" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.03)_1px,transparent_1px)] [background-size:32px_32px] z-1" />
+        {/* Extraordinary Cinematic Lighting: Luminous, transparent ambient gradients (No muddy black glass) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/30 to-transparent z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/20 z-1" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(0,174,239,0.12)_0%,transparent_60%)] z-1 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(147,51,234,0.12)_0%,transparent_60%)] z-1 pointer-events-none" />
       </div>
 
       {/* Floating Live Summit Photo Indicator */}
-      <div className="absolute top-22 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-slate-200 shadow-xl">
+      <div className="absolute top-22 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-xs text-slate-200 shadow-xl">
         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-[11px] font-bold text-slate-200 truncate max-w-[220px]">
+        <span className="text-[11px] font-bold text-slate-200 truncate max-w-[240px]">
           {heroBackgroundImages[bgImageIndex].title}
         </span>
-        <div className="flex items-center gap-1 ml-1 pl-2 border-l border-white/15">
+        <div className="flex items-center gap-1 ml-1 pl-2 border-l border-white/20">
           {heroBackgroundImages.map((_, i) => (
             <button
               key={i}
@@ -267,8 +268,8 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Subtle, soft ambient glow - lightened so photo is never washed out or blurred */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.08)_0%,rgba(75,31,167,0.05)_45%,transparent_70%)] pointer-events-none blur-3xl z-1" />
+      {/* Subtle, soft ambient glow */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(0,174,239,0.1)_0%,rgba(75,31,167,0.06)_45%,transparent_70%)] pointer-events-none blur-3xl z-1" />
 
       {/* BOTTOM GLOBAL CITY SKYLINE GRAPHIC BACKGROUND */}
       <div className="absolute bottom-0 inset-x-0 h-16 sm:h-24 pointer-events-none overflow-hidden opacity-20 select-none z-1">
@@ -281,88 +282,89 @@ export function HeroSection() {
       <div className="container-x relative z-10 flex-1 flex flex-col justify-between pt-0">
         
         {/* TOP ROW: TWO COLUMNS (LEFT CONTENT & RIGHT INTERACTIVE GLOBE) */}
-        <div className="grid gap-3 lg:grid-cols-12 items-center">
+        <div className="grid gap-4 lg:grid-cols-12 items-center">
           
           {/* LEFT COLUMN: BRANDING, HEADLINE, LOCATIONS & CTAS */}
-          <div className="lg:col-span-6 space-y-2.5 sm:space-y-3">
+          <div className="lg:col-span-6 space-y-3 sm:space-y-4">
             
-            {/* Dynamic Animated Text Section */}
-            <div className="min-h-[140px] sm:min-h-[155px] lg:min-h-[170px] flex flex-col justify-start pt-1">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={phraseIndex}
-                  initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, y: -18, filter: "blur(8px)" }}
-                  transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  className="space-y-2 sm:space-y-2.5"
-                >
-                  <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] text-cyan-400 font-btn">
-                    <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                    <span>{currentPhrase.kicker}</span>
-                  </div>
+            {/* Extraordinary Glassmorphism Highlight Card */}
+            <div className="relative rounded-3xl border border-white/15 bg-slate-950/50 backdrop-blur-xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+              {/* Subtle neon top beam */}
+              <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-white font-display leading-[1.15]">
-                    <span className="block sm:whitespace-nowrap">
-                      {currentPhrase.prefix}{" "}
-                      <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(0,174,239,0.35)]">
-                        {currentPhrase.gradientText}
+              <div className="space-y-3">
+                {/* Kicker badge */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-purple-500/20 px-3.5 py-1 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-cyan-300 shadow-[0_0_15px_rgba(0,174,239,0.25)]">
+                  <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                  <span>{currentPhrase.kicker}</span>
+                </div>
+
+                {/* Animated Headline */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={phraseIndex}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="space-y-2"
+                  >
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-white font-display leading-[1.12]">
+                      <span className="block sm:whitespace-nowrap">
+                        {currentPhrase.prefix}{" "}
+                        <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(0,174,239,0.4)]">
+                          {currentPhrase.gradientText}
+                        </span>
                       </span>
-                    </span>
-                    <span className="block">{currentPhrase.line2}</span>
-                  </h1>
+                      <span className="block">{currentPhrase.line2}</span>
+                    </h1>
 
-                  <p className="text-xs sm:text-sm lg:text-base text-slate-300 font-medium max-w-xl leading-relaxed">
-                    {currentPhrase.subtext}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+                    <p className="text-xs sm:text-sm lg:text-[15px] text-slate-200 font-medium max-w-xl leading-relaxed">
+                      {currentPhrase.subtext}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Phrase Selector Dots */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  {heroPhrases.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Phrase ${i + 1}`}
+                      onClick={() => setPhraseIndex(i)}
+                      className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                        i === phraseIndex
+                          ? "w-7 bg-gradient-to-r from-cyan-400 to-purple-500 shadow-[0_0_12px_#00AEEF]"
+                          : "w-1.5 bg-white/20 hover:bg-white/40"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
+                  <MagneticButton
+                    strength={20}
+                    className="gradient-brand rounded-full px-6 sm:px-8 py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(0,174,239,0.55)] hover:shadow-[0_15px_40px_rgba(0,174,239,0.8)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
+                  >
+                    <Link to="/events" className="flex items-center gap-2 font-btn">
+                      <span>Explore Events</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </MagneticButton>
+
+                  <MagneticButton
+                    strength={15}
+                    className="rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-5 sm:px-7 py-3 text-xs sm:text-sm font-extrabold text-white backdrop-blur-md shadow-lg hover:border-cyan-400/50 hover:text-cyan-200 transition-all duration-200 cursor-pointer"
+                  >
+                    <Link to="/events/partner" className="font-btn">
+                      Partner With Us
+                    </Link>
+                  </MagneticButton>
+                </div>
+              </div>
             </div>
-
-            {/* Phrase Selector Dots */}
-            <div className="flex items-center gap-1.5 pt-0.5">
-              {heroPhrases.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Phrase ${i + 1}`}
-                  onClick={() => setPhraseIndex(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    i === phraseIndex
-                      ? "w-6 bg-gradient-to-r from-cyan-400 to-purple-500 shadow-[0_0_10px_#00AEEF]"
-                      : "w-1.5 bg-zinc-700 hover:bg-zinc-500"
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2"
-            >
-              <MagneticButton
-                strength={20}
-                className="gradient-brand rounded-full px-5 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_30px_rgba(0,174,239,0.5)] hover:shadow-[0_15px_38px_rgba(0,174,239,0.7)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
-              >
-                <Link to="/events" className="flex items-center gap-2 font-btn">
-                  <span>Explore Events</span>
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Link>
-              </MagneticButton>
-
-              <MagneticButton
-                strength={15}
-                className="rounded-full border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold text-slate-200 shadow-sm hover:border-cyan-500/60 hover:text-cyan-300 transition-all duration-200 cursor-pointer"
-              >
-                <Link to="/events/partner" className="font-btn">
-                  Partner With Us
-                </Link>
-              </MagneticButton>
-            </motion.div>
-
           </div>
 
           {/* RIGHT COLUMN: 3D GLOBE */}
