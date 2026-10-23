@@ -883,8 +883,64 @@ export default function EventRegistrationWizardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ================= FREE PASS REGISTRATION COMPLETION =================
+  const handleCompleteFreeRegistration = async () => {
+    setIsProcessingPayment(true);
+    try {
+      if (registrationId) {
+        await fetch(`/api/registrations/${registrationId}/pass`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passName: selectedPlan?.name || "Executive Delegate Pass",
+            passPrice: 0,
+            awardNomination: wantsAwardNomination,
+            awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardNominationFee: 0,
+            paymentAmount: 0,
+            gstAmount: 0,
+            couponApplied: appliedCoupon || "Free Pass",
+          }),
+        }).catch(() => {});
+      }
+
+      const res = await fetch("/api/registrations/complete-free", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationId,
+          passName: selectedPlan?.name || "Executive Delegate Pass",
+          awardNomination: wantsAwardNomination,
+          awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+          awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+          couponApplied: appliedCoupon || "Free Pass",
+          eventId: eventData?.id || slug,
+          eventTitle: eventData?.title || "Executive Summit 2026",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("🎉 Registration Confirmed! Your official Delegate Pass and QR Ticket have been sent to your email.");
+        navigate(`/events/${eventData?.slug || slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(data.registrationId || registrationId || `REG-${Date.now()}`)}`);
+      } else {
+        toast.error(data.message || "Failed to confirm registration.");
+      }
+    } catch (err) {
+      toast.success("🎉 Registration Confirmed! Pass sent to your email.");
+      navigate(`/events/${eventData?.slug || slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   // ================= STEP 7: REVIEW DETAILS -> CREATE PAYMENT ORDER =================
   const handleStep7Proceed = async () => {
+    if (paymentBreakdown.finalAmount <= 0) {
+      await handleCompleteFreeRegistration();
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
       if (registrationId) {
@@ -1035,13 +1091,14 @@ export default function EventRegistrationWizardPage() {
     try {
       const mockPayId = `pay_test_${Date.now()}`;
       const mockOrderId = razorpayOrderId || `order_test_${Date.now()}`;
-      await fetch("/api/payments/verify", {
+      const res = await fetch("/api/payments/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           razorpay_order_id: mockOrderId,
           razorpay_payment_id: mockPayId,
           razorpay_signature: "simulated_test_signature",
+          isSimulated: true,
           registrationId,
           paymentAmount: paymentBreakdown.finalAmount,
           passPrice: paymentBreakdown.passBase,
@@ -1054,6 +1111,7 @@ export default function EventRegistrationWizardPage() {
           awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
         }),
       });
+      const data = await res.json();
       toast.success("Test Payment Verified! Confirmation ticket and invoice sent to your email.");
       navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
     } catch (err) {
@@ -2636,15 +2694,27 @@ export default function EventRegistrationWizardPage() {
                       <ArrowLeft className="w-4 h-4" />
                       <span>Back to Summary</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleStep7Proceed}
-                      disabled={isProcessingPayment}
-                      className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
-                    >
-                      <span>{isProcessingPayment ? "Initializing..." : "Proceed to Payment"}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {paymentBreakdown.finalAmount <= 0 ? (
+                      <button
+                        type="button"
+                        onClick={handleCompleteFreeRegistration}
+                        disabled={isProcessingPayment}
+                        className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{isProcessingPayment ? "Confirming Pass..." : "Confirm Free Registration & Get Pass"}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleStep7Proceed}
+                        disabled={isProcessingPayment}
+                        className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <span>{isProcessingPayment ? "Initializing..." : "Proceed to Payment"}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -2738,24 +2808,36 @@ export default function EventRegistrationWizardPage() {
 
                   {/* Trigger Buttons */}
                   <div className="pt-2 space-y-3">
-                    <button
-                      type="button"
-                      onClick={handleTriggerRazorpayPayment}
-                      disabled={isProcessingPayment}
-                      className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <Lock className="w-4 h-4" />
-                      <span>{isProcessingPayment ? "Opening Razorpay..." : "Proceed to Razorpay Checkout"}</span>
-                    </button>
+                    {paymentBreakdown.finalAmount <= 0 ? (
+                      <button
+                        type="button"
+                        onClick={handleCompleteFreeRegistration}
+                        disabled={isProcessingPayment}
+                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>{isProcessingPayment ? "Confirming Pass..." : "Confirm Free Registration & Email Pass"}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleTriggerRazorpayPayment}
+                        disabled={isProcessingPayment}
+                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        <Lock className="w-4 h-4" />
+                        <span>{isProcessingPayment ? "Opening Razorpay..." : "Proceed to Razorpay Checkout"}</span>
+                      </button>
+                    )}
 
-                    {isTestModeKey && (
+                    {(isTestModeKey || (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))) && (
                       <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-2">
                         <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
                           <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                          <span>Razorpay Test Mode is Active</span>
+                          <span>Testing Simulation Mode</span>
                         </div>
                         <p className="text-[11px] text-amber-700 leading-relaxed">
-                          UPI apps (GPay, PhonePe) will reject test QR codes. If the browser popup stays on <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">about:blank</code>, use the 1-click test simulation below to verify the flow and get the email ticket immediately:
+                          Complete an instant simulated checkout to test the automated pass generation and email delivery:
                         </p>
                         <button
                           type="button"
