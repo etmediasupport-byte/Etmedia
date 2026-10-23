@@ -5,6 +5,7 @@ import { GlowBackdrop } from "@/components/site/primitives";
 import logo from "@/assets/UPDATED LOGO.jpeg";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 import { socket } from "@/lib/socket";
+import { invalidateClientCache } from "@/lib/api-cache";
 import {
   validateEmail,
   validatePhone,
@@ -165,6 +166,11 @@ interface Registration {
   pass_price?: number;
   gst_amount?: number;
   payment_amount?: number;
+  discount_amount?: number;
+  award_nomination?: string;
+  award_category?: string;
+  award_team_category?: string;
+  award_nomination_fee?: number;
   coupon_applied?: string;
   checkin_status?: string;
   checked_in_at?: string;
@@ -875,7 +881,7 @@ export default function AdminDashboardPage() {
 
   // Terms & Conditions CMS State
   interface TermsClause {
-    num: string | number;
+    num?: string | number;
     title: string;
     content: string;
     isWarning?: boolean;
@@ -2339,8 +2345,10 @@ export default function AdminDashboardPage() {
   };
 
   // --- EVENT PAYMENT MANAGEMENT HANDLERS ---
-  const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons">("general");
+  const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons" | "awards">("general");
   const [previewTierModalConfig, setPreviewTierModalConfig] = useState<EventPaymentConfig | null>(null);
+  const [newAwardCatInput, setNewAwardCatInput] = useState("");
+  const [newTeamCatInput, setNewTeamCatInput] = useState("");
 
   const handleOpenAddPaymentConfig = () => {
     setEditingPaymentConfig(null);
@@ -2392,6 +2400,31 @@ export default function AdminDashboardPage() {
       event_start_date: defaultEvent.date || "2026-10-15",
       event_end_date: defaultEvent.date || "2026-10-16",
       payment_status: "Enabled",
+      award_nomination_enabled: true,
+      award_nomination_fee: 5000,
+      award_categories: [
+        "CHRO of the Year",
+        "HR Leader of the Year",
+        "HR Professional of the Year",
+        "Emerging HR Leader of the Year",
+        "HR Rising Star of the Year",
+        "Young HR Professional of the Year",
+        "Talent Acquisition Leader of the Year",
+        "Talent Management Leader of the Year",
+        "Learning & Development Leader of the Year",
+        "HR Business Partner of the Year",
+        "Employee Experience Leader of the Year",
+        "HR Transformation Leader of the Year",
+        "HR Technology Leader of the Year",
+      ],
+      award_team_categories: [
+        "Best HR Team of the Year",
+        "Excellence in Talent Acquisition Team",
+        "Best Learning & Development Initiative",
+        "Best Employee Experience & Engagement Initiative",
+        "Best Diversity, Equity & Inclusion Initiative",
+        "Best HR Digital Transformation Initiative",
+      ],
     });
     setShowPaymentModal(true);
   };
@@ -2414,11 +2447,23 @@ export default function AdminDashboardPage() {
     if (!Array.isArray(parsedPlans) || parsedPlans.length === 0) {
       parsedPlans = getDefaultPricingPlans();
     }
+    let parsedAwardCats = item.award_categories;
+    if (typeof parsedAwardCats === "string") {
+      try { parsedAwardCats = JSON.parse(parsedAwardCats); } catch (e) {}
+    }
+    let parsedTeamCats = item.award_team_categories;
+    if (typeof parsedTeamCats === "string") {
+      try { parsedTeamCats = JSON.parse(parsedTeamCats); } catch (e) {}
+    }
     setPaymentForm({
       ...item,
       registration_type_prices: parsedRegPrices || { Delegate: item.registration_fee || 4999 },
       pricing_plans: parsedPlans,
       coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
+      award_nomination_enabled: item.award_nomination_enabled === 1 || item.award_nomination_enabled === true,
+      award_nomination_fee: Number(item.award_nomination_fee) || 5000,
+      award_categories: Array.isArray(parsedAwardCats) ? parsedAwardCats : [],
+      award_team_categories: Array.isArray(parsedTeamCats) ? parsedTeamCats : [],
     });
     setShowPaymentModal(true);
   };
@@ -4050,7 +4095,11 @@ export default function AdminDashboardPage() {
         "Event",
         "City",
         "Pass Tier",
-        "Base Price (INR)",
+        "Pass Value (INR)",
+        "Award Nomination",
+        "Award Category",
+        "Award Fee (INR)",
+        "Discount (INR)",
         "GST 18% (INR)",
         "Total Paid (INR)",
         "Payment Status",
@@ -4059,11 +4108,11 @@ export default function AdminDashboardPage() {
       ];
       rows = filteredRegistrations.map((r) => {
         const payAmount = Number(r.payment_amount) || 0;
-        const rawPassPrice = Number(r.pass_price) || 0;
-        const rawGst = Number(r.gst_amount) || 0;
-        const basePrice = rawPassPrice > 0 ? rawPassPrice : payAmount;
-        const gst = rawGst > 0 ? rawGst : (basePrice > 0 ? Math.round(basePrice * 0.18) : 0);
-        const total = payAmount > 0 ? payAmount : (basePrice + gst);
+        const passValue = Number(r.pass_price) || 0;
+        const awardFee = Number(r.award_nomination_fee) || 0;
+        const discount = Number(r.discount_amount) || 0;
+        const gst = Number(r.gst_amount) || (passValue > 0 ? Math.round((passValue + awardFee - discount) * 0.18) : 0);
+        const total = payAmount > 0 ? payAmount : (passValue + awardFee - discount + gst);
         return [
           r.id,
           r.name,
@@ -4073,7 +4122,11 @@ export default function AdminDashboardPage() {
           r.event_title || r.event_id,
           r.city || r.registering_city || "N/A",
           r.pass_name || r.registration_category || "Executive Delegate",
-          basePrice,
+          passValue,
+          r.award_nomination || "No",
+          r.award_category ? `${r.award_category}${r.award_team_category ? ` (${r.award_team_category})` : ""}` : "N/A",
+          awardFee,
+          discount,
           gst,
           total,
           getRegistrationStatus(r),
@@ -6806,10 +6859,11 @@ export default function AdminDashboardPage() {
     setTermsForm((prev) => {
       const list = [...prev.clauses];
       const targetIndex = direction === "up" ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= list.length) return prev;
-      const temp = list[index];
-      list[index] = list[targetIndex];
-      list[targetIndex] = temp;
+      const current = list[index];
+      const target = list[targetIndex];
+      if (!current || !target) return prev;
+      list[index] = target;
+      list[targetIndex] = current;
       const renumbered = list.map((c, i) => ({ ...c, num: i + 1 }));
       return { ...prev, clauses: renumbered };
     });
@@ -6818,7 +6872,9 @@ export default function AdminDashboardPage() {
   const handleUpdateClauseField = (index: number, field: "title" | "content" | "isWarning", value: any) => {
     setTermsForm((prev) => {
       const list = [...prev.clauses];
-      list[index] = { ...list[index], [field]: value };
+      const item = list[index];
+      if (!item) return prev;
+      list[index] = { ...item, [field]: value };
       return { ...prev, clauses: list };
     });
   };
@@ -9628,9 +9684,16 @@ export default function AdminDashboardPage() {
                               <Calendar className="h-3 w-3 text-cyan-500 shrink-0" />
                               <span className="truncate">{reg.event_title || reg.event_id}</span>
                             </div>
-                            <span className="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
-                              {reg.registration_category || reg.pass_name || "Delegate Pass"}
-                            </span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
+                                {reg.pass_name || reg.registration_category || "Delegate Pass"}
+                              </span>
+                              {reg.award_nomination === "Yes" && (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category}>
+                                  🏆 {reg.award_category || "Nominated"}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* 4. Payment & Status */}
@@ -9676,6 +9739,17 @@ export default function AdminDashboardPage() {
                             <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">
                               ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
                             </div>
+                            {(Number(reg.pass_price) > 0 || Number(reg.award_nomination_fee) > 0) && (
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex flex-col gap-0.5">
+                                <span>Pass: ₹{(Number(reg.pass_price) || 0).toLocaleString("en-IN")}</span>
+                                {Number(reg.award_nomination_fee) > 0 && (
+                                  <span className="text-amber-600 dark:text-amber-400 font-semibold">Award: ₹{(Number(reg.award_nomination_fee) || 0).toLocaleString("en-IN")}</span>
+                                )}
+                                {Number(reg.gst_amount) > 0 && (
+                                  <span>GST: ₹{(Number(reg.gst_amount) || 0).toLocaleString("en-IN")}</span>
+                                )}
+                              </div>
+                            )}
                             <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                               {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
                             </div>
@@ -23565,6 +23639,42 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* 2b. Award Nomination Details Card (if nominated) */}
+              {selectedRegDetail.award_nomination === "Yes" && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
+                      <span>🏆 Official Award Nomination</span>
+                    </span>
+                    <span className="rounded-full bg-amber-200/80 text-amber-900 px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+                      Nominated
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-amber-800/70 block text-[10px] font-black uppercase">Category</span>
+                      <strong className="text-amber-950 font-bold block">
+                        {selectedRegDetail.award_category || "General Executive Award"}
+                      </strong>
+                    </div>
+                    {selectedRegDetail.award_team_category && (
+                      <div>
+                        <span className="text-amber-800/70 block text-[10px] font-black uppercase">Sub / Team Category</span>
+                        <strong className="text-amber-950 font-bold block">
+                          {selectedRegDetail.award_team_category}
+                        </strong>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-amber-800/70 block text-[10px] font-black uppercase">Nomination Fee</span>
+                      <strong className="text-amber-900 font-mono text-sm block font-black">
+                        ₹{(Number(selectedRegDetail.award_nomination_fee) || 0).toLocaleString("en-IN")}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 3. Razorpay Payment & Tax Invoice Details */}
               <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50/70 via-slate-50 to-purple-50/40 p-5 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between border-b border-cyan-200/80 pb-2">
@@ -23610,21 +23720,14 @@ export default function AdminDashboardPage() {
                 {(() => {
                   const payAmount = Number(selectedRegDetail.payment_amount) || 0;
                   const rawPassPrice = Number(selectedRegDetail.pass_price) || 0;
+                  const rawAwardFee = Number(selectedRegDetail.award_nomination_fee) || 0;
+                  const rawDiscount = Number(selectedRegDetail.discount_amount) || 0;
                   const rawGst = Number(selectedRegDetail.gst_amount) || 0;
 
-                  let taxableBase = 0;
-                  let totalGst = 0;
-                  let grandTotal = payAmount;
-
-                  if (rawPassPrice > 0) {
-                    taxableBase = rawPassPrice;
-                    totalGst = rawGst > 0 ? rawGst : Math.round(rawPassPrice * 0.18);
-                    grandTotal = payAmount > 0 ? payAmount : taxableBase + totalGst;
-                  } else if (payAmount > 0) {
-                    taxableBase = payAmount;
-                    totalGst = Math.round(taxableBase * 0.18);
-                    grandTotal = taxableBase + totalGst;
-                  }
+                  const passBase = rawPassPrice > 0 ? rawPassPrice : (payAmount > 0 ? Math.round(payAmount / 1.18) : 0);
+                  const totalTaxable = passBase + rawAwardFee - rawDiscount;
+                  const totalGst = rawGst > 0 ? rawGst : (totalTaxable > 0 ? Math.round(totalTaxable * 0.18) : 0);
+                  const grandTotal = payAmount > 0 ? payAmount : (totalTaxable + totalGst);
 
                   const cgst = Math.round(totalGst / 2);
                   const sgst = totalGst - cgst;
@@ -23632,11 +23735,18 @@ export default function AdminDashboardPage() {
                   if (grandTotal <= 0) return null;
 
                   return (
-                    <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono gap-2">
-                      <span>Base Pass Price: <strong className="text-slate-900">₹{taxableBase.toLocaleString("en-IN")}</strong></span>
+                    <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono gap-3">
+                      <span>Pass Value: <strong className="text-slate-900">₹{passBase.toLocaleString("en-IN")}</strong></span>
+                      {rawAwardFee > 0 && (
+                        <span>Award Fee: <strong className="text-amber-800">₹{rawAwardFee.toLocaleString("en-IN")}</strong></span>
+                      )}
+                      {rawDiscount > 0 && (
+                        <span>Discount: <strong className="text-emerald-700">- ₹{rawDiscount.toLocaleString("en-IN")}</strong></span>
+                      )}
                       <span>CGST (9%): <strong className="text-slate-900">₹{cgst.toLocaleString("en-IN")}</strong></span>
                       <span>SGST (9%): <strong className="text-slate-900">₹{sgst.toLocaleString("en-IN")}</strong></span>
-                      <span className="font-bold text-slate-900">Total 18% GST: ₹{totalGst.toLocaleString("en-IN")}</span>
+                      <span className="font-bold text-slate-900">Total GST (18%): ₹{totalGst.toLocaleString("en-IN")}</span>
+                      <span className="font-extrabold text-cyan-800">Grand Total: ₹{grandTotal.toLocaleString("en-IN")}</span>
                     </div>
                   );
                 })()}
@@ -23717,6 +23827,18 @@ export default function AdminDashboardPage() {
                 }`}
               >
                 3. Early Bird & Coupons
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentModalTab("awards")}
+                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+                  paymentModalTab === "awards"
+                    ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
+                    : "border-transparent text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <Award className="h-3.5 w-3.5 text-amber-500" />
+                <span>4. Awards & Nominations</span>
               </button>
             </div>
 
@@ -24331,6 +24453,298 @@ export default function AdminDashboardPage() {
                           </button>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: AWARDS & NOMINATIONS */}
+              {paymentModalTab === "awards" && (
+                <div className="space-y-6">
+                  {/* Enable Switch & Fee Box */}
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-5 w-5 text-amber-600 shrink-0" />
+                        <div>
+                          <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider">
+                            Executive & Corporate Award Nominations
+                          </h4>
+                          <p className="text-[11px] text-amber-800 font-medium">
+                            Enable award nominations on the delegate registration wizard and set nomination categories & fees.
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-amber-300 shadow-xs shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentForm.award_nomination_enabled)}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_enabled: e.target.checked })}
+                          className="rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <span className="text-xs font-black text-amber-950">
+                          {paymentForm.award_nomination_enabled ? "🟢 Enabled in Wizard" : "⚪ Disabled"}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-amber-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-amber-950 uppercase mb-1">
+                          Award Nomination Fee (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={paymentForm.award_nomination_fee ?? 5000}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_fee: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-amber-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-amber-600 focus:outline-none"
+                            placeholder="5000"
+                          />
+                        </div>
+                        <p className="text-[10px] text-amber-800 mt-1">
+                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for awards.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 rounded-xl border border-amber-200 p-3 flex flex-col justify-center">
+                        <span className="text-[10px] font-black uppercase text-amber-700">Quick Note</span>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          When enabled, delegates will see the Award Nomination step before payment with a Yes/No option and your dynamic category dropdown.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual Award Categories Manager */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Crown className="h-4 w-4 text-amber-500" />
+                          <span>Individual Award Categories ({(paymentForm.award_categories || []).length})</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          These options appear in "Which Award Category Would You Like to Nominate Yourself For?".
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const hrRecallCats = [
+                              "CHRO of the Year",
+                              "HR Leader of the Year",
+                              "HR Professional of the Year",
+                              "Emerging HR Leader of the Year",
+                              "HR Rising Star of the Year",
+                              "Young HR Professional of the Year",
+                              "Talent Acquisition Leader of the Year",
+                              "Talent Management Leader of the Year",
+                              "Learning & Development Leader of the Year",
+                              "HR Business Partner of the Year",
+                              "Employee Experience Leader of the Year",
+                              "HR Transformation Leader of the Year",
+                              "HR Technology Leader of the Year",
+                            ];
+                            setPaymentForm({ ...paymentForm, award_categories: hrRecallCats });
+                            toast.success("Loaded 13 HR RECALL 2K26 Award Categories!");
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[10px] font-bold text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          Load HR RECALL Categories
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, award_categories: [] });
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Category Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newAwardCatInput}
+                        onChange={(e) => setNewAwardCatInput(e.target.value)}
+                        placeholder="e.g. Chief People Officer of the Year, HR Rising Star"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (!newAwardCatInput.trim()) return;
+                            const current = Array.isArray(paymentForm.award_categories) ? paymentForm.award_categories : [];
+                            setPaymentForm({ ...paymentForm, award_categories: [...current, newAwardCatInput.trim()] });
+                            setNewAwardCatInput("");
+                          }
+                        }}
+                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-amber-600 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newAwardCatInput.trim()) return;
+                          const current = Array.isArray(paymentForm.award_categories) ? paymentForm.award_categories : [];
+                          setPaymentForm({ ...paymentForm, award_categories: [...current, newAwardCatInput.trim()] });
+                          setNewAwardCatInput("");
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
+                      >
+                        + Add Category
+                      </button>
+                    </div>
+
+                    {/* Categories List */}
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                      {(Array.isArray(paymentForm.award_categories) ? paymentForm.award_categories : []).length === 0 ? (
+                        <div className="text-center py-6 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs">
+                          No categories added yet. Click "Load HR RECALL Categories" or type a category name above.
+                        </div>
+                      ) : (
+                        (paymentForm.award_categories as string[]).map((catName: string, cIdx: number) => (
+                          <div
+                            key={cIdx}
+                            className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-amber-300 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="h-5 w-5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center shrink-0">
+                                {cIdx + 1}
+                              </span>
+                              <span>{catName}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (paymentForm.award_categories as string[]).filter((_, i) => i !== cIdx);
+                                setPaymentForm({ ...paymentForm, award_categories: updated });
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
+                              title="Delete Category"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Team Award Categories Manager (Optional) */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="h-4 w-4 text-purple-600" />
+                          <span>Team Award Categories ({(paymentForm.award_team_categories || []).length})</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          These options appear in "Which Award Category Would You Like to Nominate Your Team For?".
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const hrRecallTeamCats = [
+                              "Best HR Team of the Year",
+                              "Excellence in Talent Acquisition Team",
+                              "Best Learning & Development Initiative",
+                              "Best Employee Experience & Engagement Initiative",
+                              "Best Diversity, Equity & Inclusion Initiative",
+                              "Best HR Digital Transformation Initiative",
+                            ];
+                            setPaymentForm({ ...paymentForm, award_team_categories: hrRecallTeamCats });
+                            toast.success("Loaded 6 Team Award Categories!");
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-purple-300 bg-purple-50 text-[10px] font-bold text-purple-900 hover:bg-purple-100 transition-colors cursor-pointer"
+                        >
+                          Load Team Categories
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, award_team_categories: [] });
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Team Category Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newTeamCatInput}
+                        onChange={(e) => setNewTeamCatInput(e.target.value)}
+                        placeholder="e.g. Best HR Team of the Year"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (!newTeamCatInput.trim()) return;
+                            const current = Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : [];
+                            setPaymentForm({ ...paymentForm, award_team_categories: [...current, newTeamCatInput.trim()] });
+                            setNewTeamCatInput("");
+                          }
+                        }}
+                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-600 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newTeamCatInput.trim()) return;
+                          const current = Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : [];
+                          setPaymentForm({ ...paymentForm, award_team_categories: [...current, newTeamCatInput.trim()] });
+                          setNewTeamCatInput("");
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
+                      >
+                        + Add Team Category
+                      </button>
+                    </div>
+
+                    {/* Team Categories List */}
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                      {(Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : []).length === 0 ? (
+                        <div className="text-center py-4 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs">
+                          No team categories configured (Optional).
+                        </div>
+                      ) : (
+                        (paymentForm.award_team_categories as string[]).map((catName: string, cIdx: number) => (
+                          <div
+                            key={cIdx}
+                            className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-purple-300 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="h-5 w-5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black flex items-center justify-center shrink-0">
+                                {cIdx + 1}
+                              </span>
+                              <span>{catName}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (paymentForm.award_team_categories as string[]).filter((_, i) => i !== cIdx);
+                                setPaymentForm({ ...paymentForm, award_team_categories: updated });
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
+                              title="Delete Category"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>

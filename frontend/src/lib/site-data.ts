@@ -1114,6 +1114,7 @@ export interface PricingPlanTier {
   early_bird_price?: number;
   badge?: string;
   is_featured?: boolean;
+  description?: string;
   features: string[];
   button_text?: string;
   displayOrder?: number;
@@ -1231,6 +1232,10 @@ export interface EventPaymentConfig {
   event_start_date: string;
   event_end_date: string;
   payment_status: "Enabled" | "Disabled" | "Draft" | "Coming Soon";
+  award_nomination_enabled?: number | boolean;
+  award_nomination_fee?: number;
+  award_categories?: string | string[];
+  award_team_categories?: string | string[];
   created_at?: string;
   updated_at?: string;
 }

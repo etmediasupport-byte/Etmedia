@@ -30,6 +30,7 @@ import {
   Maximize2,
   Eye,
   X,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -75,13 +76,43 @@ interface EventData {
   event_image?: string;
   about_image?: string;
   description?: string;
+  status?: string;
   early_bird_enabled?: boolean | number;
   early_bird_start_date?: string;
   early_bird_end_date?: string;
   pricing_plans?: any;
   gst_percentage?: number | string;
   gst_included?: boolean | number;
+  award_nomination_enabled?: boolean | number;
+  award_nomination_fee?: number | string;
+  award_categories?: any;
+  award_team_categories?: any;
 }
+
+export const HR_RECALL_DEFAULT_CATEGORIES = [
+  "CHRO of the Year",
+  "HR Leader of the Year",
+  "HR Professional of the Year",
+  "Emerging HR Leader of the Year",
+  "HR Rising Star of the Year",
+  "Young HR Professional of the Year",
+  "Talent Acquisition Leader of the Year",
+  "Talent Management Leader of the Year",
+  "Learning & Development Leader of the Year",
+  "HR Business Partner of the Year",
+  "Employee Experience Leader of the Year",
+  "HR Transformation Leader of the Year",
+  "HR Technology Leader of the Year",
+];
+
+export const HR_RECALL_DEFAULT_TEAM_CATEGORIES = [
+  "Best HR Team of the Year",
+  "Excellence in Talent Acquisition Team",
+  "Best Learning & Development Initiative",
+  "Best Employee Experience & Engagement Initiative",
+  "Best Diversity, Equity & Inclusion Initiative",
+  "Best HR Digital Transformation Initiative",
+];
 
 interface RegistrationFieldErrors {
   firstName?: string;
@@ -252,7 +283,17 @@ export default function EventRegistrationWizardPage() {
   const [pricingPlans, setPricingPlans] = useState<PricingPlanTier[]>(initialPlans);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlanTier | null>(initialSelectedPlan || null);
 
-  // --- STEP 5 FORM STATE: Coupon & Summary ---
+  // --- STEP 5 FORM STATE: Award Nomination (Optional with fee) ---
+  const [wantsAwardNomination, setWantsAwardNomination] = useState<string>(""); // "" | "No" | "Yes"
+  const [selectedAwardCategory, setSelectedAwardCategory] = useState<string>("");
+  const [selectedTeamCategory, setSelectedTeamCategory] = useState<string>("");
+  const [awardCategoriesList, setAwardCategoriesList] = useState<string[]>([]);
+  const [awardTeamCategoriesList, setAwardTeamCategoriesList] = useState<string[]>([]);
+  const [awardNominationFee, setAwardNominationFee] = useState<number>(5000);
+  const [awardNominationEnabled, setAwardNominationEnabled] = useState<boolean>(true);
+  const [awardCategoryError, setAwardCategoryError] = useState<string>("");
+
+  // --- STEP 6 FORM STATE: Coupon & Summary ---
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -262,6 +303,8 @@ export default function EventRegistrationWizardPage() {
   // Calculated Financial Breakdown
   const [paymentBreakdown, setPaymentBreakdown] = useState({
     basePrice: 0,
+    passBase: 0,
+    nominationFeeAmount: 0,
     discountAmount: 0,
     discountedBase: 0,
     gstPct: 18,
@@ -321,6 +364,38 @@ export default function EventRegistrationWizardPage() {
       }
     };
 
+    const applyAwardSettings = (data: any) => {
+      if (!data) return;
+      if (typeof data.award_nomination_enabled !== "undefined") {
+        setAwardNominationEnabled(data.award_nomination_enabled === 1 || data.award_nomination_enabled === true);
+      }
+      if (typeof data.award_nomination_fee !== "undefined" && data.award_nomination_fee !== null) {
+        setAwardNominationFee(Number(data.award_nomination_fee) || 0);
+      }
+      if (data.award_categories) {
+        let cats: string[] = [];
+        if (typeof data.award_categories === "string") {
+          try { cats = JSON.parse(data.award_categories); } catch (_) {}
+        } else if (Array.isArray(data.award_categories)) {
+          cats = data.award_categories;
+        }
+        if (Array.isArray(cats) && cats.length > 0) {
+          setAwardCategoriesList(cats);
+        }
+      }
+      if (data.award_team_categories) {
+        let teamCats: string[] = [];
+        if (typeof data.award_team_categories === "string") {
+          try { teamCats = JSON.parse(data.award_team_categories); } catch (_) {}
+        } else if (Array.isArray(data.award_team_categories)) {
+          teamCats = data.award_team_categories;
+        }
+        if (Array.isArray(teamCats) && teamCats.length > 0) {
+          setAwardTeamCategoriesList(teamCats);
+        }
+      }
+    };
+
     // 1. Fetch Event details & attached payment config
     fetchWithCache(`/api/events/${activeSlug}`)
       .then((json) => {
@@ -341,6 +416,7 @@ export default function EventRegistrationWizardPage() {
           if (ev.pricing_plans) {
             applyPricingPlans(ev.pricing_plans);
           }
+          applyAwardSettings(ev);
         }
       })
       .catch((err) => {
@@ -367,12 +443,16 @@ export default function EventRegistrationWizardPage() {
           if (payment.pricing_plans) {
             applyPricingPlans(payment.pricing_plans);
           }
+          applyAwardSettings(payment);
         } else if (cleanActiveSlug !== activeSlug) {
           fetchWithCache(`/api/event-payments/event/${cleanActiveSlug}`)
             .then((cleanJson) => {
               if (!isMounted) return;
-              if (cleanJson.success && cleanJson.payment && cleanJson.payment.pricing_plans) {
-                applyPricingPlans(cleanJson.payment.pricing_plans);
+              if (cleanJson.success && cleanJson.payment) {
+                if (cleanJson.payment.pricing_plans) {
+                  applyPricingPlans(cleanJson.payment.pricing_plans);
+                }
+                applyAwardSettings(cleanJson.payment);
               }
             })
             .catch(() => {});
@@ -404,13 +484,16 @@ export default function EventRegistrationWizardPage() {
     (eventData as any)?.allow_paid_registration === 0 ||
     (eventData as any)?.allow_paid_registration === false;
 
-  // Recalculate Payment when Plan or Coupon changes
+  // Recalculate Payment when Plan, Coupon, or Award Nomination changes
   useEffect(() => {
     if (!selectedPlan) return;
 
-    const basePrice = isEarlyBirdActive && typeof selectedPlan.early_bird_price === "number" && selectedPlan.early_bird_price > 0
+    const passBase = isEarlyBirdActive && typeof selectedPlan.early_bird_price === "number" && selectedPlan.early_bird_price > 0
       ? selectedPlan.early_bird_price
       : Number(selectedPlan.price) || 0;
+
+    const nominationFeeAmount = wantsAwardNomination === "Yes" ? (Number(awardNominationFee) || 0) : 0;
+    const basePrice = passBase + nominationFeeAmount;
 
     const gstPct = Number(eventData?.gst_percentage) || 18;
 
@@ -429,13 +512,15 @@ export default function EventRegistrationWizardPage() {
 
     setPaymentBreakdown({
       basePrice,
+      passBase,
+      nominationFeeAmount,
       discountAmount: discount,
       discountedBase,
       gstPct,
       gstAmount,
       finalAmount,
     });
-  }, [selectedPlan, appliedCoupon, isEarlyBirdActive, eventData]);
+  }, [selectedPlan, appliedCoupon, isEarlyBirdActive, eventData, wantsAwardNomination, awardNominationFee]);
 
   // Validation errors state
   const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
@@ -649,7 +734,7 @@ export default function EventRegistrationWizardPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             passName: selectedPlan.name,
-            passPrice: paymentBreakdown.basePrice,
+            passPrice: paymentBreakdown.passBase || paymentBreakdown.basePrice,
             paymentAmount: paymentBreakdown.finalAmount,
             gstAmount: paymentBreakdown.gstAmount,
           }),
@@ -660,6 +745,48 @@ export default function EventRegistrationWizardPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       setCurrentStep(5);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // ================= STEP 5: AWARD NOMINATION SUBMIT =================
+  const handleStep5AwardSubmit = async () => {
+    if (!wantsAwardNomination) {
+      setAwardCategoryError("Please select whether you wish to nominate yourself or your team (Yes or No).");
+      toast.error("Please answer the nomination question to proceed.");
+      return;
+    }
+
+    if (wantsAwardNomination === "Yes" && !selectedAwardCategory.trim()) {
+      setAwardCategoryError("Please select an Award Category to nominate yourself for.");
+      toast.error("Please choose an award category.");
+      return;
+    }
+
+    setAwardCategoryError("");
+
+    try {
+      if (registrationId) {
+        await fetch(`/api/registrations/${registrationId}/pass`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passName: selectedPlan?.name,
+            passPrice: paymentBreakdown.passBase,
+            awardNomination: wantsAwardNomination,
+            awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
+            paymentAmount: paymentBreakdown.finalAmount,
+            gstAmount: paymentBreakdown.gstAmount,
+          }),
+        });
+      }
+      toast.success(wantsAwardNomination === "Yes" ? "Award nomination recorded!" : "Proceeding to summary.");
+      setCurrentStep(6);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      setCurrentStep(6);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -677,7 +804,8 @@ export default function EventRegistrationWizardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          basePrice: paymentBreakdown.basePrice,
+          basePrice: paymentBreakdown.passBase || paymentBreakdown.basePrice,
+          awardNominationFee: paymentBreakdown.nominationFeeAmount,
           couponCode,
           gstPct: eventData?.gst_percentage || 18,
         }),
@@ -697,18 +825,18 @@ export default function EventRegistrationWizardPage() {
     }
   };
 
-  // ================= STEP 5: SUMMARY & COUPONS =================
-  const handleStep5Submit = () => {
+  // ================= STEP 6: SUMMARY & COUPONS =================
+  const handleStep6Submit = () => {
     if (!termsAccepted) {
       toast.error("Please agree to Executive Talks Media Terms & Conditions to proceed.");
       return;
     }
-    setCurrentStep(6);
+    setCurrentStep(7);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ================= STEP 6: REVIEW DETAILS -> CREATE PAYMENT ORDER =================
-  const handleStep6Proceed = async () => {
+  // ================= STEP 7: REVIEW DETAILS -> CREATE PAYMENT ORDER =================
+  const handleStep7Proceed = async () => {
     setIsProcessingPayment(true);
     try {
       if (registrationId) {
@@ -717,7 +845,11 @@ export default function EventRegistrationWizardPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             passName: selectedPlan?.name || "Delegate Pass",
-            passPrice: paymentBreakdown.basePrice,
+            passPrice: paymentBreakdown.passBase,
+            awardNomination: wantsAwardNomination,
+            awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
             paymentAmount: paymentBreakdown.finalAmount,
             gstAmount: paymentBreakdown.gstAmount,
             couponApplied: appliedCoupon || undefined,
@@ -740,23 +872,23 @@ export default function EventRegistrationWizardPage() {
         if (data.key) {
           setRazorpayActiveKey(data.key);
         }
-        setCurrentStep(7);
+        setCurrentStep(8);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         setRazorpayOrderId(`order_demo_${Date.now()}`);
-        setCurrentStep(7);
+        setCurrentStep(8);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (e) {
       setRazorpayOrderId(`order_demo_${Date.now()}`);
-      setCurrentStep(7);
+      setCurrentStep(8);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsProcessingPayment(false);
     }
   };
 
-  // ================= STEP 7: TRIGGER RAZORPAY PAYMENT =================
+  // ================= STEP 8: TRIGGER RAZORPAY PAYMENT =================
   const handleTriggerRazorpayPayment = () => {
     if (!window.Razorpay) {
       toast.error("Razorpay SDK is loading. Please wait a moment...");
@@ -772,7 +904,7 @@ export default function EventRegistrationWizardPage() {
       amount: Math.round(paymentBreakdown.finalAmount * 100),
       currency: "INR",
       name: "Executive Talks Media",
-      description: `${eventData?.title || "Executive Summit"} - ${selectedPlan?.name || "Delegate Pass"}`,
+      description: `${eventData?.title || "Executive Summit"} - ${selectedPlan?.name || "Delegate Pass"}${wantsAwardNomination === "Yes" ? " + Award Nomination" : ""}`,
       image: "https://www.executivetalksmedia.in/assets/executivetalks-logo.jpeg",
       order_id: razorpayOrderId.startsWith("order_demo_") ? undefined : razorpayOrderId,
       prefill: {
@@ -784,6 +916,8 @@ export default function EventRegistrationWizardPage() {
         registration_id: registrationId,
         event_title: eventData?.title,
         pass_name: selectedPlan?.name,
+        award_nomination: wantsAwardNomination,
+        award_category: selectedAwardCategory,
       },
       theme: {
         color: "#0891B2",
@@ -799,7 +933,14 @@ export default function EventRegistrationWizardPage() {
               razorpay_signature: response.razorpay_signature || "simulated_sig",
               registrationId,
               paymentAmount: paymentBreakdown.finalAmount,
+              passPrice: paymentBreakdown.passBase,
+              gstAmount: paymentBreakdown.gstAmount,
+              discountAmount: paymentBreakdown.discountAmount,
               couponApplied: appliedCoupon || undefined,
+              awardNomination: wantsAwardNomination,
+              awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+              awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+              awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
             }),
           });
           const verifyData = await verifyRes.json();
@@ -855,7 +996,14 @@ export default function EventRegistrationWizardPage() {
           razorpay_signature: "simulated_test_signature",
           registrationId,
           paymentAmount: paymentBreakdown.finalAmount,
+          passPrice: paymentBreakdown.passBase,
+          gstAmount: paymentBreakdown.gstAmount,
+          discountAmount: paymentBreakdown.discountAmount,
           couponApplied: appliedCoupon || undefined,
+          awardNomination: wantsAwardNomination,
+          awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
+          awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+          awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
         }),
       });
       toast.success("Test Payment Verified! Confirmation ticket and invoice sent to your email.");
@@ -868,15 +1016,16 @@ export default function EventRegistrationWizardPage() {
     }
   };
 
-  // 7 Progressive, manageable steps
+  // 8 Progressive, manageable steps
   const stepsList = [
     { number: 1, title: "Personal", subtitle: "Contact Details" },
     { number: 2, title: "Organization", subtitle: "Role & Company" },
     { number: 3, title: "Preferences", subtitle: "Location & Tracks" },
     { number: 4, title: "Delegate Pass", subtitle: "Choose Tier" },
-    { number: 5, title: "Summary", subtitle: "Coupons & Tax" },
-    { number: 6, title: "Review", subtitle: "Confirm Details" },
-    { number: 7, title: "Payment", subtitle: "Secure Checkout" },
+    { number: 5, title: "Awards", subtitle: "Nomination Details" },
+    { number: 6, title: "Summary", subtitle: "Coupons & Tax" },
+    { number: 7, title: "Review", subtitle: "Confirm Details" },
+    { number: 8, title: "Payment", subtitle: "Secure Checkout" },
   ];
 
   const industryOptions = [
@@ -944,7 +1093,7 @@ export default function EventRegistrationWizardPage() {
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
                   {eventData?.category || "Leadership Summit"}
                 </span>
-                <span className="text-xs font-bold text-slate-400">Executive Delegate Pass Portal • Step {currentStep} of 7</span>
+                <span className="text-xs font-bold text-slate-400">Executive Delegate Pass Portal • Step {currentStep} of 8</span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black font-display tracking-tight text-white">
                 {eventData?.title || "HR RECALL 2K26 Leadership Conclave"}
@@ -1109,14 +1258,22 @@ export default function EventRegistrationWizardPage() {
                   )}
                 </div>
 
-                {/* Selected Pass Summary (Shown on Steps 5, 6, 7) */}
+                {/* Selected Pass Summary (Shown on Steps 5, 6, 7, 8) */}
                 {selectedPlan && currentStep >= 4 && (
-                  <div className="rounded-2xl bg-cyan-50/80 border border-cyan-200 p-3 space-y-1">
+                  <div className="rounded-2xl bg-cyan-50/80 border border-cyan-200 p-3 space-y-1.5">
                     <span className="text-[9px] font-black uppercase tracking-wider text-cyan-700">Selected Pass Tier</span>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-slate-900">{selectedPlan.name}</span>
-                      <span className="text-xs font-black text-cyan-700">₹{paymentBreakdown.finalAmount.toLocaleString("en-IN")}</span>
+                      <span className="text-xs font-black text-cyan-700">₹{(paymentBreakdown.passBase || paymentBreakdown.basePrice).toLocaleString("en-IN")}</span>
                     </div>
+                    {wantsAwardNomination === "Yes" && (
+                      <div className="pt-1 border-t border-cyan-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-amber-800 font-bold flex items-center gap-1">
+                          <Award className="w-3.5 h-3.5 text-amber-600" /> Award Entry
+                        </span>
+                        <span className="text-amber-900 font-black">+₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1171,7 +1328,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <User className="w-4 h-4" />
-                      <span>STEP 1 OF 7: PERSONAL DETAILS</span>
+                      <span>STEP 1 OF 8: PERSONAL DETAILS</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                       Delegate Contact Information
@@ -1338,7 +1495,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <Building2 className="w-4 h-4 text-cyan-600" />
-                      <span>STEP 2 OF 7: PROFESSIONAL DETAILS</span>
+                      <span>STEP 2 OF 8: PROFESSIONAL DETAILS</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                       Organization & Professional Profile
@@ -1493,7 +1650,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <MapPin className="w-4 h-4 text-cyan-600" />
-                      <span>STEP 3 OF 7: PREFERENCES & LOCATION</span>
+                      <span>STEP 3 OF 8: PREFERENCES & LOCATION</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                       Location & Summit Experience Preferences
@@ -1660,7 +1817,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <Crown className="w-4 h-4 text-amber-500" />
-                      <span>STEP 4 OF 7: PASS SELECTION</span>
+                      <span>STEP 4 OF 8: PASS SELECTION</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-black font-display text-slate-900 mt-1">
                       Choose Your Executive Delegate Pass Tier
@@ -1906,17 +2063,179 @@ export default function EventRegistrationWizardPage() {
                       onClick={handleStep4Submit}
                       className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
                     >
-                      <span>Continue to Summary</span>
+                      <span>Continue to Award Nomination</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
               )}
 
-              {/* ================= STEP 5: PAYMENT SUMMARY & COUPON ================= */}
+              {/* ================= STEP 5: AWARD NOMINATION ================= */}
               {currentStep === 5 && (
                 <motion.div
                   key="step5"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10 space-y-6"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
+                      <Award className="w-4 h-4 text-amber-500" />
+                      <span>STEP 5 OF 8: AWARDS & NOMINATION</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
+                      Awards & Recognition Nomination
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Nominate yourself or your organization for the prestigious {eventData?.title || "Executive Talks"} Leadership Awards.
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Question 1: Would you like to nominate yourself or your team */}
+                    <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+                      <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                        Would you like to nominate yourself or your team for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={wantsAwardNomination}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWantsAwardNomination(val);
+                          setAwardCategoryError("");
+                          if (val !== "Yes") {
+                            setSelectedAwardCategory("");
+                            setSelectedTeamCategory("");
+                          }
+                        }}
+                        className="w-full sm:w-80 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
+                      >
+                        <option value="">Choose</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                      {awardCategoryError && !wantsAwardNomination && (
+                        <p className="text-xs font-bold text-rose-500 mt-1">
+                          ⚠️ {awardCategoryError}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* If No: Friendly confirmation */}
+                    {wantsAwardNomination === "No" && (
+                      <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>No award nomination selected. No additional nomination fee will be charged. You can proceed directly to summary.</span>
+                      </div>
+                    )}
+
+                    {/* If Yes: Category Selection and Fee Information */}
+                    {wantsAwardNomination === "Yes" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-6"
+                      >
+                        {/* Question 2: Individual Category */}
+                        <div className="p-5 sm:p-6 rounded-2xl bg-cyan-50/40 border border-cyan-200 space-y-3">
+                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                            Which Award Category Would You Like to Nominate Yourself For? <span className="text-slate-500 font-normal">( T&C Apply )</span> <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={selectedAwardCategory}
+                            onChange={(e) => {
+                              setSelectedAwardCategory(e.target.value);
+                              if (e.target.value) setAwardCategoryError("");
+                            }}
+                            className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-4 shadow-sm cursor-pointer ${
+                              awardCategoryError && !selectedAwardCategory
+                                ? "border-rose-500 focus:ring-rose-500/10"
+                                : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-500/10"
+                            }`}
+                          >
+                            <option value="">Choose</option>
+                            {(awardCategoriesList.length > 0 ? awardCategoriesList : HR_RECALL_DEFAULT_CATEGORIES).map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                          {awardCategoryError && !selectedAwardCategory && (
+                            <p className="text-xs font-bold text-rose-500 mt-1">
+                              ⚠️ {awardCategoryError}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Question 3: Team Category (Optional) */}
+                        <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                            Which Award Category Would You Like to Nominate Your Team For? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span>
+                          </label>
+                          <select
+                            value={selectedTeamCategory}
+                            onChange={(e) => setSelectedTeamCategory(e.target.value)}
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
+                          >
+                            <option value="">Choose (Optional)</option>
+                            {(awardTeamCategoriesList.length > 0 ? awardTeamCategoriesList : HR_RECALL_DEFAULT_TEAM_CATEGORIES).map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Transparent Fee Alert Box */}
+                        <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 p-4 sm:p-5 flex items-start gap-3.5">
+                          <div className="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                            <Trophy className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black uppercase tracking-wider text-amber-900">Official Award Nomination Entry</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200/80 text-amber-900">
+                                Fee: ₹{awardNominationFee.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              Your nomination profile will be formally registered and submitted to the Executive Jury Board for evaluation. The nomination fee of ₹{awardNominationFee.toLocaleString("en-IN")} will be added to your order summary at the next step.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 5 Navigation Buttons */}
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(4)}
+                        className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back to Pass Selection</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleStep5AwardSubmit}
+                        className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <span>Continue to Summary</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ================= STEP 6: PAYMENT SUMMARY & COUPON ================= */}
+              {currentStep === 6 && (
+                <motion.div
+                  key="step6"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
@@ -1926,7 +2245,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <Tag className="w-4 h-4" />
-                      <span>STEP 5 OF 7: FINANCIAL SUMMARY</span>
+                      <span>STEP 6 OF 8: FINANCIAL SUMMARY</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                       Payment Summary & Coupon Discount
@@ -1950,8 +2269,15 @@ export default function EventRegistrationWizardPage() {
 
                     <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
                       <span>Pass Base Price</span>
-                      <span>₹{paymentBreakdown.basePrice.toLocaleString("en-IN")}</span>
+                      <span>₹{(paymentBreakdown.passBase || paymentBreakdown.basePrice).toLocaleString("en-IN")}</span>
                     </div>
+
+                    {wantsAwardNomination === "Yes" && (
+                      <div className="flex justify-between items-center text-xs font-bold text-amber-800 bg-amber-50/70 p-2 rounded-xl">
+                        <span>Award Nomination Fee ({selectedAwardCategory || "Award Category"})</span>
+                        <span>+ ₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
 
                     {appliedCoupon && (
                       <div className="flex justify-between items-center text-xs font-bold text-emerald-600">
@@ -2014,15 +2340,15 @@ export default function EventRegistrationWizardPage() {
                   <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(4)}
+                      onClick={() => setCurrentStep(5)}
                       className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition-all cursor-pointer flex items-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      <span>Back to Pass Selection</span>
+                      <span>Back to Award Nomination</span>
                     </button>
                     <button
                       type="button"
-                      onClick={handleStep5Submit}
+                      onClick={handleStep6Submit}
                       className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
                     >
                       <span>Review Details</span>
@@ -2032,10 +2358,10 @@ export default function EventRegistrationWizardPage() {
                 </motion.div>
               )}
 
-              {/* ================= STEP 6: REVIEW & CONFIRMATION ================= */}
-              {currentStep === 6 && (
+              {/* ================= STEP 7: REVIEW & CONFIRMATION ================= */}
+              {currentStep === 7 && (
                 <motion.div
-                  key="step6"
+                  key="step7"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
@@ -2045,7 +2371,7 @@ export default function EventRegistrationWizardPage() {
                   <div>
                     <div className="flex items-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider">
                       <ShieldCheck className="w-4 h-4" />
-                      <span>STEP 6 OF 7: REVIEW ALL DETAILS</span>
+                      <span>STEP 7 OF 8: REVIEW ALL DETAILS</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-1">
                       Review & Final Confirmation
@@ -2187,7 +2513,50 @@ export default function EventRegistrationWizardPage() {
                       </div>
                     </div>
 
-                    {/* 5. Financial Summary Card */}
+                    {/* 5. Award Nomination Review Card */}
+                    <div className="rounded-3xl border border-slate-200 p-6 space-y-3 bg-slate-50/50">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                          <Award className="w-4 h-4 text-amber-500" />
+                          <span>Award Nomination</span>
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(5)}
+                          className="text-xs font-extrabold text-cyan-700 hover:underline cursor-pointer"
+                        >
+                          Edit Award Selection
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold">
+                        <div>
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Nomination Status</span>
+                          <span className={`font-black ${wantsAwardNomination === "Yes" ? "text-amber-800" : "text-slate-700"}`}>
+                            {wantsAwardNomination === "Yes" ? "Nominated (Yes)" : "No Nomination"}
+                          </span>
+                        </div>
+                        {wantsAwardNomination === "Yes" && (
+                          <>
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Award Category</span>
+                              <span className="text-cyan-700 font-black">{selectedAwardCategory}</span>
+                            </div>
+                            {selectedTeamCategory && (
+                              <div>
+                                <span className="text-slate-400 block text-[10px] uppercase font-bold">Team Category</span>
+                                <span className="text-slate-900 font-black">{selectedTeamCategory}</span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Nomination Fee</span>
+                              <span className="text-amber-800 font-black">₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 6. Financial Summary Card */}
                     <div className="rounded-3xl border border-cyan-200 bg-cyan-50/30 p-6 space-y-3">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-cyan-200 pb-3">
                         <Tag className="w-4 h-4 text-cyan-600" />
@@ -2195,8 +2564,14 @@ export default function EventRegistrationWizardPage() {
                       </h3>
                       <div className="flex justify-between items-center text-xs font-semibold">
                         <span>Base Pass Rate:</span>
-                        <span>₹{paymentBreakdown.basePrice.toLocaleString("en-IN")}</span>
+                        <span>₹{(paymentBreakdown.passBase || paymentBreakdown.basePrice).toLocaleString("en-IN")}</span>
                       </div>
+                      {paymentBreakdown.nominationFeeAmount > 0 && (
+                        <div className="flex justify-between items-center text-xs font-bold text-amber-800">
+                          <span>Award Nomination Fee:</span>
+                          <span>+ ₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
                       {paymentBreakdown.discountAmount > 0 && (
                         <div className="flex justify-between items-center text-xs font-bold text-emerald-600">
                           <span>Discount ({appliedCoupon}):</span>
@@ -2220,7 +2595,7 @@ export default function EventRegistrationWizardPage() {
                   <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(5)}
+                      onClick={() => setCurrentStep(6)}
                       className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition-all cursor-pointer flex items-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
@@ -2228,7 +2603,7 @@ export default function EventRegistrationWizardPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleStep6Proceed}
+                      onClick={handleStep7Proceed}
                       disabled={isProcessingPayment}
                       className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/30 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-2"
                     >
@@ -2239,10 +2614,10 @@ export default function EventRegistrationWizardPage() {
                 </motion.div>
               )}
 
-              {/* ================= STEP 7: RAZORPAY PAYMENT ================= */}
-              {currentStep === 7 && (
+              {/* ================= STEP 8: RAZORPAY PAYMENT ================= */}
+              {currentStep === 8 && (
                 <motion.div
-                  key="step7"
+                  key="step8"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
@@ -2254,7 +2629,7 @@ export default function EventRegistrationWizardPage() {
                       <Lock className="w-8 h-8 text-cyan-600" />
                     </div>
                     <div className="flex items-center justify-center gap-2 text-cyan-600 font-extrabold text-xs uppercase tracking-wider mt-3">
-                      <span>STEP 7 OF 7: SECURE CHECKOUT</span>
+                      <span>STEP 8 OF 8: SECURE CHECKOUT</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 mt-2">
                       Pay Securely via Razorpay
@@ -2274,12 +2649,47 @@ export default function EventRegistrationWizardPage() {
                       <span className="text-[10px] font-black uppercase text-slate-400">EVENT</span>
                       <h4 className="text-sm font-black text-slate-900">{eventData?.title}</h4>
                     </div>
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-800">
-                      <span>Pass Tier:</span>
-                      <span className="text-cyan-700">{selectedPlan?.name}</span>
+                    <div className="space-y-2.5 pt-1 border-t border-slate-200 text-xs">
+                      <div className="flex justify-between items-center text-slate-700">
+                        <span className="font-semibold">Pass Value ({selectedPlan?.name || "Delegate Pass"}):</span>
+                        <span className="font-mono font-bold text-slate-900">
+                          ₹{paymentBreakdown.passBase.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+
+                      {wantsAwardNomination === "Yes" && (
+                        <div className="flex justify-between items-start text-amber-800">
+                          <div className="space-y-0.5 max-w-[280px]">
+                            <span className="font-semibold block flex items-center gap-1">
+                              <span>🏆 Award Nomination Value:</span>
+                            </span>
+                            <span className="text-[11px] text-amber-700 block truncate font-medium">
+                              {selectedAwardCategory} {selectedTeamCategory ? `(${selectedTeamCategory})` : ""}
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold text-amber-900">
+                            ₹{(paymentBreakdown.nominationFeeAmount || 0).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      )}
+
+                      {paymentBreakdown.discountAmount > 0 && (
+                        <div className="flex justify-between items-center text-emerald-600 font-bold">
+                          <span>Discount Applied ({appliedCoupon}):</span>
+                          <span className="font-mono">- ₹{paymentBreakdown.discountAmount.toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-slate-600">
+                        <span className="font-semibold">GST (18% Tax):</span>
+                        <span className="font-mono font-bold text-slate-800">
+                          + ₹{paymentBreakdown.gstAmount.toLocaleString("en-IN")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-200 text-lg font-black text-slate-900">
-                      <span>Amount Payable:</span>
+
+                    <div className="flex justify-between items-center pt-3 border-t-2 border-slate-300 text-lg font-black text-slate-900">
+                      <span>Total Amount Payable:</span>
                       <span className="text-2xl font-display text-cyan-700">
                         ₹{paymentBreakdown.finalAmount.toLocaleString("en-IN")}
                       </span>
@@ -2327,7 +2737,7 @@ export default function EventRegistrationWizardPage() {
                   <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(6)}
+                      onClick={() => setCurrentStep(7)}
                       className="text-xs font-extrabold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                     >
                       Back to Review Details

@@ -328,7 +328,7 @@ export default function CertificatePage() {
                 <ExecutiveCertificate
                   candidateName={candidateDisplayName}
                   organization={orgDisplayName}
-                  designation={cert?.designation}
+                  designation={cert?.designation || ""}
                   headerTitle={certSettings?.header_title}
                   headerSubtitle={certSettings?.header_subtitle}
                   presentedToText={certSettings?.presented_to_text}

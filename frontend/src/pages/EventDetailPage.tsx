@@ -206,10 +206,10 @@ export default function EventDetailPage() {
       let currentStatus: EventStatus = "upcoming";
 
       const isExplicitClosed =
-        event?.status === "past" ||
-        event?.status === "completed" ||
-        event?.status === "concluded" ||
-        event?.status === "closed" ||
+        (event?.status as string) === "past" ||
+        (event?.status as string) === "completed" ||
+        (event?.status as string) === "concluded" ||
+        (event?.status as string) === "closed" ||
         getEventStatus(event) === "past";
 
       if (isExplicitClosed || now > endDate) {
@@ -248,10 +248,10 @@ export default function EventDetailPage() {
 
   const isEventClosed =
     liveEventStatus === "ended" ||
-    event?.status === "past" ||
-    event?.status === "completed" ||
-    event?.status === "concluded" ||
-    event?.status === "closed" ||
+    (event?.status as string) === "past" ||
+    (event?.status as string) === "completed" ||
+    (event?.status as string) === "concluded" ||
+    (event?.status as string) === "closed" ||
     getEventStatus(event) === "past";
 
   const scrollToSection = (sectionId: string) => {

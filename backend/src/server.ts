@@ -213,6 +213,13 @@ interface RegistrationEmailPayload {
   paymentId?: string;
   razorpayOrderId?: string;
   paymentAmount?: number;
+  passPrice?: number;
+  gstAmount?: number;
+  discountAmount?: number;
+  awardNomination?: string;
+  awardCategory?: string;
+  awardTeamCategory?: string;
+  awardNominationFee?: number;
   couponApplied?: string;
   createdAt?: string;
 }
@@ -570,8 +577,55 @@ www.executivetalksmedia.in
                 <td style="padding: 6px 0; font-weight: 600;">Pass ID:</td>
                 <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #4b1fa7;">${regId}</td>
               </tr>
+              ${data.awardNomination === "Yes" ? `
+              <tr style="border-top: 1px dashed #cbd5e1;">
+                <td style="padding: 6px 0; font-weight: 600; color: #b45309;">Award Nomination:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #b45309;">
+                  🏆 ${data.awardCategory || "Executive Leadership Award"} ${data.awardTeamCategory ? `(${data.awardTeamCategory})` : ""}
+                </td>
+              </tr>
+              ` : ""}
             </table>
           </div>
+
+          <!-- PAYMENT BREAKDOWN & TAX RECEIPT CARD -->
+          ${payAmount > 0 ? `
+          <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
+            <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
+              🧾 Payment & Tax Invoice Breakdown
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600; width: 45%;">Pass Value (Base Rate):</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${(data.passPrice || taxableBase).toLocaleString("en-IN")}</td>
+              </tr>
+              ${data.awardNomination === "Yes" && (data.awardNominationFee || 0) > 0 ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Award Nomination Fee:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #b45309;">₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              ${(data.discountAmount || 0) > 0 ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Discount (${coupon}):</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #16a34a;">- ₹${(data.discountAmount || 0).toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">GST (18% - SAC 998397):</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">+ ₹${(data.gstAmount || gstTotal).toLocaleString("en-IN")}</td>
+              </tr>
+              <tr style="border-top: 1px dashed #cbd5e1;">
+                <td style="padding: 8px 0; font-weight: 800; font-size: 14px; color: #0891b2;">Total Paid Amount:</td>
+                <td style="padding: 8px 0; font-weight: 800; font-size: 15px; color: #0891b2;">₹${payAmount.toLocaleString("en-IN")}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; font-weight: 600; font-size: 11px; color: #64748b;">Transaction ID:</td>
+                <td style="padding: 4px 0; font-family: monospace; font-size: 11px; color: #64748b;">${payId}</td>
+              </tr>
+            </table>
+          </div>
+          ` : ""}
 
           <!-- SCANNABLE QR CODE SECTION -->
           ${qrCodeBuffer ? `
@@ -700,14 +754,34 @@ Admin Portal Login: ${adminLoginUrl}
                 <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #0f172a;">${invoiceNo}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; color: #64748b;">Pass Tier:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #4b1fa7;">${regCategory}</td>
+                <td style="padding: 6px 0; color: #64748b;">Pass Tier & Value:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #4b1fa7;">
+                  ${regCategory} (Base: ₹${(data.passPrice || taxableBase).toLocaleString("en-IN")})
+                </td>
+              </tr>
+              ${data.awardNomination === "Yes" ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Award Nomination:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #b45309;">
+                  🏆 ${data.awardCategory || "Executive Leadership Award"} ${data.awardTeamCategory ? `(${data.awardTeamCategory})` : ""} — Fee: ₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}
+                </td>
+              </tr>
+              ` : ""}
+              ${(data.discountAmount || 0) > 0 ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Discount (${coupon}):</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #16a34a;">- ₹${(data.discountAmount || 0).toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">GST (18%):</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">+ ₹${(data.gstAmount || gstTotal).toLocaleString("en-IN")}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; color: #64748b;">Payment Status:</td>
+                <td style="padding: 6px 0; color: #64748b;">Payment Status & Total:</td>
                 <td style="padding: 6px 0;">
                   <span style="background-color: ${payStatus.toLowerCase() === "paid" ? "#d1fae5" : "#dbeafe"}; color: ${payStatus.toLowerCase() === "paid" ? "#065f46" : "#1e40af"}; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-                    ${payStatus} — ₹${payAmount.toLocaleString("en-IN")}
+                    ${payStatus} — Total Paid: ₹${payAmount.toLocaleString("en-IN")}
                   </span>
                 </td>
               </tr>
@@ -2823,6 +2897,10 @@ app.get("/api/events/:slug", async (req, res) => {
             foundEvt.coupons = pay.coupons;
             foundEvt.coupons_enabled = pay.coupons_enabled;
             foundEvt.pricing_available = String(pay.payment_status || "Enabled").toLowerCase() === "enabled" || String(pay.payment_status || "Enabled").toLowerCase() === "published";
+            foundEvt.award_nomination_enabled = pay.award_nomination_enabled;
+            foundEvt.award_nomination_fee = pay.award_nomination_fee;
+            foundEvt.award_categories = pay.award_categories;
+            foundEvt.award_team_categories = pay.award_team_categories;
           }
         } catch (payErr) {
           console.warn("[/api/events/:slug] Failed to attach payment settings:", payErr);
@@ -2887,7 +2965,11 @@ app.post("/api/payments/create-order", async (req, res) => {
 // 2d. Verify Razorpay Payment Signature Endpoint
 app.post("/api/payments/verify-payment", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied } = req.body;
+    const { 
+      razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied,
+      passPrice, gstAmount, discountAmount,
+      awardNomination, awardCategory, awardTeamCategory, awardNominationFee
+    } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
@@ -2910,8 +2992,29 @@ app.post("/api/payments/verify-payment", async (req, res) => {
       if (pool && registrationId) {
         const finalPaid = Number(paymentAmount) || 0;
         await pool.query(
-          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ?, payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END WHERE id = ?",
-          [razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid, registrationId]
+          `UPDATE registrations SET 
+            payment_status = 'Paid', 
+            payment_id = ?, 
+            razorpay_order_id = ?, 
+            payment_signature = ?, 
+            payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END,
+            pass_price = COALESCE(?, pass_price),
+            gst_amount = COALESCE(?, gst_amount),
+            discount_amount = COALESCE(?, discount_amount),
+            award_nomination = COALESCE(?, award_nomination),
+            award_category = COALESCE(?, award_category),
+            award_team_category = COALESCE(?, award_team_category),
+            award_nomination_fee = COALESCE(?, award_nomination_fee)
+          WHERE id = ?`,
+          [
+            razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid,
+            passPrice ? Number(passPrice) : null,
+            gstAmount ? Number(gstAmount) : null,
+            discountAmount ? Number(discountAmount) : null,
+            awardNomination || null, awardCategory || null, awardTeamCategory || null,
+            awardNominationFee ? Number(awardNominationFee) : null,
+            registrationId
+          ]
         );
 
         const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
@@ -2937,6 +3040,13 @@ app.post("/api/payments/verify-payment", async (req, res) => {
             paymentId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
             paymentAmount: Number(reg.payment_amount) || Number(paymentAmount) || 0,
+            passPrice: Number(reg.pass_price) || Number(passPrice) || 0,
+            gstAmount: Number(reg.gst_amount) || Number(gstAmount) || 0,
+            discountAmount: Number(reg.discount_amount) || Number(discountAmount) || 0,
+            awardNomination: reg.award_nomination || awardNomination || "No",
+            awardCategory: reg.award_category || awardCategory || "",
+            awardTeamCategory: reg.award_team_category || awardTeamCategory || "",
+            awardNominationFee: Number(reg.award_nomination_fee) || Number(awardNominationFee) || 0,
             couponApplied: reg.coupon_applied || couponApplied,
             createdAt: reg.created_at,
           });
@@ -2970,7 +3080,11 @@ app.post("/api/payments/verify-payment", async (req, res) => {
 // Alias POST /api/payments/verify to /api/payments/verify-payment
 app.post("/api/payments/verify", async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied } = req.body;
+    const { 
+      razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied,
+      passPrice, gstAmount, discountAmount,
+      awardNomination, awardCategory, awardTeamCategory, awardNominationFee
+    } = req.body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
@@ -2993,8 +3107,29 @@ app.post("/api/payments/verify", async (req, res) => {
       if (pool && registrationId) {
         const finalPaid = Number(paymentAmount) || 0;
         await pool.query(
-          "UPDATE registrations SET payment_status = 'Paid', payment_id = ?, razorpay_order_id = ?, payment_signature = ?, payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END WHERE id = ?",
-          [razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid, registrationId]
+          `UPDATE registrations SET 
+            payment_status = 'Paid', 
+            payment_id = ?, 
+            razorpay_order_id = ?, 
+            payment_signature = ?, 
+            payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END,
+            pass_price = COALESCE(?, pass_price),
+            gst_amount = COALESCE(?, gst_amount),
+            discount_amount = COALESCE(?, discount_amount),
+            award_nomination = COALESCE(?, award_nomination),
+            award_category = COALESCE(?, award_category),
+            award_team_category = COALESCE(?, award_team_category),
+            award_nomination_fee = COALESCE(?, award_nomination_fee)
+          WHERE id = ?`,
+          [
+            razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid,
+            passPrice ? Number(passPrice) : null,
+            gstAmount ? Number(gstAmount) : null,
+            discountAmount ? Number(discountAmount) : null,
+            awardNomination || null, awardCategory || null, awardTeamCategory || null,
+            awardNominationFee ? Number(awardNominationFee) : null,
+            registrationId
+          ]
         );
 
         const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
@@ -3020,6 +3155,13 @@ app.post("/api/payments/verify", async (req, res) => {
             paymentId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
             paymentAmount: Number(reg.payment_amount) || Number(paymentAmount) || 0,
+            passPrice: Number(reg.pass_price) || Number(passPrice) || 0,
+            gstAmount: Number(reg.gst_amount) || Number(gstAmount) || 0,
+            discountAmount: Number(reg.discount_amount) || Number(discountAmount) || 0,
+            awardNomination: reg.award_nomination || awardNomination || "No",
+            awardCategory: reg.award_category || awardCategory || "",
+            awardTeamCategory: reg.award_team_category || awardTeamCategory || "",
+            awardNominationFee: Number(reg.award_nomination_fee) || Number(awardNominationFee) || 0,
             couponApplied: reg.coupon_applied || couponApplied,
             createdAt: reg.created_at,
           });
@@ -3142,7 +3284,10 @@ app.post("/api/registrations/start", async (req, res) => {
 app.put("/api/registrations/:registrationId/pass", async (req, res) => {
   try {
     const { registrationId } = req.params;
-    const { passName, passPrice, paymentAmount, gstAmount, couponApplied } = req.body;
+    const { 
+      passName, passPrice, paymentAmount, gstAmount, couponApplied,
+      awardNomination, awardCategory, awardTeamCategory, awardNominationFee
+    } = req.body;
     const numPassPrice = Number(passPrice) || 0;
     const numPaymentAmount = Number(paymentAmount) || (numPassPrice > 0 ? Math.round(numPassPrice * 1.18) : 0);
     const numGstAmount = Number(gstAmount) || (numPaymentAmount - numPassPrice);
@@ -3155,9 +3300,18 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
           payment_amount = ?, 
           gst_amount = ?, 
           coupon_applied = COALESCE(?, coupon_applied),
+          award_nomination = COALESCE(?, award_nomination),
+          award_category = COALESCE(?, award_category),
+          award_team_category = COALESCE(?, award_team_category),
+          award_nomination_fee = COALESCE(?, award_nomination_fee),
           payment_status = CASE WHEN payment_status = 'Paid' THEN 'Paid' ELSE 'Dropped (Pass Selected)' END
         WHERE id = ?`,
-        [passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null, registrationId]
+        [
+          passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null,
+          awardNomination || null, awardCategory || null, awardTeamCategory || null,
+          awardNominationFee ? Number(awardNominationFee) : null,
+          registrationId
+        ]
       );
     }
 
@@ -3171,32 +3325,36 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
 // 3. POST /api/registrations/calculate-payment - Step 3: Coupon & Tax Calculation
 app.post("/api/registrations/calculate-payment", async (req, res) => {
   try {
-    const { basePrice = 0, couponCode, gstPct = 18 } = req.body;
+    const { basePrice = 0, couponCode, gstPct = 18, awardNominationFee = 0 } = req.body;
     const numBase = Number(basePrice) || 0;
+    const numAwardFee = Number(awardNominationFee) || 0;
+    const totalBase = numBase + numAwardFee;
     const numGstPct = Number(gstPct) || 18;
 
     let discountAmount = 0;
     const codeUpper = (couponCode || "").trim().toUpperCase();
 
     if (codeUpper === "EARLYBIRD10" || codeUpper === "EARLYBIRD") {
-      discountAmount = Math.round(numBase * 0.10);
+      discountAmount = Math.round(totalBase * 0.10);
     } else if (codeUpper === "EXECUTIVE20" || codeUpper === "VIP20") {
-      discountAmount = Math.round(numBase * 0.20);
+      discountAmount = Math.round(totalBase * 0.20);
     } else if (codeUpper === "ETMEDIA500") {
       discountAmount = 500;
     } else if (codeUpper === "WELCOME1000") {
       discountAmount = 1000;
     } else if (codeUpper) {
-      discountAmount = Math.min(500, Math.round(numBase * 0.05));
+      discountAmount = Math.min(500, Math.round(totalBase * 0.05));
     }
 
-    const discountedBase = Math.max(0, numBase - discountAmount);
+    const discountedBase = Math.max(0, totalBase - discountAmount);
     const gstAmount = Math.round((discountedBase * numGstPct) / 100);
     const finalAmount = discountedBase + gstAmount;
 
     return res.json({
       success: true,
       basePrice: numBase,
+      awardNominationFee: numAwardFee,
+      totalBase,
       discountAmount,
       discountedBase,
       gstPct: numGstPct,
@@ -6273,6 +6431,8 @@ async function upsertEventPaymentSettings(data: any) {
   const pricingPlansStr = typeof data.pricing_plans === "string" ? data.pricing_plans : JSON.stringify(data.pricing_plans || []);
   const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
   const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
+  const awardCatsStr = typeof data.award_categories === "string" ? data.award_categories : JSON.stringify(data.award_categories || []);
+  const awardTeamCatsStr = typeof data.award_team_categories === "string" ? data.award_team_categories : JSON.stringify(data.award_team_categories || []);
 
   await ensureEventPaymentsTable();
 
@@ -6303,7 +6463,8 @@ async function upsertEventPaymentSettings(data: any) {
           available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
-          event_start_date = ?, event_end_date = ?, payment_status = ?
+          event_start_date = ?, event_end_date = ?, payment_status = ?,
+          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
         WHERE event_id = ? OR id = ?`,
         [
           id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
@@ -6315,6 +6476,7 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
           targetEventId, targetKey
         ]
       );
@@ -6327,7 +6489,8 @@ async function upsertEventPaymentSettings(data: any) {
           available_seats = ?, reserved_seats = ?, vip_seats = ?, speaker_seats = ?, sponsor_seats = ?, coupons_enabled = ?,
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
-          event_start_date = ?, event_end_date = ?, payment_status = ?
+          event_start_date = ?, event_end_date = ?, payment_status = ?,
+          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
         WHERE event_id = ?`,
         [
           event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
@@ -6339,6 +6502,7 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
           targetEventId
         ]
       );
@@ -6353,8 +6517,9 @@ async function upsertEventPaymentSettings(data: any) {
           early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
-          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
+          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6364,7 +6529,8 @@ async function upsertEventPaymentSettings(data: any) {
           data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
-          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr
         ]
       );
     } catch (insErr) {
@@ -6375,8 +6541,9 @@ async function upsertEventPaymentSettings(data: any) {
           early_bird_start_date, early_bird_end_date, special_prices, total_seats, available_seats,
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
-          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
+          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6386,7 +6553,8 @@ async function upsertEventPaymentSettings(data: any) {
           data.sponsor_seats || 0, data.coupons_enabled ? 1 : 0, couponsStr, data.payment_required ? 1 : 0,
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
-          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled"
+          data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr
         ]
       );
     }

@@ -171,28 +171,18 @@ export default function RegistrationSuccessPage() {
   // Pricing & GST Calculation
   const rawPayAmount = Number(regDetails?.payment_amount) || 0;
   const rawPassPrice = Number(regDetails?.pass_price) || 0;
+  const rawAwardFee = Number(regDetails?.award_nomination_fee) || 0;
   const rawGstAmount = Number(regDetails?.gst_amount) || 0;
+  const rawDiscount = Number(regDetails?.discount_amount) || 0;
+  const isAwardNominated = regDetails?.award_nomination === "Yes";
 
-  let taxableBase = 0;
-  let gstTotal = 0;
-  let payAmount = 0;
+  let passTaxable = rawPassPrice > 0 ? rawPassPrice : (rawPayAmount > 0 ? Math.round(rawPayAmount / 1.18) : 0);
+  let awardTaxable = (isAwardNominated && rawAwardFee > 0) ? rawAwardFee : 0;
+  let taxableBase = passTaxable + awardTaxable - rawDiscount;
+  if (taxableBase < 0) taxableBase = 0;
 
-  if (rawPassPrice > 0) {
-    taxableBase = rawPassPrice;
-    gstTotal = rawGstAmount > 0 ? rawGstAmount : Math.round(taxableBase * 0.18);
-    payAmount = rawPayAmount > taxableBase ? rawPayAmount : (taxableBase + gstTotal);
-  } else if (rawPayAmount > 0) {
-    // If rawPayAmount is the base price (e.g. 5999, 9999, 14999) or already total amount (e.g. 7079)
-    if (rawPayAmount === 5999 || rawPayAmount === 9999 || rawPayAmount === 14999 || rawPayAmount === 19999 || rawPayAmount === 29999 || rawPayAmount === 4999 || rawPayAmount === 7999) {
-      taxableBase = rawPayAmount;
-      gstTotal = Math.round(taxableBase * 0.18);
-      payAmount = taxableBase + gstTotal;
-    } else {
-      taxableBase = Math.round(rawPayAmount / 1.18);
-      gstTotal = rawPayAmount - taxableBase;
-      payAmount = rawPayAmount;
-    }
-  }
+  let gstTotal = rawGstAmount > 0 ? rawGstAmount : Math.round(taxableBase * 0.18);
+  let payAmount = rawPayAmount > 0 ? rawPayAmount : (taxableBase + gstTotal);
 
   const cgst = Number((gstTotal / 2).toFixed(2));
   const sgst = Number((gstTotal - cgst).toFixed(2));
@@ -600,13 +590,35 @@ export default function RegistrationSuccessPage() {
                       </td>
                       <td className="py-3 px-3 font-mono font-semibold text-slate-600">998397</td>
                       <td className="py-3 px-3 text-right font-semibold font-mono">
-                        ₹{taxableBase.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹{passTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-3 text-right font-semibold">18%</td>
                       <td className="py-3 px-3 text-right font-black text-sm text-slate-900 font-mono">
-                        ₹{payAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹{Math.round(passTaxable * 1.18).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
+
+                    {isAwardNominated && awardTaxable > 0 && (
+                      <tr className="border-b border-slate-200 bg-amber-50/40">
+                        <td className="py-3 px-3 font-mono font-bold text-amber-700">2</td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-sm text-amber-900 flex items-center gap-1.5">
+                            <span>🏆 Official Award Nomination</span>
+                          </span>
+                          <span className="text-[11px] text-amber-700 block mt-0.5 leading-snug font-medium">
+                            Category: {regDetails?.award_category || "Executive Leadership Award"} {regDetails?.award_team_category ? `(${regDetails.award_team_category})` : ""}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-semibold text-slate-600">998397</td>
+                        <td className="py-3 px-3 text-right font-semibold font-mono text-amber-900">
+                          ₹{awardTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-3 text-right font-semibold">18%</td>
+                        <td className="py-3 px-3 text-right font-black text-sm text-amber-900 font-mono">
+                          ₹{Math.round(awardTaxable * 1.18).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -634,8 +646,30 @@ export default function RegistrationSuccessPage() {
 
                 <div className="sm:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>Taxable Base Amount:</span>
+                    <span>Pass Base Value:</span>
                     <span className="font-mono font-semibold">
+                      ₹{passTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  {isAwardNominated && awardTaxable > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-amber-800">
+                      <span>Award Nomination Fee:</span>
+                      <span className="font-mono font-semibold">
+                        ₹{awardTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {rawDiscount > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-emerald-700 font-bold">
+                      <span>Discount:</span>
+                      <span className="font-mono">
+                        - ₹{rawDiscount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
+                    <span>Total Taxable Base:</span>
+                    <span className="font-mono font-semibold text-slate-900">
                       ₹{taxableBase.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
                   </div>

@@ -145,6 +145,11 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN certificate_id VARCHAR(100) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE contacts ADD COLUMN status VARCHAR(50) DEFAULT 'unread';"); } catch (e) {}
     try { await pool.query("ALTER TABLE partner_submissions MODIFY COLUMN status VARCHAR(100) DEFAULT 'Pending';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN award_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN award_team_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN award_nomination_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
 
 
     await pool.query(`
@@ -1251,6 +1256,10 @@ export async function ensureEventPaymentsTable() {
       { name: "event_start_date", type: "VARCHAR(100)" },
       { name: "event_end_date", type: "VARCHAR(100)" },
       { name: "payment_status", type: "VARCHAR(50) DEFAULT 'Enabled'" },
+      { name: "award_nomination_enabled", type: "TINYINT(1) DEFAULT 0" },
+      { name: "award_nomination_fee", type: "DECIMAL(10,2) DEFAULT 0.00" },
+      { name: "award_categories", type: "LONGTEXT" },
+      { name: "award_team_categories", type: "LONGTEXT" },
     ];
 
     for (const col of colsToEnsure) {
@@ -1448,6 +1457,57 @@ export async function seedDefaultEventPayments() {
         );
       }
       console.log("[MySQL] Seeded default event payment configurations!");
+    }
+
+    // Ensure HR RECALL 2K26 has award nomination config initialized
+    try {
+      const hrRecallAwardCats = JSON.stringify([
+        "CHRO of the Year",
+        "HR Leader of the Year",
+        "HR Professional of the Year",
+        "Emerging HR Leader of the Year",
+        "HR Rising Star of the Year",
+        "Young HR Professional of the Year",
+        "Talent Acquisition Leader of the Year",
+        "Talent Management Leader of the Year",
+        "Learning & Development Leader of the Year",
+        "HR Business Partner of the Year",
+        "Employee Experience Leader of the Year",
+        "HR Transformation Leader of the Year",
+        "HR Technology Leader of the Year"
+      ]);
+      const hrRecallTeamCats = JSON.stringify([
+        "Best HR Team of the Year",
+        "Excellence in Talent Acquisition Team",
+        "Best Learning & Development Initiative",
+        "Best Employee Experience & Engagement Initiative",
+        "Best Diversity, Equity & Inclusion Initiative",
+        "Best HR Digital Transformation Initiative"
+      ]);
+
+      const [hrRows]: any = await pool.query(
+        "SELECT * FROM event_payment_settings WHERE event_id = 'hr-recall-2k26' OR event_slug = 'hr-recall-2k26' LIMIT 1"
+      );
+      if (!hrRows || hrRows.length === 0) {
+        await pool.query(
+          `INSERT INTO event_payment_settings (
+            id, event_id, event_title, event_slug, registration_fee, currency, gst_percentage, gst_included,
+            early_bird_enabled, early_bird_price, total_seats, available_seats, payment_status,
+            award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
+          ) VALUES (
+            'PAY-hr-recall-2k26', 'hr-recall-2k26', 'HR RECALL 2K26', 'hr-recall-2k26', 4999.00, 'INR', 18.00, 0,
+            1, 3999.00, 200, 150, 'Enabled', 1, 5000.00, ?, ?
+          )`,
+          [hrRecallAwardCats, hrRecallTeamCats]
+        );
+      } else if (!hrRows[0].award_categories || hrRows[0].award_categories === "[]" || hrRows[0].award_categories === "") {
+        await pool.query(
+          "UPDATE event_payment_settings SET award_nomination_enabled = 1, award_nomination_fee = 5000.00, award_categories = ?, award_team_categories = ? WHERE id = ? OR event_id = 'hr-recall-2k26'",
+          [hrRecallAwardCats, hrRecallTeamCats, hrRows[0].id]
+        );
+      }
+    } catch (hrErr) {
+      console.warn("[MySQL] Warning seeding HR Recall award settings:", hrErr);
     }
   } catch (err) {
     console.error("[MySQL] Error seeding default event payment settings:", err);
