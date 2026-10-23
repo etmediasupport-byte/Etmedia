@@ -534,7 +534,7 @@ export default function AdminDashboardPage() {
       const next = prev === "dark" ? "light" : "dark";
       try {
         localStorage.setItem("etmedia_admin_theme", next);
-      } catch (e) {}
+      } catch (e) { }
       return next;
     });
   };
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
       const next = !prev;
       try {
         localStorage.setItem("etmedia_sidebar_collapsed", String(next));
-      } catch (e) {}
+      } catch (e) { }
       return next;
     });
   };
@@ -655,7 +655,7 @@ export default function AdminDashboardPage() {
       if (Array.isArray(locs) && locs[0]?.date) {
         dateStr = locs[0].date;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     if (!dateStr || typeof dateStr !== "string") {
       return evt.created_at ? new Date(evt.created_at).getTime() : 0;
@@ -1969,10 +1969,10 @@ export default function AdminDashboardPage() {
         prev.map((e) =>
           e.id === id
             ? {
-                ...e,
-                ...(allow_paid_registration !== undefined && { allow_paid_registration }),
-                ...(allow_free_registration !== undefined && { allow_free_registration }),
-              }
+              ...e,
+              ...(allow_paid_registration !== undefined && { allow_paid_registration }),
+              ...(allow_free_registration !== undefined && { allow_free_registration }),
+            }
             : e
         )
       );
@@ -2472,26 +2472,26 @@ export default function AdminDashboardPage() {
     setPaymentModalTab("general");
     let parsedRegPrices = item.registration_type_prices;
     if (typeof parsedRegPrices === "string") {
-      try { parsedRegPrices = JSON.parse(parsedRegPrices); } catch(e) {}
+      try { parsedRegPrices = JSON.parse(parsedRegPrices); } catch (e) { }
     }
     let parsedCoupons = item.coupons;
     if (typeof parsedCoupons === "string") {
-      try { parsedCoupons = JSON.parse(parsedCoupons); } catch(e) {}
+      try { parsedCoupons = JSON.parse(parsedCoupons); } catch (e) { }
     }
     let parsedPlans = item.pricing_plans;
     if (typeof parsedPlans === "string") {
-      try { parsedPlans = JSON.parse(parsedPlans); } catch(e) {}
+      try { parsedPlans = JSON.parse(parsedPlans); } catch (e) { }
     }
     if (!Array.isArray(parsedPlans) || parsedPlans.length === 0) {
       parsedPlans = getDefaultPricingPlans();
     }
     let parsedAwardCats = item.award_categories;
     if (typeof parsedAwardCats === "string") {
-      try { parsedAwardCats = JSON.parse(parsedAwardCats); } catch (e) {}
+      try { parsedAwardCats = JSON.parse(parsedAwardCats); } catch (e) { }
     }
     let parsedTeamCats = item.award_team_categories;
     if (typeof parsedTeamCats === "string") {
-      try { parsedTeamCats = JSON.parse(parsedTeamCats); } catch (e) {}
+      try { parsedTeamCats = JSON.parse(parsedTeamCats); } catch (e) { }
     }
     setPaymentForm({
       ...item,
@@ -2578,7 +2578,7 @@ export default function AdminDashboardPage() {
           if (freshData.success && Array.isArray(freshData.payments)) {
             setEventPayments(freshData.payments);
           }
-        } catch (_) {}
+        } catch (_) { }
 
         fetchDashboardData();
       } else {
@@ -2892,10 +2892,10 @@ export default function AdminDashboardPage() {
       prev.map((r) =>
         r.id === id
           ? {
-              ...r,
-              status: newStatus,
-              payment_status: newStatus === "Confirmed" ? "Approved (Free Pass)" : "Pending",
-            }
+            ...r,
+            status: newStatus,
+            payment_status: newStatus === "Confirmed" ? "Approved (Free Pass)" : "Pending",
+          }
           : r
       )
     );
@@ -3052,7 +3052,7 @@ export default function AdminDashboardPage() {
     if (evt.certificate_settings) {
       try {
         parsedSettings = typeof evt.certificate_settings === "string" ? JSON.parse(evt.certificate_settings) : evt.certificate_settings;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const defaultVenue = evt.venue ? `${evt.date || "2026-06-19"} | ${evt.venue}${evt.city ? `, ${evt.city}` : ""}` : "2026-06-19 | Radisson Hotel, Hyderabad";
@@ -3806,8 +3806,8 @@ export default function AdminDashboardPage() {
       attendanceRosterTab === "present"
         ? "Present_CheckedIn"
         : attendanceRosterTab === "absent"
-        ? "Absent_AwaitingArrival"
-        : "All_Registered";
+          ? "Absent_AwaitingArrival"
+          : "All_Registered";
     const eventName = selectedEventAttendanceSummary.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
     const dateStamp = new Date().toISOString().split("T")[0];
     const filename = `ET_Media_${tabName}_${eventName}_${dateStamp}.xlsx`;
@@ -4142,7 +4142,7 @@ export default function AdminDashboardPage() {
             },
           });
           sent++;
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     toast.success(`Dispatched tickets to ${sent} delegates!`);
@@ -4336,13 +4336,13 @@ export default function AdminDashboardPage() {
           </thead>
           <tbody>
             ${rows
-              .map(
-                (row) =>
-                  `<tr>${row
-                    .map((val) => `<td>${String(val ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`)
-                    .join("")}</tr>`
-              )
-              .join("")}
+        .map(
+          (row) =>
+            `<tr>${row
+              .map((val) => `<td>${String(val ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`)
+              .join("")}</tr>`
+        )
+        .join("")}
           </tbody>
         </table>
       </body>
@@ -4617,14 +4617,14 @@ export default function AdminDashboardPage() {
             </thead>
             <tbody>
               ${rows
-                .map(
-                  (row) => `
+        .map(
+          (row) => `
                 <tr>
                   ${row.map((cell) => `<td>${cell !== undefined && cell !== null ? String(cell) : ""}</td>`).join("")}
                 </tr>
               `
-                )
-                .join("")}
+        )
+        .join("")}
             </tbody>
           </table>
 
@@ -5279,7 +5279,7 @@ export default function AdminDashboardPage() {
     try {
       if (typeof evt.locations === "string") parsedLocations = JSON.parse(evt.locations);
       else if (Array.isArray(evt.locations)) parsedLocations = evt.locations;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedLocations || parsedLocations.length === 0) {
       parsedLocations = [
         {
@@ -5306,35 +5306,35 @@ export default function AdminDashboardPage() {
     try {
       if (typeof evt.speakers_list === "string") parsedSpeakers = JSON.parse(evt.speakers_list);
       else if (Array.isArray(evt.speakers_list)) parsedSpeakers = evt.speakers_list;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedSpeakers) parsedSpeakers = [];
 
     let parsedZura: Speaker[] = [];
     try {
       if (typeof evt.zura_list === "string") parsedZura = JSON.parse(evt.zura_list);
       else if (Array.isArray(evt.zura_list)) parsedZura = evt.zura_list;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedZura) parsedZura = [];
 
     let parsedSponsors: Sponsor[] = [];
     try {
       if (typeof evt.sponsors_list === "string") parsedSponsors = JSON.parse(evt.sponsors_list);
       else if (Array.isArray(evt.sponsors_list)) parsedSponsors = evt.sponsors_list;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedSponsors) parsedSponsors = [];
 
     let parsedGallery: GalleryItem[] = [];
     try {
       if (typeof evt.gallery_list === "string") parsedGallery = JSON.parse(evt.gallery_list);
       else if (Array.isArray(evt.gallery_list)) parsedGallery = evt.gallery_list;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedGallery) parsedGallery = [];
 
     let parsedAgenda: AgendaItem[] = [];
     try {
       if (typeof evt.agenda_list === "string") parsedAgenda = JSON.parse(evt.agenda_list);
       else if (Array.isArray(evt.agenda_list)) parsedAgenda = evt.agenda_list;
-    } catch (e) {}
+    } catch (e) { }
     if (!parsedAgenda) parsedAgenda = [];
 
     setEventForm({
@@ -5481,7 +5481,7 @@ export default function AdminDashboardPage() {
       if (data.success) {
         const isUpdate = Boolean(editingEvent);
         const eventTitle = eventForm.title || "Event";
-        
+
         setEventSaveNotification({
           message: isUpdate
             ? `🎉 Event "${eventTitle}" Updated Successfully!`
@@ -5610,8 +5610,8 @@ export default function AdminDashboardPage() {
           type === "paid"
             ? `Paid Registration ("Register Now") ${newPaid ? "Enabled" : "Hidden"}`
             : type === "free"
-            ? `Free Registration ("Register Free") ${newFree ? "Enabled" : "Hidden"}`
-            : `Price Details & Pass Tiers ${newPricing ? "Enabled / Visible" : "Hidden"}`
+              ? `Free Registration ("Register Free") ${newFree ? "Enabled" : "Hidden"}`
+              : `Price Details & Pass Tiers ${newPricing ? "Enabled / Visible" : "Hidden"}`
         );
         setCmsEvents((prev) =>
           prev.map((e) =>
@@ -5684,7 +5684,7 @@ export default function AdminDashboardPage() {
           if (ptrData.success && Array.isArray(ptrData.partners)) {
             setPartnersList(ptrData.partners);
           }
-        } catch (e) {}
+        } catch (e) { }
       } else {
         toast.error(data.message || "Failed to save partner.");
       }
@@ -6004,7 +6004,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(isEditing ? "Gallery media updated!" : "Gallery media item published!");
-        
+
         const savedItem: MediaGalleryItem = data.item || {
           id: editingGalleryItem ? editingGalleryItem.id : `GAL-${Date.now().toString().slice(-6)}`,
           title: payload.title,
@@ -6705,8 +6705,8 @@ export default function AdminDashboardPage() {
       targetIds && targetIds.length > 0
         ? targetIds
         : selectedRememberUserIds.length > 0
-        ? selectedRememberUserIds
-        : filteredRememberDelegates.map((d) => d.id);
+          ? selectedRememberUserIds
+          : filteredRememberDelegates.map((d) => d.id);
 
     if (idsToSend.length === 0) {
       toast.error("No registered delegates found to send alerts.");
@@ -6806,12 +6806,12 @@ export default function AdminDashboardPage() {
           prev.map((c) =>
             c.id === "event_remember_alert"
               ? {
-                  ...c,
-                  subject_template: rememberCustomSubject,
-                  body_intro: rememberCustomBodyIntro,
-                  body_template: rememberCustomBodyTemplate,
-                  body_notes: rememberCustomBodyNotes,
-                }
+                ...c,
+                subject_template: rememberCustomSubject,
+                body_intro: rememberCustomBodyIntro,
+                body_template: rememberCustomBodyTemplate,
+                body_notes: rememberCustomBodyNotes,
+              }
               : c
           )
         );
@@ -7916,81 +7916,81 @@ export default function AdminDashboardPage() {
 
   const navGroups: NavGroup[] = isScannerOnlyUser
     ? [
-        {
-          title: "GATE SCANNER ACCESS",
-          items: [
-            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
-            { id: "attendance", label: "Event Attendance Roster", icon: UserCheck, count: attendancePresentCount },
-          ],
-        },
-      ]
+      {
+        title: "GATE SCANNER ACCESS",
+        items: [
+          { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+          { id: "attendance", label: "Event Attendance Roster", icon: UserCheck, count: attendancePresentCount },
+        ],
+      },
+    ]
     : [
-        {
-          title: "OVERVIEW",
-          items: [
-            { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
-          ],
-        },
-        {
-          title: "SUMMITS & CMS",
-          items: [
-            { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
-            { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
-            { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
-            { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
-          ],
-        },
-        {
-          title: "DELEGATES & PARTNERS",
-          items: [
-            { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
-            { id: "remember", label: "Remember (Event Alerts)", icon: BellRing },
-            { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
-            { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
-            { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
-            { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
-            { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
-            { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
-          ],
-        },
-        {
-          title: "EDITORIAL & MEDIA",
-          items: [
-            { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
-            { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
-            { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
-            { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
-          ],
-        },
-        {
-          title: "MEDIA & CXO VOICES",
-          items: [
-            { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
-            { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
-            { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
-          ],
-        },
-        {
-          title: "COMMUNICATIONS & SYSTEM",
-          items: [
-            { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
-            { id: "certificates", label: "Certificate Designer", icon: Sparkles },
-            { id: "email-subjects", label: "Email Subject & Body Manager", icon: Mail, count: emailSubjectsList.length },
-            { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
-            { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
-            { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
-            { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
-            { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
-            { id: "settings", label: "Website Settings", icon: Settings },
-          ],
-        },
-        {
-          title: "ACCOUNTS & FINANCE",
-          items: [
-            { id: "accounts", label: "Accounts & GST Ledger", icon: IndianRupee, count: accountsData.totals.totalTransactions },
-          ],
-        },
-      ];
+      {
+        title: "OVERVIEW",
+        items: [
+          { id: "overview", label: "Executive Dashboard", icon: LayoutDashboard },
+        ],
+      },
+      {
+        title: "SUMMITS & CMS",
+        items: [
+          { id: "events", label: "Events & Summits", icon: Calendar, count: cmsEvents.length },
+          { id: "sectors", label: "Sector Focus CMS", icon: Layers, count: cmsSectors.length },
+          { id: "event-payments", label: "Event Payments & Pricing", icon: CreditCard, count: eventPayments.length },
+          { id: "popup", label: "Popup Management", icon: Sparkles, count: selectedPopupEventIds.length },
+        ],
+      },
+      {
+        title: "DELEGATES & PARTNERS",
+        items: [
+          { id: "event-registrations", label: "Delegate Registrations", icon: Users, count: eventRegistrationsList.length },
+          { id: "remember", label: "Remember (Event Alerts)", icon: BellRing },
+          { id: "attendance", label: "Event Attendance", icon: UserCheck, count: attendancePresentCount },
+          { id: "qr-scanner", label: "Gate QR Scanner", icon: QrCode },
+          { id: "offline-registrations", label: "Offline Registrations", icon: FileSpreadsheet, count: offlineRegistrationsList.length },
+          { id: "cms-delegates", label: "Corporate Delegates", icon: Award, count: cmsDelegates.length },
+          { id: "partner-requests", label: "Partner Requests & Leads", icon: Building, count: partnerSubmissions.length },
+          { id: "partners", label: "Collaborator Logos", icon: Handshake, count: partnersList.length },
+        ],
+      },
+      {
+        title: "EDITORIAL & MEDIA",
+        items: [
+          { id: "news", label: "News & Media Coverage", icon: Newspaper, count: newsList.length },
+          { id: "magazines", label: "Executive Magazines", icon: BookOpen, count: cmsMagazines.length },
+          { id: "career-jobs", label: "Career Openings", icon: Briefcase, count: cmsJobs.length },
+          { id: "career-applicants", label: "Career Applicants", icon: FileText, count: jobApplications.length },
+        ],
+      },
+      {
+        title: "MEDIA & CXO VOICES",
+        items: [
+          { id: "gallery", label: "Media Gallery", icon: Film, count: cmsGalleryItems.length },
+          { id: "videos", label: "YouTube & Insta Videos", icon: PlayCircle, count: cmsGalleryItems.filter((i) => i.type === "video").length },
+          { id: "testimonials", label: "CXO Testimonials", icon: Quote, count: testimonials.length },
+        ],
+      },
+      {
+        title: "COMMUNICATIONS & SYSTEM",
+        items: [
+          { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
+          { id: "certificates", label: "Certificate Designer", icon: Sparkles },
+          { id: "email-subjects", label: "Email Subject & Body Manager", icon: Mail, count: emailSubjectsList.length },
+          { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
+          { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
+          { id: "newsletter", label: "Newsletter Subscribers", icon: MailCheck, count: newsletterSubscribers.length },
+          { id: "seo", label: "SEO Meta Tags", icon: SearchCode },
+          { id: "users", label: "Admin Users", icon: UserPlus, count: adminUsers.length },
+          { id: "settings", label: "Website Settings", icon: Settings },
+        ],
+      },
+      {
+        title: "ACCOUNTS & FINANCE",
+        items: [
+          { id: "accounts", label: "Accounts & GST Ledger", icon: IndianRupee, count: accountsData.totals.totalTransactions },
+        ],
+      },
+    ];
 
   const allNavItems = useMemo(() => navGroups.flatMap((g) => g.items), [navGroups]);
 
@@ -8011,9 +8011,8 @@ export default function AdminDashboardPage() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-md transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          sidebarCollapsed ? "lg:w-20" : "lg:w-72"
-        } w-72 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-md transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarCollapsed ? "lg:w-20" : "lg:w-72"
+          } w-72 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex flex-col h-full overflow-hidden space-y-3">
           {/* Brand Logo & Header */}
@@ -8074,15 +8073,13 @@ export default function AdminDashboardPage() {
                         }
                       }}
                       title={item.label}
-                      className={`flex w-full items-center rounded-xl transition-all cursor-pointer ${
-                        sidebarCollapsed
+                      className={`flex w-full items-center rounded-xl transition-all cursor-pointer ${sidebarCollapsed
                           ? "justify-center p-2.5 relative group"
                           : "justify-between px-3 py-2 text-xs font-bold"
-                      } ${
-                        isActive
+                        } ${isActive
                           ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                           : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
@@ -8091,11 +8088,10 @@ export default function AdminDashboardPage() {
 
                       {!sidebarCollapsed && item.count !== undefined && item.count > 0 && (
                         <span
-                          className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shrink-0 ${
-                            isActive
+                          className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shrink-0 ${isActive
                               ? "bg-white/25 text-white"
                               : "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
-                          }`}
+                            }`}
                         >
                           {item.count}
                         </span>
@@ -8117,11 +8113,10 @@ export default function AdminDashboardPage() {
           {!sidebarCollapsed ? (
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-2.5">
               <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
-                  isScannerOnlyUser
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${isScannerOnlyUser
                     ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
                     : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
-                }`}>
+                  }`}>
                   {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -8131,11 +8126,10 @@ export default function AdminDashboardPage() {
                   <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                     {adminUser?.email || "staff@executivetalksmedia.in"}
                   </p>
-                  <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                    isScannerOnlyUser
+                  <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${isScannerOnlyUser
                       ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
                       : "bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300"
-                  }`}>
+                    }`}>
                     {isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin"}
                   </span>
                 </div>
@@ -8143,11 +8137,10 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs ${
-                isScannerOnlyUser
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs ${isScannerOnlyUser
                   ? "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300"
                   : "bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300"
-              }`} title={adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}>
+                }`} title={adminUser?.name || (isScannerOnlyUser ? "Gate Scanner Staff" : "Super Admin")}>
                 {isScannerOnlyUser ? <QrCode className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
               </div>
             </div>
@@ -8228,11 +8221,10 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsEventPickerOpen((prev) => !prev)}
-                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${
-                  selectedDashboardEventId !== "all"
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${selectedDashboardEventId !== "all"
                     ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-2xs ring-1 ring-purple-400/30"
                     : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
-                }`}
+                  }`}
                 title="Filter entire dashboard by Event / Summit"
               >
                 <Ticket className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -8256,9 +8248,8 @@ export default function AdminDashboardPage() {
                   </span>
                 ) : (
                   <ChevronDown
-                    className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${
-                      isEventPickerOpen ? "rotate-180" : ""
-                    }`}
+                    className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${isEventPickerOpen ? "rotate-180" : ""
+                      }`}
                   />
                 )}
               </button>
@@ -8295,11 +8286,10 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectDashboardEvent("all")}
-                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
-                          selectedDashboardEventId === "all"
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${selectedDashboardEventId === "all"
                             ? "bg-purple-50 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 font-bold border border-purple-200 dark:border-purple-800"
                             : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <Globe className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -8342,11 +8332,10 @@ export default function AdminDashboardPage() {
                             key={evt.id || evt.slug}
                             type="button"
                             onClick={() => handleSelectDashboardEvent(evt.id || evt.slug || evtTitle)}
-                            className={`w-full flex items-start justify-between p-2 rounded-xl text-left transition-colors cursor-pointer group ${
-                              isSelected
+                            className={`w-full flex items-start justify-between p-2 rounded-xl text-left transition-colors cursor-pointer group ${isSelected
                                 ? "bg-purple-50 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 font-bold border border-purple-200 dark:border-purple-800"
                                 : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                            }`}
+                              }`}
                           >
                             <div className="min-w-0 flex-1 pr-2">
                               <p className="font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400">
@@ -8904,10 +8893,10 @@ export default function AdminDashboardPage() {
                     const key = (p.event_slug && p.event_slug.trim())
                       ? p.event_slug.trim().toLowerCase()
                       : (p.event_title && p.event_title.trim())
-                      ? p.event_title.trim().toLowerCase()
-                      : (p.event_id && p.event_id.trim())
-                      ? p.event_id.trim().toLowerCase()
-                      : p.id;
+                        ? p.event_title.trim().toLowerCase()
+                        : (p.event_id && p.event_id.trim())
+                          ? p.event_id.trim().toLowerCase()
+                          : p.id;
                     if (key && !uniqueStatsMap.has(key)) {
                       uniqueStatsMap.set(key, p);
                     }
@@ -9018,11 +9007,10 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setPaymentViewMode("row")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          paymentViewMode === "row"
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${paymentViewMode === "row"
                             ? "bg-cyan-600 text-white shadow-sm"
                             : "text-slate-600 hover:text-slate-900"
-                        }`}
+                          }`}
                         title="Tabular Row Format (1 Card per Row)"
                       >
                         <List className="h-3.5 w-3.5" />
@@ -9031,11 +9019,10 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setPaymentViewMode("grid")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          paymentViewMode === "grid"
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${paymentViewMode === "grid"
                             ? "bg-cyan-600 text-white shadow-sm"
                             : "text-slate-600 hover:text-slate-900"
-                        }`}
+                          }`}
                         title="2-Column Grid Format"
                       >
                         <Grid className="h-3.5 w-3.5" />
@@ -9128,10 +9115,10 @@ export default function AdminDashboardPage() {
                   const key = (p.event_slug && p.event_slug.trim())
                     ? p.event_slug.trim().toLowerCase()
                     : (p.event_title && p.event_title.trim())
-                    ? p.event_title.trim().toLowerCase()
-                    : (p.event_id && p.event_id.trim())
-                    ? p.event_id.trim().toLowerCase()
-                    : p.id;
+                      ? p.event_title.trim().toLowerCase()
+                      : (p.event_id && p.event_id.trim())
+                        ? p.event_id.trim().toLowerCase()
+                        : p.id;
                   if (key && !uniquePaymentsMap.has(key)) {
                     uniquePaymentsMap.set(key, p);
                   }
@@ -9151,7 +9138,7 @@ export default function AdminDashboardPage() {
 
                     let coupons: any[] = [];
                     if (typeof item.coupons === "string") {
-                      try { coupons = JSON.parse(item.coupons); } catch (e) {}
+                      try { coupons = JSON.parse(item.coupons); } catch (e) { }
                     } else if (Array.isArray(item.coupons)) {
                       coupons = item.coupons;
                     }
@@ -9159,7 +9146,7 @@ export default function AdminDashboardPage() {
 
                     let plans: any[] = [];
                     if (typeof item.pricing_plans === "string") {
-                      try { plans = JSON.parse(item.pricing_plans); } catch (e) {}
+                      try { plans = JSON.parse(item.pricing_plans); } catch (e) { }
                     } else if (Array.isArray(item.pricing_plans)) {
                       plans = item.pricing_plans;
                     }
@@ -9194,7 +9181,7 @@ export default function AdminDashboardPage() {
                     const itemSlug = (item.event_slug || "").toLowerCase().trim();
                     const itemTitle = (item.event_title || "").toLowerCase().trim();
                     const itemId = (item.event_id || item.id || "").toLowerCase().trim();
-                    
+
                     return (
                       (itemSlug && (rEvtId === itemSlug || rEvtTitle.includes(itemSlug))) ||
                       (itemId && (rEvtId === itemId || rEvtTitle.includes(itemId))) ||
@@ -9285,14 +9272,14 @@ export default function AdminDashboardPage() {
 
                       let parsedCoupons: any[] = [];
                       if (typeof item.coupons === "string") {
-                        try { parsedCoupons = JSON.parse(item.coupons); } catch (e) {}
+                        try { parsedCoupons = JSON.parse(item.coupons); } catch (e) { }
                       } else if (Array.isArray(item.coupons)) {
                         parsedCoupons = item.coupons;
                       }
 
                       let parsedPlans: PricingPlanTier[] = [];
                       if (typeof item.pricing_plans === "string") {
-                        try { parsedPlans = JSON.parse(item.pricing_plans); } catch (e) {}
+                        try { parsedPlans = JSON.parse(item.pricing_plans); } catch (e) { }
                       } else if (Array.isArray(item.pricing_plans)) {
                         parsedPlans = item.pricing_plans as any;
                       }
@@ -9307,9 +9294,8 @@ export default function AdminDashboardPage() {
                       return (
                         <div
                           key={item.id}
-                          className={`relative rounded-3xl border bg-white p-6 shadow-md transition-all hover:shadow-xl ${
-                            isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 bg-cyan-50/20" : "border-slate-200"
-                          }`}
+                          className={`relative rounded-3xl border bg-white p-6 shadow-md transition-all hover:shadow-xl ${isSelected ? "border-cyan-500 ring-2 ring-cyan-500/20 bg-cyan-50/20" : "border-slate-200"
+                            }`}
                         >
                           {/* CARD TOP HEADER: SELECT CHECKBOX + TITLE + STATUS TOGGLE */}
                           <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
@@ -9357,11 +9343,10 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleTogglePaymentStatusRow(item.id, item.payment_status || "Enabled")}
-                              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold border transition-all cursor-pointer shadow-sm ${
-                                isEnabled
+                              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold border transition-all cursor-pointer shadow-sm ${isEnabled
                                   ? "bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100"
                                   : "bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100"
-                              }`}
+                                }`}
                             >
                               <span className={`h-2 w-2 rounded-full ${isEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
                               {isEnabled ? "Live Checkout" : "Disabled"}
@@ -9451,11 +9436,10 @@ export default function AdminDashboardPage() {
                                 return (
                                   <div
                                     key={pIdx}
-                                    className={`rounded-xl p-2.5 text-xs font-bold border transition-all ${
-                                      isPopular
+                                    className={`rounded-xl p-2.5 text-xs font-bold border transition-all ${isPopular
                                         ? "bg-white border-amber-300 shadow-xs text-slate-900 ring-1 ring-amber-400/30"
                                         : "bg-white/80 border-slate-200 text-slate-800"
-                                    }`}
+                                      }`}
                                   >
                                     <div className="flex items-center justify-between gap-1 mb-1">
                                       <span className="truncate font-extrabold">{plan.name}</span>
@@ -9589,17 +9573,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus("all")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "all"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "all"
                       ? "bg-cyan-50/80 dark:bg-cyan-950/60 border-cyan-500 ring-1 ring-cyan-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "all"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "all"
                       ? "bg-cyan-600 text-white"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                  }`}>
+                    }`}>
                     <Users className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9617,17 +9599,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "paid" ? "all" : "paid")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "paid"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "paid"
                       ? "bg-emerald-50/80 dark:bg-emerald-950/60 border-emerald-500 ring-1 ring-emerald-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "paid"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "paid"
                       ? "bg-emerald-600 text-white"
                       : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                  }`}>
+                    }`}>
                     <IndianRupee className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9645,17 +9625,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "awards" ? "all" : "awards")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "awards"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "awards"
                       ? "bg-amber-50/80 dark:bg-amber-950/60 border-amber-500 ring-1 ring-amber-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "awards"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "awards"
                       ? "bg-amber-500 text-white"
                       : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
-                  }`}>
+                    }`}>
                     <Award className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9673,17 +9651,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "pending_review" || regFilterStatus === "pending"
                       ? "bg-amber-50/80 dark:bg-amber-950/60 border-amber-500 ring-1 ring-amber-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "pending_review" || regFilterStatus === "pending"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "pending_review" || regFilterStatus === "pending"
                       ? "bg-amber-600 text-white"
                       : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
-                  }`}>
+                    }`}>
                     <Clock className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9701,17 +9677,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "free_granted" || regFilterStatus === "free" ? "all" : "free_granted")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "free_granted" || regFilterStatus === "free"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "free_granted" || regFilterStatus === "free"
                       ? "bg-purple-50/80 dark:bg-purple-950/60 border-purple-500 ring-1 ring-purple-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "free_granted" || regFilterStatus === "free"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "free_granted" || regFilterStatus === "free"
                       ? "bg-purple-600 text-white"
                       : "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
-                  }`}>
+                    }`}>
                     <Ticket className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9729,17 +9703,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "offline" ? "all" : "offline")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "offline"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "offline"
                       ? "bg-blue-50/80 dark:bg-blue-950/60 border-blue-500 ring-1 ring-blue-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "offline"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "offline"
                       ? "bg-blue-600 text-white"
                       : "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
-                  }`}>
+                    }`}>
                     <FileSpreadsheet className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -9757,17 +9729,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "dropped" ? "all" : "dropped")}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
-                    regFilterStatus === "dropped"
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${regFilterStatus === "dropped"
                       ? "bg-rose-50/80 dark:bg-rose-950/60 border-rose-500 ring-1 ring-rose-500/30 shadow-xs"
                       : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-700"
-                  }`}
+                    }`}
                 >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
-                    regFilterStatus === "dropped"
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${regFilterStatus === "dropped"
                       ? "bg-rose-600 text-white"
                       : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                  }`}>
+                    }`}>
                     <Clock className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -10032,11 +10002,10 @@ export default function AdminDashboardPage() {
                       return (
                         <tr
                           key={reg.id}
-                          className={`transition-colors ${
-                            isSelected
+                          className={`transition-colors ${isSelected
                               ? "bg-purple-50/70 dark:bg-purple-950/40"
                               : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
-                          }`}
+                            }`}
                         >
                           {/* 0. Row Selection Checkbox */}
                           <td className="py-2.5 px-2 align-middle text-center">
@@ -10635,9 +10604,8 @@ export default function AdminDashboardPage() {
                           return (
                             <tr
                               key={delegate.id}
-                              className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${
-                                isSelected ? "bg-amber-50/50 dark:bg-amber-950/20" : ""
-                              }`}
+                              className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${isSelected ? "bg-amber-50/50 dark:bg-amber-950/20" : ""
+                                }`}
                             >
                               <td className="p-3 text-center">
                                 <input
@@ -11162,11 +11130,10 @@ export default function AdminDashboardPage() {
                       return (
                         <tr
                           key={reg.id}
-                          className={`transition-colors ${
-                            isSelected
+                          className={`transition-colors ${isSelected
                               ? "bg-blue-50/60 dark:bg-blue-950/40"
                               : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
-                          }`}
+                            }`}
                         >
                           <td className="py-3 px-3 align-middle text-center">
                             <input
@@ -11237,11 +11204,10 @@ export default function AdminDashboardPage() {
                               <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
                                 📂 Offline Excel
                               </span>
-                              <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${
-                                isPaid
+                              <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${isPaid
                                   ? "bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
                                   : "bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
-                              }`}>
+                                }`}>
                                 {isPaid ? "💳 Paid" : "🎟️ Free Pass"}
                               </span>
                             </div>
@@ -11356,22 +11322,20 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("overview")}
-                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        attendancePageView === "overview"
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${attendancePageView === "overview"
                           ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                      }`}
+                        }`}
                     >
                       Dashboard Overview
                     </button>
                     <button
                       type="button"
                       onClick={() => setAttendancePageView("roster")}
-                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        attendancePageView === "roster"
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${attendancePageView === "roster"
                           ? "bg-cyan-600 text-white shadow-xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                      }`}
+                        }`}
                     >
                       <Users className="h-3.5 w-3.5" />
                       <span>Attendee Roster</span>
@@ -11413,676 +11377,393 @@ export default function AdminDashboardPage() {
                 <>
                   {/* EXECUTIVE EVENT SELECTION DROPDOWN (STRICTLY CMS EVENTS - NO DUMMY CARDS) */}
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left: Section Title & Real CMS Count Badge */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="h-7 w-7 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-                        <CalendarDays className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                        Event Attendance & Summit Selector
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-100 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border border-cyan-300/40">
-                        {eventAttendanceStats.length} Live CMS Summits
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Choose an event from the dropdown to monitor live gate admissions, verify attendee status, or export real database rosters.
-                    </p>
-                  </div>
-
-                  {/* Right: Prominent Full-Width Dropdown Selector */}
-                  <div className="w-full lg:w-auto lg:min-w-[440px]">
-                    <div className="relative">
-                      <select
-                        id="attendance-event-dropdown"
-                        value={attendanceEventFilter}
-                        onChange={(e) => setAttendanceEventFilter(e.target.value)}
-                        className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 sm:py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
-                      >
-                        <option value="all">
-                          🌐 All Summits & Conferences Combined ({registrations.length} Total Registered • {attendancePresentCount} Checked In)
-                        </option>
-                        {eventAttendanceStats.map((evt) => (
-                          <option key={evt.id} value={evt.id}>
-                            📌 {evt.title} ({evt.totalRegistered} Registered • {evt.presentCount} In • {evt.absentCount} Pending)
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-600 dark:text-cyan-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ACTIVE SELECTED SUMMIT BANNER CARD */}
-                <div className="rounded-xl border border-cyan-200/80 dark:border-cyan-900/50 bg-cyan-50/60 dark:bg-cyan-950/30 p-3.5 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
-                      {attendanceEventFilter === "all" ? "🌐" : "🎯"}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">
-                          Active Event Scope:
-                        </span>
-                        <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
-                          {selectedEventAttendanceSummary.title}
-                        </h4>
-                      </div>
-                      <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
-                        {selectedEventAttendanceSummary.date && (
-                          <span className="flex items-center gap-1 font-mono font-bold">
-                            <Clock className="h-3 w-3 text-slate-400" />
-                            {selectedEventAttendanceSummary.date}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      {/* Left: Section Title & Real CMS Count Badge */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="h-7 w-7 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                            <CalendarDays className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                            Event Attendance & Summit Selector
                           </span>
-                        )}
-                        {selectedEventAttendanceSummary.city && (
-                          <span className="flex items-center gap-1 font-semibold">
-                            <MapPin className="h-3 w-3 text-slate-400" />
-                            {selectedEventAttendanceSummary.city}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-100 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border border-cyan-300/40">
+                            {eventAttendanceStats.length} Live CMS Summits
                           </span>
-                        )}
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                          Real Database Records
-                        </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Choose an event from the dropdown to monitor live gate admissions, verify attendee status, or export real database rosters.
+                        </p>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAttendanceRosterTab("present");
-                        setAttendancePageView("roster");
-                      }}
-                      className="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                      title="Open dedicated attendance roster page"
-                    >
-                      <Users className="h-3.5 w-3.5" />
-                      <span>View Attendees Page ↗</span>
-                    </button>
-
-                    {attendanceEventFilter !== "all" && (
-                      <button
-                        type="button"
-                        onClick={() => setAttendanceEventFilter("all")}
-                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
-                        <span>All Summits</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-                  {/* Card 1: Total Registered */}
-                  <div
-                    onClick={() => {
-                      setAttendanceRosterTab("all");
-                      setAttendancePageView("roster");
-                    }}
-                    className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view all registered attendees in dedicated page"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                      <span>Total Registered</span>
-                      <Users className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
-                      <span>{selectedEventAttendanceSummary.total.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-cyan-600 transition-colors" />
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                      <span>View All Roster Page</span> <span>↗</span>
-                    </span>
-                  </div>
-
-                  {/* Card 2: Checked In (Present) */}
-                  <div
-                    onClick={() => {
-                      setAttendanceRosterTab("present");
-                      setAttendancePageView("roster");
-                    }}
-                    className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view who checked in (Present) in dedicated page"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
-                      <span>Checked-In (Present)</span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
-                      <span>{selectedEventAttendanceSummary.present.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-emerald-500/70 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
-                    </div>
-                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:underline">
-                      <span>{selectedEventAttendanceSummary.turnout}% turn-out • View Present</span> <span>↗</span>
-                    </span>
-                  </div>
-
-                  {/* Card 3: Absent / Pending Scan */}
-                  <div
-                    onClick={() => {
-                      setAttendanceRosterTab("absent");
-                      setAttendancePageView("roster");
-                    }}
-                    className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view who is absent / awaiting arrival in dedicated page"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center justify-between">
-                      <span>Awaiting Arrival (Absent)</span>
-                      <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
-                      <span>{selectedEventAttendanceSummary.absent.toLocaleString()}</span>
-                      <ArrowUpRight className="h-4 w-4 text-amber-500/70 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
-                    </div>
-                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1 group-hover:underline">
-                      <span>Pending scan • View Absent</span> <span>↗</span>
-                    </span>
-                  </div>
-
-                  {/* Card 4: Turnout Progress */}
-                  <div
-                    onClick={() => {
-                      setAttendanceRosterTab("present");
-                      setAttendancePageView("roster");
-                    }}
-                    className="rounded-2xl border border-cyan-200 dark:border-cyan-800/80 bg-cyan-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
-                    title="Click to view turnout breakdown in dedicated page"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 flex items-center justify-between">
-                      <span>Venue Turnout Rate</span>
-                      <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                    </span>
-                    <div className="space-y-1.5">
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
-                          style={{ width: `${selectedEventAttendanceSummary.turnout}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                        <span>Attendance:</span>
-                        <span className="text-cyan-700 dark:text-cyan-300 font-black flex items-center gap-1 group-hover:underline">
-                          {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
-                          <ArrowUpRight className="h-3 w-3" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* QUICK GATE CHECK-IN FORM */}
-              <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                      Quick Gate Check-In (Scanner Gun or Manual Pass ID)
-                    </h3>
-                  </div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Works seamlessly with USB/Bluetooth scanners or typed Pass IDs
-                  </span>
-                </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleQuickCheckin();
-                  }}
-                  className="flex flex-col sm:flex-row gap-2"
-                >
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={quickScanInput}
-                      onChange={(e) => setQuickScanInput(e.target.value)}
-                      placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={quickScanLoading || !quickScanInput.trim()}
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm shrink-0"
-                  >
-                    {quickScanLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    <span>Record Gate Admission</span>
-                  </button>
-                </form>
-              </div>
-
-              {/* UNIVERSAL SEARCH & MULTI-FILTER SUITE */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-xs">
-                {/* Row 1: Universal Search & Attendance Status Tabs */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="relative w-full sm:max-w-lg">
-                    <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={attendanceSearchQuery}
-                      onChange={(e) => setAttendanceSearchQuery(e.target.value)}
-                      placeholder="Search attendee by Name, Mobile Number, Email, Pass ID, Company, Role, City..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
-                    />
-                    {attendanceSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setAttendanceSearchQuery("")}
-                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold shadow-xs w-full sm:w-auto justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setAttendanceStatusFilter("all")}
-                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${
-                        attendanceStatusFilter === "all"
-                          ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                      }`}
-                    >
-                      All ({selectedEventAttendanceSummary.total})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAttendanceStatusFilter("present")}
-                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        attendanceStatusFilter === "present"
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span>Checked-In ({selectedEventAttendanceSummary.present})</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAttendanceStatusFilter("absent")}
-                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                        attendanceStatusFilter === "absent"
-                          ? "bg-amber-600 text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-amber-600"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                      <span>Absent ({selectedEventAttendanceSummary.absent})</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Row 2: Secondary Filter Controls (Category, Date Range, Date Basis, Reset) */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    {/* Pass Category Filter */}
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                      <Tag className="h-3.5 w-3.5 text-slate-400" />
-                      <select
-                        value={attendanceCategoryFilter}
-                        onChange={(e) => setAttendanceCategoryFilter(e.target.value)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
-                      >
-                        <option value="all">All Pass Tiers</option>
-                        {attendanceCategoriesList.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Date Preset Filter */}
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <select
-                        value={attendanceDateFilter}
-                        onChange={(e) => setAttendanceDateFilter(e.target.value as any)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
-                      >
-                        <option value="all">All Time / Any Date</option>
-                        <option value="today">Today</option>
-                        <option value="yesterday">Yesterday</option>
-                        <option value="7days">Last 7 Days</option>
-                        <option value="30days">Last 30 Days</option>
-                        <option value="this_month">This Month</option>
-                        <option value="custom">Custom Date Range...</option>
-                      </select>
-                    </div>
-
-                    {/* Date Type Selector (Registered vs Check-in) */}
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                      <span className="text-[11px] font-bold text-slate-400">By:</span>
-                      <select
-                        value={attendanceDateType}
-                        onChange={(e) => setAttendanceDateType(e.target.value as any)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
-                      >
-                        <option value="created">Registration Date</option>
-                        <option value="checked_in">Gate Check-In Date</option>
-                      </select>
-                    </div>
-
-                    {/* Custom Date Pickers */}
-                    {attendanceDateFilter === "custom" && (
-                      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs">
-                        <input
-                          type="date"
-                          value={attendanceStartDate}
-                          onChange={(e) => setAttendanceStartDate(e.target.value)}
-                          className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
-                        />
-                        <span className="text-slate-400">to</span>
-                        <input
-                          type="date"
-                          value={attendanceEndDate}
-                          onChange={(e) => setAttendanceEndDate(e.target.value)}
-                          className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
-                        />
-                      </div>
-                    )}
-
-                    {/* Clear Filters Button */}
-                    {(attendanceSearchQuery ||
-                      attendanceStatusFilter !== "all" ||
-                      attendanceCategoryFilter !== "all" ||
-                      attendanceDateFilter !== "all" ||
-                      attendanceEventFilter !== "all") && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAttendanceSearchQuery("");
-                          setAttendanceStatusFilter("all");
-                          setAttendanceCategoryFilter("all");
-                          setAttendanceDateFilter("all");
-                          setAttendanceStartDate("");
-                          setAttendanceEndDate("");
-                          setAttendanceEventFilter("all");
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                        <span>Clear All Filters</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Showing <strong className="text-slate-900 dark:text-slate-100 font-bold">{attendanceDelegatesList.length}</strong> of{" "}
-                    <strong>{selectedEventAttendanceSummary.total}</strong> attendees
-                  </div>
-                </div>
-              </div>
-
-              {/* ATTENDANCE DELEGATE TABLE */}
-              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs custom-scrollbar min-h-[460px]">
-                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    <tr>
-                      <th className="py-3 px-2 w-7 text-center">#</th>
-                      <th className="py-3 px-2.5">Attendee Profile</th>
-                      <th className="py-3 px-2.5">Company & Role</th>
-                      <th className="py-3 px-2.5">Summit / Event</th>
-                      <th className="py-3 px-2">Pass Tier</th>
-                      <th className="py-3 px-2 text-center">Gate Status</th>
-                      <th className="py-3 px-2">Check-In Details</th>
-                      <th className="py-3 px-2.5 text-right w-36">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
-                    {attendanceDelegatesList.length > 0 ? (
-                      attendanceDelegatesList.map((del, idx) => {
-                        const isPresent = del.checkin_status?.toLowerCase() === "present";
-                        const attendeeName =
-                          del.name ||
-                          `${del.first_name || ""} ${del.last_name || ""}`.trim() ||
-                          "Delegate";
-                        return (
-                          <tr
-                            key={del.id}
-                            className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${
-                              isPresent ? "bg-emerald-50/30 dark:bg-emerald-950/10" : ""
-                            }`}
+                      {/* Right: Prominent Full-Width Dropdown Selector */}
+                      <div className="w-full lg:w-auto lg:min-w-[440px]">
+                        <div className="relative">
+                          <select
+                            id="attendance-event-dropdown"
+                            value={attendanceEventFilter}
+                            onChange={(e) => setAttendanceEventFilter(e.target.value)}
+                            className="w-full appearance-none rounded-xl border-2 border-cyan-500/50 hover:border-cyan-500 dark:border-cyan-500/60 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 sm:py-3 pr-10 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-all cursor-pointer"
                           >
-                            <td className="py-3 px-2 text-slate-400 font-mono text-[11px] text-center">
-                              {idx + 1}
-                            </td>
+                            <option value="all">
+                              🌐 All Summits & Conferences Combined ({registrations.length} Total Registered • {attendancePresentCount} Checked In)
+                            </option>
+                            {eventAttendanceStats.map((evt) => (
+                              <option key={evt.id} value={evt.id}>
+                                📌 {evt.title} ({evt.totalRegistered} Registered • {evt.presentCount} In • {evt.absentCount} Pending)
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-600 dark:text-cyan-400 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
 
-                            {/* Attendee Profile (Name, Pass ID, Email) */}
-                            <td className="py-3 px-2.5">
-                              <div className="space-y-0.5 min-w-0">
-                                <strong
-                                  className="font-bold text-slate-900 dark:text-white capitalize text-xs block truncate max-w-[150px]"
-                                  title={attendeeName}
-                                >
-                                  {attendeeName}
-                                </strong>
-                                <div className="flex items-center gap-1 text-[10px] font-mono text-cyan-700 dark:text-cyan-400">
-                                  <span className="truncate max-w-[110px]">{del.id}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(del.id);
-                                      toast.success(`Copied Pass ID: ${del.id}`);
-                                    }}
-                                    className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                                    title="Copy Pass ID"
-                                  >
-                                    <Copy className="h-2.5 w-2.5" />
-                                  </button>
-                                </div>
-                                {del.email && (
-                                  <a
-                                    href={`mailto:${del.email}`}
-                                    className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-cyan-600 truncate block max-w-[150px]"
-                                    title={del.email}
-                                  >
-                                    {del.email}
-                                  </a>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Company & Role */}
-                            <td className="py-3 px-2.5">
-                              <div className="space-y-0.5 min-w-0">
-                                <span
-                                  className="font-bold text-slate-900 dark:text-slate-100 block text-xs truncate max-w-[135px]"
-                                  title={del.organization || "Independent"}
-                                >
-                                  {del.organization || "Independent"}
-                                </span>
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-[130px]">
-                                  {del.designation || "Executive"}
-                                </span>
-                                {del.city && (
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[125px]">
-                                    <MapPin className="h-2.5 w-2.5 shrink-0" />
-                                    <span>{del.city}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Summit / Event */}
-                            <td className="py-3 px-2.5">
-                              <div className="space-y-0.5 min-w-0">
-                                <span
-                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs max-w-[145px]"
-                                  title={del.event_title || del.event_id}
-                                >
-                                  {del.event_title || del.event_id || "Executive Conclave"}
-                                </span>
-                                {del.created_at && (
-                                  <span className="text-[10px] font-mono text-slate-400 block">
-                                    Reg: {new Date(del.created_at).toLocaleDateString("en-IN")}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Pass Tier */}
-                            <td className="py-3 px-2">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[120px]" title={del.pass_name || del.registration_category || "Delegate Pass"}>
-                                {del.pass_name || del.registration_category || "Delegate Pass"}
+                    {/* ACTIVE SELECTED SUMMIT BANNER CARD */}
+                    <div className="rounded-xl border border-cyan-200/80 dark:border-cyan-900/50 bg-cyan-50/60 dark:bg-cyan-950/30 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-9 w-9 rounded-lg bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                          {attendanceEventFilter === "all" ? "🌐" : "🎯"}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300">
+                              Active Event Scope:
+                            </span>
+                            <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
+                              {selectedEventAttendanceSummary.title}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap mt-0.5">
+                            {selectedEventAttendanceSummary.date && (
+                              <span className="flex items-center gap-1 font-mono font-bold">
+                                <Clock className="h-3 w-3 text-slate-400" />
+                                {selectedEventAttendanceSummary.date}
                               </span>
-                            </td>
+                            )}
+                            {selectedEventAttendanceSummary.city && (
+                              <span className="flex items-center gap-1 font-semibold">
+                                <MapPin className="h-3 w-3 text-slate-400" />
+                                {selectedEventAttendanceSummary.city}
+                              </span>
+                            )}
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                              Real Database Records
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                            {/* Gate Status */}
-                            <td className="py-3 px-2 text-center">
-                              {isPresent ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
-                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                                  <span>Present</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                                  <Clock className="h-3 w-3" />
-                                  <span>Absent</span>
-                                </span>
-                              )}
-                            </td>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAttendanceRosterTab("present");
+                            setAttendancePageView("roster");
+                          }}
+                          className="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                          title="Open dedicated attendance roster page"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          <span>View Attendees Page ↗</span>
+                        </button>
 
-                            {/* Check-In Details */}
-                            <td className="py-3 px-2 text-xs font-mono text-slate-600 dark:text-slate-400">
-                              {del.checked_in_at ? (
-                                <div className="space-y-0.5">
-                                  <span className="font-bold text-emerald-700 dark:text-emerald-400 block text-[11px]">
-                                    {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 block">
-                                    {new Date(del.checked_in_at).toLocaleDateString("en-IN")}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">Awaiting scan</span>
-                              )}
-                            </td>
+                        {attendanceEventFilter !== "all" && (
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceEventFilter("all")}
+                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5 text-cyan-600" />
+                            <span>All Summits</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                            {/* Actions */}
-                            <td className="py-3 px-2.5 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {isPresent ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => setPreviewCertAttendee(del)}
-                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
-                                      title="Preview Letterhead E-Certificate"
-                                    >
-                                      <Award className="h-3.5 w-3.5 text-amber-600" />
-                                    </button>
+                  {/* DYNAMIC KPI METRICS FOR SELECTED EVENT */}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                      {/* Card 1: Total Registered */}
+                      <div
+                        onClick={() => {
+                          setAttendanceRosterTab("all");
+                          setAttendancePageView("roster");
+                        }}
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer group active:scale-[0.99]"
+                        title="Click to view all registered attendees in dedicated page"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                          <span>Total Registered</span>
+                          <Users className="h-3.5 w-3.5 text-slate-400 group-hover:text-cyan-500 transition-colors" />
+                        </span>
+                        <div className="text-2xl sm:text-3xl font-black font-display text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                          <span>{selectedEventAttendanceSummary.total.toLocaleString()}</span>
+                          <ArrowUpRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:text-cyan-600 transition-colors" />
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                          <span>View All Roster Page</span> <span>↗</span>
+                        </span>
+                      </div>
 
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSendCertificate(del.id, del.name)}
-                                      disabled={sendingCertId === del.id}
-                                      className={`h-7 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
-                                        del.certificate_sent_at
-                                          ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
-                                          : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black"
-                                      }`}
-                                      title={
-                                        del.certificate_sent_at
-                                          ? `Certificate sent on ${new Date(del.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
-                                          : `Send E-Certificate email to ${del.email}`
-                                      }
-                                    >
-                                      {sendingCertId === del.id ? (
-                                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                      ) : del.certificate_sent_at ? (
-                                        <RefreshCw className="h-3 w-3 text-amber-600" />
-                                      ) : (
-                                        <Mail className="h-3 w-3" />
-                                      )}
-                                      <span>{del.certificate_sent_at ? "Resend" : "Cert"}</span>
-                                    </button>
+                      {/* Card 2: Checked In (Present) */}
+                      <div
+                        onClick={() => {
+                          setAttendanceRosterTab("present");
+                          setAttendancePageView("roster");
+                        }}
+                        className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-600 transition-all cursor-pointer group active:scale-[0.99]"
+                        title="Click to view who checked in (Present) in dedicated page"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                          <span>Checked-In (Present)</span>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        </span>
+                        <div className="text-2xl sm:text-3xl font-black font-display text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                          <span>{selectedEventAttendanceSummary.present.toLocaleString()}</span>
+                          <ArrowUpRight className="h-4 w-4 text-emerald-500/70 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
+                        </div>
+                        <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 group-hover:underline">
+                          <span>{selectedEventAttendanceSummary.turnout}% turn-out • View Present</span> <span>↗</span>
+                        </span>
+                      </div>
 
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUndoAttendance(del.id)}
-                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
-                                      title="Undo check-in (revert attendee back to Absent status)"
-                                    >
-                                      <RotateCcw className="h-3 w-3" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleQuickCheckin(del.id)}
-                                    className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                  >
-                                    Check In
-                                  </button>
-                                )}
+                      {/* Card 3: Absent / Pending Scan */}
+                      <div
+                        onClick={() => {
+                          setAttendanceRosterTab("absent");
+                          setAttendancePageView("roster");
+                        }}
+                        className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-1.5 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all cursor-pointer group active:scale-[0.99]"
+                        title="Click to view who is absent / awaiting arrival in dedicated page"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                          <span>Awaiting Arrival (Absent)</span>
+                          <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        </span>
+                        <div className="text-2xl sm:text-3xl font-black font-display text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                          <span>{selectedEventAttendanceSummary.absent.toLocaleString()}</span>
+                          <ArrowUpRight className="h-4 w-4 text-amber-500/70 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors" />
+                        </div>
+                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1 group-hover:underline">
+                          <span>Pending scan • View Absent</span> <span>↗</span>
+                        </span>
+                      </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const d = del as any;
-                                    setThermalBadgeAttendee({
-                                      ...del,
-                                      name: d.name || d.full_name || "Delegate",
-                                      email: d.email || d.official_email || "",
-                                      event_title: d.event_title || d.eventTitle || selectedEventAttendanceSummary.title,
-                                      checked_in_at: d.checked_in_at || new Date().toISOString(),
-                                    });
-                                    setShowThermalBadgeModal(true);
-                                  }}
-                                  className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs"
-                                  title="Print TVS Thermal Badge Pass Slip"
-                                >
-                                  <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
-                                </button>
+                      {/* Card 4: Turnout Progress */}
+                      <div
+                        onClick={() => {
+                          setAttendanceRosterTab("present");
+                          setAttendancePageView("roster");
+                        }}
+                        className="rounded-2xl border border-cyan-200 dark:border-cyan-800/80 bg-cyan-50/70 dark:bg-slate-900 p-3.5 sm:p-4 space-y-2 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-600 transition-all cursor-pointer group active:scale-[0.99]"
+                        title="Click to view turnout breakdown in dedicated page"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:text-cyan-300 flex items-center justify-between">
+                          <span>Venue Turnout Rate</span>
+                          <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                        </span>
+                        <div className="space-y-1.5">
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                              style={{ width: `${selectedEventAttendanceSummary.turnout}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                            <span>Attendance:</span>
+                            <span className="text-cyan-700 dark:text-cyan-300 font-black flex items-center gap-1 group-hover:underline">
+                              {selectedEventAttendanceSummary.present} / {selectedEventAttendanceSummary.total} ({selectedEventAttendanceSummary.turnout}%)
+                              <ArrowUpRight className="h-3 w-3" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedRegDetail(del as Registration)}
-                                  title="View Full Attendee Dossier & Details"
-                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 dark:text-cyan-400 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                                  <span>View</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={8} className="py-12 text-center">
-                          <div className="max-w-md mx-auto space-y-3">
-                            <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-                              <Search className="h-6 w-6" />
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                                No Attendees Found
-                              </h4>
-                              <p className="text-xs text-slate-500">
-                                No delegate records matched your search query or filter criteria.
-                              </p>
-                            </div>
+                  {/* QUICK GATE CHECK-IN FORM */}
+                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div className="flex items-center gap-2">
+                        <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                          Quick Gate Check-In (Scanner Gun or Manual Pass ID)
+                        </h3>
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Works seamlessly with USB/Bluetooth scanners or typed Pass IDs
+                      </span>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleQuickCheckin();
+                      }}
+                      className="flex flex-col sm:flex-row gap-2"
+                    >
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={quickScanInput}
+                          onChange={(e) => setQuickScanInput(e.target.value)}
+                          placeholder="Scan delegate barcode or type Pass ID (e.g. ETM-REG-12345 or full URL)..."
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-inner"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={quickScanLoading || !quickScanInput.trim()}
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-sm shrink-0"
+                      >
+                        {quickScanLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                        <span>Record Gate Admission</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* UNIVERSAL SEARCH & MULTI-FILTER SUITE */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-xs">
+                    {/* Row 1: Universal Search & Attendance Status Tabs */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="relative w-full sm:max-w-lg">
+                        <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          value={attendanceSearchQuery}
+                          onChange={(e) => setAttendanceSearchQuery(e.target.value)}
+                          placeholder="Search attendee by Name, Mobile Number, Email, Pass ID, Company, Role, City..."
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-8 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-xs"
+                        />
+                        {attendanceSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceSearchQuery("")}
+                            className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold shadow-xs w-full sm:w-auto justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatusFilter("all")}
+                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer text-center ${attendanceStatusFilter === "all"
+                              ? "bg-slate-900 dark:bg-cyan-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                            }`}
+                        >
+                          All ({selectedEventAttendanceSummary.total})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatusFilter("present")}
+                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${attendanceStatusFilter === "present"
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-400 hover:text-emerald-600"
+                            }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                          <span>Checked-In ({selectedEventAttendanceSummary.present})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatusFilter("absent")}
+                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${attendanceStatusFilter === "absent"
+                              ? "bg-amber-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-400 hover:text-amber-600"
+                            }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          <span>Absent ({selectedEventAttendanceSummary.absent})</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Secondary Filter Controls (Category, Date Range, Date Basis, Reset) */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Pass Category Filter */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                          <Tag className="h-3.5 w-3.5 text-slate-400" />
+                          <select
+                            value={attendanceCategoryFilter}
+                            onChange={(e) => setAttendanceCategoryFilter(e.target.value)}
+                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                          >
+                            <option value="all">All Pass Tiers</option>
+                            {attendanceCategoriesList.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Date Preset Filter */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                          <select
+                            value={attendanceDateFilter}
+                            onChange={(e) => setAttendanceDateFilter(e.target.value as any)}
+                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                          >
+                            <option value="all">All Time / Any Date</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="this_month">This Month</option>
+                            <option value="custom">Custom Date Range...</option>
+                          </select>
+                        </div>
+
+                        {/* Date Type Selector (Registered vs Check-in) */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                          <span className="text-[11px] font-bold text-slate-400">By:</span>
+                          <select
+                            value={attendanceDateType}
+                            onChange={(e) => setAttendanceDateType(e.target.value as any)}
+                            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 shadow-xs cursor-pointer"
+                          >
+                            <option value="created">Registration Date</option>
+                            <option value="checked_in">Gate Check-In Date</option>
+                          </select>
+                        </div>
+
+                        {/* Custom Date Pickers */}
+                        {attendanceDateFilter === "custom" && (
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-xs">
+                            <input
+                              type="date"
+                              value={attendanceStartDate}
+                              onChange={(e) => setAttendanceStartDate(e.target.value)}
+                              className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
+                            />
+                            <span className="text-slate-400">to</span>
+                            <input
+                              type="date"
+                              value={attendanceEndDate}
+                              onChange={(e) => setAttendanceEndDate(e.target.value)}
+                              className="bg-transparent text-xs text-slate-800 dark:text-slate-200 px-1 py-0.5 focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        {/* Clear Filters Button */}
+                        {(attendanceSearchQuery ||
+                          attendanceStatusFilter !== "all" ||
+                          attendanceCategoryFilter !== "all" ||
+                          attendanceDateFilter !== "all" ||
+                          attendanceEventFilter !== "all") && (
                             <button
                               type="button"
                               onClick={() => {
@@ -12094,17 +11775,295 @@ export default function AdminDashboardPage() {
                                 setAttendanceEndDate("");
                                 setAttendanceEventFilter("all");
                               }}
-                              className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1"
                             >
-                              Reset All Filters
+                              <X className="h-3.5 w-3.5" />
+                              <span>Clear All Filters</span>
                             </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                      </div>
+
+                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        Showing <strong className="text-slate-900 dark:text-slate-100 font-bold">{attendanceDelegatesList.length}</strong> of{" "}
+                        <strong>{selectedEventAttendanceSummary.total}</strong> attendees
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ATTENDANCE DELEGATE TABLE */}
+                  <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs custom-scrollbar min-h-[460px]">
+                    <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                      <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        <tr>
+                          <th className="py-3 px-2 w-7 text-center">#</th>
+                          <th className="py-3 px-2.5">Attendee Profile</th>
+                          <th className="py-3 px-2.5">Company & Role</th>
+                          <th className="py-3 px-2.5">Summit / Event</th>
+                          <th className="py-3 px-2">Pass Tier</th>
+                          <th className="py-3 px-2 text-center">Gate Status</th>
+                          <th className="py-3 px-2">Check-In Details</th>
+                          <th className="py-3 px-2.5 text-right w-36">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                        {attendanceDelegatesList.length > 0 ? (
+                          attendanceDelegatesList.map((del, idx) => {
+                            const isPresent = del.checkin_status?.toLowerCase() === "present";
+                            const attendeeName =
+                              del.name ||
+                              `${del.first_name || ""} ${del.last_name || ""}`.trim() ||
+                              "Delegate";
+                            return (
+                              <tr
+                                key={del.id}
+                                className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${isPresent ? "bg-emerald-50/30 dark:bg-emerald-950/10" : ""
+                                  }`}
+                              >
+                                <td className="py-3 px-2 text-slate-400 font-mono text-[11px] text-center">
+                                  {idx + 1}
+                                </td>
+
+                                {/* Attendee Profile (Name, Pass ID, Email) */}
+                                <td className="py-3 px-2.5">
+                                  <div className="space-y-0.5 min-w-0">
+                                    <strong
+                                      className="font-bold text-slate-900 dark:text-white capitalize text-xs block truncate max-w-[150px]"
+                                      title={attendeeName}
+                                    >
+                                      {attendeeName}
+                                    </strong>
+                                    <div className="flex items-center gap-1 text-[10px] font-mono text-cyan-700 dark:text-cyan-400">
+                                      <span className="truncate max-w-[110px]">{del.id}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(del.id);
+                                          toast.success(`Copied Pass ID: ${del.id}`);
+                                        }}
+                                        className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                        title="Copy Pass ID"
+                                      >
+                                        <Copy className="h-2.5 w-2.5" />
+                                      </button>
+                                    </div>
+                                    {del.email && (
+                                      <a
+                                        href={`mailto:${del.email}`}
+                                        className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-cyan-600 truncate block max-w-[150px]"
+                                        title={del.email}
+                                      >
+                                        {del.email}
+                                      </a>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Company & Role */}
+                                <td className="py-3 px-2.5">
+                                  <div className="space-y-0.5 min-w-0">
+                                    <span
+                                      className="font-bold text-slate-900 dark:text-slate-100 block text-xs truncate max-w-[135px]"
+                                      title={del.organization || "Independent"}
+                                    >
+                                      {del.organization || "Independent"}
+                                    </span>
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-[130px]">
+                                      {del.designation || "Executive"}
+                                    </span>
+                                    {del.city && (
+                                      <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[125px]">
+                                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                                        <span>{del.city}</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Summit / Event */}
+                                <td className="py-3 px-2.5">
+                                  <div className="space-y-0.5 min-w-0">
+                                    <span
+                                      className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs max-w-[145px]"
+                                      title={del.event_title || del.event_id}
+                                    >
+                                      {del.event_title || del.event_id || "Executive Conclave"}
+                                    </span>
+                                    {del.created_at && (
+                                      <span className="text-[10px] font-mono text-slate-400 block">
+                                        Reg: {new Date(del.created_at).toLocaleDateString("en-IN")}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Pass Tier */}
+                                <td className="py-3 px-2">
+                                  <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[120px]" title={del.pass_name || del.registration_category || "Delegate Pass"}>
+                                    {del.pass_name || del.registration_category || "Delegate Pass"}
+                                  </span>
+                                </td>
+
+                                {/* Gate Status */}
+                                <td className="py-3 px-2 text-center">
+                                  {isPresent ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
+                                      <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                      <span>Present</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                      <Clock className="h-3 w-3" />
+                                      <span>Absent</span>
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Check-In Details */}
+                                <td className="py-3 px-2 text-xs font-mono text-slate-600 dark:text-slate-400">
+                                  {del.checked_in_at ? (
+                                    <div className="space-y-0.5">
+                                      <span className="font-bold text-emerald-700 dark:text-emerald-400 block text-[11px]">
+                                        {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 block">
+                                        {new Date(del.checked_in_at).toLocaleDateString("en-IN")}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[11px]">Awaiting scan</span>
+                                  )}
+                                </td>
+
+                                {/* Actions */}
+                                <td className="py-3 px-2.5 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    {isPresent ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewCertAttendee(del)}
+                                          className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
+                                          title="Preview Letterhead E-Certificate"
+                                        >
+                                          <Award className="h-3.5 w-3.5 text-amber-600" />
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSendCertificate(del.id, del.name)}
+                                          disabled={sendingCertId === del.id}
+                                          className={`h-7 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${del.certificate_sent_at
+                                              ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
+                                              : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black"
+                                            }`}
+                                          title={
+                                            del.certificate_sent_at
+                                              ? `Certificate sent on ${new Date(del.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
+                                              : `Send E-Certificate email to ${del.email}`
+                                          }
+                                        >
+                                          {sendingCertId === del.id ? (
+                                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                          ) : del.certificate_sent_at ? (
+                                            <RefreshCw className="h-3 w-3 text-amber-600" />
+                                          ) : (
+                                            <Mail className="h-3 w-3" />
+                                          )}
+                                          <span>{del.certificate_sent_at ? "Resend" : "Cert"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUndoAttendance(del.id)}
+                                          className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
+                                          title="Undo check-in (revert attendee back to Absent status)"
+                                        >
+                                          <RotateCcw className="h-3 w-3" />
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleQuickCheckin(del.id)}
+                                        className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                                      >
+                                        Check In
+                                      </button>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const d = del as any;
+                                        setThermalBadgeAttendee({
+                                          ...del,
+                                          name: d.name || d.full_name || "Delegate",
+                                          email: d.email || d.official_email || "",
+                                          event_title: d.event_title || d.eventTitle || selectedEventAttendanceSummary.title,
+                                          checked_in_at: d.checked_in_at || new Date().toISOString(),
+                                        });
+                                        setShowThermalBadgeModal(true);
+                                      }}
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs"
+                                      title="Print TVS Thermal Badge Pass Slip"
+                                    >
+                                      <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedRegDetail(del as Registration)}
+                                      title="View Full Attendee Dossier & Details"
+                                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 dark:text-cyan-400 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                                      <span>View</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="py-12 text-center">
+                              <div className="max-w-md mx-auto space-y-3">
+                                <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                                  <Search className="h-6 w-6" />
+                                </div>
+                                <div className="space-y-1">
+                                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                                    No Attendees Found
+                                  </h4>
+                                  <p className="text-xs text-slate-500">
+                                    No delegate records matched your search query or filter criteria.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAttendanceSearchQuery("");
+                                    setAttendanceStatusFilter("all");
+                                    setAttendanceCategoryFilter("all");
+                                    setAttendanceDateFilter("all");
+                                    setAttendanceStartDate("");
+                                    setAttendanceEndDate("");
+                                    setAttendanceEventFilter("all");
+                                  }}
+                                  className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
+                                >
+                                  Reset All Filters
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
                 </>
               )}
@@ -12201,477 +12160,463 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                    {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-3">
-                      {/* Tab Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700/60">
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceRosterTab("present")}
-                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                              attendanceRosterTab === "present"
-                                ? "bg-emerald-600 text-white shadow-xs"
-                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  {/* 2. TAB TOGGLE & LIVE SEARCH BAR */}
+                  <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-3">
+                    {/* Tab Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700/60">
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceRosterTab("present")}
+                          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${attendanceRosterTab === "present"
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                             }`}
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span>Checked-In (Present)</span>
-                            <span
-                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                                attendanceRosterTab === "present"
-                                  ? "bg-white/20 text-white"
-                                  : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Checked-In (Present)</span>
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${attendanceRosterTab === "present"
+                                ? "bg-white/20 text-white"
+                                : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
                               }`}
-                            >
-                              {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}
-                            </span>
-                          </button>
+                          >
+                            {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}
+                          </span>
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceRosterTab("absent")}
-                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                              attendanceRosterTab === "absent"
-                                ? "bg-amber-600 text-white shadow-xs"
-                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceRosterTab("absent")}
+                          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${attendanceRosterTab === "absent"
+                              ? "bg-amber-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                             }`}
-                          >
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>Awaiting Arrival (Absent)</span>
-                            <span
-                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                                attendanceRosterTab === "absent"
-                                  ? "bg-white/20 text-white"
-                                  : "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>Awaiting Arrival (Absent)</span>
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${attendanceRosterTab === "absent"
+                                ? "bg-white/20 text-white"
+                                : "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
                               }`}
-                            >
-                              {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}
-                            </span>
-                          </button>
+                          >
+                            {eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}
+                          </span>
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceRosterTab("all")}
-                            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                              attendanceRosterTab === "all"
-                                ? "bg-slate-900 dark:bg-white dark:text-slate-900 text-white shadow-xs"
-                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceRosterTab("all")}
+                          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${attendanceRosterTab === "all"
+                              ? "bg-slate-900 dark:bg-white dark:text-slate-900 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                             }`}
-                          >
-                            <Users className="h-3.5 w-3.5" />
-                            <span>All Registered</span>
-                            <span
-                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                                attendanceRosterTab === "all"
-                                  ? "bg-white/20 dark:bg-slate-900/20"
-                                  : "bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          <span>All Registered</span>
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${attendanceRosterTab === "all"
+                                ? "bg-white/20 dark:bg-slate-900/20"
+                                : "bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                               }`}
-                            >
-                              {eventScopedDelegates.length}
-                            </span>
-                          </button>
-                        </div>
-
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-bold">
-                          Showing <span className="text-slate-900 dark:text-white font-black">{modalAttendeesList.length}</span> attendees
-                        </div>
+                          >
+                            {eventScopedDelegates.length}
+                          </span>
+                        </button>
                       </div>
 
-                      {/* E-CERTIFICATE DISPATCH BANNER FOR PRESENT ATTENDEES */}
-                      {attendanceRosterTab === "present" && (() => {
-                        const presentList = eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present");
-                        const unsentList = presentList.filter((r) => !r.certificate_sent_at);
-                        const sentList = presentList.filter((r) => !!r.certificate_sent_at);
-
-                        if (presentList.length === 0) return null;
-
-                        const allSent = unsentList.length === 0 && presentList.length > 0;
-
-                        return (
-                          <div
-                            className={`flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all ${
-                              allSent
-                                ? "bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-cyan-500/10 border-emerald-500/30"
-                                : "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-cyan-500/10 border-amber-500/30"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
-                                  allSent
-                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                                    : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                                }`}
-                              >
-                                {allSent ? <CheckCircle2 className="h-5 w-5" /> : <Award className="h-5 w-5" />}
-                              </div>
-                              <div>
-                                <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
-                                  <span>
-                                    {allSent
-                                      ? `All ${presentList.length} Checked-In Attendees Have Received E-Certificates`
-                                      : `Official Letterhead E-Certificate Automation (${unsentList.length} Pending)`}
-                                  </span>
-                                  <span
-                                    className={`px-2 py-0.2 rounded-full text-[9px] font-black uppercase ${
-                                      allSent
-                                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                    }`}
-                                  >
-                                    Hostinger SMTP
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                  {allSent
-                                    ? "Every checked-in attendee has received their official certificate. You can resend individually or to all."
-                                    : "Single-click sends official prestigious E-Certificates directly to attendees' registered emails with their proper name and certificate ID."}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {!allSent && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleBulkSendCertificates(true)}
-                                  disabled={bulkSendingCerts}
-                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
-                                >
-                                  {bulkSendingCerts ? (
-                                    <>
-                                      <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
-                                      <span>Sending Emails...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Award className="h-4 w-4" />
-                                      <span>Send E-Certificates to Unsent ({unsentList.length})</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
-
-                              <button
-                                type="button"
-                                onClick={() => handleBulkSendCertificates(false)}
-                                disabled={bulkSendingCerts}
-                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50 ${
-                                  allSent
-                                    ? "bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-wider shadow-emerald-500/20"
-                                    : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
-                                }`}
-                                title="Resend certificates to all present attendees"
-                              >
-                                <RefreshCw className="h-3.5 w-3.5" />
-                                <span>{allSent ? `Resend to All (${presentList.length})` : "Resend All"}</span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Search & Category Filter */}
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative flex-1 min-w-[240px]">
-                          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
-                          <input
-                            type="text"
-                            value={attendanceRosterSearch}
-                            onChange={(e) => setAttendanceRosterSearch(e.target.value)}
-                            placeholder="Search attendee by name, email, phone, company, pass ID..."
-                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-2xs"
-                          />
-                          {attendanceRosterSearch && (
-                            <button
-                              type="button"
-                              onClick={() => setAttendanceRosterSearch("")}
-                              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        {attendanceCategoriesList.length > 0 && (
-                          <div className="w-auto min-w-[180px]">
-                            <select
-                              value={attendanceRosterCategory}
-                              onChange={(e) => setAttendanceRosterCategory(e.target.value)}
-                              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 cursor-pointer shadow-2xs"
-                            >
-                              <option value="all">All Pass Categories</option>
-                              {attendanceCategoriesList.map((cat) => (
-                                <option key={cat} value={cat}>
-                                  {cat}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
+                      <div className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+                        Showing <span className="text-slate-900 dark:text-white font-black">{modalAttendeesList.length}</span> attendees
                       </div>
                     </div>
 
-                    {/* 3. ATTENDEE ROSTER SCROLLABLE TABLE */}
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar min-h-[320px]">
-                      {modalAttendeesList.length === 0 ? (
-                        <div className="py-16 text-center space-y-3">
-                          <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-                            <Search className="h-6 w-6" />
+                    {/* E-CERTIFICATE DISPATCH BANNER FOR PRESENT ATTENDEES */}
+                    {attendanceRosterTab === "present" && (() => {
+                      const presentList = eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present");
+                      const unsentList = presentList.filter((r) => !r.certificate_sent_at);
+                      const sentList = presentList.filter((r) => !!r.certificate_sent_at);
+
+                      if (presentList.length === 0) return null;
+
+                      const allSent = unsentList.length === 0 && presentList.length > 0;
+
+                      return (
+                        <div
+                          className={`flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all ${allSent
+                              ? "bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-cyan-500/10 border-emerald-500/30"
+                              : "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-cyan-500/10 border-amber-500/30"
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${allSent
+                                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                }`}
+                            >
+                              {allSent ? <CheckCircle2 className="h-5 w-5" /> : <Award className="h-5 w-5" />}
+                            </div>
+                            <div>
+                              <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
+                                <span>
+                                  {allSent
+                                    ? `All ${presentList.length} Checked-In Attendees Have Received E-Certificates`
+                                    : `Official Letterhead E-Certificate Automation (${unsentList.length} Pending)`}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.2 rounded-full text-[9px] font-black uppercase ${allSent
+                                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                      : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                    }`}
+                                >
+                                  Hostinger SMTP
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {allSent
+                                  ? "Every checked-in attendee has received their official certificate. You can resend individually or to all."
+                                  : "Single-click sends official prestigious E-Certificates directly to attendees' registered emails with their proper name and certificate ID."}
+                              </p>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                              No Attendees Found
-                            </h4>
-                            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                              No attendee records matched your search query or active filter in this roster.
-                            </p>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {!allSent && (
+                              <button
+                                type="button"
+                                onClick={() => handleBulkSendCertificates(true)}
+                                disabled={bulkSendingCerts}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                              >
+                                {bulkSendingCerts ? (
+                                  <>
+                                    <div className="h-3.5 w-3.5 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin" />
+                                    <span>Sending Emails...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Award className="h-4 w-4" />
+                                    <span>Send E-Certificates to Unsent ({unsentList.length})</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleBulkSendCertificates(false)}
+                              disabled={bulkSendingCerts}
+                              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50 ${allSent
+                                  ? "bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-wider shadow-emerald-500/20"
+                                  : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                                }`}
+                              title="Resend certificates to all present attendees"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              <span>{allSent ? `Resend to All (${presentList.length})` : "Resend All"}</span>
+                            </button>
                           </div>
                         </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {modalAttendeesList.map((attendee, index) => {
-                            const isPresent = attendee.checkin_status?.toLowerCase() === "present";
-                            const attendeeName =
-                              attendee.name ||
-                              `${attendee.first_name || ""} ${attendee.last_name || ""}`.trim() ||
-                              "Delegate";
+                      );
+                    })()}
 
-                            return (
-                              <div
-                                key={attendee.id || index}
-                                className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
-                                  isPresent
-                                    ? "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10"
-                                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
-                                }`}
-                              >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                  {/* Attendee Info */}
-                                  <div className="flex items-start gap-3 min-w-0">
-                                    <div
-                                      className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs ${
-                                        isPresent
-                                          ? "bg-emerald-600 text-white"
-                                          : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                                      }`}
-                                    >
-                                      {attendeeName.charAt(0).toUpperCase()}
-                                    </div>
+                    {/* Search & Category Filter */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="relative flex-1 min-w-[240px]">
+                        <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          value={attendanceRosterSearch}
+                          onChange={(e) => setAttendanceRosterSearch(e.target.value)}
+                          placeholder="Search attendee by name, email, phone, company, pass ID..."
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-cyan-500 shadow-2xs"
+                        />
+                        {attendanceRosterSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setAttendanceRosterSearch("")}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
 
-                                    <div className="min-w-0 space-y-0.5">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-mono text-[10px] text-slate-400">
-                                          #{index + 1}
-                                        </span>
-                                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
-                                          {attendeeName}
-                                        </h4>
-                                        <span
-                                          className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                                            isPresent
-                                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40"
-                                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40"
-                                          }`}
-                                        >
-                                          {isPresent ? "✓ PRESENT" : "⏳ ABSENT"}
-                                        </span>
-
-                                        {attendee.certificate_sent_at && (
-                                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300/40 flex items-center gap-1">
-                                            <Award className="h-3 w-3 text-cyan-600" />
-                                            <span>Cert Sent</span>
-                                          </span>
-                                        )}
-                                      </div>
-
-                                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                                        {attendee.designation && (
-                                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                                            {attendee.designation}
-                                          </span>
-                                        )}
-                                        {attendee.organization && (
-                                          <span>• {attendee.organization}</span>
-                                        )}
-                                        {attendee.city && <span>• {attendee.city}</span>}
-                                      </div>
-
-                                      <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap font-mono pt-1">
-                                        {attendee.email && (
-                                          <span className="flex items-center gap-1">
-                                            <Mail className="h-3 w-3 text-slate-400" />
-                                            {attendee.email}
-                                          </span>
-                                        )}
-                                        {attendee.phone && (
-                                          <span className="flex items-center gap-1">
-                                            <Phone className="h-3 w-3 text-slate-400" />
-                                            {attendee.phone}
-                                          </span>
-                                        )}
-                                        <span className="px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
-                                          {attendee.id}
-                                        </span>
-                                        {(attendee.pass_name || attendee.registration_category) && (
-                                          <span className="text-cyan-600 font-bold">
-                                            {attendee.pass_name || attendee.registration_category}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Right: Check-In Details & Instant Action */}
-                                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                                    {isPresent ? (
-                                      <div className="flex items-center gap-2 flex-wrap justify-end">
-                                        <div className="text-[11px] text-right font-mono hidden md:block">
-                                          <div className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 justify-end">
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            <span>Checked-In</span>
-                                          </div>
-                                          <div className="text-slate-400 text-[10px]">
-                                            {attendee.checked_in_at
-                                              ? new Date(attendee.checked_in_at).toLocaleTimeString("en-IN", {
-                                                  hour: "2-digit",
-                                                  minute: "2-digit",
-                                                })
-                                              : "Recorded"}
-                                          </div>
-                                        </div>
-
-                                        {/* Preview Certificate Button */}
-                                        <button
-                                          type="button"
-                                          onClick={() => setPreviewCertAttendee(attendee)}
-                                          className="px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                                          title="Preview Letterhead Certificate"
-                                        >
-                                          <Award className="h-3.5 w-3.5 text-amber-600" />
-                                          <span className="hidden sm:inline">Preview</span>
-                                        </button>
-
-                                        {/* Single-Click Send / Resend E-Certificate */}
-                                        <button
-                                          type="button"
-                                          onClick={() => handleSendCertificate(attendee.id, attendeeName)}
-                                          disabled={sendingCertId === attendee.id}
-                                          className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
-                                            attendee.certificate_sent_at
-                                              ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
-                                              : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
-                                          }`}
-                                          title={
-                                            attendee.certificate_sent_at
-                                              ? `E-Certificate was emailed on ${new Date(attendee.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
-                                              : `Click to dispatch E-Certificate directly to registered email (${attendee.email})`
-                                          }
-                                        >
-                                          {sendingCertId === attendee.id ? (
-                                            <>
-                                              <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                              <span>{attendee.certificate_sent_at ? "Resending..." : "Sending..."}</span>
-                                            </>
-                                          ) : attendee.certificate_sent_at ? (
-                                            <>
-                                              <RefreshCw className="h-3.5 w-3.5 text-amber-600" />
-                                              <span>Resend</span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Mail className="h-3.5 w-3.5" />
-                                              <span>Send E-Cert</span>
-                                            </>
-                                          )}
-                                        </button>
-
-                                        <button
-                                          type="button"
-                                          onClick={() => handleUndoAttendance(attendee.id)}
-                                          className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-300 dark:hover:bg-rose-950/30 text-slate-500 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
-                                          title="Revert check-in to absent"
-                                        >
-                                          Undo
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleQuickCheckin(attendee.id)}
-                                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-                                      >
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                        <span>Admit / Check In</span>
-                                      </button>
-                                    )}
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const a = attendee as any;
-                                        setThermalBadgeAttendee({
-                                          ...attendee,
-                                          name: a.name || a.full_name || "Delegate",
-                                          email: a.email || a.official_email || "",
-                                          event_title: a.event_title || a.eventTitle || selectedEventAttendanceSummary.title,
-                                          checked_in_at: a.checked_in_at || new Date().toISOString(),
-                                        });
-                                        setShowThermalBadgeModal(true);
-                                      }}
-                                      className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-                                      title="Print TVS Thermal Badge Pass Slip"
-                                    >
-                                      <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
-                                      <span className="text-xs font-bold hidden sm:inline">Print Pass</span>
-                                    </button>
-
-                                    <a
-                                      href={`/verify-pass/${attendee.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-2 rounded-xl text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                      title="View official digital pass"
-                                    >
-                                      <ExternalLink className="h-3.5 w-3.5" />
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                      {attendanceCategoriesList.length > 0 && (
+                        <div className="w-auto min-w-[180px]">
+                          <select
+                            value={attendanceRosterCategory}
+                            onChange={(e) => setAttendanceRosterCategory(e.target.value)}
+                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-cyan-500 cursor-pointer shadow-2xs"
+                          >
+                            <option value="all">All Pass Categories</option>
+                            {attendanceCategoriesList.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       )}
                     </div>
-
-                    {/* 4. MODAL FOOTER */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold flex-wrap">
-                        <span>
-                          Total Roster: <strong className="text-slate-900 dark:text-white font-black">{eventScopedDelegates.length}</strong>
-                        </span>
-                        <span className="text-emerald-600">
-                          Checked-In: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}</strong>
-                        </span>
-                        <span className="text-amber-600">
-                          Awaiting: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}</strong>
-                        </span>
-                        <span className="text-cyan-600">
-                          Turnout: <strong className="font-black">{selectedEventAttendanceSummary.turnout}%</strong>
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setAttendancePageView("overview")}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        <span>Back to Dashboard Overview</span>
-                      </button>
-                    </div>
                   </div>
+
+                  {/* 3. ATTENDEE ROSTER SCROLLABLE TABLE */}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar min-h-[320px]">
+                    {modalAttendeesList.length === 0 ? (
+                      <div className="py-16 text-center space-y-3">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                          <Search className="h-6 w-6" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                            No Attendees Found
+                          </h4>
+                          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                            No attendee records matched your search query or active filter in this roster.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {modalAttendeesList.map((attendee, index) => {
+                          const isPresent = attendee.checkin_status?.toLowerCase() === "present";
+                          const attendeeName =
+                            attendee.name ||
+                            `${attendee.first_name || ""} ${attendee.last_name || ""}`.trim() ||
+                            "Delegate";
+
+                          return (
+                            <div
+                              key={attendee.id || index}
+                              className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${isPresent
+                                  ? "border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/10"
+                                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
+                                }`}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                {/* Attendee Info */}
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <div
+                                    className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs ${isPresent
+                                        ? "bg-emerald-600 text-white"
+                                        : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                      }`}
+                                  >
+                                    {attendeeName.charAt(0).toUpperCase()}
+                                  </div>
+
+                                  <div className="min-w-0 space-y-0.5">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-mono text-[10px] text-slate-400">
+                                        #{index + 1}
+                                      </span>
+                                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                                        {attendeeName}
+                                      </h4>
+                                      <span
+                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${isPresent
+                                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/40"
+                                            : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/40"
+                                          }`}
+                                      >
+                                        {isPresent ? "✓ PRESENT" : "⏳ ABSENT"}
+                                      </span>
+
+                                      {attendee.certificate_sent_at && (
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300/40 flex items-center gap-1">
+                                          <Award className="h-3 w-3 text-cyan-600" />
+                                          <span>Cert Sent</span>
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                                      {attendee.designation && (
+                                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                                          {attendee.designation}
+                                        </span>
+                                      )}
+                                      {attendee.organization && (
+                                        <span>• {attendee.organization}</span>
+                                      )}
+                                      {attendee.city && <span>• {attendee.city}</span>}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap font-mono pt-1">
+                                      {attendee.email && (
+                                        <span className="flex items-center gap-1">
+                                          <Mail className="h-3 w-3 text-slate-400" />
+                                          {attendee.email}
+                                        </span>
+                                      )}
+                                      {attendee.phone && (
+                                        <span className="flex items-center gap-1">
+                                          <Phone className="h-3 w-3 text-slate-400" />
+                                          {attendee.phone}
+                                        </span>
+                                      )}
+                                      <span className="px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+                                        {attendee.id}
+                                      </span>
+                                      {(attendee.pass_name || attendee.registration_category) && (
+                                        <span className="text-cyan-600 font-bold">
+                                          {attendee.pass_name || attendee.registration_category}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right: Check-In Details & Instant Action */}
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                  {isPresent ? (
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                                      <div className="text-[11px] text-right font-mono hidden md:block">
+                                        <div className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 justify-end">
+                                          <CheckCircle2 className="h-3 w-3" />
+                                          <span>Checked-In</span>
+                                        </div>
+                                        <div className="text-slate-400 text-[10px]">
+                                          {attendee.checked_in_at
+                                            ? new Date(attendee.checked_in_at).toLocaleTimeString("en-IN", {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })
+                                            : "Recorded"}
+                                        </div>
+                                      </div>
+
+                                      {/* Preview Certificate Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewCertAttendee(attendee)}
+                                        className="px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                                        title="Preview Letterhead Certificate"
+                                      >
+                                        <Award className="h-3.5 w-3.5 text-amber-600" />
+                                        <span className="hidden sm:inline">Preview</span>
+                                      </button>
+
+                                      {/* Single-Click Send / Resend E-Certificate */}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSendCertificate(attendee.id, attendeeName)}
+                                        disabled={sendingCertId === attendee.id}
+                                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${attendee.certificate_sent_at
+                                            ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
+                                            : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
+                                          }`}
+                                        title={
+                                          attendee.certificate_sent_at
+                                            ? `E-Certificate was emailed on ${new Date(attendee.certificate_sent_at).toLocaleDateString("en-IN")}. Click to resend.`
+                                            : `Click to dispatch E-Certificate directly to registered email (${attendee.email})`
+                                        }
+                                      >
+                                        {sendingCertId === attendee.id ? (
+                                          <>
+                                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                            <span>{attendee.certificate_sent_at ? "Resending..." : "Sending..."}</span>
+                                          </>
+                                        ) : attendee.certificate_sent_at ? (
+                                          <>
+                                            <RefreshCw className="h-3.5 w-3.5 text-amber-600" />
+                                            <span>Resend</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Mail className="h-3.5 w-3.5" />
+                                            <span>Send E-Cert</span>
+                                          </>
+                                        )}
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUndoAttendance(attendee.id)}
+                                        className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-300 dark:hover:bg-rose-950/30 text-slate-500 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
+                                        title="Revert check-in to absent"
+                                      >
+                                        Undo
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleQuickCheckin(attendee.id)}
+                                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                                    >
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                      <span>Admit / Check In</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const a = attendee as any;
+                                      setThermalBadgeAttendee({
+                                        ...attendee,
+                                        name: a.name || a.full_name || "Delegate",
+                                        email: a.email || a.official_email || "",
+                                        event_title: a.event_title || a.eventTitle || selectedEventAttendanceSummary.title,
+                                        checked_in_at: a.checked_in_at || new Date().toISOString(),
+                                      });
+                                      setShowThermalBadgeModal(true);
+                                    }}
+                                    className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                                    title="Print TVS Thermal Badge Pass Slip"
+                                  >
+                                    <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
+                                    <span className="text-xs font-bold hidden sm:inline">Print Pass</span>
+                                  </button>
+
+                                  <a
+                                    href={`/verify-pass/${attendee.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 rounded-xl text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                    title="View official digital pass"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. MODAL FOOTER */}
+                  <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300 font-bold flex-wrap">
+                      <span>
+                        Total Roster: <strong className="text-slate-900 dark:text-white font-black">{eventScopedDelegates.length}</strong>
+                      </span>
+                      <span className="text-emerald-600">
+                        Checked-In: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() === "present").length}</strong>
+                      </span>
+                      <span className="text-amber-600">
+                        Awaiting: <strong className="font-black">{eventScopedDelegates.filter((r) => r.checkin_status?.toLowerCase() !== "present").length}</strong>
+                      </span>
+                      <span className="text-cyan-600">
+                        Turnout: <strong className="font-black">{selectedEventAttendanceSummary.turnout}%</strong>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setAttendancePageView("overview")}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      <span>Back to Dashboard Overview</span>
+                    </button>
+                  </div>
+                </div>
               )}
 
               {/* ========================================================================= */}
@@ -12734,7 +12679,7 @@ export default function AdminDashboardPage() {
                         if (matchedEvent?.certificate_settings) {
                           try {
                             parsedCertSettings = typeof matchedEvent.certificate_settings === "string" ? JSON.parse(matchedEvent.certificate_settings) : matchedEvent.certificate_settings;
-                          } catch (e) {}
+                          } catch (e) { }
                         }
 
                         const eventTitle = parsedCertSettings?.event_title || matchedEvent?.title || previewCertAttendee.event_title || selectedEventAttendanceSummary.title || "HR RECALL 2K26 – Hyderabad Annual Connect";
@@ -13008,11 +12953,10 @@ export default function AdminDashboardPage() {
                       <div
                         key={evt.id}
                         onClick={() => handleTogglePopupEventSelect(evt.id)}
-                        className={`relative rounded-2xl border p-4 cursor-pointer transition-all ${
-                          isSelected
+                        className={`relative rounded-2xl border p-4 cursor-pointer transition-all ${isSelected
                             ? "border-cyan-500 bg-cyan-50/20 ring-2 ring-cyan-500/20 shadow-md"
                             : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <input
@@ -13113,17 +13057,15 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => handleToggleContactReadStatus(con)}
                               title="Click to toggle read status"
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border transition-all cursor-pointer ${
-                                isReplied
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border transition-all cursor-pointer ${isReplied
                                   ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
                                   : isUnread
-                                  ? "bg-purple-100 dark:bg-purple-950/70 border-purple-300 dark:border-purple-800 text-purple-800 dark:text-purple-300"
-                                  : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
-                              }`}
+                                    ? "bg-purple-100 dark:bg-purple-950/70 border-purple-300 dark:border-purple-800 text-purple-800 dark:text-purple-300"
+                                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                                }`}
                             >
-                              <span className={`h-1.5 w-1.5 rounded-full ${
-                                isReplied ? "bg-emerald-500" : isUnread ? "bg-purple-600 animate-ping" : "bg-slate-400"
-                              }`} />
+                              <span className={`h-1.5 w-1.5 rounded-full ${isReplied ? "bg-emerald-500" : isUnread ? "bg-purple-600 animate-ping" : "bg-slate-400"
+                                }`} />
                               {isReplied ? "Replied" : isUnread ? "Unread" : "Read"}
                             </button>
                           </td>
@@ -13337,11 +13279,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setEventFilter("live")}
-                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                      eventFilter === "live"
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${eventFilter === "live"
                         ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20 ring-2 ring-emerald-400/50"
                         : "bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-emerald-100/80"
-                    }`}
+                      }`}
                   >
                     <span className="relative flex h-2.5 w-2.5 items-center justify-center">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -13354,11 +13295,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setEventFilter("all")}
-                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                      eventFilter === "all"
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${eventFilter === "all"
                         ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
                         : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     All Events ({allEventsCount})
                   </button>
@@ -13367,11 +13307,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setEventFilter("upcoming")}
-                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                      eventFilter === "upcoming"
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${eventFilter === "upcoming"
                         ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
                         : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Upcoming Events ({upcomingEventsCount})
                   </button>
@@ -13380,11 +13319,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setEventFilter("past")}
-                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                      eventFilter === "past"
+                    className={`rounded-full px-5 py-2 text-xs sm:text-sm font-bold transition-all cursor-pointer ${eventFilter === "past"
                         ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
                         : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Past Events ({pastEventsCount})
                   </button>
@@ -13417,7 +13355,7 @@ export default function AdminDashboardPage() {
                       try {
                         if (typeof evt.locations === "string") parsedLocs = JSON.parse(evt.locations);
                         else if (Array.isArray(evt.locations)) parsedLocs = evt.locations;
-                      } catch (e) {}
+                      } catch (e) { }
 
                       if (!parsedLocs || parsedLocs.length === 0) {
                         parsedLocs = [{ city: evt.city, venue: evt.venue, date: evt.date, time: evt.time }];
@@ -13453,11 +13391,10 @@ export default function AdminDashboardPage() {
                                 <button
                                   onClick={() => handleToggleFeatured(evt)}
                                   title={evt.is_featured ? "Featured on Homepage" : "Set as Featured"}
-                                  className={`flex items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md transition-all shrink-0 ${
-                                    evt.is_featured === 1 || evt.is_featured === true
+                                  className={`flex items-center gap-1 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md transition-all shrink-0 ${evt.is_featured === 1 || evt.is_featured === true
                                       ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
                                       : "bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-sm"
-                                  }`}
+                                    }`}
                                 >
                                   <Star className={`h-3 w-3 ${evt.is_featured ? "fill-slate-950" : ""}`} />
                                   <span>{evt.is_featured ? "Featured" : "Normal"}</span>
@@ -13467,27 +13404,24 @@ export default function AdminDashboardPage() {
                               {/* Status Overlay Badge */}
                               <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3 flex items-center gap-2 flex-wrap">
                                 <span
-                                  className={`flex items-center gap-1 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md border ${
-                                    evt.status === "published"
+                                  className={`flex items-center gap-1 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold backdrop-blur-md border ${evt.status === "published"
                                       ? "bg-emerald-500/90 text-white border-emerald-400"
                                       : "bg-amber-500/90 text-slate-950 border-amber-400"
-                                  }`}
+                                    }`}
                                 >
                                   <span
-                                    className={`h-1.5 w-1.5 rounded-full ${
-                                      evt.status === "published" ? "bg-white animate-pulse" : "bg-slate-950"
-                                    }`}
+                                    className={`h-1.5 w-1.5 rounded-full ${evt.status === "published" ? "bg-white animate-pulse" : "bg-slate-950"
+                                      }`}
                                   />
                                   <span className="capitalize">{evt.status || "published"}</span>
                                 </span>
 
                                 {/* Date Category Badge */}
                                 <span
-                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border backdrop-blur-md ${
-                                    isPast
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border backdrop-blur-md ${isPast
                                       ? "bg-slate-900/80 text-slate-200 border-slate-700"
                                       : "bg-sky-500/90 text-white border-sky-400 shadow-xs"
-                                  }`}
+                                    }`}
                                 >
                                   {isPast ? "Past Event" : "Upcoming"}
                                 </span>
@@ -13542,11 +13476,10 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleRegistrationVisibility(evt, "paid")}
-                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
-                                    evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false
                                       ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
                                       : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
-                                  }`}
+                                    }`}
                                   title={
                                     evt.allow_paid_registration !== 0 && evt.allow_paid_registration !== false
                                       ? "Paid 'Register Now' is Visible (Click to Hide)"
@@ -13561,11 +13494,10 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleRegistrationVisibility(evt, "free")}
-                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
-                                    evt.allow_free_registration !== 0 && evt.allow_free_registration !== false
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${evt.allow_free_registration !== 0 && evt.allow_free_registration !== false
                                       ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                                       : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
-                                  }`}
+                                    }`}
                                   title={
                                     evt.allow_free_registration !== 0 && evt.allow_free_registration !== false
                                       ? "Free 'Register Free' is Visible (Click to Hide)"
@@ -13580,11 +13512,10 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleRegistrationVisibility(evt, "pricing")}
-                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
-                                    evt.show_pricing !== 0 && evt.show_pricing !== false
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${evt.show_pricing !== 0 && evt.show_pricing !== false
                                       ? "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
                                       : "bg-slate-100 border-slate-200 text-slate-400 line-through hover:bg-slate-200"
-                                  }`}
+                                    }`}
                                   title={
                                     evt.show_pricing !== 0 && evt.show_pricing !== false
                                       ? "Price Details & Pass Tiers are Visible (Click to Hide)"
@@ -13602,11 +13533,10 @@ export default function AdminDashboardPage() {
                           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                             <button
                               onClick={() => handleToggleStatus(evt)}
-                              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold border transition-all ${
-                                evt.status === "published"
+                              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold border transition-all ${evt.status === "published"
                                   ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
                                   : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                              }`}
+                                }`}
                             >
                               {evt.status === "published" ? (
                                 <>
@@ -13646,2485 +13576,2474 @@ export default function AdminDashboardPage() {
             );
           })()}
 
-      {/* ========================================== */}
-      {/* RIGHT SIDE CONTAINER DRAWER (EVENT BUILDER) */}
-      {/* ========================================== */}
-      {eventModalOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop Overlay */}
-          <div
-            onClick={() => setEventModalOpen(false)}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
-          />
-
-          {/* Right-Side Container Panel */}
-          <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col bg-white border-l border-slate-200 shadow-2xl animate-in slide-in-from-right duration-300 text-slate-900 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/90 backdrop-blur-md sticky top-0 z-20">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-800 shadow-xs">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 font-display">
-                    {editingEvent ? "Event Builder & Management" : "Create New Event Platform"}
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Configure Event Details, Speakers, Sponsors, Gallery & Agenda
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
+          {/* ========================================== */}
+          {/* RIGHT SIDE CONTAINER DRAWER (EVENT BUILDER) */}
+          {/* ========================================== */}
+          {eventModalOpen && (
+            <div className="fixed inset-0 z-50 flex justify-end">
+              {/* Backdrop Overlay */}
+              <div
                 onClick={() => setEventModalOpen(false)}
-                className="rounded-full p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+                className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
+              />
 
-            {/* Builder Sub-Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-100/70 p-2 overflow-x-auto gap-1 text-xs font-bold shrink-0">
-              {[
-                { id: "basic", label: `1. Basic & Venues (${(eventForm.locations || []).length})` },
-                { id: "agenda", label: `2. Agenda (${(eventForm.agenda_list || []).length})` },
-                { id: "speakers", label: `3. Speakers (${(eventForm.speakers_list || []).length})` },
-                { id: "zura", label: `4. Jury Members (${(eventForm.zura_list || []).length})` },
-                { id: "sponsors", label: `5. Sponsors (${(eventForm.sponsors_list || []).length})` },
-                { id: "gallery", label: `6. Gallery (${(eventForm.gallery_list || []).length})` },
-                { id: "venue", label: "7. Primary Map" },
-                { id: "terms", label: "8. Terms & Conditions" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setBuilderTab(tab.id as any)}
-                  className={`rounded-xl px-3.5 py-2 whitespace-nowrap transition-all ${
-                    builderTab === tab.id
-                      ? "bg-white text-cyan-700 shadow-sm border border-slate-200 font-extrabold"
-                      : "text-slate-600 hover:bg-white/50 hover:text-slate-900"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
-              {/* Event Save Success Notification Banner */}
-              {eventSaveNotification && (
-                <div className="rounded-2xl bg-emerald-50 border border-emerald-300 p-4 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+              {/* Right-Side Container Panel */}
+              <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col bg-white border-l border-slate-200 shadow-2xl animate-in slide-in-from-right duration-300 text-slate-900 overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/90 backdrop-blur-md sticky top-0 z-20">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-full bg-emerald-500 p-1.5 text-white shadow-xs shrink-0">
-                      <CheckCircle2 className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-800 shadow-xs">
+                      <Calendar className="h-5 w-5" />
                     </div>
                     <div>
-                      <span className="font-extrabold text-xs block text-emerald-950">{eventSaveNotification.message}</span>
-                      <span className="text-[11px] text-emerald-700 font-medium">All changes, venue schedules, agenda, speakers & sponsors are updated live on the website.</span>
+                      <h3 className="text-base font-extrabold text-slate-900 font-display">
+                        {editingEvent ? "Event Builder & Management" : "Create New Event Platform"}
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Configure Event Details, Speakers, Sponsors, Gallery & Agenda
+                      </p>
                     </div>
                   </div>
+
                   <button
                     type="button"
-                    onClick={() => setEventSaveNotification(null)}
-                    className="rounded-full p-1 text-emerald-700 hover:bg-emerald-200/60 transition-colors text-sm font-extrabold cursor-pointer"
+                    onClick={() => setEventModalOpen(false)}
+                    className="rounded-full p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
-              )}
 
-              {/* TAB 1: BASIC INFO & LOCATIONS WITH DYNAMIC VENUE BLOCKS */}
-              {builderTab === "basic" && (
-                <div className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className="block text-slate-700 font-bold mb-1">
-                        Event Title *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={eventForm.title}
-                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                        placeholder="e.g. National CFO & AI Leadership Summit 2026"
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                      />
-                    </div>
+                {/* Builder Sub-Navigation Tabs */}
+                <div className="flex border-b border-slate-200 bg-slate-100/70 p-2 overflow-x-auto gap-1 text-xs font-bold shrink-0">
+                  {[
+                    { id: "basic", label: `1. Basic & Venues (${(eventForm.locations || []).length})` },
+                    { id: "agenda", label: `2. Agenda (${(eventForm.agenda_list || []).length})` },
+                    { id: "speakers", label: `3. Speakers (${(eventForm.speakers_list || []).length})` },
+                    { id: "zura", label: `4. Jury Members (${(eventForm.zura_list || []).length})` },
+                    { id: "sponsors", label: `5. Sponsors (${(eventForm.sponsors_list || []).length})` },
+                    { id: "gallery", label: `6. Gallery (${(eventForm.gallery_list || []).length})` },
+                    { id: "venue", label: "7. Primary Map" },
+                    { id: "terms", label: "8. Terms & Conditions" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setBuilderTab(tab.id as any)}
+                      className={`rounded-xl px-3.5 py-2 whitespace-nowrap transition-all ${builderTab === tab.id
+                          ? "bg-white text-cyan-700 shadow-sm border border-slate-200 font-extrabold"
+                          : "text-slate-600 hover:bg-white/50 hover:text-slate-900"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Category Badge *</label>
-                      <select
-                        value={eventForm.category}
-                        onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                      >
-                        <option value="Conference & Leadership">Conference & Leadership</option>
-                        <option value="CXO Summit">CXO Summit</option>
-                        <option value="Tech Conclave">Tech Conclave</option>
-                        <option value="HR & Talent">HR & Talent</option>
-                        <option value="Marketing Summit">Marketing Summit</option>
-                        <option value="BFSI Forum">BFSI Forum</option>
-                        <option value="Awards & Recognition">Awards & Recognition</option>
-                        <option value="Global Capability">Global Capability</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Status</label>
-                      <select
-                        value={eventForm.status}
-                        onChange={(e) => setEventForm({ ...eventForm, status: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                      >
-                        <option value="published">Published (Live & Visible)</option>
-                        <option value="draft">Draft (Admin Only)</option>
-                      </select>
-                    </div>
-
-                    {/* REGISTRATION BUTTONS VISIBILITY (PREMIUM FEATURE) */}
-                    <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-cyan-50/70 border border-indigo-200/90 shadow-2xs space-y-3">
-                      <div className="flex items-center justify-between">
+                {/* Scrollable Form Body */}
+                <form onSubmit={handleSaveEvent} className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+                  {/* Event Save Success Notification Banner */}
+                  {eventSaveNotification && (
+                    <div className="rounded-2xl bg-emerald-50 border border-emerald-300 p-4 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-emerald-500 p-1.5 text-white shadow-xs shrink-0">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </div>
                         <div>
-                          <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
-                            <Sparkles className="h-4 w-4 text-indigo-600" />
-                            <span>Registration Pass Buttons (Hide / Show)</span>
-                          </h4>
-                          <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                            Control which registration options are available to visitors for this event on cards, popups, and the event detail page.
-                          </p>
+                          <span className="font-extrabold text-xs block text-emerald-950">{eventSaveNotification.message}</span>
+                          <span className="text-[11px] text-emerald-700 font-medium">All changes, venue schedules, agenda, speakers & sponsors are updated live on the website.</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEventSaveNotification(null)}
+                        className="rounded-full p-1 text-emerald-700 hover:bg-emerald-200/60 transition-colors text-sm font-extrabold cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* TAB 1: BASIC INFO & LOCATIONS WITH DYNAMIC VENUE BLOCKS */}
+                  {builderTab === "basic" && (
+                    <div className="space-y-6">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-700 font-bold mb-1">
+                            Event Title *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={eventForm.title}
+                            onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                            placeholder="e.g. National CFO & AI Leadership Summit 2026"
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Category Badge *</label>
+                          <select
+                            value={eventForm.category}
+                            onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          >
+                            <option value="Conference & Leadership">Conference & Leadership</option>
+                            <option value="CXO Summit">CXO Summit</option>
+                            <option value="Tech Conclave">Tech Conclave</option>
+                            <option value="HR & Talent">HR & Talent</option>
+                            <option value="Marketing Summit">Marketing Summit</option>
+                            <option value="BFSI Forum">BFSI Forum</option>
+                            <option value="Awards & Recognition">Awards & Recognition</option>
+                            <option value="Global Capability">Global Capability</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Status</label>
+                          <select
+                            value={eventForm.status}
+                            onChange={(e) => setEventForm({ ...eventForm, status: e.target.value })}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          >
+                            <option value="published">Published (Live & Visible)</option>
+                            <option value="draft">Draft (Admin Only)</option>
+                          </select>
+                        </div>
+
+                        {/* REGISTRATION BUTTONS VISIBILITY (PREMIUM FEATURE) */}
+                        <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-cyan-50/70 border border-indigo-200/90 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
+                                <Sparkles className="h-4 w-4 text-indigo-600" />
+                                <span>Registration Pass Buttons (Hide / Show)</span>
+                              </h4>
+                              <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                                Control which registration options are available to visitors for this event on cards, popups, and the event detail page.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                            {/* Toggle 1: Paid Registration Button */}
+                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${eventForm.allow_paid_registration !== 0
+                                ? "bg-white border-indigo-300 ring-2 ring-indigo-500/10 shadow-xs"
+                                : "bg-slate-50/90 border-slate-200 opacity-70"
+                              }`}>
+                              <input
+                                type="checkbox"
+                                checked={eventForm.allow_paid_registration !== 0}
+                                onChange={(e) => setEventForm({ ...eventForm, allow_paid_registration: e.target.checked ? 1 : 0 })}
+                                className="mt-0.5 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <div>
+                                <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                                  <Zap className="h-3.5 w-3.5 text-amber-500" />
+                                  Show "Register Now" (Paid Pass)
+                                </span>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  {eventForm.allow_paid_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                                </p>
+                              </div>
+                            </label>
+
+                            {/* Toggle 2: Free Registration Button */}
+                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${eventForm.allow_free_registration !== 0
+                                ? "bg-white border-emerald-300 ring-2 ring-emerald-500/10 shadow-xs"
+                                : "bg-slate-50/90 border-slate-200 opacity-70"
+                              }`}>
+                              <input
+                                type="checkbox"
+                                checked={eventForm.allow_free_registration !== 0}
+                                onChange={(e) => setEventForm({ ...eventForm, allow_free_registration: e.target.checked ? 1 : 0 })}
+                                className="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                              />
+                              <div>
+                                <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                                  Show "Register Free" Pass
+                                </span>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  {eventForm.allow_free_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                                </p>
+                              </div>
+                            </label>
+
+                            {/* Toggle 3: Registration Pass Price Details */}
+                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${eventForm.show_pricing !== 0
+                                ? "bg-white border-purple-300 ring-2 ring-purple-500/10 shadow-xs"
+                                : "bg-slate-50/90 border-slate-200 opacity-70"
+                              }`}>
+                              <input
+                                type="checkbox"
+                                checked={eventForm.show_pricing !== 0}
+                                onChange={(e) => setEventForm({ ...eventForm, show_pricing: e.target.checked ? 1 : 0 })}
+                                className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                              />
+                              <div>
+                                <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                                  <Ticket className="h-3.5 w-3.5 text-purple-600" />
+                                  Show Price Details & Pass Tiers
+                                </span>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  {eventForm.show_pricing !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* EVENT TERMS & CONDITIONS TEMPLATE SELECTOR */}
+                        <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-cyan-50/80 via-blue-50/50 to-slate-50 border border-cyan-200 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-xs">
+                                <ShieldCheck className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <span className="font-extrabold text-xs text-slate-900 block">
+                                  Terms & Conditions Template
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                  Choose which point-wise Terms & Conditions will appear during registration and in confirmation emails.
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setBuilderTab("terms")}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-white px-3 py-1.5 text-[11px] font-bold text-cyan-800 hover:bg-cyan-50 shadow-2xs transition-all cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                              <span>Preview Terms Clauses</span>
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                            <div className="sm:col-span-2">
+                              <select
+                                value={eventForm.terms_id || ""}
+                                onChange={(e) => setEventForm({ ...eventForm, terms_id: e.target.value })}
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs cursor-pointer"
+                              >
+                                <option value="">
+                                  🌟 Global Default Template ({termsTemplatesList.find((t) => t.is_default)?.title || "Standard Terms"})
+                                </option>
+                                {termsTemplatesList.map((tpl) => (
+                                  <option key={tpl.id} value={tpl.id}>
+                                    {tpl.title} {tpl.is_default ? "(Default)" : ""} — ({Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} Points)
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="text-[11px] text-slate-600 font-medium bg-white/80 p-2.5 rounded-xl border border-cyan-100 flex items-center justify-between">
+                              <span>
+                                Selected:{" "}
+                                <strong className="text-cyan-800">
+                                  {termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.title ||
+                                    termsTemplatesList.find((t) => t.is_default)?.title ||
+                                    "Standard Terms"}
+                                </strong>
+                              </span>
+                              <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
+                                {(termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.clauses?.length) ||
+                                  (termsTemplatesList.find((t) => t.is_default)?.clauses?.length) ||
+                                  10}{" "}
+                                Clauses
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* DYNAMIC DELEGATES, SPEAKERS, SPONSORS STAT COUNTS */}
+                        <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200">
+                          <div>
+                            <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                              Delegates Count (Badge Stat)
+                            </label>
+                            <input
+                              type="text"
+                              value={eventForm.delegates_count}
+                              onChange={(e) => setEventForm({ ...eventForm, delegates_count: e.target.value })}
+                              placeholder="e.g. 500+"
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                              Speakers Count (Badge Stat)
+                            </label>
+                            <input
+                              type="text"
+                              value={eventForm.speakers_count}
+                              onChange={(e) => setEventForm({ ...eventForm, speakers_count: e.target.value })}
+                              placeholder="e.g. 30+"
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-800 font-extrabold mb-1 text-xs">
+                              Sponsors Count (Badge Stat)
+                            </label>
+                            <input
+                              type="text"
+                              value={eventForm.sponsors_count}
+                              onChange={(e) => setEventForm({ ...eventForm, sponsors_count: e.target.value })}
+                              placeholder="e.g. 25+"
+                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Banner Image & Live Preview Box */}
+                        <div className="sm:col-span-2 space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                          <label className="block text-slate-700 font-bold">
+                            Banner Image (Upload File or Image URL) *
+                          </label>
+
+                          <div className="grid gap-3 sm:grid-cols-2 items-start">
+                            <div className="space-y-3">
+                              <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50/80 px-4 py-3 text-cyan-800 font-bold hover:bg-cyan-100 transition-all shadow-xs">
+                                <Upload className="h-4 w-4" />
+                                <span>{uploadingImage ? "Uploading Image..." : "Upload Image File"}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleFileUpload}
+                                  disabled={uploadingImage}
+                                  className="hidden"
+                                />
+                              </label>
+
+                              <input
+                                type="text"
+                                required
+                                value={eventForm.image}
+                                onChange={(e) => setEventForm({ ...eventForm, image: e.target.value })}
+                                placeholder="Image URL e.g. /assets/event-cfo-BjslOJNi.jpg"
+                                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[11px]"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Live Preview</span>
+                              <div className="relative h-24 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-200/60 shadow-xs flex items-center justify-center">
+                                {eventForm.image ? (
+                                  <img
+                                    src={eventForm.image}
+                                    alt="Event Banner Preview"
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = "/assets/event-cfo-BjslOJNi.jpg";
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 font-bold">No Image Selected</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                        {/* Toggle 1: Paid Registration Button */}
-                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
-                          eventForm.allow_paid_registration !== 0
-                            ? "bg-white border-indigo-300 ring-2 ring-indigo-500/10 shadow-xs"
-                            : "bg-slate-50/90 border-slate-200 opacity-70"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={eventForm.allow_paid_registration !== 0}
-                            onChange={(e) => setEventForm({ ...eventForm, allow_paid_registration: e.target.checked ? 1 : 0 })}
-                            className="mt-0.5 h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
+                      {/* Multiple Locations & Dynamic Matching Venue Blocks */}
+                      <div className="space-y-4 pt-4 border-t border-slate-200">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                              <Zap className="h-3.5 w-3.5 text-amber-500" />
-                              Show "Register Now" (Paid Pass)
-                            </span>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              {eventForm.allow_paid_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
-                            </p>
+                            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
+                              <MapPin className="h-4 w-4 text-cyan-600" />
+                              <span>Event Schedules & Dynamic Venues</span>
+                            </h4>
+                            <p className="text-xs text-slate-500 font-medium">Each slot automatically generates a matching venue block with custom address and map iframe.</p>
                           </div>
-                        </label>
 
-                        {/* Toggle 2: Free Registration Button */}
-                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
-                          eventForm.allow_free_registration !== 0
-                            ? "bg-white border-emerald-300 ring-2 ring-emerald-500/10 shadow-xs"
-                            : "bg-slate-50/90 border-slate-200 opacity-70"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={eventForm.allow_free_registration !== 0}
-                            onChange={(e) => setEventForm({ ...eventForm, allow_free_registration: e.target.checked ? 1 : 0 })}
-                            className="mt-0.5 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                          />
-                          <div>
-                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                              <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
-                              Show "Register Free" Pass
-                            </span>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              {eventForm.allow_free_registration !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
-                            </p>
-                          </div>
-                        </label>
+                          <button
+                            type="button"
+                            onClick={handleAddLocationSlot}
+                            className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
+                          >
+                            <PlusCircle className="h-4 w-4 text-cyan-600" />
+                            <span>+ Add Schedule & Venue Block</span>
+                          </button>
+                        </div>
 
-                        {/* Toggle 3: Registration Pass Price Details */}
-                        <label className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
-                          eventForm.show_pricing !== 0
-                            ? "bg-white border-purple-300 ring-2 ring-purple-500/10 shadow-xs"
-                            : "bg-slate-50/90 border-slate-200 opacity-70"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={eventForm.show_pricing !== 0}
-                            onChange={(e) => setEventForm({ ...eventForm, show_pricing: e.target.checked ? 1 : 0 })}
-                            className="mt-0.5 h-4 w-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        <div className="space-y-5">
+                          {eventForm.locations.map((loc, idx) => {
+                            const isOpen = openLocationSlots.includes(idx);
+                            return (
+                              <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/90 p-4 space-y-3 shadow-xs hover:border-slate-300 transition-all">
+                                {/* Slot Header with Open / Close Toggle */}
+                                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                                  <div
+                                    onClick={() => toggleLocationSlot(idx)}
+                                    className="flex items-center gap-2 cursor-pointer select-none group"
+                                  >
+                                    <button
+                                      type="button"
+                                      className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 group-hover:bg-cyan-50 group-hover:text-cyan-700 transition-colors"
+                                    >
+                                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </button>
+
+                                    <span className="font-extrabold text-cyan-900 text-sm group-hover:text-cyan-700">
+                                      Slot #{idx + 1}: {loc.city ? loc.city : "New Schedule Slot"}
+                                    </span>
+
+                                    {idx === 0 && (
+                                      <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
+                                        Primary Location
+                                      </span>
+                                    )}
+
+                                    {!isOpen && loc.city && (
+                                      <span className="text-[11px] font-semibold text-slate-500 ml-2 truncate max-w-xs">
+                                        📍 {loc.city} {loc.date ? `· 📅 ${loc.date}` : ""} {loc.venue ? `· 🏢 ${loc.venue}` : ""}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleLocationSlot(idx)}
+                                      className="flex items-center gap-1 text-xs font-bold text-cyan-700 hover:text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
+                                    >
+                                      {isOpen ? (
+                                        <>
+                                          <ChevronUp className="h-3.5 w-3.5" /> Collapse Slot
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ChevronDown className="h-3.5 w-3.5" /> Open Slot
+                                        </>
+                                      )}
+                                    </button>
+
+                                    {eventForm.locations.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveLocationSlot(idx)}
+                                        className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
+                                      >
+                                        <X className="h-3.5 w-3.5" /> Remove Slot
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Collapsible Body Content */}
+                                {isOpen && (
+                                  <div className="space-y-4 pt-2">
+                                    {/* Schedule Inputs */}
+                                    <div className="grid gap-3.5 sm:grid-cols-2">
+                                      <div>
+                                        <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                          <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
+                                        </label>
+                                        <input
+                                          type="text"
+                                          required
+                                          value={loc.city}
+                                          onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
+                                          placeholder="e.g. Visakhapatnam / Hyderabad"
+                                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
+                                          <Calendar className="h-3.5 w-3.5 text-cyan-600" /> Date *
+                                        </label>
+                                        <input
+                                          type="date"
+                                          required
+                                          value={loc.date}
+                                          onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
+                                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Interactive Timing Clock Pickers & Quick Presets */}
+                                    <div className="rounded-xl border border-cyan-200/90 bg-gradient-to-r from-cyan-50/70 via-blue-50/50 to-emerald-50/40 p-3.5 space-y-3 shadow-2xs">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-200/70 pb-2">
+                                        <label className="text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
+                                          <Clock className="h-4 w-4 text-cyan-700" />
+                                          <span>Event Timing Clock Pickers *</span>
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[11px] text-slate-500 font-medium">Configured Time:</span>
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-700 text-white font-mono text-xs font-extrabold shadow-2xs">
+                                            <Clock className="h-3.5 w-3.5" />
+                                            {loc.time || "09:00 AM — 06:00 PM"}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                          <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                            <span className="flex items-center gap-1">⏰ Start / From Time</span>
+                                            <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
+                                              {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start)}
+                                            </span>
+                                          </label>
+                                          <input
+                                            type="time"
+                                            value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start}
+                                            onChange={(e) => {
+                                              const newStart = e.target.value;
+                                              const currentEnd = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end;
+                                              const formatted = `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`;
+                                              handleUpdateLocationSlot(idx, "time", formatted);
+                                            }}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                                          />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                          <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                            <span className="flex items-center gap-1">⏰ End / To Time</span>
+                                            <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
+                                              {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end)}
+                                            </span>
+                                          </label>
+                                          <input
+                                            type="time"
+                                            value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end}
+                                            onChange={(e) => {
+                                              const newEnd = e.target.value;
+                                              const currentStart = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start;
+                                              const formatted = `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`;
+                                              handleUpdateLocationSlot(idx, "time", formatted);
+                                            }}
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Quick Presets */}
+                                      <div className="pt-2 border-t border-cyan-100/80 flex flex-wrap items-center gap-1.5">
+                                        <span className="text-[11px] font-bold text-slate-600 mr-1 flex items-center gap-1">
+                                          ⚡ Quick Presets:
+                                        </span>
+                                        {[
+                                          { label: "09:00 AM — 06:00 PM (Full Day)", val: "09:00 AM — 06:00 PM" },
+                                          { label: "09:30 AM — 05:30 PM", val: "09:30 AM — 05:30 PM" },
+                                          { label: "10:00 AM — 05:00 PM", val: "10:00 AM — 05:00 PM" },
+                                          { label: "02:00 PM — 07:00 PM (Afternoon)", val: "02:00 PM — 07:00 PM" },
+                                          { label: "05:00 PM — 10:00 PM (Evening Gala)", val: "05:00 PM — 10:00 PM" },
+                                        ].map((preset) => (
+                                          <button
+                                            key={preset.val}
+                                            type="button"
+                                            onClick={() => handleUpdateLocationSlot(idx, "time", preset.val)}
+                                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${loc.time === preset.val
+                                                ? "bg-cyan-700 text-white border-cyan-700 shadow-2xs"
+                                                : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900 hover:border-cyan-300"
+                                              }`}
+                                          >
+                                            {preset.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Dynamic Matching Venue Block Section */}
+                                    <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-3">
+                                      <h5 className="font-extrabold text-xs text-cyan-900 flex items-center gap-2">
+                                        <Building className="h-4 w-4 text-cyan-600" />
+                                        <span>Venue for Slot {idx + 1} – {loc.city ? loc.city : `City #${idx + 1}`}</span>
+                                      </h5>
+
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <div>
+                                          <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                            Venue Name / Hotel *
+                                          </label>
+                                          <input
+                                            type="text"
+                                            required
+                                            value={loc.venue || ""}
+                                            onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
+                                            placeholder="e.g. Novotel Visakhapatnam Varun Beach / Taj Krishna"
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                          />
+                                        </div>
+
+                                        <div>
+                                          <label className="block text-slate-700 font-bold text-[11px] mb-1">
+                                            Custom Venue Address *
+                                          </label>
+                                          <input
+                                            type="text"
+                                            required
+                                            value={loc.address || ""}
+                                            onChange={(e) => handleUpdateLocationSlot(idx, "address", e.target.value)}
+                                            placeholder="e.g. Beach Rd, Maharani Peta, Visakhapatnam, AP 530002"
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
+                                          />
+                                        </div>
+
+                                        <div className="sm:col-span-2">
+                                          <label className="block text-slate-700 font-bold text-[11px] mb-1 flex items-center justify-between">
+                                            <span>Google Maps Embed iframe URL *</span>
+                                            <span className="text-[10px] text-slate-500 font-normal">Standard Google Maps Embed iframe src URL or paste full &lt;iframe&gt; code</span>
+                                          </label>
+                                          <textarea
+                                            rows={2}
+                                            required
+                                            value={loc.map_url || ""}
+                                            onChange={(e) => {
+                                              let val = e.target.value;
+                                              if (val.includes("<iframe") && val.includes("src=")) {
+                                                const match = val.match(/src=["']([^"']+)["']/);
+                                                if (match && match[1]) val = match[1];
+                                              }
+                                              handleUpdateLocationSlot(idx, "map_url", val);
+                                            }}
+                                            placeholder="https://www.google.com/maps/embed?pb=... or paste full <iframe src='...'> code"
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Descriptions & About Event Section */}
+                      <div className="space-y-4 pt-2">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Short Description (Card Overview) *</label>
+                          <textarea
+                            required
+                            rows={2}
+                            value={eventForm.description}
+                            onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                            placeholder="Brief summary of event..."
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
                           />
-                          <div>
-                            <span className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                              <Ticket className="h-3.5 w-3.5 text-purple-600" />
-                              Show Price Details & Pass Tiers
-                            </span>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              {eventForm.show_pricing !== 0 ? "✅ Visible to visitors" : "❌ Hidden from visitors"}
-                            </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Full Description (Detail Page Overview)</label>
+                          <textarea
+                            rows={3}
+                            value={eventForm.full_description}
+                            onChange={(e) => setEventForm({ ...eventForm, full_description: e.target.value })}
+                            placeholder="Detailed rich text breakdown of event themes, objectives, key takeaways..."
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
+                          />
+                        </div>
+
+                        {/* DEDICATED ABOUT THE EVENT CONTENT & IMAGE SECTION */}
+                        <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/80 space-y-4">
+                          <div className="flex items-center gap-2 border-b border-cyan-200/80 pb-2">
+                            <FileText className="h-4 w-4 text-cyan-700" />
+                            <h4 className="text-xs font-extrabold text-cyan-900 uppercase tracking-wider">
+                              About The Event Content & Featured Banner Image
+                            </h4>
                           </div>
-                        </label>
+
+                          {/* About Event Content Text Area */}
+                          <div>
+                            <label className="block text-slate-800 font-extrabold mb-1">
+                              About The Event Content (Detailed Story & Highlights) *
+                            </label>
+                            <p className="text-[11px] text-slate-500 mb-1.5 font-medium">
+                              This content appears directly under "About The Summit" on the public event page.
+                            </p>
+                            <textarea
+                              rows={5}
+                              value={eventForm.about_content}
+                              onChange={(e) => setEventForm({ ...eventForm, about_content: e.target.value })}
+                              placeholder="Write comprehensive details about the summit goals, key themes, agenda vision, target audience, and enterprise impact..."
+                              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none shadow-xs"
+                            />
+                          </div>
+
+                          {/* About Event Upload Image & Live Preview */}
+                          <div className="space-y-3 pt-2 border-t border-cyan-200/60">
+                            <label className="block text-slate-800 font-extrabold">
+                              About Event Image (Upload File or Image URL)
+                            </label>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              Upload a high-resolution photo/banner to showcase in the "About The Summit" section.
+                            </p>
+
+                            <div className="grid gap-3 sm:grid-cols-2 items-start">
+                              <div className="space-y-3">
+                                <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-500 bg-white px-4 py-3 text-cyan-800 font-bold hover:bg-cyan-100/70 transition-all shadow-xs">
+                                  <Upload className="h-4 w-4 text-cyan-600" />
+                                  <span>{uploadingAboutImage ? "Uploading Image..." : "Upload About Image File"}</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAboutFileUpload}
+                                    disabled={uploadingAboutImage}
+                                    className="hidden"
+                                  />
+                                </label>
+
+                                <input
+                                  type="text"
+                                  value={eventForm.about_image}
+                                  onChange={(e) => setEventForm({ ...eventForm, about_image: e.target.value })}
+                                  placeholder="Or paste image URL e.g. /assets/hero-summit.jpg"
+                                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[11px]"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                                  About Image Preview
+                                </span>
+                                <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-xs flex items-center justify-center">
+                                  {eventForm.about_image ? (
+                                    <img
+                                      src={eventForm.about_image}
+                                      alt="About Event Preview"
+                                      className="h-full w-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = "/assets/hero-summit.jpg";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="text-center p-3">
+                                      <ImageIcon className="h-6 w-6 text-slate-300 mx-auto mb-1" />
+                                      <span className="text-[11px] text-slate-400 font-medium block">No About Image Uploaded</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    {/* EVENT TERMS & CONDITIONS TEMPLATE SELECTOR */}
-                    <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-cyan-50/80 via-blue-50/50 to-slate-50 border border-cyan-200 space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-xs">
-                            <ShieldCheck className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-xs text-slate-900 block">
-                              Terms & Conditions Template
-                            </span>
-                            <span className="text-[11px] text-slate-500 font-medium">
-                              Choose which point-wise Terms & Conditions will appear during registration and in confirmation emails.
-                            </span>
-                          </div>
+                  {/* TAB 2: AGENDA TIMELINE (SUMMARY CARD & MODAL WORKFLOW) */}
+                  {builderTab === "agenda" && (
+                    <div className="space-y-5">
+                      {/* Summary Card */}
+                      <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            <span>✅ {eventForm.agenda_list.length} Agenda Sessions Added</span>
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Agenda & Session Timeline</h4>
+                          <p className="text-xs text-slate-600 font-medium">Click "+ Add Session" to open modal popup and save sessions.</p>
                         </div>
 
                         <button
                           type="button"
-                          onClick={() => setBuilderTab("terms")}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-white px-3 py-1.5 text-[11px] font-bold text-cyan-800 hover:bg-cyan-50 shadow-2xs transition-all cursor-pointer"
+                          onClick={handleOpenAddAgenda}
+                          className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                         >
-                          <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                          <span>Preview Terms Clauses</span>
+                          <PlusCircle className="h-4 w-4" />
+                          <span>+ Add Agenda Session</span>
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                        <div className="sm:col-span-2">
-                          <select
-                            value={eventForm.terms_id || ""}
-                            onChange={(e) => setEventForm({ ...eventForm, terms_id: e.target.value })}
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none shadow-2xs cursor-pointer"
-                          >
-                            <option value="">
-                              🌟 Global Default Template ({termsTemplatesList.find((t) => t.is_default)?.title || "Standard Terms"})
-                            </option>
-                            {termsTemplatesList.map((tpl) => (
-                              <option key={tpl.id} value={tpl.id}>
-                                {tpl.title} {tpl.is_default ? "(Default)" : ""} — ({Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} Points)
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="text-[11px] text-slate-600 font-medium bg-white/80 p-2.5 rounded-xl border border-cyan-100 flex items-center justify-between">
-                          <span>
-                            Selected:{" "}
-                            <strong className="text-cyan-800">
-                              {termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.title ||
-                                termsTemplatesList.find((t) => t.is_default)?.title ||
-                                "Standard Terms"}
-                            </strong>
-                          </span>
-                          <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
-                            {(termsTemplatesList.find((t) => t.id === eventForm.terms_id)?.clauses?.length) ||
-                              (termsTemplatesList.find((t) => t.is_default)?.clauses?.length) ||
-                              10}{" "}
-                            Clauses
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* DYNAMIC DELEGATES, SPEAKERS, SPONSORS STAT COUNTS */}
-                    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200">
-                      <div>
-                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
-                          Delegates Count (Badge Stat)
-                        </label>
-                        <input
-                          type="text"
-                          value={eventForm.delegates_count}
-                          onChange={(e) => setEventForm({ ...eventForm, delegates_count: e.target.value })}
-                          placeholder="e.g. 500+"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
-                          Speakers Count (Badge Stat)
-                        </label>
-                        <input
-                          type="text"
-                          value={eventForm.speakers_count}
-                          onChange={(e) => setEventForm({ ...eventForm, speakers_count: e.target.value })}
-                          placeholder="e.g. 30+"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-800 font-extrabold mb-1 text-xs">
-                          Sponsors Count (Badge Stat)
-                        </label>
-                        <input
-                          type="text"
-                          value={eventForm.sponsors_count}
-                          onChange={(e) => setEventForm({ ...eventForm, sponsors_count: e.target.value })}
-                          placeholder="e.g. 25+"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Banner Image & Live Preview Box */}
-                    <div className="sm:col-span-2 space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                      <label className="block text-slate-700 font-bold">
-                        Banner Image (Upload File or Image URL) *
-                      </label>
-
-                      <div className="grid gap-3 sm:grid-cols-2 items-start">
-                        <div className="space-y-3">
-                          <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50/80 px-4 py-3 text-cyan-800 font-bold hover:bg-cyan-100 transition-all shadow-xs">
-                            <Upload className="h-4 w-4" />
-                            <span>{uploadingImage ? "Uploading Image..." : "Upload Image File"}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFileUpload}
-                              disabled={uploadingImage}
-                              className="hidden"
-                            />
-                          </label>
-
-                          <input
-                            type="text"
-                            required
-                            value={eventForm.image}
-                            onChange={(e) => setEventForm({ ...eventForm, image: e.target.value })}
-                            placeholder="Image URL e.g. /assets/event-cfo-BjslOJNi.jpg"
-                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[11px]"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Live Preview</span>
-                          <div className="relative h-24 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-200/60 shadow-xs flex items-center justify-center">
-                            {eventForm.image ? (
-                              <img
-                                src={eventForm.image}
-                                alt="Event Banner Preview"
-                                className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "/assets/event-cfo-BjslOJNi.jpg";
-                                }}
-                              />
-                            ) : (
-                              <span className="text-[11px] text-slate-400 font-bold">No Image Selected</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Multiple Locations & Dynamic Matching Venue Blocks */}
-                  <div className="space-y-4 pt-4 border-t border-slate-200">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-display">
-                          <MapPin className="h-4 w-4 text-cyan-600" />
-                          <span>Event Schedules & Dynamic Venues</span>
-                        </h4>
-                        <p className="text-xs text-slate-500 font-medium">Each slot automatically generates a matching venue block with custom address and map iframe.</p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleAddLocationSlot}
-                        className="flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all shadow-xs cursor-pointer"
-                      >
-                        <PlusCircle className="h-4 w-4 text-cyan-600" />
-                        <span>+ Add Schedule & Venue Block</span>
-                      </button>
-                    </div>
-
-                    <div className="space-y-5">
-                      {eventForm.locations.map((loc, idx) => {
-                        const isOpen = openLocationSlots.includes(idx);
-                        return (
-                          <div key={idx} className="relative rounded-2xl border border-slate-200 bg-slate-50/90 p-4 space-y-3 shadow-xs hover:border-slate-300 transition-all">
-                            {/* Slot Header with Open / Close Toggle */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
-                              <div
-                                onClick={() => toggleLocationSlot(idx)}
-                                className="flex items-center gap-2 cursor-pointer select-none group"
-                              >
-                                <button
-                                  type="button"
-                                  className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 group-hover:bg-cyan-50 group-hover:text-cyan-700 transition-colors"
-                                >
-                                  {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                </button>
-
-                                <span className="font-extrabold text-cyan-900 text-sm group-hover:text-cyan-700">
-                                  Slot #{idx + 1}: {loc.city ? loc.city : "New Schedule Slot"}
-                                </span>
-
-                                {idx === 0 && (
-                                  <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] text-cyan-800 font-bold border border-cyan-200">
-                                    Primary Location
-                                  </span>
-                                )}
-
-                                {!isOpen && loc.city && (
-                                  <span className="text-[11px] font-semibold text-slate-500 ml-2 truncate max-w-xs">
-                                    📍 {loc.city} {loc.date ? `· 📅 ${loc.date}` : ""} {loc.venue ? `· 🏢 ${loc.venue}` : ""}
-                                  </span>
-                                )}
-                              </div>
-
+                      {/* Sessions Summary List */}
+                      <div className="space-y-3">
+                        {(eventForm.agenda_list || []).map((item, idx) => (
+                          <div key={item.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs hover:border-cyan-300 transition-all">
+                            <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleLocationSlot(idx)}
-                                  className="flex items-center gap-1 text-xs font-bold text-cyan-700 hover:text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
-                                >
-                                  {isOpen ? (
-                                    <>
-                                      <ChevronUp className="h-3.5 w-3.5" /> Collapse Slot
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChevronDown className="h-3.5 w-3.5" /> Open Slot
-                                    </>
-                                  )}
-                                </button>
-
-                                {eventForm.locations.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveLocationSlot(idx)}
-                                    className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer"
-                                  >
-                                    <X className="h-3.5 w-3.5" /> Remove Slot
-                                  </button>
-                                )}
+                                <span className="rounded-md bg-cyan-100 text-cyan-800 px-2 py-0.5 font-mono text-[11px] font-bold">
+                                  {item.time || "Time N/A"}
+                                </span>
+                                <span className="font-bold text-slate-900 text-xs sm:text-sm">{item.title}</span>
                               </div>
+                              {item.speaker && (
+                                <p className="text-xs text-slate-600 font-medium">👤 Presenter: <span className="text-slate-800 font-semibold">{item.speaker}</span></p>
+                              )}
+                              {item.description && (
+                                <p className="text-xs text-slate-500 line-clamp-1">{item.description}</p>
+                              )}
                             </div>
 
-                            {/* Collapsible Body Content */}
-                            {isOpen && (
-                              <div className="space-y-4 pt-2">
-                                {/* Schedule Inputs */}
-                                <div className="grid gap-3.5 sm:grid-cols-2">
-                                  <div>
-                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                      <MapPin className="h-3.5 w-3.5 text-cyan-600" /> City *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      required
-                                      value={loc.city}
-                                      onChange={(e) => handleUpdateLocationSlot(idx, "city", e.target.value)}
-                                      placeholder="e.g. Visakhapatnam / Hyderabad"
-                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-slate-700 font-bold text-xs mb-1 flex items-center gap-1.5">
-                                      <Calendar className="h-3.5 w-3.5 text-cyan-600" /> Date *
-                                    </label>
-                                    <input
-                                      type="date"
-                                      required
-                                      value={loc.date}
-                                      onChange={(e) => handleUpdateLocationSlot(idx, "date", e.target.value)}
-                                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Interactive Timing Clock Pickers & Quick Presets */}
-                                <div className="rounded-xl border border-cyan-200/90 bg-gradient-to-r from-cyan-50/70 via-blue-50/50 to-emerald-50/40 p-3.5 space-y-3 shadow-2xs">
-                                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-200/70 pb-2">
-                                    <label className="text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
-                                      <Clock className="h-4 w-4 text-cyan-700" />
-                                      <span>Event Timing Clock Pickers *</span>
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[11px] text-slate-500 font-medium">Configured Time:</span>
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-700 text-white font-mono text-xs font-extrabold shadow-2xs">
-                                        <Clock className="h-3.5 w-3.5" />
-                                        {loc.time || "09:00 AM — 06:00 PM"}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                      <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
-                                        <span className="flex items-center gap-1">⏰ Start / From Time</span>
-                                        <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
-                                          {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start)}
-                                        </span>
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start}
-                                        onChange={(e) => {
-                                          const newStart = e.target.value;
-                                          const currentEnd = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end;
-                                          const formatted = `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`;
-                                          handleUpdateLocationSlot(idx, "time", formatted);
-                                        }}
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
-                                      />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                      <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
-                                        <span className="flex items-center gap-1">⏰ End / To Time</span>
-                                        <span className="text-[11px] font-extrabold text-cyan-800 bg-cyan-100/80 px-2 py-0.5 rounded-md font-mono">
-                                          {convert24To12Hour(parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end)}
-                                        </span>
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").end}
-                                        onChange={(e) => {
-                                          const newEnd = e.target.value;
-                                          const currentStart = parseTimeRangeToClocks(loc.time || "09:00 AM — 06:00 PM").start;
-                                          const formatted = `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`;
-                                          handleUpdateLocationSlot(idx, "time", formatted);
-                                        }}
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* Quick Presets */}
-                                  <div className="pt-2 border-t border-cyan-100/80 flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[11px] font-bold text-slate-600 mr-1 flex items-center gap-1">
-                                      ⚡ Quick Presets:
-                                    </span>
-                                    {[
-                                      { label: "09:00 AM — 06:00 PM (Full Day)", val: "09:00 AM — 06:00 PM" },
-                                      { label: "09:30 AM — 05:30 PM", val: "09:30 AM — 05:30 PM" },
-                                      { label: "10:00 AM — 05:00 PM", val: "10:00 AM — 05:00 PM" },
-                                      { label: "02:00 PM — 07:00 PM (Afternoon)", val: "02:00 PM — 07:00 PM" },
-                                      { label: "05:00 PM — 10:00 PM (Evening Gala)", val: "05:00 PM — 10:00 PM" },
-                                    ].map((preset) => (
-                                      <button
-                                        key={preset.val}
-                                        type="button"
-                                        onClick={() => handleUpdateLocationSlot(idx, "time", preset.val)}
-                                        className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${
-                                          loc.time === preset.val
-                                            ? "bg-cyan-700 text-white border-cyan-700 shadow-2xs"
-                                            : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900 hover:border-cyan-300"
-                                        }`}
-                                      >
-                                        {preset.label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {/* Dynamic Matching Venue Block Section */}
-                                <div className="rounded-xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-3">
-                                  <h5 className="font-extrabold text-xs text-cyan-900 flex items-center gap-2">
-                                    <Building className="h-4 w-4 text-cyan-600" />
-                                    <span>Venue for Slot {idx + 1} – {loc.city ? loc.city : `City #${idx + 1}`}</span>
-                                  </h5>
-
-                                  <div className="grid gap-3 sm:grid-cols-2">
-                                    <div>
-                                      <label className="block text-slate-700 font-bold text-[11px] mb-1">
-                                        Venue Name / Hotel *
-                                      </label>
-                                      <input
-                                        type="text"
-                                        required
-                                        value={loc.venue || ""}
-                                        onChange={(e) => handleUpdateLocationSlot(idx, "venue", e.target.value)}
-                                        placeholder="e.g. Novotel Visakhapatnam Varun Beach / Taj Krishna"
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                      />
-                                    </div>
-
-                                    <div>
-                                      <label className="block text-slate-700 font-bold text-[11px] mb-1">
-                                        Custom Venue Address *
-                                      </label>
-                                      <input
-                                        type="text"
-                                        required
-                                        value={loc.address || ""}
-                                        onChange={(e) => handleUpdateLocationSlot(idx, "address", e.target.value)}
-                                        placeholder="e.g. Beach Rd, Maharani Peta, Visakhapatnam, AP 530002"
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none"
-                                      />
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                      <label className="block text-slate-700 font-bold text-[11px] mb-1 flex items-center justify-between">
-                                        <span>Google Maps Embed iframe URL *</span>
-                                        <span className="text-[10px] text-slate-500 font-normal">Standard Google Maps Embed iframe src URL or paste full &lt;iframe&gt; code</span>
-                                      </label>
-                                      <textarea
-                                        rows={2}
-                                        required
-                                        value={loc.map_url || ""}
-                                        onChange={(e) => {
-                                          let val = e.target.value;
-                                          if (val.includes("<iframe") && val.includes("src=")) {
-                                            const match = val.match(/src=["']([^"']+)["']/);
-                                            if (match && match[1]) val = match[1];
-                                          }
-                                          handleUpdateLocationSlot(idx, "map_url", val);
-                                        }}
-                                        placeholder="https://www.google.com/maps/embed?pb=... or paste full <iframe src='...'> code"
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 font-mono text-[11px] focus:border-cyan-600 focus:outline-none"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditAgenda(idx)}
+                                className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 cursor-pointer flex items-center gap-1"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" /> Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAgendaItem(idx)}
+                                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer flex items-center gap-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              </button>
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        ))}
 
-                  {/* Descriptions & About Event Section */}
-                  <div className="space-y-4 pt-2">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Short Description (Card Overview) *</label>
-                      <textarea
-                        required
-                        rows={2}
-                        value={eventForm.description}
-                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                        placeholder="Brief summary of event..."
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                      />
+                        {(eventForm.agenda_list || []).length === 0 && (
+                          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                            No agenda sessions added yet. Click "+ Add Agenda Session" above.
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Full Description (Detail Page Overview)</label>
-                      <textarea
-                        rows={3}
-                        value={eventForm.full_description}
-                        onChange={(e) => setEventForm({ ...eventForm, full_description: e.target.value })}
-                        placeholder="Detailed rich text breakdown of event themes, objectives, key takeaways..."
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:border-cyan-600 focus:bg-white focus:outline-none"
-                      />
-                    </div>
+                  {/* TAB 3: SPEAKERS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+                  {builderTab === "speakers" && (
+                    <div className="space-y-5">
+                      {/* Summary Card */}
+                      <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            <span>✅ {(eventForm.speakers_list || []).length} Speakers Added</span>
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Keynote Speakers & Leaders</h4>
+                          <p className="text-xs text-slate-600 font-medium">Click "+ Add Speaker" to open modal popup, upload photo, and save.</p>
+                        </div>
 
-                    {/* DEDICATED ABOUT THE EVENT CONTENT & IMAGE SECTION */}
-                    <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/80 space-y-4">
-                      <div className="flex items-center gap-2 border-b border-cyan-200/80 pb-2">
-                        <FileText className="h-4 w-4 text-cyan-700" />
-                        <h4 className="text-xs font-extrabold text-cyan-900 uppercase tracking-wider">
-                          About The Event Content & Featured Banner Image
-                        </h4>
+                        <button
+                          type="button"
+                          onClick={handleOpenAddSpeaker}
+                          className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>+ Add Speaker</span>
+                        </button>
                       </div>
 
-                      {/* About Event Content Text Area */}
-                      <div>
-                        <label className="block text-slate-800 font-extrabold mb-1">
-                          About The Event Content (Detailed Story & Highlights) *
-                        </label>
-                        <p className="text-[11px] text-slate-500 mb-1.5 font-medium">
-                          This content appears directly under "About The Summit" on the public event page.
-                        </p>
-                        <textarea
-                          rows={5}
-                          value={eventForm.about_content}
-                          onChange={(e) => setEventForm({ ...eventForm, about_content: e.target.value })}
-                          placeholder="Write comprehensive details about the summit goals, key themes, agenda vision, target audience, and enterprise impact..."
-                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none shadow-xs"
-                        />
-                      </div>
-
-                      {/* About Event Upload Image & Live Preview */}
-                      <div className="space-y-3 pt-2 border-t border-cyan-200/60">
-                        <label className="block text-slate-800 font-extrabold">
-                          About Event Image (Upload File or Image URL)
-                        </label>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Upload a high-resolution photo/banner to showcase in the "About The Summit" section.
-                        </p>
-
-                        <div className="grid gap-3 sm:grid-cols-2 items-start">
-                          <div className="space-y-3">
-                            <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-dashed border-cyan-500 bg-white px-4 py-3 text-cyan-800 font-bold hover:bg-cyan-100/70 transition-all shadow-xs">
-                              <Upload className="h-4 w-4 text-cyan-600" />
-                              <span>{uploadingAboutImage ? "Uploading Image..." : "Upload About Image File"}</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAboutFileUpload}
-                                disabled={uploadingAboutImage}
-                                className="hidden"
-                              />
-                            </label>
-
-                            <input
-                              type="text"
-                              value={eventForm.about_image}
-                              onChange={(e) => setEventForm({ ...eventForm, about_image: e.target.value })}
-                              placeholder="Or paste image URL e.g. /assets/hero-summit.jpg"
-                              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:border-cyan-600 focus:outline-none font-mono text-[11px]"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                              About Image Preview
-                            </span>
-                            <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-xs flex items-center justify-center">
-                              {eventForm.about_image ? (
-                                <img
-                                  src={eventForm.about_image}
-                                  alt="About Event Preview"
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = "/assets/hero-summit.jpg";
-                                  }}
-                                />
+                      {/* Speakers Summary Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {(eventForm.speakers_list || []).map((spk, idx) => (
+                          <div key={spk.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-cyan-300 transition-all">
+                            <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
+                              {spk.photo ? (
+                                <img src={spk.photo} alt={spk.name} className="h-full w-full object-cover" />
                               ) : (
-                                <div className="text-center p-3">
-                                  <ImageIcon className="h-6 w-6 text-slate-300 mx-auto mb-1" />
-                                  <span className="text-[11px] text-slate-400 font-medium block">No About Image Uploaded</span>
+                                <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
+                                  {spk.name.charAt(0) || "S"}
                                 </div>
                               )}
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* TAB 2: AGENDA TIMELINE (SUMMARY CARD & MODAL WORKFLOW) */}
-              {builderTab === "agenda" && (
-                <div className="space-y-5">
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <span>✅ {eventForm.agenda_list.length} Agenda Sessions Added</span>
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Agenda & Session Timeline</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Session" to open modal popup and save sessions.</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenAddAgenda}
-                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Agenda Session</span>
-                    </button>
-                  </div>
-
-                  {/* Sessions Summary List */}
-                  <div className="space-y-3">
-                    {(eventForm.agenda_list || []).map((item, idx) => (
-                      <div key={item.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs hover:border-cyan-300 transition-all">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-md bg-cyan-100 text-cyan-800 px-2 py-0.5 font-mono text-[11px] font-bold">
-                              {item.time || "Time N/A"}
-                            </span>
-                            <span className="font-bold text-slate-900 text-xs sm:text-sm">{item.title}</span>
-                          </div>
-                          {item.speaker && (
-                            <p className="text-xs text-slate-600 font-medium">👤 Presenter: <span className="text-slate-800 font-semibold">{item.speaker}</span></p>
-                          )}
-                          {item.description && (
-                            <p className="text-xs text-slate-500 line-clamp-1">{item.description}</p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditAgenda(idx)}
-                            className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 cursor-pointer flex items-center gap-1"
-                          >
-                            <Edit3 className="h-3.5 w-3.5" /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAgendaItem(idx)}
-                            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer flex items-center gap-1"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {(eventForm.agenda_list || []).length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No agenda sessions added yet. Click "+ Add Agenda Session" above.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: SPEAKERS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
-              {builderTab === "speakers" && (
-                <div className="space-y-5">
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <span>✅ {(eventForm.speakers_list || []).length} Speakers Added</span>
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Keynote Speakers & Leaders</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Speaker" to open modal popup, upload photo, and save.</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenAddSpeaker}
-                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Speaker</span>
-                    </button>
-                  </div>
-
-                  {/* Speakers Summary Grid */}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {(eventForm.speakers_list || []).map((spk, idx) => (
-                      <div key={spk.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-cyan-300 transition-all">
-                        <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
-                          {spk.photo ? (
-                            <img src={spk.photo} alt={spk.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
-                              {spk.name.charAt(0) || "S"}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
-                            {(spk.website_url || spk.websiteUrl) && (
-                              <a
-                                href={spk.website_url || spk.websiteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-cyan-700 hover:opacity-80 shrink-0"
-                                title="Website"
-                              >
-                                <Globe className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(spk.linkedin_url || spk.linkedinUrl) && (
-                              <a
-                                href={spk.linkedin_url || spk.linkedinUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-[#0077b5] hover:opacity-80 shrink-0"
-                                title="LinkedIn Profile"
-                              >
-                                <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
-                              </a>
-                            )}
-                            {(spk.youtube_url || spk.youtubeUrl) && (
-                              <a
-                                href={spk.youtube_url || spk.youtubeUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-red-600 hover:opacity-80 shrink-0"
-                                title="YouTube Channel"
-                              >
-                                <Youtube className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(spk.instagram_url || spk.instagramUrl) && (
-                              <a
-                                href={spk.instagram_url || spk.instagramUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-pink-600 hover:opacity-80 shrink-0"
-                                title="Instagram"
-                              >
-                                <Instagram className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(spk.twitter_url || spk.twitterUrl) && (
-                              <a
-                                href={spk.twitter_url || spk.twitterUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-sky-500 hover:opacity-80 shrink-0"
-                                title="Twitter / X"
-                              >
-                                <Twitter className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-600 font-medium truncate">{spk.designation}</p>
-                          <p className="text-[11px] text-cyan-800 font-bold truncate">{spk.organization}</p>
-                        </div>
-
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditSpeaker(idx)}
-                            className="rounded-lg border border-cyan-200 bg-cyan-50 p-1.5 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
-                            title="Edit Speaker"
-                          >
-                            <Edit3 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSpeakerItem(idx)}
-                            className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
-                            title="Delete Speaker"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {(eventForm.speakers_list || []).length === 0 && (
-                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No speakers added yet. Click "+ Add Speaker" above.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: ZURA & JURY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
-              {builderTab === "zura" && (
-                <div className="space-y-5">
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-bold text-amber-800">
-                        <CheckCircle2 className="h-4 w-4 text-amber-600" />
-                        <span>✅ {(eventForm.zura_list || []).length} Jury Members Added</span>
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Our Jury Members</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Jury Member" to open modal popup, upload photo, and save.</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenAddZura}
-                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Jury Member</span>
-                    </button>
-                  </div>
-
-                  {/* Zura Summary Grid */}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {(eventForm.zura_list || []).map((zura, idx) => (
-                      <div key={zura.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-amber-300 transition-all">
-                        <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
-                          {zura.photo ? (
-                            <img src={zura.photo} alt={zura.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
-                              {zura.name.charAt(0) || "Z"}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{zura.name}</h5>
-                            {(zura.website_url || zura.websiteUrl) && (
-                              <a
-                                href={zura.website_url || zura.websiteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-cyan-700 hover:opacity-80 shrink-0"
-                                title="Website"
-                              >
-                                <Globe className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(zura.linkedin_url || zura.linkedinUrl) && (
-                              <a
-                                href={zura.linkedin_url || zura.linkedinUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-[#0077b5] hover:opacity-80 shrink-0"
-                                title="LinkedIn Profile"
-                              >
-                                <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
-                              </a>
-                            )}
-                            {(zura.youtube_url || zura.youtubeUrl) && (
-                              <a
-                                href={zura.youtube_url || zura.youtubeUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-red-600 hover:opacity-80 shrink-0"
-                                title="YouTube Channel"
-                              >
-                                <Youtube className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(zura.instagram_url || zura.instagramUrl) && (
-                              <a
-                                href={zura.instagram_url || zura.instagramUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-pink-600 hover:opacity-80 shrink-0"
-                                title="Instagram"
-                              >
-                                <Instagram className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {(zura.twitter_url || zura.twitterUrl) && (
-                              <a
-                                href={zura.twitter_url || zura.twitterUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-sky-500 hover:opacity-80 shrink-0"
-                                title="Twitter / X"
-                              >
-                                <Twitter className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-600 font-medium truncate">{zura.designation}</p>
-                          <p className="text-[11px] text-amber-800 font-bold truncate">{zura.organization}</p>
-                        </div>
-
-                        <div className="flex flex-col gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditZura(idx)}
-                            className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-800 hover:bg-amber-100 cursor-pointer"
-                            title="Edit Zura"
-                          >
-                            <Edit3 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteZuraItem(idx)}
-                            className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
-                            title="Delete Zura"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {(eventForm.zura_list || []).length === 0 && (
-                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No jury members added yet. Click "+ Add Jury Member" above.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 5: SPONSORS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
-              {builderTab === "sponsors" && (
-                <div className="space-y-5">
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <span>✅ {(eventForm.sponsors_list || []).length} Sponsors Added</span>
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Corporate Sponsors & Brand Partners</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Sponsor" to open modal popup and manage logos.</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenAddSponsor}
-                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Sponsor</span>
-                    </button>
-                  </div>
-
-                  {/* Sponsors Grid */}
-                  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                    {(eventForm.sponsors_list || []).map((spn, idx) => (
-                      <div key={spn.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-cyan-300 transition-all">
-                        <div className="flex items-center justify-between">
-                          <span className="rounded-full bg-purple-100 border border-purple-200 px-2.5 py-0.5 text-[10px] text-purple-800 font-extrabold uppercase">
-                            {spn.tier}
-                          </span>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditSponsor(idx)}
-                              className="rounded-lg border border-cyan-200 bg-cyan-50 p-1 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSponsorItem(idx)}
-                              className="rounded-lg border border-rose-200 bg-rose-50 p-1 text-rose-700 hover:bg-rose-100 cursor-pointer"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="h-16 flex items-center justify-center border border-slate-100 rounded-xl p-2 bg-slate-50/50">
-                          {spn.logo ? (
-                            <img src={spn.logo} alt={spn.name} className="max-h-full max-w-full object-contain" />
-                          ) : (
-                            <span className="font-bold text-slate-800 text-xs">{spn.name}</span>
-                          )}
-                        </div>
-
-                        <div className="text-center">
-                          <p className="font-bold text-slate-900 text-xs truncate">{spn.name}</p>
-                          {(spn.websiteUrl || (spn as any).website) && (
-                            <a
-                              href={spn.websiteUrl || (spn as any).website}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[10px] text-cyan-600 hover:underline flex items-center justify-center gap-1 mt-0.5 truncate"
-                            >
-                              <span className="truncate">{spn.websiteUrl || (spn as any).website}</span>
-                              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {(eventForm.sponsors_list || []).length === 0 && (
-                      <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No corporate sponsors added yet. Click "+ Add Sponsor" above.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 5: GALLERY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
-              {builderTab === "gallery" && (
-                <div className="space-y-5">
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <span>✅ {(eventForm.gallery_list || []).length} Images Added</span>
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Event Photos & Highlights</h4>
-                      <p className="text-xs text-slate-600 font-medium">Click "+ Add Gallery Image" (supports JPG, PNG, WEBP up to 5 MB).</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenAddGallery}
-                      className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      <span>+ Add Gallery Image</span>
-                    </button>
-                  </div>
-
-                  {/* Gallery Grid */}
-                  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                    {(eventForm.gallery_list || []).map((item, idx) => (
-                      <div key={item.id || idx} className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs hover:shadow-lg transition-all h-40">
-                        <img src={item.url} alt={item.caption || `Gallery ${idx + 1}`} className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-90 p-3 flex flex-col justify-between text-white">
-                          <div className="flex justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditGallery(idx)}
-                              className="rounded-lg bg-white/90 p-1 text-slate-900 hover:bg-white cursor-pointer"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteEventGalleryItem(idx)}
-                              className="rounded-lg bg-rose-600 p-1 text-white hover:bg-rose-700 cursor-pointer"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                          <span className="text-[11px] font-semibold truncate">{item.caption || "Event Highlight"}</span>
-                        </div>
-                      </div>
-                    ))}
-
-                    {(eventForm.gallery_list || []).length === 0 && (
-                      <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
-                        No gallery images added yet. Click "+ Add Gallery Image" above.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 6: PRIMARY MAP EMBED */}
-              {builderTab === "venue" && (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 font-display">Primary Google Maps Embed & Venue Location</h4>
-                    <p className="text-xs text-slate-500 font-medium">Fallback venue address and iframe URL for primary event location.</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Primary Venue Address</label>
-                      <input
-                        type="text"
-                        value={eventForm.venue_address}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEventForm((prev) => {
-                            const locs = [...prev.locations];
-                            if (locs.length > 0 && locs[0]) {
-                              locs[0] = { ...locs[0], address: val };
-                            }
-                            return { ...prev, venue_address: val, locations: locs };
-                          });
-                        }}
-                        placeholder="e.g. The St. Regis, Lower Parel, Mumbai, Maharashtra 400013"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Google Maps Embed iframe URL</label>
-                      <textarea
-                        rows={3}
-                        value={eventForm.map_url}
-                        onChange={(e) => {
-                          let val = e.target.value;
-                          if (val.includes("<iframe") && val.includes("src=")) {
-                            const match = val.match(/src=["']([^"']+)["']/);
-                            if (match && match[1]) val = match[1];
-                          }
-                          setEventForm((prev) => {
-                            const locs = [...prev.locations];
-                            if (locs.length > 0 && locs[0]) {
-                              locs[0] = { ...locs[0], map_url: val };
-                            }
-                            return { ...prev, map_url: val, locations: locs };
-                          });
-                        }}
-                        placeholder="Paste Google Maps iframe src URL..."
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 7: TERMS & CONDITIONS SELECTOR & PREVIEW */}
-              {builderTab === "terms" && (
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 font-display flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-cyan-600" />
-                        <span>Event Terms & Conditions Clauses</span>
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">
-                        Select the template that will be displayed to delegates and included in registration confirmation emails.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEventModalOpen(false);
-                        setActiveTab("terms-conditions");
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5 text-cyan-600" />
-                      <span>Manage All Templates in CMS</span>
-                    </button>
-                  </div>
-
-                  {/* Template Picker */}
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
-                    <label className="block font-extrabold text-slate-800 text-xs">
-                      Choose Active Template for "{eventForm.title || "This Event"}"
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Default Template Option */}
-                      {(() => {
-                        const defTpl = termsTemplatesList.find((t) => t.is_default);
-                        const isSelected = !eventForm.terms_id || (defTpl && eventForm.terms_id === defTpl.id);
-                        return (
-                          <div
-                            onClick={() => setEventForm({ ...eventForm, terms_id: defTpl?.id || "" })}
-                            className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                              isSelected
-                                ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
-                                : "bg-white/70 border-slate-200 hover:border-slate-300"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-extrabold text-xs text-slate-900">
-                                    {defTpl?.title || "Default Standard Terms"}
-                                  </span>
-                                  <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
-                                    Global Default
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                  {defTpl?.description || "Comprehensive 10-point standard legal clauses for Executive Talks Media corporate events."}
-                                </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{spk.name}</h5>
+                                {(spk.website_url || spk.websiteUrl) && (
+                                  <a
+                                    href={spk.website_url || spk.websiteUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-cyan-700 hover:opacity-80 shrink-0"
+                                    title="Website"
+                                  >
+                                    <Globe className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(spk.linkedin_url || spk.linkedinUrl) && (
+                                  <a
+                                    href={spk.linkedin_url || spk.linkedinUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-[#0077b5] hover:opacity-80 shrink-0"
+                                    title="LinkedIn Profile"
+                                  >
+                                    <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
+                                  </a>
+                                )}
+                                {(spk.youtube_url || spk.youtubeUrl) && (
+                                  <a
+                                    href={spk.youtube_url || spk.youtubeUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-red-600 hover:opacity-80 shrink-0"
+                                    title="YouTube Channel"
+                                  >
+                                    <Youtube className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(spk.instagram_url || spk.instagramUrl) && (
+                                  <a
+                                    href={spk.instagram_url || spk.instagramUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-pink-600 hover:opacity-80 shrink-0"
+                                    title="Instagram"
+                                  >
+                                    <Instagram className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(spk.twitter_url || spk.twitterUrl) && (
+                                  <a
+                                    href={spk.twitter_url || spk.twitterUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-sky-500 hover:opacity-80 shrink-0"
+                                    title="Twitter / X"
+                                  >
+                                    <Twitter className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
                               </div>
-                              <input
-                                type="radio"
-                                readOnly
-                                checked={isSelected}
-                                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
-                              />
+                              <p className="text-xs text-slate-600 font-medium truncate">{spk.designation}</p>
+                              <p className="text-[11px] text-cyan-800 font-bold truncate">{spk.organization}</p>
                             </div>
-                            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                              <span>Clauses: {defTpl?.clauses?.length || 10} points</span>
-                              {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
+
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditSpeaker(idx)}
+                                className="rounded-lg border border-cyan-200 bg-cyan-50 p-1.5 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
+                                title="Edit Speaker"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSpeakerItem(idx)}
+                                className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                                title="Delete Speaker"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {(eventForm.speakers_list || []).length === 0 && (
+                          <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                            No speakers added yet. Click "+ Add Speaker" above.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: ZURA & JURY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+                  {builderTab === "zura" && (
+                    <div className="space-y-5">
+                      {/* Summary Card */}
+                      <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 border border-amber-300 px-3 py-1 text-xs font-bold text-amber-800">
+                            <CheckCircle2 className="h-4 w-4 text-amber-600" />
+                            <span>✅ {(eventForm.zura_list || []).length} Jury Members Added</span>
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Our Jury Members</h4>
+                          <p className="text-xs text-slate-600 font-medium">Click "+ Add Jury Member" to open modal popup, upload photo, and save.</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenAddZura}
+                          className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>+ Add Jury Member</span>
+                        </button>
+                      </div>
+
+                      {/* Zura Summary Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {(eventForm.zura_list || []).map((zura, idx) => (
+                          <div key={zura.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center gap-3 shadow-2xs hover:border-amber-300 transition-all">
+                            <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
+                              {zura.photo ? (
+                                <img src={zura.photo} alt={zura.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center font-bold text-slate-400 bg-slate-100 text-sm">
+                                  {zura.name.charAt(0) || "Z"}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate">{zura.name}</h5>
+                                {(zura.website_url || zura.websiteUrl) && (
+                                  <a
+                                    href={zura.website_url || zura.websiteUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-cyan-700 hover:opacity-80 shrink-0"
+                                    title="Website"
+                                  >
+                                    <Globe className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(zura.linkedin_url || zura.linkedinUrl) && (
+                                  <a
+                                    href={zura.linkedin_url || zura.linkedinUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-[#0077b5] hover:opacity-80 shrink-0"
+                                    title="LinkedIn Profile"
+                                  >
+                                    <Linkedin className="h-3.5 w-3.5 fill-[#0077b5]" />
+                                  </a>
+                                )}
+                                {(zura.youtube_url || zura.youtubeUrl) && (
+                                  <a
+                                    href={zura.youtube_url || zura.youtubeUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-red-600 hover:opacity-80 shrink-0"
+                                    title="YouTube Channel"
+                                  >
+                                    <Youtube className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(zura.instagram_url || zura.instagramUrl) && (
+                                  <a
+                                    href={zura.instagram_url || zura.instagramUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-pink-600 hover:opacity-80 shrink-0"
+                                    title="Instagram"
+                                  >
+                                    <Instagram className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                                {(zura.twitter_url || zura.twitterUrl) && (
+                                  <a
+                                    href={zura.twitter_url || zura.twitterUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-sky-500 hover:opacity-80 shrink-0"
+                                    title="Twitter / X"
+                                  >
+                                    <Twitter className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-600 font-medium truncate">{zura.designation}</p>
+                              <p className="text-[11px] text-amber-800 font-bold truncate">{zura.organization}</p>
+                            </div>
+
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditZura(idx)}
+                                className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-800 hover:bg-amber-100 cursor-pointer"
+                                title="Edit Zura"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteZuraItem(idx)}
+                                className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                                title="Delete Zura"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {(eventForm.zura_list || []).length === 0 && (
+                          <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                            No jury members added yet. Click "+ Add Jury Member" above.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 5: SPONSORS BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+                  {builderTab === "sponsors" && (
+                    <div className="space-y-5">
+                      {/* Summary Card */}
+                      <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            <span>✅ {(eventForm.sponsors_list || []).length} Sponsors Added</span>
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Corporate Sponsors & Brand Partners</h4>
+                          <p className="text-xs text-slate-600 font-medium">Click "+ Add Sponsor" to open modal popup and manage logos.</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenAddSponsor}
+                          className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>+ Add Sponsor</span>
+                        </button>
+                      </div>
+
+                      {/* Sponsors Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        {(eventForm.sponsors_list || []).map((spn, idx) => (
+                          <div key={spn.id || idx} className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-cyan-300 transition-all">
+                            <div className="flex items-center justify-between">
+                              <span className="rounded-full bg-purple-100 border border-purple-200 px-2.5 py-0.5 text-[10px] text-purple-800 font-extrabold uppercase">
+                                {spn.tier}
+                              </span>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditSponsor(idx)}
+                                  className="rounded-lg border border-cyan-200 bg-cyan-50 p-1 text-cyan-800 hover:bg-cyan-100 cursor-pointer"
+                                >
+                                  <Edit3 className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSponsorItem(idx)}
+                                  className="rounded-lg border border-rose-200 bg-rose-50 p-1 text-rose-700 hover:bg-rose-100 cursor-pointer"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="h-16 flex items-center justify-center border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                              {spn.logo ? (
+                                <img src={spn.logo} alt={spn.name} className="max-h-full max-w-full object-contain" />
+                              ) : (
+                                <span className="font-bold text-slate-800 text-xs">{spn.name}</span>
+                              )}
+                            </div>
+
+                            <div className="text-center">
+                              <p className="font-bold text-slate-900 text-xs truncate">{spn.name}</p>
+                              {(spn.websiteUrl || (spn as any).website) && (
+                                <a
+                                  href={spn.websiteUrl || (spn as any).website}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[10px] text-cyan-600 hover:underline flex items-center justify-center gap-1 mt-0.5 truncate"
+                                >
+                                  <span className="truncate">{spn.websiteUrl || (spn as any).website}</span>
+                                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+
+                        {(eventForm.sponsors_list || []).length === 0 && (
+                          <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                            No corporate sponsors added yet. Click "+ Add Sponsor" above.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 5: GALLERY BUILDER (SUMMARY CARD & MODAL WORKFLOW) */}
+                  {builderTab === "gallery" && (
+                    <div className="space-y-5">
+                      {/* Summary Card */}
+                      <div className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-teal-50 to-emerald-50 p-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                        <div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-800">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            <span>✅ {(eventForm.gallery_list || []).length} Images Added</span>
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-2 font-display">Event Photos & Highlights</h4>
+                          <p className="text-xs text-slate-600 font-medium">Click "+ Add Gallery Image" (supports JPG, PNG, WEBP up to 5 MB).</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenAddGallery}
+                          className="gradient-brand rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          <span>+ Add Gallery Image</span>
+                        </button>
+                      </div>
+
+                      {/* Gallery Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        {(eventForm.gallery_list || []).map((item, idx) => (
+                          <div key={item.id || idx} className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs hover:shadow-lg transition-all h-40">
+                            <img src={item.url} alt={item.caption || `Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-90 p-3 flex flex-col justify-between text-white">
+                              <div className="flex justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditGallery(idx)}
+                                  className="rounded-lg bg-white/90 p-1 text-slate-900 hover:bg-white cursor-pointer"
+                                >
+                                  <Edit3 className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteEventGalleryItem(idx)}
+                                  className="rounded-lg bg-rose-600 p-1 text-white hover:bg-rose-700 cursor-pointer"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                              <span className="text-[11px] font-semibold truncate">{item.caption || "Event Highlight"}</span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {(eventForm.gallery_list || []).length === 0 && (
+                          <div className="sm:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+                            No gallery images added yet. Click "+ Add Gallery Image" above.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 6: PRIMARY MAP EMBED */}
+                  {builderTab === "venue" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 font-display">Primary Google Maps Embed & Venue Location</h4>
+                        <p className="text-xs text-slate-500 font-medium">Fallback venue address and iframe URL for primary event location.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Primary Venue Address</label>
+                          <input
+                            type="text"
+                            value={eventForm.venue_address}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setEventForm((prev) => {
+                                const locs = [...prev.locations];
+                                if (locs.length > 0 && locs[0]) {
+                                  locs[0] = { ...locs[0], address: val };
+                                }
+                                return { ...prev, venue_address: val, locations: locs };
+                              });
+                            }}
+                            placeholder="e.g. The St. Regis, Lower Parel, Mumbai, Maharashtra 400013"
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Google Maps Embed iframe URL</label>
+                          <textarea
+                            rows={3}
+                            value={eventForm.map_url}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.includes("<iframe") && val.includes("src=")) {
+                                const match = val.match(/src=["']([^"']+)["']/);
+                                if (match && match[1]) val = match[1];
+                              }
+                              setEventForm((prev) => {
+                                const locs = [...prev.locations];
+                                if (locs.length > 0 && locs[0]) {
+                                  locs[0] = { ...locs[0], map_url: val };
+                                }
+                                return { ...prev, map_url: val, locations: locs };
+                              });
+                            }}
+                            placeholder="Paste Google Maps iframe src URL..."
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 font-mono text-[11px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 7: TERMS & CONDITIONS SELECTOR & PREVIEW */}
+                  {builderTab === "terms" && (
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 font-display flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                            <span>Event Terms & Conditions Clauses</span>
+                          </h4>
+                          <p className="text-xs text-slate-500 font-medium">
+                            Select the template that will be displayed to delegates and included in registration confirmation emails.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEventModalOpen(false);
+                            setActiveTab("terms-conditions");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-300 bg-cyan-50 px-3.5 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>Manage All Templates in CMS</span>
+                        </button>
+                      </div>
+
+                      {/* Template Picker */}
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                        <label className="block font-extrabold text-slate-800 text-xs">
+                          Choose Active Template for "{eventForm.title || "This Event"}"
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Default Template Option */}
+                          {(() => {
+                            const defTpl = termsTemplatesList.find((t) => t.is_default);
+                            const isSelected = !eventForm.terms_id || (defTpl && eventForm.terms_id === defTpl.id);
+                            return (
+                              <div
+                                onClick={() => setEventForm({ ...eventForm, terms_id: defTpl?.id || "" })}
+                                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${isSelected
+                                    ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
+                                    : "bg-white/70 border-slate-200 hover:border-slate-300"
+                                  }`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-xs text-slate-900">
+                                        {defTpl?.title || "Default Standard Terms"}
+                                      </span>
+                                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
+                                        Global Default
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                                      {defTpl?.description || "Comprehensive 10-point standard legal clauses for Executive Talks Media corporate events."}
+                                    </p>
+                                  </div>
+                                  <input
+                                    type="radio"
+                                    readOnly
+                                    checked={isSelected}
+                                    className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
+                                  />
+                                </div>
+                                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                                  <span>Clauses: {defTpl?.clauses?.length || 10} points</span>
+                                  {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Custom Templates */}
+                          {termsTemplatesList
+                            .filter((t) => !t.is_default)
+                            .map((tpl) => {
+                              const isSelected = eventForm.terms_id === tpl.id;
+                              return (
+                                <div
+                                  key={tpl.id}
+                                  onClick={() => setEventForm({ ...eventForm, terms_id: tpl.id })}
+                                  className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${isSelected
+                                      ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
+                                      : "bg-white/70 border-slate-200 hover:border-slate-300"
+                                    }`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <span className="font-extrabold text-xs text-slate-900 block">
+                                        {tpl.title}
+                                      </span>
+                                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                                        {tpl.description || "Custom event clauses."}
+                                      </p>
+                                    </div>
+                                    <input
+                                      type="radio"
+                                      readOnly
+                                      checked={isSelected}
+                                      className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
+                                    />
+                                  </div>
+                                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                                    <span>Clauses: {Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} points</span>
+                                    {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      {/* Selected Template Live Preview Card */}
+                      {(() => {
+                        const activeTpl =
+                          termsTemplatesList.find((t) => t.id === eventForm.terms_id) ||
+                          termsTemplatesList.find((t) => t.is_default) || {
+                            title: "Standard Executive Talks Media Terms & Conditions",
+                            clauses: [
+                              { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
+                              { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
+                              { num: 3, title: "Partner Communication", content: "I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication." },
+                              { num: 4, title: "Digital & Promotional Usage", content: "I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities." },
+                              { num: 5, title: "Photography & Video Consent", content: "I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes." },
+                              { num: 6, title: "Data Usage", content: "I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws." },
+                              { num: 7, title: "Third-Party Communication", content: "I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration." },
+                              { num: 8, title: "Event Updates", content: "I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change." },
+                              { num: 9, title: "Personal Safety & Belongings", content: "Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.", isWarning: true },
+                              { num: 10, title: "Consent & Acceptance", content: "By clicking “I Agree / Submit Registration,” I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms." },
+                            ],
+                          };
+
+                        return (
+                          <div className="rounded-2xl border border-cyan-200/80 bg-white p-5 shadow-sm space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-xs text-cyan-900 uppercase tracking-wider">
+                                  Preview: {activeTpl.title}
+                                </span>
+                                <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
+                                  {activeTpl.clauses?.length || 0} Clauses
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                This is what the user reads before agreeing
+                              </span>
+                            </div>
+
+                            <div className="max-h-96 overflow-y-auto space-y-3 pr-2 divide-y divide-slate-100">
+                              {activeTpl.clauses?.map((c: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className={`pt-3 first:pt-0 ${c.isWarning
+                                      ? "p-3 rounded-xl bg-amber-50/80 border border-amber-200"
+                                      : ""
+                                    }`}
+                                >
+                                  <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 mb-1">
+                                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-cyan-800 text-[10px] font-black shrink-0">
+                                      {c.num || i + 1}
+                                    </span>
+                                    <span>{c.num || i + 1}. {c.title}</span>
+                                    {c.isWarning && (
+                                      <span className="rounded bg-amber-200/70 text-amber-900 px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                        Important
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
+                                    {c.content}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         );
                       })()}
+                    </div>
+                  )}
 
-                      {/* Custom Templates */}
-                      {termsTemplatesList
-                        .filter((t) => !t.is_default)
-                        .map((tpl) => {
-                          const isSelected = eventForm.terms_id === tpl.id;
-                          return (
-                            <div
-                              key={tpl.id}
-                              onClick={() => setEventForm({ ...eventForm, terms_id: tpl.id })}
-                              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                                isSelected
-                                  ? "bg-white border-cyan-600 ring-2 ring-cyan-500/20 shadow-xs"
-                                  : "bg-white/70 border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <span className="font-extrabold text-xs text-slate-900 block">
-                                    {tpl.title}
-                                  </span>
-                                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                                    {tpl.description || "Custom event clauses."}
-                                  </p>
-                                </div>
-                                <input
-                                  type="radio"
-                                  readOnly
-                                  checked={isSelected}
-                                  className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 mt-1 cursor-pointer"
-                                />
-                              </div>
-                              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                                <span>Clauses: {Array.isArray(tpl.clauses) ? tpl.clauses.length : 0} points</span>
-                                {isSelected && <span className="font-bold text-cyan-700">✓ Active for this event</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
+                  {/* REQUIREMENT 5: STICKY SAVE BAR AT BOTTOM */}
+                  <div className="sticky bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 shrink-0 rounded-2xl">
+                    <label className="relative flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={eventForm.is_featured}
+                        onChange={(e) => setEventForm({ ...eventForm, is_featured: e.target.checked })}
+                        className="h-4 w-4 rounded border-slate-300 bg-white text-cyan-600 focus:ring-cyan-500"
+                      />
+                      <span className="font-bold text-slate-900 text-xs">Mark as Featured Event</span>
+                    </label>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => handleSaveEvent(e, "draft")}
+                        className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+                      >
+                        Save Draft
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const eventSlug = editingEvent?.slug || eventForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                          if (eventSlug) {
+                            window.open(`/events/${eventSlug}?preview=true`, "_blank");
+                          } else {
+                            toast.info("Please enter an event title or save event first to preview.");
+                          }
+                        }}
+                        className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Preview Event</span>
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={submittingEvent}
+                        className="gradient-brand rounded-xl px-6 py-2.5 text-xs font-extrabold text-white shadow-lg hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        {submittingEvent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        <span>{editingEvent ? "Update Event" : "Create & Save Event"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </aside>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* POPUP SUB-MODAL: SPEAKER EDIT/ADD          */}
+          {/* ========================================== */}
+          {speakerModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+              <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-slate-900 text-base font-display">
+                    {editingSpeakerIndex !== null ? "Edit Keynote Speaker" : "Add Keynote Speaker"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setSpeakerModalOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveSpeakerModal} className="space-y-4 text-xs">
+                  {/* 2-column inputs for main speaker information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Speaker Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={speakerForm.name}
+                        onChange={(e) => setSpeakerForm({ ...speakerForm, name: e.target.value })}
+                        placeholder="e.g. Dr. Rajesh Sharma"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Designation *</label>
+                      <input
+                        type="text"
+                        required
+                        value={speakerForm.designation}
+                        onChange={(e) => setSpeakerForm({ ...speakerForm, designation: e.target.value })}
+                        placeholder="e.g. Chief Technology Officer / Executive VP"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
+                      <input
+                        type="text"
+                        required
+                        value={speakerForm.organization}
+                        onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
+                        placeholder="e.g. Executive Talks Media Hub"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
+                      <input
+                        type="text"
+                        value={speakerForm.topic || ""}
+                        onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
+                        placeholder="e.g. Keynote: AI Transformation"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    {/* Photo Image Span 2 Columns */}
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
+                      <div className="flex items-center gap-2.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>{uploadingSpeakerImg ? "Uploading..." : "Upload File"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleSpeakerImgFileUpload}
+                            disabled={uploadingSpeakerImg}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={speakerForm.photo}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, photo: e.target.value })}
+                          placeholder="Image URL or uploaded file path..."
+                          className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Selected Template Live Preview Card */}
-                  {(() => {
-                    const activeTpl =
-                      termsTemplatesList.find((t) => t.id === eventForm.terms_id) ||
-                      termsTemplatesList.find((t) => t.is_default) || {
-                        title: "Standard Executive Talks Media Terms & Conditions",
-                        clauses: [
-                          { num: 1, title: "Accurate Information", content: "I confirm that all information and details provided by me in the registration form are true, accurate, and complete." },
-                          { num: 2, title: "Communication Consent", content: "I provide my consent to receive calls, WhatsApp messages, SMS, and emails from the Event Organiser regarding the event, registration, updates, offers, and related activities." },
-                          { num: 3, title: "Partner Communication", content: "I agree that my contact details may be shared with event partners, sponsors, exhibitors, and associated organisations for event-related communication, business networking, and relevant promotional communication." },
-                          { num: 4, title: "Digital & Promotional Usage", content: "I provide my consent to the organiser to use my name, photograph, designation, company name, videos, and other event-related content for event promotions, social media, websites, digital campaigns, marketing materials, event reports, and other promotional activities." },
-                          { num: 5, title: "Photography & Video Consent", content: "I understand that photographs and videos may be captured during the event and may be used by the organiser and its authorised partners for event coverage and promotional purposes." },
-                          { num: 6, title: "Data Usage", content: "I authorise the organiser to collect, store, process, and use the information provided by me for event management, communication, networking, business opportunities, and promotional activities, subject to applicable laws." },
-                          { num: 7, title: "Third-Party Communication", content: "I understand that event partners or sponsors may contact me regarding their products, services, business solutions, or networking opportunities based on the consent provided through this registration." },
-                          { num: 8, title: "Event Updates", content: "I understand that event schedules, speakers, sessions, venue details, and other programme information may be subject to change." },
-                          { num: 9, title: "Personal Safety & Belongings", content: "Participant safety and personal belongings are the sole responsibility of the participant. The Event Organiser, its partners, sponsors, venue, and associated personnel shall not be held responsible or liable for any loss, theft, damage, or misplacement of personal belongings, including mobile phones, laptops, bags, documents, valuables, or other personal items during the event. Participants are advised to take appropriate care of their personal belongings and valuables at all times.", isWarning: true },
-                          { num: 10, title: "Consent & Acceptance", content: "By clicking “I Agree / Submit Registration,” I confirm that I have read and understood these Terms & Conditions and voluntarily provide my consent to the above terms." },
-                        ],
-                      };
+                  {/* Speaker Custom URLs Section - 2 Columns */}
+                  <div className="space-y-2 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-800 font-extrabold text-xs">
+                        Speaker Links & Social URLs (Optional)
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        Only provided URLs will appear on user side
+                      </span>
+                    </div>
 
-                    return (
-                      <div className="rounded-2xl border border-cyan-200/80 bg-white p-5 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-xs text-cyan-900 uppercase tracking-wider">
-                              Preview: {activeTpl.title}
-                            </span>
-                            <span className="rounded-full bg-cyan-100 text-cyan-800 px-2 py-0.5 text-[10px] font-bold">
-                              {activeTpl.clauses?.length || 0} Clauses
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-slate-400 font-medium">
-                            This is what the user reads before agreeing
-                          </span>
-                        </div>
-
-                        <div className="max-h-96 overflow-y-auto space-y-3 pr-2 divide-y divide-slate-100">
-                          {activeTpl.clauses?.map((c: any, i: number) => (
-                            <div
-                              key={i}
-                              className={`pt-3 first:pt-0 ${
-                                c.isWarning
-                                  ? "p-3 rounded-xl bg-amber-50/80 border border-amber-200"
-                                  : ""
-                              }`}
-                            >
-                              <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5 mb-1">
-                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-cyan-800 text-[10px] font-black shrink-0">
-                                  {c.num || i + 1}
-                                </span>
-                                <span>{c.num || i + 1}. {c.title}</span>
-                                {c.isWarning && (
-                                  <span className="rounded bg-amber-200/70 text-amber-900 px-1.5 py-0.5 text-[9px] font-black uppercase">
-                                    Important
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-slate-600 leading-relaxed pl-6">
-                                {c.content}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>Website / Portfolio URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={speakerForm.website_url || speakerForm.websiteUrl || ""}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, website_url: e.target.value })}
+                          placeholder="e.g. https://www.speakerwebsite.com"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
 
-              {/* REQUIREMENT 5: STICKY SAVE BAR AT BOTTOM */}
-              <div className="sticky bottom-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 shrink-0 rounded-2xl">
-                <label className="relative flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={eventForm.is_featured}
-                    onChange={(e) => setEventForm({ ...eventForm, is_featured: e.target.checked })}
-                    className="h-4 w-4 rounded border-slate-300 bg-white text-cyan-600 focus:ring-cyan-500"
-                  />
-                  <span className="font-bold text-slate-900 text-xs">Mark as Featured Event</span>
-                </label>
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                          <span>LinkedIn Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
+                          placeholder="e.g. https://www.linkedin.com/in/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
+                        />
+                      </div>
 
-                <div className="flex items-center gap-3">
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Youtube className="h-3.5 w-3.5 text-red-600" />
+                          <span>YouTube Channel / Video URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={speakerForm.youtube_url || speakerForm.youtubeUrl || ""}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, youtube_url: e.target.value })}
+                          placeholder="e.g. https://www.youtube.com/@username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Instagram className="h-3.5 w-3.5 text-pink-600" />
+                          <span>Instagram Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={speakerForm.instagram_url || speakerForm.instagramUrl || ""}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, instagram_url: e.target.value })}
+                          placeholder="e.g. https://www.instagram.com/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Twitter className="h-3.5 w-3.5 text-sky-500" />
+                          <span>Twitter / X Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={speakerForm.twitter_url || speakerForm.twitterUrl || ""}
+                          onChange={(e) => setSpeakerForm({ ...speakerForm, twitter_url: e.target.value })}
+                          placeholder="e.g. https://x.com/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setSpeakerModalOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                    >
+                      Save Speaker
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* POPUP SUB-MODAL: ZURA & JURY EDIT/ADD      */}
+          {/* ========================================== */}
+          {zuraModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+              <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-slate-900 text-base font-display">
+                    {editingZuraIndex !== null ? "Edit Jury Member" : "Add Jury Member"}
+                  </h4>
                   <button
                     type="button"
-                    onClick={(e) => handleSaveEvent(e, "draft")}
-                    className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+                    onClick={() => setZuraModalOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                   >
-                    Save Draft
+                    <X className="h-5 w-5" />
                   </button>
+                </div>
 
+                <form onSubmit={handleSaveZuraModal} className="space-y-4 text-xs">
+                  {/* 2-column inputs for main zura information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Jury Member Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={zuraForm.name}
+                        onChange={(e) => setZuraForm({ ...zuraForm, name: e.target.value })}
+                        placeholder="e.g. Dr. Rajesh Sharma"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Designation *</label>
+                      <input
+                        type="text"
+                        required
+                        value={zuraForm.designation}
+                        onChange={(e) => setZuraForm({ ...zuraForm, designation: e.target.value })}
+                        placeholder="e.g. Jury Chair / Executive VP"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
+                      <input
+                        type="text"
+                        required
+                        value={zuraForm.organization}
+                        onChange={(e) => setZuraForm({ ...zuraForm, organization: e.target.value })}
+                        placeholder="e.g. Executive Talks Media Hub"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
+                      <input
+                        type="text"
+                        value={zuraForm.topic || ""}
+                        onChange={(e) => setZuraForm({ ...zuraForm, topic: e.target.value })}
+                        placeholder="e.g. Jury Evaluation & Governance"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    {/* Photo Image Span 2 Columns */}
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
+                      <div className="flex items-center gap-2.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>{uploadingZuraImg ? "Uploading..." : "Upload File"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleZuraImgFileUpload}
+                            disabled={uploadingZuraImg}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={zuraForm.photo}
+                          onChange={(e) => setZuraForm({ ...zuraForm, photo: e.target.value })}
+                          placeholder="Image URL or uploaded file path..."
+                          className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Jury Custom URLs Section - 2 Columns */}
+                  <div className="space-y-2 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-800 font-extrabold text-xs">
+                        Jury Member Links & Social URLs (Optional)
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        Only provided URLs will appear on user side
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                          <span>Website / Portfolio URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={zuraForm.website_url || zuraForm.websiteUrl || ""}
+                          onChange={(e) => setZuraForm({ ...zuraForm, website_url: e.target.value })}
+                          placeholder="e.g. https://www.zuraprofile.com"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
+                          <span>LinkedIn Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={zuraForm.linkedin_url || zuraForm.linkedinUrl || ""}
+                          onChange={(e) => setZuraForm({ ...zuraForm, linkedin_url: e.target.value })}
+                          placeholder="e.g. https://www.linkedin.com/in/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Youtube className="h-3.5 w-3.5 text-red-600" />
+                          <span>YouTube Channel / Video URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={zuraForm.youtube_url || zuraForm.youtubeUrl || ""}
+                          onChange={(e) => setZuraForm({ ...zuraForm, youtube_url: e.target.value })}
+                          placeholder="e.g. https://www.youtube.com/@username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Instagram className="h-3.5 w-3.5 text-pink-600" />
+                          <span>Instagram Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={zuraForm.instagram_url || zuraForm.instagramUrl || ""}
+                          onChange={(e) => setZuraForm({ ...zuraForm, instagram_url: e.target.value })}
+                          placeholder="e.g. https://www.instagram.com/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
+                          <Twitter className="h-3.5 w-3.5 text-sky-500" />
+                          <span>Twitter / X Profile URL</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={zuraForm.twitter_url || zuraForm.twitterUrl || ""}
+                          onChange={(e) => setZuraForm({ ...zuraForm, twitter_url: e.target.value })}
+                          placeholder="e.g. https://x.com/username"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setZuraModalOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                    >
+                      Save Jury Member
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* POPUP SUB-MODAL: SPONSOR EDIT/ADD          */}
+          {/* ========================================== */}
+          {sponsorModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-slate-900 text-base font-display">
+                    {editingSponsorIndex !== null ? "Edit Corporate Sponsor" : "Add Corporate Sponsor"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setSponsorModalOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveSponsorModal} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Brand Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Google, Microsoft, KPMG..."
+                        value={sponsorForm.name}
+                        onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Website URL (Optional)</label>
+                      <input
+                        type="url"
+                        placeholder="e.g. https://www.google.com"
+                        value={sponsorForm.websiteUrl || (sponsorForm as any).website || ""}
+                        onChange={(e) =>
+                          setSponsorForm({
+                            ...sponsorForm,
+                            websiteUrl: e.target.value,
+                          })
+                        }
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Sponsorship Tier *</label>
+                      <select
+                        value={sponsorForm.tier}
+                        onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value as any })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      >
+                        <option value="Title Partner">Title Partner</option>
+                        <option value="Platinum Sponsor">Platinum Sponsor</option>
+                        <option value="Gold Sponsor">Gold Sponsor</option>
+                        <option value="Silver Partner">Silver Partner</option>
+                        <option value="Technology Partner">Technology Partner</option>
+                        <option value="Media Partner">Media Partner</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-slate-700 font-bold mb-1">Logo (Upload or URL) *</label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-2.5 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
+                          <Upload className="h-3.5 w-3.5" />
+                          <span>{uploadingSponsorLogo ? "..." : "Upload"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleSponsorLogoFileUpload}
+                            disabled={uploadingSponsorLogo}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={sponsorForm.logo}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, logo: e.target.value })}
+                          placeholder="Logo URL..."
+                          className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setSponsorModalOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                    >
+                      Save Sponsor
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* POPUP SUB-MODAL: AGENDA EDIT/ADD           */}
+          {/* ========================================== */}
+          {agendaModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+              <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                    {editingAgendaIndex !== null ? "Edit Agenda Session" : "Add Agenda Session"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setAgendaModalOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveAgendaModal} className="space-y-3 text-xs">
+                  <div className="rounded-xl border border-cyan-200 bg-gradient-to-r from-cyan-50/70 to-blue-50/60 p-3 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-cyan-600" />
+                        <span>Session Time Slot *</span>
+                      </label>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-700 text-white font-mono text-[11px] font-bold">
+                        {agendaForm.time || "09:30 AM — 10:30 AM"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">From Clock</label>
+                        <input
+                          type="time"
+                          value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start}
+                          onChange={(e) => {
+                            const newStart = e.target.value;
+                            const currentEnd = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end;
+                            setAgendaForm({
+                              ...agendaForm,
+                              time: `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`
+                            });
+                          }}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">To Clock</label>
+                        <input
+                          type="time"
+                          value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end}
+                          onChange={(e) => {
+                            const newEnd = e.target.value;
+                            const currentStart = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start;
+                            setAgendaForm({
+                              ...agendaForm,
+                              time: `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`
+                            });
+                          }}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1.5 border-t border-cyan-100 flex flex-wrap gap-1">
+                      {[
+                        "09:30 AM — 10:30 AM",
+                        "10:30 AM — 11:30 AM",
+                        "11:30 AM — 01:00 PM",
+                        "02:00 PM — 03:30 PM",
+                        "03:30 PM — 05:00 PM",
+                      ].map((tPreset) => (
+                        <button
+                          key={tPreset}
+                          type="button"
+                          onClick={() => setAgendaForm({ ...agendaForm, time: tPreset })}
+                          className={`px-2 py-0.5 rounded-lg border text-[10px] font-semibold cursor-pointer transition-colors ${agendaForm.time === tPreset
+                              ? "bg-cyan-700 text-white border-cyan-700"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900"
+                            }`}
+                        >
+                          {tPreset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Session Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={agendaForm.title}
+                      onChange={(e) => setAgendaForm({ ...agendaForm, title: e.target.value })}
+                      placeholder="e.g. Opening Keynote: AI Transformation in Indian Enterprise"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Speaker / Presenter</label>
+                    <input
+                      type="text"
+                      value={agendaForm.speaker || ""}
+                      onChange={(e) => setAgendaForm({ ...agendaForm, speaker: e.target.value })}
+                      placeholder="e.g. Dr. Rajesh Sharma"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Session Description</label>
+                    <textarea
+                      rows={3}
+                      value={agendaForm.description || ""}
+                      onChange={(e) => setAgendaForm({ ...agendaForm, description: e.target.value })}
+                      placeholder="Brief summary of session takeaways..."
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setAgendaModalOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                    >
+                      Save Agenda Session
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* POPUP SUB-MODAL: GALLERY EDIT/ADD         */}
+          {/* ========================================== */}
+          {galleryModalOpen && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+              <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-slate-900 text-sm font-display">
+                    {editingGalleryIndex !== null ? "Edit Gallery Image" : "Add Gallery Image"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryModalOpen(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveGalleryModal} className="space-y-3 text-xs">
+                  <div className="space-y-2">
+                    <label className="block text-slate-700 font-bold flex items-center justify-between">
+                      <span>Upload Image File (JPG, PNG, WEBP max 5 MB) *</span>
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-4 py-2.5 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs shadow-xs">
+                        <Upload className="h-4 w-4" />
+                        <span>{uploadingGalleryImg ? "Uploading (Max 5MB)..." : "Upload File"}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleGalleryUploadFile}
+                          disabled={uploadingGalleryImg}
+                          className="hidden"
+                        />
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={galleryForm.url}
+                        onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
+                        placeholder="Image URL..."
+                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Caption / Description</label>
+                    <input
+                      type="text"
+                      value={galleryForm.caption || ""}
+                      onChange={(e) => setGalleryForm({ ...galleryForm, caption: e.target.value })}
+                      placeholder="e.g. Executive Keynote Address Highlights"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
+                    />
+                  </div>
+
+                  {galleryForm.url && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thumbnail Preview</span>
+                      <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-100 shadow-xs">
+                        <img src={galleryForm.url} alt="Preview" className="h-full w-full object-cover" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setGalleryModalOpen(false)}
+                      className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
+                    >
+                      Save Gallery Image
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================== */}
+          {/* DELEGATE REGISTRATION FULL DETAILS MODAL  */}
+          {/* ========================================== */}
+          {selectedRegDetail && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+              <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRegDetail(null)}
+                  className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+                  <Users className="h-4 w-4" />
+                  <span>Delegate Registration Details</span>
+                </div>
+
+                <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
+                  {selectedRegDetail.name}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  Registration ID: <span className="text-cyan-700 font-bold">{selectedRegDetail.id}</span>
+                </p>
+
+                {/* Details Grid */}
+                <div className="mt-6 space-y-4 text-xs">
+                  {/* Personal & Corporate Info */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                      Personal & Executive Info
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">First Name:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.first_name || selectedRegDetail.name.split(" ")[0]}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Last Name:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.last_name || selectedRegDetail.name.split(" ").slice(1).join(" ") || "N/A"}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Designation:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.designation}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Organization / Company:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.organization}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact & Location Info */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                      Contact & Location Info
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Work Email:</span>
+                        <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedRegDetail.email}</a>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Contact Number:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.phone}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">City:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.city || "N/A"}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Country:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.country || "India"}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Participation Preferences */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                    <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
+                      Category, Status & Referral Preferences
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Category:</span>
+                        <span className="inline-block rounded-md bg-cyan-100 px-2 py-0.5 text-cyan-800 font-bold text-[11px]">
+                          {selectedRegDetail.registration_category || "Delegate"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Status:</span>
+                        {(() => {
+                          const modalStatus = getRegistrationStatus(selectedRegDetail);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleToggleRegistrationStatus(selectedRegDetail.id);
+                                setSelectedRegDetail((prev) =>
+                                  prev ? { ...prev, status: modalStatus === "Confirmed" ? "Pending" : "Confirmed" } : null
+                                );
+                              }}
+                              title="Click to toggle status"
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-all cursor-pointer ${modalStatus === "Confirmed"
+                                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                  : "bg-amber-50 border-amber-200 text-amber-800"
+                                }`}
+                            >
+                              {modalStatus}
+                            </button>
+                          );
+                        })()}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Registering City:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.registering_city || selectedRegDetail.city || "N/A"}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Referral Source:</span>
+                        <strong className="text-slate-900 text-xs">{selectedRegDetail.referral_source || "Direct"}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Event Details Banner */}
+                  <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-1">
+                    <span className="text-[10px] font-black uppercase text-cyan-800 tracking-wider block">Registered Event</span>
+                    <h4 className="text-sm font-bold text-slate-900">{selectedRegDetail.event_title || selectedRegDetail.event_id}</h4>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Timestamp: {new Date(selectedRegDetail.created_at).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Gate Attendance & Admission Details */}
+                  {(selectedRegDetail.checkin_status || selectedRegDetail.checked_in_at) && (
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
+                      <div className="flex items-center justify-between border-b border-emerald-200/80 pb-1.5">
+                        <span className="text-[11px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>Gate Admission & Attendance</span>
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${selectedRegDetail.checkin_status?.toLowerCase() === "present"
+                              ? "bg-emerald-200 text-emerald-900"
+                              : "bg-slate-200 text-slate-800"
+                            }`}
+                        >
+                          {selectedRegDetail.checkin_status || "Awaiting Scan"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Gate Check-In Time:</span>
+                          <strong className="text-slate-900 font-mono text-xs">
+                            {selectedRegDetail.checked_in_at
+                              ? new Date(selectedRegDetail.checked_in_at).toLocaleString("en-IN")
+                              : "Not yet checked in"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Admitted By:</span>
+                          <strong className="text-slate-900 text-xs">
+                            {selectedRegDetail.checked_in_by || "Gate Coordinator"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex gap-3">
                   <button
                     type="button"
                     onClick={() => {
-                      const eventSlug = editingEvent?.slug || eventForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-                      if (eventSlug) {
-                        window.open(`/events/${eventSlug}?preview=true`, "_blank");
-                      } else {
-                        toast.info("Please enter an event title or save event first to preview.");
-                      }
+                      navigator.clipboard.writeText(JSON.stringify(selectedRegDetail, null, 2));
+                      toast.success("Delegate registration data copied to clipboard!");
                     }}
-                    className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition-all cursor-pointer flex items-center gap-1.5"
+                    className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
-                    <Eye className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Preview Event</span>
+                    Copy JSON
                   </button>
-
                   <button
-                    type="submit"
-                    disabled={submittingEvent}
-                    className="gradient-brand rounded-xl px-6 py-2.5 text-xs font-extrabold text-white shadow-lg hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
+                    type="button"
+                    onClick={() => setSelectedRegDetail(null)}
+                    className="flex-1 rounded-xl bg-cyan-600 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer"
                   >
-                    {submittingEvent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    <span>{editingEvent ? "Update Event" : "Create & Save Event"}</span>
+                    Close
                   </button>
                 </div>
               </div>
-            </form>
-          </aside>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* POPUP SUB-MODAL: SPEAKER EDIT/ADD          */}
-      {/* ========================================== */}
-      {speakerModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-base font-display">
-                {editingSpeakerIndex !== null ? "Edit Keynote Speaker" : "Add Keynote Speaker"}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setSpeakerModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
-
-            <form onSubmit={handleSaveSpeakerModal} className="space-y-4 text-xs">
-              {/* 2-column inputs for main speaker information */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Speaker Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={speakerForm.name}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, name: e.target.value })}
-                    placeholder="e.g. Dr. Rajesh Sharma"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Designation *</label>
-                  <input
-                    type="text"
-                    required
-                    value={speakerForm.designation}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, designation: e.target.value })}
-                    placeholder="e.g. Chief Technology Officer / Executive VP"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
-                  <input
-                    type="text"
-                    required
-                    value={speakerForm.organization}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, organization: e.target.value })}
-                    placeholder="e.g. Executive Talks Media Hub"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
-                  <input
-                    type="text"
-                    value={speakerForm.topic || ""}
-                    onChange={(e) => setSpeakerForm({ ...speakerForm, topic: e.target.value })}
-                    placeholder="e.g. Keynote: AI Transformation"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                {/* Photo Image Span 2 Columns */}
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
-                  <div className="flex items-center gap-2.5">
-                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                      <Upload className="h-3.5 w-3.5" />
-                      <span>{uploadingSpeakerImg ? "Uploading..." : "Upload File"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleSpeakerImgFileUpload}
-                        disabled={uploadingSpeakerImg}
-                        className="hidden"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={speakerForm.photo}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, photo: e.target.value })}
-                      placeholder="Image URL or uploaded file path..."
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Speaker Custom URLs Section - 2 Columns */}
-              <div className="space-y-2 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="block text-slate-800 font-extrabold text-xs">
-                    Speaker Links & Social URLs (Optional)
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Only provided URLs will appear on user side
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Globe className="h-3.5 w-3.5 text-cyan-600" />
-                      <span>Website / Portfolio URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={speakerForm.website_url || speakerForm.websiteUrl || ""}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, website_url: e.target.value })}
-                      placeholder="e.g. https://www.speakerwebsite.com"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
-                      <span>LinkedIn Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={speakerForm.linkedin_url || speakerForm.linkedinUrl || ""}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, linkedin_url: e.target.value })}
-                      placeholder="e.g. https://www.linkedin.com/in/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Youtube className="h-3.5 w-3.5 text-red-600" />
-                      <span>YouTube Channel / Video URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={speakerForm.youtube_url || speakerForm.youtubeUrl || ""}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, youtube_url: e.target.value })}
-                      placeholder="e.g. https://www.youtube.com/@username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Instagram className="h-3.5 w-3.5 text-pink-600" />
-                      <span>Instagram Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={speakerForm.instagram_url || speakerForm.instagramUrl || ""}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, instagram_url: e.target.value })}
-                      placeholder="e.g. https://www.instagram.com/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Twitter className="h-3.5 w-3.5 text-sky-500" />
-                      <span>Twitter / X Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={speakerForm.twitter_url || speakerForm.twitterUrl || ""}
-                      onChange={(e) => setSpeakerForm({ ...speakerForm, twitter_url: e.target.value })}
-                      placeholder="e.g. https://x.com/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSpeakerModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
-                >
-                  Save Speaker
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* POPUP SUB-MODAL: ZURA & JURY EDIT/ADD      */}
-      {/* ========================================== */}
-      {zuraModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-base font-display">
-                {editingZuraIndex !== null ? "Edit Jury Member" : "Add Jury Member"}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setZuraModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveZuraModal} className="space-y-4 text-xs">
-              {/* 2-column inputs for main zura information */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Jury Member Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={zuraForm.name}
-                    onChange={(e) => setZuraForm({ ...zuraForm, name: e.target.value })}
-                    placeholder="e.g. Dr. Rajesh Sharma"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Designation *</label>
-                  <input
-                    type="text"
-                    required
-                    value={zuraForm.designation}
-                    onChange={(e) => setZuraForm({ ...zuraForm, designation: e.target.value })}
-                    placeholder="e.g. Jury Chair / Executive VP"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Company / Organization *</label>
-                  <input
-                    type="text"
-                    required
-                    value={zuraForm.organization}
-                    onChange={(e) => setZuraForm({ ...zuraForm, organization: e.target.value })}
-                    placeholder="e.g. Executive Talks Media Hub"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Presentation Topic / Bio</label>
-                  <input
-                    type="text"
-                    value={zuraForm.topic || ""}
-                    onChange={(e) => setZuraForm({ ...zuraForm, topic: e.target.value })}
-                    placeholder="e.g. Jury Evaluation & Governance"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                {/* Photo Image Span 2 Columns */}
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="block text-slate-700 font-bold mb-1">Photo Image (Upload or URL) *</label>
-                  <div className="flex items-center gap-2.5">
-                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-3 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                      <Upload className="h-3.5 w-3.5" />
-                      <span>{uploadingZuraImg ? "Uploading..." : "Upload File"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleZuraImgFileUpload}
-                        disabled={uploadingZuraImg}
-                        className="hidden"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={zuraForm.photo}
-                      onChange={(e) => setZuraForm({ ...zuraForm, photo: e.target.value })}
-                      placeholder="Image URL or uploaded file path..."
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Jury Custom URLs Section - 2 Columns */}
-              <div className="space-y-2 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="block text-slate-800 font-extrabold text-xs">
-                    Jury Member Links & Social URLs (Optional)
-                  </label>
-                  <span className="text-[10px] text-slate-400">
-                    Only provided URLs will appear on user side
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Globe className="h-3.5 w-3.5 text-cyan-600" />
-                      <span>Website / Portfolio URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={zuraForm.website_url || zuraForm.websiteUrl || ""}
-                      onChange={(e) => setZuraForm({ ...zuraForm, website_url: e.target.value })}
-                      placeholder="e.g. https://www.zuraprofile.com"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Linkedin className="h-3.5 w-3.5 text-[#0077b5]" />
-                      <span>LinkedIn Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={zuraForm.linkedin_url || zuraForm.linkedinUrl || ""}
-                      onChange={(e) => setZuraForm({ ...zuraForm, linkedin_url: e.target.value })}
-                      placeholder="e.g. https://www.linkedin.com/in/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-[#0077b5] focus:outline-none focus:ring-1 focus:ring-[#0077b5]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Youtube className="h-3.5 w-3.5 text-red-600" />
-                      <span>YouTube Channel / Video URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={zuraForm.youtube_url || zuraForm.youtubeUrl || ""}
-                      onChange={(e) => setZuraForm({ ...zuraForm, youtube_url: e.target.value })}
-                      placeholder="e.g. https://www.youtube.com/@username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Instagram className="h-3.5 w-3.5 text-pink-600" />
-                      <span>Instagram Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={zuraForm.instagram_url || zuraForm.instagramUrl || ""}
-                      onChange={(e) => setZuraForm({ ...zuraForm, instagram_url: e.target.value })}
-                      placeholder="e.g. https://www.instagram.com/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-slate-600 font-semibold mb-1 flex items-center gap-1.5 text-[11px]">
-                      <Twitter className="h-3.5 w-3.5 text-sky-500" />
-                      <span>Twitter / X Profile URL</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={zuraForm.twitter_url || zuraForm.twitterUrl || ""}
-                      onChange={(e) => setZuraForm({ ...zuraForm, twitter_url: e.target.value })}
-                      placeholder="e.g. https://x.com/username"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-mono text-xs focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setZuraModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
-                >
-                  Save Jury Member
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* POPUP SUB-MODAL: SPONSOR EDIT/ADD          */}
-      {/* ========================================== */}
-      {sponsorModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-base font-display">
-                {editingSponsorIndex !== null ? "Edit Corporate Sponsor" : "Add Corporate Sponsor"}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setSponsorModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSponsorModal} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Brand Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Google, Microsoft, KPMG..."
-                    value={sponsorForm.name}
-                    onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Website URL (Optional)</label>
-                  <input
-                    type="url"
-                    placeholder="e.g. https://www.google.com"
-                    value={sponsorForm.websiteUrl || (sponsorForm as any).website || ""}
-                    onChange={(e) =>
-                      setSponsorForm({
-                        ...sponsorForm,
-                        websiteUrl: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Sponsorship Tier *</label>
-                  <select
-                    value={sponsorForm.tier}
-                    onChange={(e) => setSponsorForm({ ...sponsorForm, tier: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  >
-                    <option value="Title Partner">Title Partner</option>
-                    <option value="Platinum Sponsor">Platinum Sponsor</option>
-                    <option value="Gold Sponsor">Gold Sponsor</option>
-                    <option value="Silver Partner">Silver Partner</option>
-                    <option value="Technology Partner">Technology Partner</option>
-                    <option value="Media Partner">Media Partner</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-slate-700 font-bold mb-1">Logo (Upload or URL) *</label>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1.5 cursor-pointer shrink-0 rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-2.5 py-2 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs">
-                      <Upload className="h-3.5 w-3.5" />
-                      <span>{uploadingSponsorLogo ? "..." : "Upload"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleSponsorLogoFileUpload}
-                        disabled={uploadingSponsorLogo}
-                        className="hidden"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={sponsorForm.logo}
-                      onChange={(e) => setSponsorForm({ ...sponsorForm, logo: e.target.value })}
-                      placeholder="Logo URL..."
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSponsorModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
-                >
-                  Save Sponsor
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* POPUP SUB-MODAL: AGENDA EDIT/ADD           */}
-      {/* ========================================== */}
-      {agendaModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm font-display">
-                {editingAgendaIndex !== null ? "Edit Agenda Session" : "Add Agenda Session"}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setAgendaModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAgendaModal} className="space-y-3 text-xs">
-              <div className="rounded-xl border border-cyan-200 bg-gradient-to-r from-cyan-50/70 to-blue-50/60 p-3 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-slate-800 font-extrabold text-xs flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-cyan-600" />
-                    <span>Session Time Slot *</span>
-                  </label>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-700 text-white font-mono text-[11px] font-bold">
-                    {agendaForm.time || "09:30 AM — 10:30 AM"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">From Clock</label>
-                    <input
-                      type="time"
-                      value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start}
-                      onChange={(e) => {
-                        const newStart = e.target.value;
-                        const currentEnd = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end;
-                        setAgendaForm({
-                          ...agendaForm,
-                          time: `${convert24To12Hour(newStart)} — ${convert24To12Hour(currentEnd)}`
-                        });
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">To Clock</label>
-                    <input
-                      type="time"
-                      value={parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").end}
-                      onChange={(e) => {
-                        const newEnd = e.target.value;
-                        const currentStart = parseTimeRangeToClocks(agendaForm.time || "09:30 AM — 10:30 AM").start;
-                        setAgendaForm({
-                          ...agendaForm,
-                          time: `${convert24To12Hour(currentStart)} — ${convert24To12Hour(newEnd)}`
-                        });
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 focus:border-cyan-600 focus:outline-none cursor-pointer shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-1.5 border-t border-cyan-100 flex flex-wrap gap-1">
-                  {[
-                    "09:30 AM — 10:30 AM",
-                    "10:30 AM — 11:30 AM",
-                    "11:30 AM — 01:00 PM",
-                    "02:00 PM — 03:30 PM",
-                    "03:30 PM — 05:00 PM",
-                  ].map((tPreset) => (
-                    <button
-                      key={tPreset}
-                      type="button"
-                      onClick={() => setAgendaForm({ ...agendaForm, time: tPreset })}
-                      className={`px-2 py-0.5 rounded-lg border text-[10px] font-semibold cursor-pointer transition-colors ${
-                        agendaForm.time === tPreset
-                          ? "bg-cyan-700 text-white border-cyan-700"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900"
-                      }`}
-                    >
-                      {tPreset}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Session Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={agendaForm.title}
-                  onChange={(e) => setAgendaForm({ ...agendaForm, title: e.target.value })}
-                  placeholder="e.g. Opening Keynote: AI Transformation in Indian Enterprise"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Speaker / Presenter</label>
-                <input
-                  type="text"
-                  value={agendaForm.speaker || ""}
-                  onChange={(e) => setAgendaForm({ ...agendaForm, speaker: e.target.value })}
-                  placeholder="e.g. Dr. Rajesh Sharma"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Session Description</label>
-                <textarea
-                  rows={3}
-                  value={agendaForm.description || ""}
-                  onChange={(e) => setAgendaForm({ ...agendaForm, description: e.target.value })}
-                  placeholder="Brief summary of session takeaways..."
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setAgendaModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
-                >
-                  Save Agenda Session
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* POPUP SUB-MODAL: GALLERY EDIT/ADD         */}
-      {/* ========================================== */}
-      {galleryModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm font-display">
-                {editingGalleryIndex !== null ? "Edit Gallery Image" : "Add Gallery Image"}
-              </h4>
-              <button
-                type="button"
-                onClick={() => setGalleryModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveGalleryModal} className="space-y-3 text-xs">
-              <div className="space-y-2">
-                <label className="block text-slate-700 font-bold flex items-center justify-between">
-                  <span>Upload Image File (JPG, PNG, WEBP max 5 MB) *</span>
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-dashed border-cyan-400 bg-cyan-50 px-4 py-2.5 text-cyan-800 font-bold hover:bg-cyan-100 transition-all text-xs shadow-xs">
-                    <Upload className="h-4 w-4" />
-                    <span>{uploadingGalleryImg ? "Uploading (Max 5MB)..." : "Upload File"}</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleGalleryUploadFile}
-                      disabled={uploadingGalleryImg}
-                      className="hidden"
-                    />
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={galleryForm.url}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
-                    placeholder="Image URL..."
-                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Caption / Description</label>
-                <input
-                  type="text"
-                  value={galleryForm.caption || ""}
-                  onChange={(e) => setGalleryForm({ ...galleryForm, caption: e.target.value })}
-                  placeholder="e.g. Executive Keynote Address Highlights"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-slate-900"
-                />
-              </div>
-
-              {galleryForm.url && (
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thumbnail Preview</span>
-                  <div className="relative h-28 w-full overflow-hidden rounded-xl border border-slate-300 bg-slate-100 shadow-xs">
-                    <img src={galleryForm.url} alt="Preview" className="h-full w-full object-cover" />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setGalleryModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="gradient-brand rounded-xl px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-105 transition-transform"
-                >
-                  Save Gallery Image
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================== */}
-      {/* DELEGATE REGISTRATION FULL DETAILS MODAL  */}
-      {/* ========================================== */}
-      {selectedRegDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200">
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setSelectedRegDetail(null)}
-              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
-              <Users className="h-4 w-4" />
-              <span>Delegate Registration Details</span>
-            </div>
-
-            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
-              {selectedRegDetail.name}
-            </h3>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
-              Registration ID: <span className="text-cyan-700 font-bold">{selectedRegDetail.id}</span>
-            </p>
-
-            {/* Details Grid */}
-            <div className="mt-6 space-y-4 text-xs">
-              {/* Personal & Corporate Info */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
-                  Personal & Executive Info
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">First Name:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.first_name || selectedRegDetail.name.split(" ")[0]}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Last Name:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.last_name || selectedRegDetail.name.split(" ").slice(1).join(" ") || "N/A"}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Designation:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.designation}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Organization / Company:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.organization}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact & Location Info */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
-                  Contact & Location Info
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Work Email:</span>
-                    <a href={`mailto:${selectedRegDetail.email}`} className="text-cyan-700 font-bold hover:underline">{selectedRegDetail.email}</a>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Contact Number:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.phone}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">City:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.city || "N/A"}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Country:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.country || "India"}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Participation Preferences */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="text-[11px] font-black uppercase text-slate-500 tracking-wider border-b border-slate-200 pb-1">
-                  Category, Status & Referral Preferences
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Category:</span>
-                    <span className="inline-block rounded-md bg-cyan-100 px-2 py-0.5 text-cyan-800 font-bold text-[11px]">
-                      {selectedRegDetail.registration_category || "Delegate"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Status:</span>
-                    {(() => {
-                      const modalStatus = getRegistrationStatus(selectedRegDetail);
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleToggleRegistrationStatus(selectedRegDetail.id);
-                            setSelectedRegDetail((prev) =>
-                              prev ? { ...prev, status: modalStatus === "Confirmed" ? "Pending" : "Confirmed" } : null
-                            );
-                          }}
-                          title="Click to toggle status"
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-all cursor-pointer ${
-                            modalStatus === "Confirmed"
-                              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                              : "bg-amber-50 border-amber-200 text-amber-800"
-                          }`}
-                        >
-                          {modalStatus}
-                        </button>
-                      );
-                    })()}
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Registering City:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.registering_city || selectedRegDetail.city || "N/A"}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[10px]">Referral Source:</span>
-                    <strong className="text-slate-900 text-xs">{selectedRegDetail.referral_source || "Direct"}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Event Details Banner */}
-              <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4 space-y-1">
-                <span className="text-[10px] font-black uppercase text-cyan-800 tracking-wider block">Registered Event</span>
-                <h4 className="text-sm font-bold text-slate-900">{selectedRegDetail.event_title || selectedRegDetail.event_id}</h4>
-                <p className="text-[11px] text-slate-500 font-mono">
-                  Timestamp: {new Date(selectedRegDetail.created_at).toLocaleString()}
-                </p>
-              </div>
-
-              {/* Gate Attendance & Admission Details */}
-              {(selectedRegDetail.checkin_status || selectedRegDetail.checked_in_at) && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
-                  <div className="flex items-center justify-between border-b border-emerald-200/80 pb-1.5">
-                    <span className="text-[11px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                      <span>Gate Admission & Attendance</span>
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        selectedRegDetail.checkin_status?.toLowerCase() === "present"
-                          ? "bg-emerald-200 text-emerald-900"
-                          : "bg-slate-200 text-slate-800"
-                      }`}
-                    >
-                      {selectedRegDetail.checkin_status || "Awaiting Scan"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Gate Check-In Time:</span>
-                      <strong className="text-slate-900 font-mono text-xs">
-                        {selectedRegDetail.checked_in_at
-                          ? new Date(selectedRegDetail.checked_in_at).toLocaleString("en-IN")
-                          : "Not yet checked in"}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Admitted By:</span>
-                      <strong className="text-slate-900 text-xs">
-                        {selectedRegDetail.checked_in_by || "Gate Coordinator"}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(selectedRegDetail, null, 2));
-                  toast.success("Delegate registration data copied to clipboard!");
-                }}
-                className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-              >
-                Copy JSON
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedRegDetail(null)}
-                className="flex-1 rounded-xl bg-cyan-600 py-3 text-xs font-bold text-white hover:bg-cyan-700 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
           {/* TAB: PARTNERS & COLLABORATORS */}
           {activeTab === "partners" && (
@@ -16140,11 +16059,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPartnerSubTab("brands")}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-                      partnerSubTab === "brands"
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${partnerSubTab === "brands"
                         ? "bg-white text-cyan-700 shadow-sm"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Collaborator Logos ({partnersList.length})
                   </button>
@@ -16152,11 +16070,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPartnerSubTab("leads")}
-                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
-                      partnerSubTab === "leads"
+                    className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${partnerSubTab === "leads"
                         ? "bg-white text-cyan-700 shadow-sm"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Partner Applications ({partnerSubmissions.length})
                   </button>
@@ -16253,7 +16170,7 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                           Brand Logo (File Upload or URL) *
                         </label>
-                        
+
                         {/* File Upload Option */}
                         <div className="mb-2">
                           <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
@@ -16366,11 +16283,10 @@ export default function AdminDashboardPage() {
                           return (
                             <div
                               key={partner.id}
-                              className={`flex flex-col justify-between p-4 rounded-2xl border transition-all space-y-3 ${
-                                isActive
+                              className={`flex flex-col justify-between p-4 rounded-2xl border transition-all space-y-3 ${isActive
                                   ? "border-slate-200 bg-slate-50 hover:border-cyan-400"
                                   : "border-slate-200 bg-slate-100/70 opacity-75"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-3 min-w-0">
@@ -16403,11 +16319,10 @@ export default function AdminDashboardPage() {
                                 </div>
 
                                 <span
-                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border shrink-0 ${
-                                    isActive
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border shrink-0 ${isActive
                                       ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                                       : "bg-slate-200 text-slate-700 border-slate-300"
-                                  }`}
+                                    }`}
                                 >
                                   {isActive ? "🟢 Active" : "🔴 Inactive"}
                                 </span>
@@ -16669,11 +16584,10 @@ export default function AdminDashboardPage() {
                             key={fmt.id}
                             type="button"
                             onClick={() => setNewsForm({ ...newsForm, type: fmt.id })}
-                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                              newsForm.type === fmt.id
+                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${newsForm.type === fmt.id
                                 ? "bg-cyan-50 border-cyan-500 text-cyan-800 shadow-xs"
                                 : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                            }`}
+                              }`}
                           >
                             <fmt.icon className="h-4 w-4 mb-1" />
                             <span className="text-[11px]">{fmt.label}</span>
@@ -16881,11 +16795,10 @@ export default function AdminDashboardPage() {
                           key={type}
                           type="button"
                           onClick={() => setNewsFilterType(type)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
-                            newsFilterType === type
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${newsFilterType === type
                               ? "bg-cyan-600 text-white"
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {type}
                         </button>
@@ -16930,13 +16843,12 @@ export default function AdminDashboardPage() {
                           {/* Details */}
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                                item.type === "video"
+                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${item.type === "video"
                                   ? "bg-rose-50 text-rose-700 border-rose-200"
                                   : item.type === "article"
-                                  ? "bg-cyan-50 text-cyan-700 border-cyan-200"
-                                  : "bg-blue-50 text-blue-700 border-blue-200"
-                              }`}>
+                                    ? "bg-cyan-50 text-cyan-700 border-cyan-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
                                 {item.type}
                               </span>
 
@@ -16986,11 +16898,10 @@ export default function AdminDashboardPage() {
                             type="button"
                             onClick={() => handleToggleNewsFeatured(item.id, item.is_featured)}
                             title={item.is_featured ? "Remove featured" : "Feature on Homepage"}
-                            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-                              item.is_featured
+                            className={`p-2 rounded-xl border transition-colors cursor-pointer ${item.is_featured
                                 ? "bg-amber-50 text-amber-600 border-amber-300"
                                 : "bg-slate-50 text-slate-400 border-slate-200 hover:text-amber-500"
-                            }`}
+                              }`}
                           >
                             <Star className={`h-3.5 w-3.5 ${item.is_featured ? "fill-amber-500" : ""}`} />
                           </button>
@@ -17548,11 +17459,10 @@ export default function AdminDashboardPage() {
                         return (
                           <div
                             key={mag.id}
-                            className={`flex flex-col justify-between p-4 rounded-2xl border transition-all duration-300 ${
-                              mag.is_featured
+                            className={`flex flex-col justify-between p-4 rounded-2xl border transition-all duration-300 ${mag.is_featured
                                 ? "border-purple-300 bg-gradient-to-b from-purple-50/60 to-white shadow-md shadow-purple-500/5"
                                 : "border-slate-200 bg-slate-50/50 hover:border-purple-300 hover:bg-white"
-                            }`}
+                              }`}
                           >
                             <div className="space-y-3">
                               {/* Top Bar with Badges */}
@@ -17588,7 +17498,7 @@ export default function AdminDashboardPage() {
                                   <h4 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2">
                                     {mag.title}
                                   </h4>
-                                  
+
                                   <p className="text-[11px] text-purple-700 font-bold">
                                     {mag.month || mag.date} · {mag.category}
                                   </p>
@@ -17621,11 +17531,10 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleToggleMagFeatured(mag)}
-                                className={`text-[11px] font-extrabold px-3 py-1 rounded-xl border transition-colors cursor-pointer ${
-                                  mag.is_featured
+                                className={`text-[11px] font-extrabold px-3 py-1 rounded-xl border transition-colors cursor-pointer ${mag.is_featured
                                     ? "bg-amber-100 text-amber-900 border-amber-300"
                                     : "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300"
-                                }`}
+                                  }`}
                               >
                                 {mag.is_featured ? "Featured ★" : "Make Featured"}
                               </button>
@@ -17689,11 +17598,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setCareersSubTab("jobs")}
-                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                      careersSubTab === "jobs"
+                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${careersSubTab === "jobs"
                         ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                      }`}
                   >
                     <Briefcase className="h-4 w-4" />
                     <span>Job Openings CMS ({cmsJobs.length})</span>
@@ -17702,11 +17610,10 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setCareersSubTab("applicants")}
-                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
-                      careersSubTab === "applicants"
+                    className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${careersSubTab === "applicants"
                         ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                      }`}
                   >
                     <Users className="h-4 w-4" />
                     <span>Applicant Resumes Inbox</span>
@@ -17923,11 +17830,10 @@ export default function AdminDashboardPage() {
                           return (
                             <div
                               key={job.id}
-                              className={`flex flex-col justify-between p-5 rounded-2xl border transition-all space-y-4 ${
-                                isOpen
+                              className={`flex flex-col justify-between p-5 rounded-2xl border transition-all space-y-4 ${isOpen
                                   ? "border-slate-200 bg-slate-50 hover:border-cyan-400"
                                   : "border-slate-200 bg-slate-100/70 opacity-80"
-                              }`}
+                                }`}
                             >
                               <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
@@ -17949,11 +17855,10 @@ export default function AdminDashboardPage() {
 
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className={`rounded-full px-3 py-1 text-xs font-bold border ${
-                                      isOpen
+                                    className={`rounded-full px-3 py-1 text-xs font-bold border ${isOpen
                                         ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                                         : "bg-slate-200 text-slate-700 border-slate-300"
-                                    }`}
+                                      }`}
                                   >
                                     {isOpen ? "🟢 Open for Applicants" : "🔴 Hiring Closed"}
                                   </span>
@@ -17968,11 +17873,10 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleJobStatus(job)}
-                                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                                    isOpen
+                                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${isOpen
                                       ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
                                       : "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                                  }`}
+                                    }`}
                                 >
                                   {isOpen ? "Close Hiring" : "Reopen Hiring"}
                                 </button>
@@ -18280,7 +18184,7 @@ export default function AdminDashboardPage() {
                       <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Upload Media File or Enter URL *
                       </label>
-                      
+
                       <div className="mb-2">
                         <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors w-full justify-center">
                           <Upload className="h-4 w-4 text-cyan-600" />
@@ -18455,11 +18359,10 @@ export default function AdminDashboardPage() {
                         {cmsGalleryItems.map((item) => (
                           <div
                             key={item.id}
-                            className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${
-                              editingGalleryItem?.id === item.id
+                            className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${editingGalleryItem?.id === item.id
                                 ? "border-cyan-600 ring-2 ring-cyan-500/20 shadow-md"
                                 : "border-slate-200 hover:border-cyan-400 hover:shadow-md"
-                            }`}
+                              }`}
                           >
                             {/* Top Thumbnail Image Banner with Badges Overlay */}
                             <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
@@ -18471,7 +18374,7 @@ export default function AdminDashboardPage() {
                                   (e.target as HTMLElement).style.display = "none";
                                 }}
                               />
-                              
+
                               <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 z-10">
                                 <span className="text-[10px] font-mono font-bold text-white bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20 shadow-xs">
                                   {item.category}
@@ -18479,11 +18382,10 @@ export default function AdminDashboardPage() {
                               </div>
 
                               <div className="absolute top-2.5 right-2.5 z-10">
-                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${
-                                  item.type === "video"
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${item.type === "video"
                                     ? "bg-purple-900/80 text-purple-200 border-purple-400/40"
                                     : "bg-slate-900/80 text-cyan-200 border-cyan-400/40"
-                                }`}>
+                                  }`}>
                                   {item.type === "video" ? "🎥 Video Embed" : "📷 Photo Image"}
                                 </span>
                               </div>
@@ -18495,7 +18397,7 @@ export default function AdminDashboardPage() {
                                 <h4 className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2" title={item.title}>
                                   {item.title}
                                 </h4>
-                                
+
                                 <p className="text-[11px] text-slate-600 font-medium flex items-center gap-1">
                                   <span className="text-cyan-600 font-bold">📍</span>
                                   <span className="truncate">{item.event_title || "All Events"}</span>
@@ -18659,11 +18561,10 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => setNewVideoForm({ ...newVideoForm, platform: "youtube" })}
-                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${
-                            newVideoForm.platform === "youtube"
+                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${newVideoForm.platform === "youtube"
                               ? "bg-red-600 text-white border-red-600 shadow-sm"
                               : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                          }`}
+                            }`}
                         >
                           <Youtube className="h-4 w-4" />
                           <span>YouTube Video</span>
@@ -18672,11 +18573,10 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => setNewVideoForm({ ...newVideoForm, platform: "instagram" })}
-                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${
-                            newVideoForm.platform === "instagram"
+                          className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 font-bold border transition-all cursor-pointer ${newVideoForm.platform === "instagram"
                               ? "bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white border-pink-600 shadow-sm"
                               : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                          }`}
+                            }`}
                         >
                           <Instagram className="h-4 w-4" />
                           <span>Instagram Reel</span>
@@ -18887,18 +18787,16 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setVideoFilterPlatform("all")}
-                        className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                          videoFilterPlatform === "all" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${videoFilterPlatform === "all" ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                          }`}
                       >
                         All Videos
                       </button>
                       <button
                         type="button"
                         onClick={() => setVideoFilterPlatform("youtube")}
-                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                          videoFilterPlatform === "youtube" ? "bg-red-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${videoFilterPlatform === "youtube" ? "bg-red-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                          }`}
                       >
                         <Youtube className="h-3 w-3" />
                         <span>YouTube</span>
@@ -18906,9 +18804,8 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setVideoFilterPlatform("instagram")}
-                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                          videoFilterPlatform === "instagram" ? "bg-pink-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${videoFilterPlatform === "instagram" ? "bg-pink-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                          }`}
                       >
                         <Instagram className="h-3 w-3" />
                         <span>Instagram Reels</span>
@@ -18942,11 +18839,10 @@ export default function AdminDashboardPage() {
                             return (
                               <div
                                 key={item.id}
-                                className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${
-                                  editingVideoItem?.id === item.id
+                                className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-white transition-all group ${editingVideoItem?.id === item.id
                                     ? "border-red-600 ring-2 ring-red-500/20 shadow-md"
                                     : "border-slate-200 hover:border-slate-400 hover:shadow-md"
-                                }`}
+                                  }`}
                               >
                                 {/* Video Thumbnail Card Header */}
                                 <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
@@ -18964,20 +18860,18 @@ export default function AdminDashboardPage() {
                                     onClick={() => setSelectedVideoPreview(item)}
                                     className="absolute inset-0 flex items-center justify-center cursor-pointer group/play"
                                   >
-                                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-xl backdrop-blur-md group-hover/play:scale-115 transition-transform ${
-                                      isInsta ? "bg-gradient-to-r from-purple-600 to-pink-600" : "bg-red-600"
-                                    }`}>
+                                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-xl backdrop-blur-md group-hover/play:scale-115 transition-transform ${isInsta ? "bg-gradient-to-r from-purple-600 to-pink-600" : "bg-red-600"
+                                      }`}>
                                       <Play className="h-5 w-5 fill-white ml-0.5" />
                                     </div>
                                   </div>
 
                                   {/* Platform Badge Overlay */}
                                   <div className="absolute top-2.5 left-2.5 z-10">
-                                    <span className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${
-                                      isInsta
+                                    <span className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-xs ${isInsta
                                         ? "bg-gradient-to-r from-purple-900/90 to-pink-900/90 text-pink-200 border-pink-400/40"
                                         : "bg-red-950/90 text-red-200 border-red-500/40"
-                                    }`}>
+                                      }`}>
                                       {isInsta ? <Instagram className="h-3 w-3" /> : <Youtube className="h-3 w-3" />}
                                       <span>{isInsta ? "Instagram Reel" : "YouTube Video"}</span>
                                     </span>
@@ -19448,9 +19342,8 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleToggleJobStatus(job)}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                              job.status !== "Closed" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
-                            }`}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold ${job.status !== "Closed" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                              }`}
                           >
                             {job.status !== "Closed" ? "Open" : "Closed"}
                           </button>
@@ -19721,7 +19614,7 @@ export default function AdminDashboardPage() {
                                     setNewTestimonialForm((prev) => ({ ...prev, avatar: uploadData.url }));
                                     toast.success("Avatar uploaded!");
                                   }
-                                } catch (err) {}
+                                } catch (err) { }
                               };
                               reader.readAsDataURL(file);
                             }}
@@ -20052,11 +19945,10 @@ export default function AdminDashboardPage() {
                       <button
                         key={pg.key}
                         onClick={() => handleSelectSeoPage(pg.key)}
-                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
+                        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${isSelected
                             ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                             : "text-slate-700 hover:bg-slate-100"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <PgIcon className={`h-4 w-4 ${isSelected ? "text-white" : "text-cyan-600"}`} />
@@ -20101,11 +19993,10 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                           Page Title (&lt;title&gt;) *
                         </label>
-                        <span className={`text-[11px] font-bold ${
-                          seoForm.title.length >= 50 && seoForm.title.length <= 65
+                        <span className={`text-[11px] font-bold ${seoForm.title.length >= 50 && seoForm.title.length <= 65
                             ? "text-emerald-600"
                             : "text-amber-600"
-                        }`}>
+                          }`}>
                           {seoForm.title.length} / 60 chars
                         </span>
                       </div>
@@ -20128,11 +20019,10 @@ export default function AdminDashboardPage() {
                         <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                           Meta Description *
                         </label>
-                        <span className={`text-[11px] font-bold ${
-                          seoForm.description.length >= 140 && seoForm.description.length <= 165
+                        <span className={`text-[11px] font-bold ${seoForm.description.length >= 140 && seoForm.description.length <= 165
                             ? "text-emerald-600"
                             : "text-amber-600"
-                        }`}>
+                          }`}>
                           {seoForm.description.length} / 160 chars
                         </span>
                       </div>
@@ -20346,13 +20236,12 @@ export default function AdminDashboardPage() {
                         className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/50 p-6 shadow-2xs hover:border-cyan-400 hover:bg-white hover:shadow-md transition-all space-y-4"
                       >
                         <div className={`absolute top-0 left-0 right-0 h-1 ${isScanner ? "bg-gradient-to-r from-amber-500 to-amber-600" : "bg-gradient-to-r from-cyan-500 to-blue-600"}`} />
-                        
+
                         <div className="flex items-center justify-between">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase border ${
-                            isScanner
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase border ${isScanner
                               ? "bg-amber-50 text-amber-900 border-amber-300"
                               : "bg-cyan-50 text-cyan-800 border-cyan-200"
-                          }`}>
+                            }`}>
                             <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${isScanner ? "bg-amber-600" : "bg-cyan-600"}`} />
                             {isScanner ? "📱 GATE SCANNER STAFF" : "🛡️ SUPER ADMIN"}
                           </span>
@@ -20381,9 +20270,8 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white font-black text-base shadow-sm ${
-                            isScanner ? "bg-gradient-to-br from-amber-600 to-amber-800" : "bg-gradient-to-br from-slate-800 to-slate-950"
-                          }`}>
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white font-black text-base shadow-sm ${isScanner ? "bg-gradient-to-br from-amber-600 to-amber-800" : "bg-gradient-to-br from-slate-800 to-slate-950"
+                            }`}>
                             {u.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -20845,17 +20733,15 @@ export default function AdminDashboardPage() {
                         key={tab.id}
                         type="button"
                         onClick={() => setSelectedEmailSubjectCategory(tab.id)}
-                        className={`rounded-2xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          isSelected
+                        className={`rounded-2xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${isSelected
                             ? "gradient-brand text-white shadow-md shadow-cyan-500/20"
                             : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
+                          }`}
                       >
                         <span>{tab.label}</span>
                         <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
-                            isSelected ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                          }`}
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            }`}
                         >
                           {count}
                         </span>
@@ -20948,15 +20834,14 @@ export default function AdminDashboardPage() {
                                   ID: {item.id}
                                 </span>
                                 <span
-                                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                                    isCert
+                                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${isCert
                                       ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
                                       : isAttendee
-                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                      : isAlert
-                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                                      : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                  }`}
+                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                        : isAlert
+                                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                          : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                    }`}
                                 >
                                   {item.recipient_type}
                                 </span>
@@ -20971,16 +20856,14 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleEmailSubjectActive(item.id, item.is_active)}
-                              className={`inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                                item.is_active === 1
+                              className={`inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${item.is_active === 1
                                   ? "border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
                                   : "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`h-2 w-2 rounded-full ${
-                                  item.is_active === 1 ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
-                                }`}
+                                className={`h-2 w-2 rounded-full ${item.is_active === 1 ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                                  }`}
                               />
                               {item.is_active === 1 ? "Template Active" : "Default Fallback"}
                             </button>
@@ -20992,11 +20875,10 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "subject" }))}
-                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
-                              activeSubTab === "subject"
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${activeSubTab === "subject"
                                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
                                 : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
-                            }`}
+                              }`}
                           >
                             <Mail className="h-4 w-4" />
                             <span>1. Subject Line Builder</span>
@@ -21005,11 +20887,10 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "body" }))}
-                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
-                              activeSubTab === "body"
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${activeSubTab === "body"
                                 ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30 scale-[1.02]"
                                 : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 hover:bg-cyan-50 dark:hover:bg-slate-600 border border-slate-300 dark:border-slate-600"
-                            }`}
+                              }`}
                           >
                             <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                             <span>2. Email Body & Message Matter 📝</span>
@@ -21018,11 +20899,10 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setEmailCardSubTab((prev) => ({ ...prev, [item.id]: "preview" }))}
-                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${
-                              activeSubTab === "preview"
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-all cursor-pointer ${activeSubTab === "preview"
                                 ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 scale-[1.02]"
                                 : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900"
-                            }`}
+                              }`}
                           >
                             <Eye className="h-4 w-4" />
                             <span>3. Full Live Email Preview 👁️</span>
@@ -21274,10 +21154,10 @@ export default function AdminDashboardPage() {
                                   <div className="space-y-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                                     {liveBodyText
                                       ? liveBodyText.split("\n\n").map((para, pIdx) => (
-                                          <p key={pIdx} className="whitespace-pre-line">
-                                            {para}
-                                          </p>
-                                        ))
+                                        <p key={pIdx} className="whitespace-pre-line">
+                                          {para}
+                                        </p>
+                                      ))
                                       : (
                                         <p className="italic text-slate-400">
                                           (No message body entered. Default template will be dispatched.)
@@ -21490,11 +21370,10 @@ export default function AdminDashboardPage() {
                     return (
                       <div
                         key={tpl.id}
-                        className={`rounded-3xl border bg-white shadow-sm transition-all overflow-hidden ${
-                          isDefault
+                        className={`rounded-3xl border bg-white shadow-sm transition-all overflow-hidden ${isDefault
                             ? "border-emerald-300 ring-2 ring-emerald-500/10"
                             : "border-slate-200 hover:border-slate-300"
-                        }`}
+                          }`}
                       >
                         {/* Template Card Header */}
                         <div className="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/40">
@@ -21603,19 +21482,17 @@ export default function AdminDashboardPage() {
                             {clauses.map((clause, idx) => (
                               <div
                                 key={idx}
-                                className={`rounded-2xl border transition-all p-4 ${
-                                  clause.isWarning
+                                className={`rounded-2xl border transition-all p-4 ${clause.isWarning
                                     ? "bg-amber-50/70 border-amber-200 text-amber-950"
                                     : "bg-slate-50/60 border-slate-200/80 text-slate-900 hover:bg-white hover:border-slate-300"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-start gap-3">
                                   <div
-                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-2xs ${
-                                      clause.isWarning
+                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-2xs ${clause.isWarning
                                         ? "bg-amber-500 text-white"
                                         : "bg-cyan-600 text-white"
-                                    }`}
+                                      }`}
                                   >
                                     {clause.num || idx + 1}
                                   </div>
@@ -22278,11 +22155,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIssuedCertStatusFilter("all")}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                        issuedCertStatusFilter === "all"
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${issuedCertStatusFilter === "all"
                           ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
                           : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
                         <Users className="h-5 w-5" />
@@ -22299,11 +22175,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIssuedCertStatusFilter("issued")}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                        issuedCertStatusFilter === "issued"
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${issuedCertStatusFilter === "issued"
                           ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md"
                           : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 font-bold border border-amber-300 dark:border-amber-700">
                         <Award className="h-5 w-5" />
@@ -22320,11 +22195,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIssuedCertStatusFilter("emailed")}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                        issuedCertStatusFilter === "emailed"
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${issuedCertStatusFilter === "emailed"
                           ? "bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md"
                           : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-300 dark:border-emerald-700">
                         <MailCheck className="h-5 w-5" />
@@ -22341,11 +22215,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIssuedCertStatusFilter("checked_in")}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                        issuedCertStatusFilter === "checked_in"
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${issuedCertStatusFilter === "checked_in"
                           ? "bg-blue-50 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-500/25 shadow-md"
                           : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-blue-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-400 font-bold border border-blue-300 dark:border-blue-700">
                         <UserCheck className="h-5 w-5" />
@@ -22362,11 +22235,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIssuedCertStatusFilter("pending")}
-                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
-                        issuedCertStatusFilter === "pending"
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${issuedCertStatusFilter === "pending"
                           ? "bg-rose-50 dark:bg-rose-950/80 border-rose-500 ring-2 ring-rose-500/25 shadow-md"
                           : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-rose-300"
-                      }`}
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-400 font-bold border border-rose-300 dark:border-rose-700">
                         <AlertTriangle className="h-5 w-5" />
@@ -22442,11 +22314,10 @@ export default function AdminDashboardPage() {
                           key={tab.id}
                           type="button"
                           onClick={() => setIssuedCertStatusFilter(tab.id as any)}
-                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            issuedCertStatusFilter === tab.id
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${issuedCertStatusFilter === tab.id
                               ? "bg-amber-500 text-slate-950 shadow-xs"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                          }`}
+                            }`}
                         >
                           {tab.label} ({tab.count})
                         </button>
@@ -22652,7 +22523,7 @@ export default function AdminDashboardPage() {
                                             parsedCertSettings = typeof matchingEvent.certificate_settings === "string"
                                               ? JSON.parse(matchingEvent.certificate_settings)
                                               : matchingEvent.certificate_settings;
-                                          } catch (e) {}
+                                          } catch (e) { }
                                         }
 
                                         setPreviewCertAttendee({
@@ -23133,11 +23004,10 @@ export default function AdminDashboardPage() {
                             key={pVal}
                             type="button"
                             onClick={() => setSiteSettings({ ...siteSettings, office_hours: pVal })}
-                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${
-                              siteSettings.office_hours === pVal
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${siteSettings.office_hours === pVal
                                 ? "bg-cyan-700 text-white border-cyan-700 shadow-2xs"
                                 : "bg-white text-slate-700 border-slate-200 hover:bg-cyan-100 hover:text-cyan-900"
-                            }`}
+                              }`}
                           >
                             {pVal}
                           </button>
@@ -23956,13 +23826,12 @@ export default function AdminDashboardPage() {
               <h3 className="text-2xl font-extrabold text-slate-900">
                 {selectedContactDetail.name}
               </h3>
-              <span className={`rounded-full px-3 py-0.5 text-xs font-extrabold border ${
-                selectedContactDetail.status === "replied"
+              <span className={`rounded-full px-3 py-0.5 text-xs font-extrabold border ${selectedContactDetail.status === "replied"
                   ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                   : selectedContactDetail.status === "read"
-                  ? "bg-slate-100 border-slate-200 text-slate-700"
-                  : "bg-purple-100 border-purple-300 text-purple-800"
-              }`}>
+                    ? "bg-slate-100 border-slate-200 text-slate-700"
+                    : "bg-purple-100 border-purple-300 text-purple-800"
+                }`}>
                 {selectedContactDetail.status === "replied" ? "🟢 Replied" : selectedContactDetail.status === "read" ? "⚪ Read" : "🔵 Unread"}
               </span>
             </div>
@@ -24136,11 +24005,10 @@ export default function AdminDashboardPage() {
               <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase text-purple-800 tracking-wider">2. Awards Nomination Status</span>
-                  <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
-                    selectedCmsDelegateDetail.awards_nomination === "Yes"
+                  <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${selectedCmsDelegateDetail.awards_nomination === "Yes"
                       ? "bg-purple-600 text-white shadow-xs"
                       : "bg-slate-200 text-slate-700"
-                  }`}>
+                    }`}>
                     {selectedCmsDelegateDetail.awards_nomination}
                   </span>
                 </div>
@@ -24395,15 +24263,14 @@ export default function AdminDashboardPage() {
                 <span className="rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-300">
                   {selectedRegDetail.registration_category || "Executive Pass"}
                 </span>
-                <span className={`rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider ${
-                  selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
+                <span className={`rounded-full px-3.5 py-1 text-xs font-black uppercase tracking-wider ${selectedRegDetail.payment_status === "Paid" || selectedRegDetail.payment_id
                     ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
                     : selectedRegDetail.payment_status === "Free" || selectedRegDetail.payment_status === "Approved (Free Pass)"
-                    ? "bg-blue-100 text-blue-900 border border-blue-300"
-                    : selectedRegDetail.payment_status === "Rejected"
-                    ? "bg-rose-100 text-rose-900 border border-rose-300"
-                    : "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
-                }`}>
+                      ? "bg-blue-100 text-blue-900 border border-blue-300"
+                      : selectedRegDetail.payment_status === "Rejected"
+                        ? "bg-rose-100 text-rose-900 border border-rose-300"
+                        : "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
+                  }`}>
                   {selectedRegDetail.payment_status || "Paid"}
                 </span>
               </div>
@@ -24679,22 +24546,20 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("general")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
-                    paymentModalTab === "general"
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${paymentModalTab === "general"
                       ? "border-cyan-600 text-cyan-700 bg-cyan-50/50 rounded-t-xl"
                       : "border-transparent text-slate-500 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   1. General & Taxes
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("plans")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                    paymentModalTab === "plans"
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "plans"
                       ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
                       : "border-transparent text-slate-500 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <Crown className="h-3.5 w-3.5 text-amber-500" />
                   <span>2. Tier Registration Plans</span>
@@ -24702,22 +24567,20 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("coupons")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
-                    paymentModalTab === "coupons"
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${paymentModalTab === "coupons"
                       ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
                       : "border-transparent text-slate-500 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   3. Early Bird & Coupons
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("awards")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                    paymentModalTab === "awards"
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "awards"
                       ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
                       : "border-transparent text-slate-500 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <Award className="h-3.5 w-3.5 text-amber-500" />
                   <span>4. Awards & Nominations</span>
@@ -24903,9 +24766,8 @@ export default function AdminDashboardPage() {
                     {(Array.isArray(paymentForm.pricing_plans) ? paymentForm.pricing_plans : []).map((plan: PricingPlanTier, pIdx: number) => (
                       <div
                         key={plan.id || pIdx}
-                        className={`rounded-2xl border p-4 space-y-3 bg-white shadow-sm relative ${
-                          plan.is_featured ? "border-amber-400 ring-2 ring-amber-400/20" : "border-slate-200"
-                        }`}
+                        className={`rounded-2xl border p-4 space-y-3 bg-white shadow-sm relative ${plan.is_featured ? "border-amber-400 ring-2 ring-amber-400/20" : "border-slate-200"
+                          }`}
                       >
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                           <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1">
@@ -25646,7 +25508,7 @@ export default function AdminDashboardPage() {
               {(() => {
                 let parsedPlans: PricingPlanTier[] = [];
                 if (typeof ticketPreviewItem.pricing_plans === "string") {
-                  try { parsedPlans = JSON.parse(ticketPreviewItem.pricing_plans); } catch (e) {}
+                  try { parsedPlans = JSON.parse(ticketPreviewItem.pricing_plans); } catch (e) { }
                 } else if (Array.isArray(ticketPreviewItem.pricing_plans)) {
                   parsedPlans = ticketPreviewItem.pricing_plans as any;
                 }
@@ -26008,13 +25870,12 @@ export default function AdminDashboardPage() {
                     handleOfflineExcelFileChange(e.dataTransfer.files[0]);
                   }
                 }}
-                className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all text-center ${
-                  offlineDragOver
+                className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all text-center ${offlineDragOver
                     ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/40"
                     : offlineExcelFile
-                    ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20"
-                    : "border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 hover:border-blue-400"
-                }`}
+                      ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20"
+                      : "border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 hover:border-blue-400"
+                  }`}
               >
                 <input
                   type="file"
@@ -26629,20 +26490,18 @@ export default function AdminDashboardPage() {
                   {termsForm.clauses.map((clause, idx) => (
                     <div
                       key={idx}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        clause.isWarning
+                      className={`p-4 rounded-2xl border transition-all ${clause.isWarning
                           ? "bg-amber-50/60 border-amber-300/80"
                           : "bg-white border-slate-200 hover:border-slate-300"
-                      } shadow-2xs`}
+                        } shadow-2xs`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-3 pb-2.5 border-b border-slate-100">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
-                              clause.isWarning
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${clause.isWarning
                                 ? "bg-amber-500 text-white"
                                 : "bg-cyan-600 text-white"
-                            }`}
+                              }`}
                           >
                             {clause.num || idx + 1}
                           </span>
