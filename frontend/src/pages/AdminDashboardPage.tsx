@@ -1746,8 +1746,9 @@ export default function AdminDashboardPage() {
 
       // 16. Fetch Event Payment Configurations
       try {
-        const payRes = await fetch("/api/admin/event-payments", {
+        const payRes = await fetch(`/api/admin/event-payments?_t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
         const payData = await payRes.json();
         if (payData.success && Array.isArray(payData.payments)) {
@@ -1920,6 +1921,41 @@ export default function AdminDashboardPage() {
     socket.on("new_newsletter_subscriber", onNewSubscriber);
     socket.on("settings_updated", onSettingsUpdate);
 
+    const onEventPaymentUpdate = (data: any) => {
+      console.log("[Socket.IO] Realtime event payment update received:", data);
+      if (data && data.payment) {
+        const pay = data.payment;
+        setEventPayments((prev) => {
+          const updated = [...prev];
+          const idx = updated.findIndex((p) => p.id === pay.id || p.event_id === pay.event_id || (p.event_slug && p.event_slug === pay.event_slug));
+          if (idx !== -1) {
+            updated[idx] = { ...updated[idx], ...pay };
+          } else {
+            updated.unshift(pay);
+          }
+          return updated;
+        });
+      }
+      // Re-fetch fresh event payment settings with cache-busting
+      const currentToken = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
+      if (currentToken) {
+        fetch(`/api/admin/event-payments?_t=${Date.now()}`, {
+          headers: { Authorization: `Bearer ${currentToken}` },
+          cache: "no-store",
+        })
+          .then((res) => res.json())
+          .then((d) => {
+            if (d.success && Array.isArray(d.payments)) {
+              setEventPayments(d.payments);
+            }
+          })
+          .catch((err) => console.warn("Socket refresh event payments error:", err));
+      }
+    };
+
+    socket.on("event_payment_updated", onEventPaymentUpdate);
+    socket.on("event_payment_deleted", onEventPaymentUpdate);
+
     const onRegVisibility = ({ id, allow_paid_registration, allow_free_registration }: any) => {
       setCmsEvents((prev) =>
         prev.map((e) =>
@@ -1950,6 +1986,8 @@ export default function AdminDashboardPage() {
       socket.off("testimonial_updated", onTestimonialUpdate);
       socket.off("new_newsletter_subscriber", onNewSubscriber);
       socket.off("settings_updated", onSettingsUpdate);
+      socket.off("event_payment_updated", onEventPaymentUpdate);
+      socket.off("event_payment_deleted", onEventPaymentUpdate);
       socket.off("event_registration_visibility_changed", onRegVisibility);
     };
   }, []);
@@ -2502,6 +2540,38 @@ export default function AdminDashboardPage() {
         invalidateClientCache();
         toast.success(editingPaymentConfig ? "Event payment settings updated!" : "Event payment configuration created!");
         setShowPaymentModal(false);
+
+        // 1. Instant optimistic state update so cards refresh in 0 milliseconds
+        const targetId = editingPaymentConfig?.id || data.id || `PAY-${paymentForm.event_id}`;
+        setEventPayments((prev) => {
+          const updated = [...prev];
+          const idx = updated.findIndex((p) => p.id === targetId || p.event_id === paymentForm.event_id || (p.event_slug && p.event_slug === paymentForm.event_slug));
+          const updatedRow: any = {
+            ...(editingPaymentConfig || {}),
+            ...paymentForm,
+            id: targetId,
+            updated_at: new Date().toISOString(),
+          };
+          if (idx !== -1) {
+            updated[idx] = { ...updated[idx], ...updatedRow };
+          } else {
+            updated.unshift(updatedRow);
+          }
+          return updated;
+        });
+
+        // 2. Fetch fresh payments in parallel with cache bust
+        try {
+          const freshRes = await fetch(`/api/admin/event-payments?_t=${Date.now()}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          });
+          const freshData = await freshRes.json();
+          if (freshData.success && Array.isArray(freshData.payments)) {
+            setEventPayments(freshData.payments);
+          }
+        } catch (_) {}
+
         fetchDashboardData();
       } else {
         toast.error(data.message || "Failed to save event payment settings.");

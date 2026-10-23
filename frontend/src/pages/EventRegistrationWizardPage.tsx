@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { socket } from "@/lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -461,8 +462,56 @@ export default function EventRegistrationWizardPage() {
         console.warn("[Wizard] Could not fetch event payment settings:", err);
       });
 
+    // Realtime Socket.IO: Live Event Payment & Pricing Updates
+    const handleEventPaymentSocket = (data: any) => {
+      if (!isMounted || !data) return;
+      const targetSlug = (data.event_slug || data.event_id || "").toLowerCase();
+      const currentSlug = activeSlug.toLowerCase();
+      const currentClean = cleanActiveSlug.toLowerCase();
+      if (
+        !targetSlug ||
+        targetSlug === currentSlug ||
+        targetSlug === currentClean ||
+        currentSlug.includes(targetSlug) ||
+        targetSlug.includes(currentSlug)
+      ) {
+        if (data.payment) {
+          const payment = data.payment;
+          setEventData((prev) => ({
+            ...prev,
+            early_bird_enabled: payment.early_bird_enabled,
+            early_bird_price: payment.early_bird_price,
+            early_bird_start_date: payment.early_bird_start_date,
+            early_bird_end_date: payment.early_bird_end_date,
+            gst_percentage: payment.gst_percentage,
+            gst_included: payment.gst_included,
+            registration_fee: payment.registration_fee,
+          }));
+          if (payment.pricing_plans) {
+            applyPricingPlans(payment.pricing_plans);
+          }
+          applyAwardSettings(payment);
+          toast.info("⚡ Live event pricing & pass tiers updated in real-time!", { id: "live-pricing-toast" });
+        } else {
+          fetch(`/api/event-payments/event/${activeSlug}?_t=${Date.now()}`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then((json) => {
+              if (!isMounted) return;
+              if (json.success && json.payment) {
+                if (json.payment.pricing_plans) applyPricingPlans(json.payment.pricing_plans);
+                applyAwardSettings(json.payment);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    };
+
+    socket.on("event_payment_updated", handleEventPaymentSocket);
+
     return () => {
       isMounted = false;
+      socket.off("event_payment_updated", handleEventPaymentSocket);
     };
   }, [slug, searchParams]);
 

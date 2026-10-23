@@ -6329,6 +6329,7 @@ app.get("/api/admin/events", authenticateAdmin, async (_req, res) => {
 app.get("/api/admin/event-payments", authenticateAdmin, async (_req, res) => {
   try {
     if (!pool) return res.json({ success: true, payments: [] });
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     await ensureEventPaymentsTable();
     const [rows]: any = await pool.query(`
       SELECT p.*, e.title as event_title, e.category as event_category, e.city as event_city, e.date as event_date, e.image as event_image, e.slug as event_slug
@@ -6528,6 +6529,21 @@ async function upsertEventPaymentSettings(data: any) {
     }
     invalidateFastCache("event_payment_");
     invalidateFastCache("events_");
+    try {
+      if (pool) {
+        const [savedRows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE id = ? OR event_id = ? LIMIT 1", [id, event_id]);
+        if (savedRows && savedRows.length > 0) {
+          io.emit("event_payment_updated", {
+            event_id,
+            event_slug,
+            payment: savedRows[0],
+          });
+          io.emit("event_updated", { id: event_id, slug: event_slug });
+        }
+      }
+    } catch (wsErr) {
+      console.warn("[Socket.IO] Broadcast event_payment_updated error:", wsErr);
+    }
     return id;
   } else {
     try {
@@ -6581,6 +6597,21 @@ async function upsertEventPaymentSettings(data: any) {
     }
     invalidateFastCache("event_payment_");
     invalidateFastCache("events_");
+    try {
+      if (pool) {
+        const [savedRows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE id = ? OR event_id = ? LIMIT 1", [id, event_id]);
+        if (savedRows && savedRows.length > 0) {
+          io.emit("event_payment_updated", {
+            event_id,
+            event_slug,
+            payment: savedRows[0],
+          });
+          io.emit("event_updated", { id: event_id, slug: event_slug });
+        }
+      }
+    } catch (wsErr) {
+      console.warn("[Socket.IO] Broadcast event_payment_updated error:", wsErr);
+    }
     return id;
   }
 }
@@ -6605,6 +6636,10 @@ app.delete("/api/admin/event-payments/:id", authenticateAdmin, async (req, res) 
   try {
     if (pool) {
       await pool.query("DELETE FROM event_payment_settings WHERE id = ? OR event_id = ?", [id, id]);
+      invalidateFastCache("event_payment_");
+      invalidateFastCache("events_");
+      io.emit("event_payment_deleted", { id });
+      io.emit("event_payment_updated", { id, deleted: true });
       res.json({ success: true, message: "Payment configuration deleted successfully!" });
     }
   } catch (err) {
@@ -6630,6 +6665,9 @@ app.post("/api/admin/event-payments/bulk", authenticateAdmin, async (req, res) =
       } else if (action === "delete") {
         await pool.query("DELETE FROM event_payment_settings WHERE id IN (?) OR event_id IN (?)", [ids, ids]);
       }
+      invalidateFastCache("event_payment_");
+      invalidateFastCache("events_");
+      io.emit("event_payment_updated", { action, ids });
       res.json({ success: true, message: `Bulk action '${action}' completed successfully!` });
     }
   } catch (err) {
