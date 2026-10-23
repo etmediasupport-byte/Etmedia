@@ -11130,10 +11130,10 @@ export default function AdminDashboardPage() {
 
               {/* Table of Offline Candidates */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full min-w-[1000px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
                     <tr>
-                      <th className="py-3.5 px-3 min-w-[56px] w-14 text-center">
+                      <th className="py-2.5 px-2 w-8 text-center">
                         <input
                           type="checkbox"
                           checked={
@@ -11144,28 +11144,14 @@ export default function AdminDashboardPage() {
                             handleToggleSelectAllOfflineRegistrations(filteredOfflineRegistrations.map((r) => r.id))
                           }
                           aria-label="Select all offline delegates"
-                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </th>
-                      <th className="py-3 px-3 w-10 text-center">
-                        <input
-                          type="checkbox"
-                          checked={
-                            filteredOfflineRegistrations.length > 0 &&
-                            filteredOfflineRegistrations.every((r) => selectedOfflineRegIds.includes(r.id))
-                          }
-                          onChange={() =>
-                            handleToggleSelectAllOfflineRegistrations(filteredOfflineRegistrations.map((r) => r.id))
-                          }
-                          aria-label="Select all offline delegates"
-                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                      </th>
-                      <th className="py-3 px-3.5 min-w-[200px]">Candidate & Contact</th>
-                      <th className="py-3 px-3.5 min-w-[170px]">Organization & City</th>
-                      <th className="py-3 px-3.5 min-w-[200px]">Event & Pass Tier</th>
-                      <th className="py-3 px-3.5 min-w-[150px]">Payment & Source</th>
-                      <th className="py-3 px-3.5 text-right w-28 min-w-[110px]">Actions</th>
+                      <th className="py-2.5 px-3">Candidate & Contact</th>
+                      <th className="py-2.5 px-3">Organization & City</th>
+                      <th className="py-2.5 px-3">Event & Pass Tier</th>
+                      <th className="py-2.5 px-3">Payment & Source</th>
+                      <th className="py-2.5 px-3 text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -11845,17 +11831,15 @@ export default function AdminDashboardPage() {
 
               {/* ATTENDANCE DELEGATE TABLE */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs custom-scrollbar">
-                <table className="w-full min-w-[1260px] text-left text-xs">
+                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     <tr>
-                      <th className="py-3.5 px-3 w-12 text-center">#</th>
-                      <th className="py-3.5 px-3 min-w-[220px]">Attendee Profile</th>
-                      <th className="py-3.5 px-3 min-w-[170px]">Company & Role</th>
-                      <th className="py-3.5 px-3 min-w-[180px]">Summit / Event</th>
-                      <th className="py-3.5 px-3 min-w-[130px]">Pass Tier</th>
-                      <th className="py-3.5 px-3 min-w-[110px] text-center">Gate Status</th>
-                      <th className="py-3.5 px-3 min-w-[130px]">Check-In Details</th>
-                      <th className="py-3.5 px-3 text-right min-w-[280px] w-[280px] pr-4">Actions</th>
+                      <th className="py-2.5 px-2 w-8 text-center">#</th>
+                      <th className="py-2.5 px-3">Attendee Profile</th>
+                      <th className="py-2.5 px-3">Company & Role</th>
+                      <th className="py-2.5 px-3">Summit / Pass</th>
+                      <th className="py-2.5 px-3 text-center">Gate Status</th>
+                      <th className="py-2.5 px-3 text-right w-36">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
@@ -11873,20 +11857,21 @@ export default function AdminDashboardPage() {
                               isPresent ? "bg-emerald-50/30 dark:bg-emerald-950/10" : ""
                             }`}
                           >
-                            <td className="py-3.5 px-3 text-slate-400 font-mono text-[11px]">
+                            <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px] text-center">
                               {idx + 1}
                             </td>
 
-                            {/* Profile (Name, Pass ID, Email, Phone) */}
-                            <td className="py-3.5 px-3">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5">
-                                  <strong className="font-bold text-slate-900 dark:text-white capitalize text-sm">
-                                    {attendeeName}
-                                  </strong>
-                                </div>
-                                <div className="flex items-center gap-1 text-[11px] font-mono text-cyan-700 dark:text-cyan-400">
-                                  <span>{del.id}</span>
+                            {/* Attendee Profile (Name, Pass ID, Email) */}
+                            <td className="py-2.5 px-3">
+                              <div className="space-y-0.5">
+                                <strong
+                                  className="font-bold text-slate-900 dark:text-white capitalize text-xs block truncate max-w-[170px]"
+                                  title={attendeeName}
+                                >
+                                  {attendeeName}
+                                </strong>
+                                <div className="flex items-center gap-1 text-[10px] font-mono text-cyan-700 dark:text-cyan-400">
+                                  <span className="truncate max-w-[130px]">{del.id}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -11896,118 +11881,91 @@ export default function AdminDashboardPage() {
                                     className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                                     title="Copy Pass ID"
                                   >
-                                    <Copy className="h-3 w-3" />
+                                    <Copy className="h-2.5 w-2.5" />
                                   </button>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                  {del.email && (
-                                    <a
-                                      href={`mailto:${del.email}`}
-                                      className="hover:text-cyan-600 underline-offset-2 hover:underline truncate max-w-[180px]"
-                                    >
-                                      {del.email}
-                                    </a>
-                                  )}
-                                  {del.phone && (
-                                    <a
-                                      href={`tel:${del.phone}`}
-                                      className="hover:text-cyan-600 truncate font-mono"
-                                    >
-                                      {del.phone}
-                                    </a>
-                                  )}
-                                </div>
+                                {del.email && (
+                                  <a
+                                    href={`mailto:${del.email}`}
+                                    className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-cyan-600 truncate block max-w-[170px]"
+                                    title={del.email}
+                                  >
+                                    {del.email}
+                                  </a>
+                                )}
                               </div>
                             </td>
 
                             {/* Company & Role */}
-                            <td className="py-3.5 px-3">
+                            <td className="py-2.5 px-3">
                               <div className="space-y-0.5">
-                                <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                                  {del.organization || "Enterprise Delegate"}
+                                <span
+                                  className="font-bold text-slate-900 dark:text-slate-100 block text-xs truncate max-w-[160px]"
+                                  title={del.organization || "Independent"}
+                                >
+                                  {del.organization || "Independent"}
                                 </span>
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-[150px]">
                                   {del.designation || "Executive"}
                                 </span>
                                 {del.city && (
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                    <MapPin className="h-2.5 w-2.5" />
-                                    {del.city}
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
+                                    <MapPin className="h-2.5 w-2.5 shrink-0" />
+                                    <span>{del.city}</span>
                                   </span>
                                 )}
                               </div>
                             </td>
 
-                            {/* Summit / Event */}
-                            <td className="py-3.5 px-3">
-                              <div className="space-y-0.5 max-w-[200px]">
+                            {/* Summit & Pass Tier */}
+                            <td className="py-2.5 px-3">
+                              <div className="space-y-1">
                                 <span
-                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs"
+                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs max-w-[170px]"
                                   title={del.event_title || del.event_id}
                                 >
                                   {del.event_title || del.event_id || "Executive Conclave"}
                                 </span>
-                                {del.created_at && (
-                                  <span className="text-[10px] font-mono text-slate-400 block">
-                                    Reg: {new Date(del.created_at).toLocaleDateString("en-IN")}
-                                  </span>
-                                )}
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[160px]">
+                                  {del.pass_name || del.registration_category || "Delegate Pass"}
+                                </span>
                               </div>
                             </td>
 
-                            {/* Pass Tier */}
-                            <td className="py-3.5 px-3">
-                              <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap shadow-2xs">
-                                {del.pass_name || del.registration_category || "Delegate Pass"}
-                              </span>
-                            </td>
-
                             {/* Gate Status */}
-                            <td className="py-3.5 px-3 text-center">
+                            <td className="py-2.5 px-3 text-center">
                               {isPresent ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
-                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                                  <span>Present</span>
-                                </span>
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                    <span>Present</span>
+                                  </span>
+                                  {del.checked_in_at && (
+                                    <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5 font-bold whitespace-nowrap">
+                                      {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                  )}
+                                </div>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
                                   <Clock className="h-3 w-3" />
                                   <span>Absent</span>
                                 </span>
                               )}
                             </td>
 
-                            {/* Check-In Details */}
-                            <td className="py-3.5 px-3 text-xs font-mono text-slate-600 dark:text-slate-400">
-                              {del.checked_in_at ? (
-                                <div className="space-y-0.5">
-                                  <span className="font-bold text-emerald-700 dark:text-emerald-400 block">
-                                    {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 block">
-                                    {new Date(del.checked_in_at).toLocaleDateString("en-IN")}
-                                  </span>
-                                  <span className="text-[9px] text-slate-400 block">
-                                    by {del.checked_in_by || "Gate Coordinator"}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic">Awaiting scan</span>
-                              )}
-                            </td>
-
                             {/* Actions */}
-                            <td className="py-3.5 px-3 text-right min-w-[280px] w-[280px] whitespace-nowrap pr-4">
-                              <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
                                 {isPresent ? (
-                                  <div className="flex items-center gap-1.5">
+                                  <>
                                     <button
                                       type="button"
                                       onClick={() => setPreviewCertAttendee(del)}
-                                      className="p-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
                                       title="Preview Letterhead E-Certificate"
                                     >
                                       <Award className="h-3.5 w-3.5 text-amber-600" />
@@ -12017,10 +11975,10 @@ export default function AdminDashboardPage() {
                                       type="button"
                                       onClick={() => handleSendCertificate(del.id, del.name)}
                                       disabled={sendingCertId === del.id}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
+                                      className={`h-7 px-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
                                         del.certificate_sent_at
                                           ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
-                                          : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20"
+                                          : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black"
                                       }`}
                                       title={
                                         del.certificate_sent_at
@@ -12035,23 +11993,23 @@ export default function AdminDashboardPage() {
                                       ) : (
                                         <Mail className="h-3 w-3" />
                                       )}
-                                      <span>{del.certificate_sent_at ? "Resend" : "Send Cert"}</span>
+                                      <span>{del.certificate_sent_at ? "Resend" : "Cert"}</span>
                                     </button>
 
                                     <button
                                       type="button"
                                       onClick={() => handleUndoAttendance(del.id)}
-                                      className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
                                       title="Undo check-in (revert attendee back to Absent status)"
                                     >
-                                      Undo
+                                      <RotateCcw className="h-3 w-3" />
                                     </button>
-                                  </div>
+                                  </>
                                 ) : (
                                   <button
                                     type="button"
                                     onClick={() => handleQuickCheckin(del.id)}
-                                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                                   >
                                     Check In
                                   </button>
@@ -12070,22 +12028,21 @@ export default function AdminDashboardPage() {
                                     });
                                     setShowThermalBadgeModal(true);
                                   }}
-                                  className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+                                  className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs"
                                   title="Print TVS Thermal Badge Pass Slip"
                                 >
                                   <Printer className="h-3.5 w-3.5 text-slate-700 dark:text-slate-300" />
-                                  <span className="text-[10px] font-bold">Print</span>
                                 </button>
 
-                                <a
-                                  href={`/verify-pass/${del.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                  title="View official delegate pass token"
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedRegDetail(del as Registration)}
+                                  title="View Full Attendee Dossier & Details"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 dark:text-cyan-400 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
                                 >
-                                  <ExternalLink className="h-3.5 w-3.5" />
-                                </a>
+                                  <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                                  <span>View</span>
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -12093,7 +12050,7 @@ export default function AdminDashboardPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center">
+                        <td colSpan={6} className="py-12 text-center">
                           <div className="max-w-md mx-auto space-y-3">
                             <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
                               <Search className="h-6 w-6" />
@@ -12860,16 +12817,16 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full min-w-[1050px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50/90 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
                     <tr>
-                      <th className="py-3 px-3.5 min-w-[180px]">Delegate Name</th>
-                      <th className="py-3 px-3.5 min-w-[180px]">Designation & Company</th>
-                      <th className="py-3 px-3.5 min-w-[180px]">Contact Info</th>
-                      <th className="py-3 px-3.5 min-w-[140px]">Industry & Location</th>
-                      <th className="py-3 px-3.5 min-w-[130px]">Awards Nomination</th>
-                      <th className="py-3 px-3.5 min-w-[110px]">Submitted At</th>
-                      <th className="py-3 px-3.5 text-right w-24 min-w-[90px]">Actions</th>
+                      <th className="py-2.5 px-3">Delegate Name</th>
+                      <th className="py-2.5 px-3">Designation & Company</th>
+                      <th className="py-2.5 px-3">Contact Info</th>
+                      <th className="py-2.5 px-3">Industry & Location</th>
+                      <th className="py-2.5 px-3">Awards Nomination</th>
+                      <th className="py-2.5 px-3">Submitted At</th>
+                      <th className="py-2.5 px-3 text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -13113,16 +13070,16 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full min-w-[960px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
                     <tr>
-                      <th className="py-3.5 px-4 min-w-[110px]">Status</th>
-                      <th className="py-3.5 px-4 min-w-[180px]">Sender</th>
-                      <th className="py-3.5 px-4 min-w-[200px]">Contact Info</th>
-                      <th className="py-3.5 px-4 min-w-[140px]">Category</th>
-                      <th className="py-3.5 px-4 min-w-[220px]">Message</th>
-                      <th className="py-3.5 px-4 min-w-[130px]">Submitted At</th>
-                      <th className="py-3.5 px-4 min-w-[140px] text-right">Actions</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Sender</th>
+                      <th className="py-2.5 px-3">Contact Info</th>
+                      <th className="py-2.5 px-3">Category</th>
+                      <th className="py-2.5 px-3">Message</th>
+                      <th className="py-2.5 px-3">Submitted At</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -16086,6 +16043,43 @@ export default function AdminDashboardPage() {
                   Timestamp: {new Date(selectedRegDetail.created_at).toLocaleString()}
                 </p>
               </div>
+
+              {/* Gate Attendance & Admission Details */}
+              {(selectedRegDetail.checkin_status || selectedRegDetail.checked_in_at) && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between border-b border-emerald-200/80 pb-1.5">
+                    <span className="text-[11px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>Gate Admission & Attendance</span>
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        selectedRegDetail.checkin_status?.toLowerCase() === "present"
+                          ? "bg-emerald-200 text-emerald-900"
+                          : "bg-slate-200 text-slate-800"
+                      }`}
+                    >
+                      {selectedRegDetail.checkin_status || "Awaiting Scan"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Gate Check-In Time:</span>
+                      <strong className="text-slate-900 font-mono text-xs">
+                        {selectedRegDetail.checked_in_at
+                          ? new Date(selectedRegDetail.checked_in_at).toLocaleString("en-IN")
+                          : "Not yet checked in"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Admitted By:</span>
+                      <strong className="text-slate-900 text-xs">
+                        {selectedRegDetail.checked_in_by || "Gate Coordinator"}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex gap-3">
