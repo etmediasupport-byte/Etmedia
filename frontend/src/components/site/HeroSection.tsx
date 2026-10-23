@@ -219,35 +219,35 @@ export function HeroSection() {
   const currentPhrase = heroPhrases[phraseIndex] ?? heroPhrases[0]!;
 
   return (
-    <section className="relative w-full overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-18 sm:pt-20 lg:pt-22 pb-3 sm:pb-4">
+    <section className="relative w-full min-h-[92vh] lg:min-h-screen flex flex-col justify-between overflow-hidden bg-black text-slate-100 border-b border-zinc-800/90 pt-20 sm:pt-24 lg:pt-26 pb-4 sm:pb-6">
       
-      {/* 6 Real Summit Photos Carousel Background - Perfectly Aligned Below Navbar without Cropping Heads */}
-      <div className="absolute inset-x-0 bottom-0 top-16 sm:top-18 lg:top-20 overflow-hidden pointer-events-none z-0">
+      {/* 6 Real Summit Photos Carousel Background - 1920x1080 Widescreen Full-Screen Fit */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <AnimatePresence mode="sync">
           <motion.img
             key={bgImageIndex}
             src={heroBackgroundImages[bgImageIndex].url}
             alt={heroBackgroundImages[bgImageIndex].title}
-            initial={{ opacity: 0, scale: 1.03 }}
-            animate={{ opacity: 0.86, scale: 1.0 }}
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 0.90, scale: 1.0 }}
             exit={{ opacity: 0 }}
             transition={{
-              opacity: { duration: 1.0, ease: "easeInOut" },
+              opacity: { duration: 0.9, ease: "easeInOut" },
               scale: { duration: 6, ease: "linear" },
             }}
-            style={{ transformOrigin: "center top" }}
-            className="absolute inset-0 w-full h-full object-cover object-top filter brightness-[0.96] contrast-[1.05]"
+            style={{ transformOrigin: "center center" }}
+            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.94] contrast-[1.04]"
           />
         </AnimatePresence>
 
         {/* Lightweight translucent gradient for pristine text readability without hiding the photos */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/25 z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/25 z-1" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.04)_1px,transparent_1px)] [background-size:32px_32px] z-1" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/55 to-black/20 z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 z-1" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(20,198,248,0.03)_1px,transparent_1px)] [background-size:32px_32px] z-1" />
       </div>
 
       {/* Floating Live Summit Photo Indicator */}
-      <div className="absolute top-20 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-slate-200 shadow-xl">
+      <div className="absolute top-22 right-6 sm:right-10 z-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-slate-200 shadow-xl">
         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="text-[11px] font-bold text-slate-200 truncate max-w-[220px]">
           {heroBackgroundImages[bgImageIndex].title}
@@ -278,7 +278,7 @@ export function HeroSection() {
       </div>
 
       {/* MAIN CONTENT CONTAINER */}
-      <div className="container-x relative z-10 flex flex-col justify-between pt-0">
+      <div className="container-x relative z-10 flex-1 flex flex-col justify-between pt-0">
         
         {/* TOP ROW: TWO COLUMNS (LEFT CONTENT & RIGHT INTERACTIVE GLOBE) */}
         <div className="grid gap-3 lg:grid-cols-12 items-center">
@@ -399,7 +399,7 @@ export function HeroSection() {
           transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative z-20 mt-2.5 sm:mt-4 rounded-2xl sm:rounded-3xl border border-zinc-800 bg-zinc-950/90 p-2.5 sm:p-4 shadow-[0_25px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden group/stats"
+          className="relative z-20 mt-auto rounded-2xl sm:rounded-3xl border border-zinc-800/80 bg-zinc-950/85 p-2.5 sm:p-4 shadow-[0_25px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl overflow-hidden group/stats"
         >
           {/* Ambient Inner Glow Beam */}
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-blue-500/10 blur-xl opacity-50 group-hover/stats:opacity-100 transition-opacity duration-700 pointer-events-none" />
