@@ -9584,30 +9584,30 @@ export default function AdminDashboardPage() {
           {activeTab === "event-registrations" && (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
               {/* 7 Interactive Quick Filter Cards: All, Paid, Awards, Free Applications, Granted Free, Offline, Dropout */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-2.5">
                 {/* Card 1: All Delegates */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus("all")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "all"
-                      ? "bg-cyan-50 dark:bg-cyan-950/80 border-cyan-500 ring-2 ring-cyan-500/25 shadow-md shadow-cyan-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                      ? "bg-cyan-50/80 dark:bg-cyan-950/60 border-cyan-500 ring-1 ring-cyan-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "all"
-                      ? "bg-cyan-600 text-white shadow-xs scale-105"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                      ? "bg-cyan-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                   }`}>
-                    <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Users className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-tight">
                       All Delegates
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.all}</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.all}</span>
                       <span className="text-[10px] text-slate-400 font-medium">Total</span>
                     </div>
                   </div>
@@ -9617,26 +9617,26 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "paid" ? "all" : "paid")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "paid"
-                      ? "bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 ring-2 ring-emerald-500/25 shadow-md shadow-emerald-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700"
+                      ? "bg-emerald-50/80 dark:bg-emerald-950/60 border-emerald-500 ring-1 ring-emerald-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "paid"
-                      ? "bg-emerald-600 text-white shadow-xs scale-105"
-                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                   }`}>
-                    <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <IndianRupee className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Paid Passes
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.paid}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold">Confirmed</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.paid}</span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Confirmed</span>
                     </div>
                   </div>
                 </button>
@@ -9645,138 +9645,138 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "awards" ? "all" : "awards")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "awards"
-                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
+                      ? "bg-amber-50/80 dark:bg-amber-950/60 border-amber-500 ring-1 ring-amber-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "awards"
-                      ? "bg-amber-500 text-white shadow-xs scale-105"
-                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                      ? "bg-amber-500 text-white"
+                      : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
                   }`}>
-                    <Award className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Award className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Award & Nominations
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.awards}</span>
-                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Nominated 🏆</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.awards}</span>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Nominated 🏆</span>
                     </div>
                   </div>
                 </button>
 
-                {/* Card 4: Free Applications (Awaiting Admin Grant) */}
+                {/* Card 4: Free Applications */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "pending_review" || regFilterStatus === "pending"
-                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
+                      ? "bg-amber-50/80 dark:bg-amber-950/60 border-amber-500 ring-1 ring-amber-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "pending_review" || regFilterStatus === "pending"
-                      ? "bg-amber-600 text-white shadow-xs scale-105"
-                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                      ? "bg-amber-600 text-white"
+                      : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
                   }`}>
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Clock className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Free Applications
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.pendingReview}</span>
-                      <span className="text-[10px] text-amber-600 font-bold">Awaiting ⏳</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.pendingReview}</span>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Awaiting ⏳</span>
                     </div>
                   </div>
                 </button>
 
-                {/* Card 4: Granted Free Passes (Passes Issued) */}
+                {/* Card 5: Granted Free Passes */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "free_granted" || regFilterStatus === "free" ? "all" : "free_granted")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "free_granted" || regFilterStatus === "free"
-                      ? "bg-purple-50 dark:bg-purple-950/80 border-purple-500 ring-2 ring-purple-500/25 shadow-md shadow-purple-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
+                      ? "bg-purple-50/80 dark:bg-purple-950/60 border-purple-500 ring-1 ring-purple-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "free_granted" || regFilterStatus === "free"
-                      ? "bg-purple-600 text-white shadow-xs scale-105"
-                      : "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+                      ? "bg-purple-600 text-white"
+                      : "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
                   }`}>
-                    <Ticket className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Ticket className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Granted Free Passes
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.freeGranted}</span>
-                      <span className="text-[10px] text-purple-600 font-bold">Granted ✅</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.freeGranted}</span>
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Granted ✅</span>
                     </div>
                   </div>
                 </button>
 
-                {/* Card 5: Offline Registrations (Excel Imports & On-Spot) */}
+                {/* Card 6: Offline Candidates */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "offline" ? "all" : "offline")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "offline"
-                      ? "bg-blue-50 dark:bg-blue-950/80 border-blue-500 ring-2 ring-blue-500/25 shadow-md shadow-blue-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
+                      ? "bg-blue-50/80 dark:bg-blue-950/60 border-blue-500 ring-1 ring-blue-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "offline"
-                      ? "bg-blue-600 text-white shadow-xs scale-105"
-                      : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                      ? "bg-blue-600 text-white"
+                      : "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
                   }`}>
-                    <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <FileSpreadsheet className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Offline Candidates
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.offline}</span>
-                      <span className="text-[10px] text-blue-600 font-bold">Offline 📂</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.offline}</span>
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Offline 📂</span>
                     </div>
                   </div>
                 </button>
 
-                {/* Card 6: Dropout / Incomplete */}
+                {/* Card 7: Dropout / Leads */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "dropped" ? "all" : "dropped")}
-                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                     regFilterStatus === "dropped"
-                      ? "bg-rose-50 dark:bg-rose-950/80 border-rose-500 ring-2 ring-rose-500/25 shadow-md shadow-rose-500/10"
-                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-700"
+                      ? "bg-rose-50/80 dark:bg-rose-950/60 border-rose-500 ring-1 ring-rose-500/30 shadow-xs"
+                      : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-700"
                   }`}
                 >
-                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-transform ${
                     regFilterStatus === "dropped"
-                      ? "bg-rose-600 text-white shadow-xs scale-105"
-                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                      ? "bg-rose-600 text-white"
+                      : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
                   }`}>
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Clock className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 truncate">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">
                       Dropout / Leads
                     </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.dropped}</span>
-                      <span className="text-[10px] text-rose-600 font-bold">Incomplete</span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-base font-black text-slate-900 dark:text-slate-100 font-mono">{regStatusCounts.dropped}</span>
+                      <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">Incomplete</span>
                     </div>
                   </div>
                 </button>
