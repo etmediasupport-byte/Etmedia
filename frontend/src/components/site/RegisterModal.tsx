@@ -419,7 +419,7 @@ export function RegisterModal({ isOpen, onClose, event, mode = "free" }: Registe
   const handleFinalCheckoutAndRegister = async () => {
     setSubmitting(true);
     const pricing = getPricing();
-    const razorpayKey = (import.meta.env as any)["VITE_RAZORPAY_KEY_ID"] || "rzp_test_SwedUUn1KgRMs0";
+    const razorpayKey = (import.meta.env as any)["VITE_RAZORPAY_KEY_ID"] || "rzp_live_Tll7hRUGZhgorS";
 
     try {
       if (pricing.totalPayable > 0) {

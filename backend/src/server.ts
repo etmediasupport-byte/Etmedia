@@ -21,8 +21,8 @@ import { Resvg } from "@resvg/resvg-js";
 dotenv.config();
 
 // Razorpay SDK Credentials & Instance Initialization
-const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0").trim();
-const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || "xdW2Ry7T67sUK4zMKb3oOsZh").trim();
+const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || "rzp_live_Tll7hRUGZhgorS").trim();
+const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || "FE503YbnPxv1PuTIiepcD8o0").trim();
 
 const razorpayClient = new Razorpay({
   key_id: razorpayKeyId,

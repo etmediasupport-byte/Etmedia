@@ -896,7 +896,7 @@ export default function EventRegistrationWizardPage() {
 
     setIsProcessingPayment(true);
 
-    const activeKey = (razorpayActiveKey || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0").trim();
+    const activeKey = (razorpayActiveKey || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_live_Tll7hRUGZhgorS").trim();
 
     const options = {
       key: activeKey,
@@ -979,7 +979,7 @@ export default function EventRegistrationWizardPage() {
     }
   };
 
-  const isTestModeKey = (razorpayActiveKey || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0").trim().startsWith("rzp_test_");
+  const isTestModeKey = (razorpayActiveKey || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_live_Tll7hRUGZhgorS").trim().startsWith("rzp_test_");
 
   const handleSimulateTestPayment = async () => {
     setIsProcessingPayment(true);
