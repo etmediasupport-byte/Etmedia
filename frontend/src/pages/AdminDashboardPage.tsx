@@ -7332,7 +7332,8 @@ export default function AdminDashboardPage() {
         const matchesEvent = (r.event_title || r.event_id || "").toLowerCase().includes(q);
         const matchesId = (r.id || "").toLowerCase().includes(q);
         const matchesPayId = (r.payment_id || "").toLowerCase().includes(q);
-        if (!matchesName && !matchesEmail && !matchesPhone && !matchesOrg && !matchesDesig && !matchesCity && !matchesEvent && !matchesId && !matchesPayId) {
+        const matchesAward = (r.award_category || "").toLowerCase().includes(q) || (r.award_nomination || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesEmail && !matchesPhone && !matchesOrg && !matchesDesig && !matchesCity && !matchesEvent && !matchesId && !matchesPayId && !matchesAward) {
           return false;
         }
       }
@@ -7367,6 +7368,14 @@ export default function AdminDashboardPage() {
         const pStatus = (r.payment_status || "").toString().toLowerCase();
 
         if (regFilterStatus === "paid" && !isPaid) return false;
+        if (regFilterStatus === "awards" || regFilterStatus === "award_nomination" || regFilterStatus === "nominations") {
+          const hasAward =
+            r.award_nomination === "Yes" ||
+            (r.award_nomination && r.award_nomination !== "No" && r.award_nomination !== "") ||
+            Boolean(r.award_category && r.award_category.trim()) ||
+            (Number(r.award_nomination_fee) > 0);
+          if (!hasAward) return false;
+        }
         if ((regFilterStatus === "free_granted" || regFilterStatus === "free") && !isFreeGranted) return false;
         if ((regFilterStatus === "pending_review" || regFilterStatus === "pending") && !isPendingReview) return false;
         if (regFilterStatus === "offline" && !isDelegateOffline(r)) return false;
@@ -7402,6 +7411,7 @@ export default function AdminDashboardPage() {
     let pendingReview = 0;
     let dropped = 0;
     let offline = 0;
+    let awards = 0;
 
     let targetList = eventRegistrationsList;
     if (selectedDashboardEventId !== "all" && activeSelectedEvent) {
@@ -7416,6 +7426,14 @@ export default function AdminDashboardPage() {
     }
 
     targetList.forEach((r) => {
+      const hasAward =
+        r.award_nomination === "Yes" ||
+        (r.award_nomination && r.award_nomination !== "No" && r.award_nomination !== "") ||
+        Boolean(r.award_category && r.award_category.trim()) ||
+        (Number(r.award_nomination_fee) > 0);
+      if (hasAward) {
+        awards++;
+      }
       if (isDelegateOffline(r)) {
         offline++;
       }
@@ -7437,6 +7455,7 @@ export default function AdminDashboardPage() {
       pendingReview,
       dropped,
       offline,
+      awards,
     };
   }, [eventRegistrationsList, selectedDashboardEventId, activeSelectedEvent, regFilterEvent, cmsEvents]);
 
@@ -9250,8 +9269,8 @@ export default function AdminDashboardPage() {
           {/* TAB 1: EVENT REGISTRATIONS */}
           {activeTab === "event-registrations" && (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm space-y-5">
-              {/* 6 Interactive Quick Filter Cards: All, Paid, Free Applications, Granted Free, Offline, Dropout */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {/* 7 Interactive Quick Filter Cards: All, Paid, Awards, Free Applications, Granted Free, Offline, Dropout */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
                 {/* Card 1: All Delegates */}
                 <button
                   type="button"
@@ -9308,7 +9327,35 @@ export default function AdminDashboardPage() {
                   </div>
                 </button>
 
-                {/* Card 3: Free Applications (Awaiting Admin Grant) */}
+                {/* Card 3: Award & Nominations */}
+                <button
+                  type="button"
+                  onClick={() => setRegFilterStatus(regFilterStatus === "awards" ? "all" : "awards")}
+                  className={`flex items-center gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-2xl border transition-all text-left cursor-pointer shadow-2xs ${
+                    regFilterStatus === "awards"
+                      ? "bg-amber-50 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-500/25 shadow-md shadow-amber-500/10"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-700"
+                  }`}
+                >
+                  <div className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl font-bold text-xs sm:text-sm transition-transform ${
+                    regFilterStatus === "awards"
+                      ? "bg-amber-500 text-white shadow-xs scale-105"
+                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                  }`}>
+                    <Award className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
+                      Award & Nominations
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">{regStatusCounts.awards}</span>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Nominated 🏆</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Card 4: Free Applications (Awaiting Admin Grant) */}
                 <button
                   type="button"
                   onClick={() => setRegFilterStatus(regFilterStatus === "pending_review" || regFilterStatus === "pending" ? "all" : "pending_review")}
@@ -9507,6 +9554,7 @@ export default function AdminDashboardPage() {
                     >
                       <option value="all">💳 All Statuses</option>
                       <option value="paid">💳 Paid Passes (Confirmed)</option>
+                      <option value="awards">🏆 Award & Nominations</option>
                       <option value="pending_review">⏳ Free Applications (Awaiting Grant)</option>
                       <option value="free_granted">🎟️ Granted Free Passes (Passes Issued ✅)</option>
                       <option value="offline">📂 Offline Registrations (Excel Imports)</option>
@@ -9751,8 +9799,8 @@ export default function AdminDashboardPage() {
                               <span className="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
                                 {reg.pass_name || reg.registration_category || "Delegate Pass"}
                               </span>
-                              {reg.award_nomination === "Yes" && (
-                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category}>
+                              {(reg.award_nomination === "Yes" || (reg.award_category && reg.award_category.trim()) || Number(reg.award_nomination_fee) > 0) && (
+                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category ? `Award: ${reg.award_category}` : "Nominated"}>
                                   🏆 {reg.award_category || "Nominated"}
                                 </span>
                               )}
