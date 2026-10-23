@@ -9994,12 +9994,12 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* RESPONSIVE FULL-WIDTH TABLE WITH HORIZONTAL SCROLLBAR & CHECKBOX SELECTION */}
+              {/* RESPONSIVE FULL-WIDTH TABLE & CHECKBOX SELECTION */}
               <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
-                <table className="w-full min-w-[1050px] text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50/90 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
                     <tr>
-                      <th className="py-3 px-3 w-10 text-center">
+                      <th className="py-2.5 px-2 w-8 text-center">
                         <input
                           type="checkbox"
                           checked={
@@ -10013,14 +10013,14 @@ export default function AdminDashboardPage() {
                               ? "No eligible ungranted delegates in this view"
                               : "Select / Deselect All Eligible Delegates"
                           }
-                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         />
                       </th>
-                      <th className="py-3 px-3.5 min-w-[200px]">Delegate & Contact</th>
-                      <th className="py-3 px-3.5 min-w-[170px]">Organization & City</th>
-                      <th className="py-3 px-3.5 min-w-[200px]">Event & Pass Tier</th>
-                      <th className="py-3 px-3.5 min-w-[150px]">Payment & Status</th>
-                      <th className="py-3 px-3.5 text-right w-36 min-w-[120px]">Actions</th>
+                      <th className="py-2.5 px-3">Delegate & Contact</th>
+                      <th className="py-2.5 px-3">Organization & City</th>
+                      <th className="py-2.5 px-3">Event & Pass</th>
+                      <th className="py-2.5 px-3">Payment & Status</th>
+                      <th className="py-2.5 px-3 text-right w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -10038,110 +10038,84 @@ export default function AdminDashboardPage() {
                               : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                           }`}
                         >
-                          {/* 0. Row Selection Checkbox / Granted / Paid Badge */}
-                          <td className="py-3 px-3 align-middle text-center">
-                            {isFreeGranted ? (
-                              <span
-                                title="Free pass has been granted to this delegate"
-                                className="inline-flex items-center gap-1 rounded-md bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 select-none whitespace-nowrap"
-                              >
-                                <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
-                                <span>Granted</span>
-                              </span>
-                            ) : isPaid ? (
-                              <span
-                                title="Confirmed Paid Delegate"
-                                className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 select-none whitespace-nowrap"
-                              >
-                                <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span>Paid</span>
-                              </span>
-                            ) : (
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSelectRegistration(reg.id)}
-                                title={`Select ${reg.name} to grant free pass`}
-                                className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                              />
-                            )}
+                          {/* 0. Row Selection Checkbox */}
+                          <td className="py-2.5 px-2 align-middle text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRegistration(reg.id)}
+                              title={`Select ${reg.name}`}
+                              className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                            />
                           </td>
 
                           {/* 1. Delegate & Contact */}
-                          <td className="py-3 px-3.5 align-middle">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-300 font-bold text-xs shadow-2xs">
+                          <td className="py-2.5 px-3 align-middle">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-300 font-bold text-xs">
                                 {reg.name.charAt(0).toUpperCase()}
                               </div>
-                              <div className="min-w-0 space-y-0.5">
-                                <span className="block font-bold text-slate-900 dark:text-slate-100 text-xs truncate max-w-[200px]">
+                              <div className="min-w-0">
+                                <span className="block font-bold text-slate-900 dark:text-slate-100 text-xs truncate max-w-[160px]">
                                   {reg.name}
                                 </span>
-                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
-                                  {reg.designation || "Executive Delegate"}
+                                <span className="block text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px]">
+                                  {reg.email}
                                 </span>
-                                <a
-                                  href={`mailto:${reg.email}`}
-                                  className="inline-flex items-center gap-1 text-[11px] text-cyan-700 dark:text-cyan-400 font-mono hover:underline truncate max-w-[200px]"
-                                >
-                                  <Mail className="h-2.5 w-2.5 shrink-0" />
-                                  <span className="truncate">{reg.email}</span>
-                                </a>
                               </div>
                             </div>
                           </td>
 
                           {/* 2. Organization & City */}
-                          <td className="py-3 px-3.5 align-middle space-y-1">
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 text-xs font-semibold max-w-[190px] truncate">
-                              <Building className="h-3 w-3 text-slate-400 shrink-0" />
-                              <span className="truncate">{reg.organization || "Corporate Enterprise"}</span>
-                            </span>
-                            <span className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                              <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[160px]">{reg.city || reg.registering_city || "Pan-India"}</span>
-                            </span>
+                          <td className="py-2.5 px-3 align-middle">
+                            <div className="min-w-0">
+                              <span className="block font-semibold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[150px]">
+                                {reg.organization || "Independent"}
+                              </span>
+                              <span className="block text-[11px] text-slate-400 truncate max-w-[140px]">
+                                {reg.city || reg.registering_city || "Pan-India"}
+                              </span>
+                            </div>
                           </td>
 
-                          {/* 3. Event & Tier */}
-                          <td className="py-3 px-3.5 align-middle space-y-1">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-900 dark:text-slate-100 font-semibold max-w-[240px] truncate" title={reg.event_title || reg.event_id}>
-                              <Calendar className="h-3 w-3 text-cyan-500 shrink-0" />
-                              <span className="truncate">{reg.event_title || reg.event_id}</span>
+                          {/* 3. Event & Pass Tier */}
+                          <td className="py-2.5 px-3 align-middle space-y-0.5">
+                            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[160px]" title={reg.event_title || reg.event_id}>
+                              {reg.event_title || reg.event_id}
                             </div>
                             <div className="flex items-center gap-1 flex-wrap">
-                              <span className="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
+                              <span className="inline-block rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
                                 {reg.pass_name || reg.registration_category || "Delegate Pass"}
                               </span>
                               {(reg.award_nomination === "Yes" || (reg.award_category && reg.award_category.trim()) || Number(reg.award_nomination_fee) > 0) && (
-                                <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category ? `Award: ${reg.award_category}` : "Nominated"}>
-                                  🏆 {reg.award_category || "Nominated"}
+                                <span className="inline-block rounded px-1.5 py-0.2 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category ? `Award: ${reg.award_category}` : "Nominated"}>
+                                  🏆 Award
                                 </span>
                               )}
                             </div>
                           </td>
 
                           {/* 4. Payment & Status */}
-                          <td className="py-3 px-3.5 align-middle space-y-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                          <td className="py-2.5 px-3 align-middle">
+                            <div className="flex items-center gap-1.5">
                               {(() => {
                                 if (isFreeGranted) {
                                   return (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
-                                      🎟️ Free Pass
+                                    <span className="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 text-[10px] font-bold">
+                                      🎟️ Free
                                     </span>
                                   );
                                 }
                                 if (isPaid) {
                                   return (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                                    <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 text-[10px] font-bold">
                                       💳 Paid
                                     </span>
                                   );
                                 }
                                 if (isDelegatePendingReview(reg)) {
                                   return (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                                    <span className="inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-1.5 py-0.2 text-[10px] font-bold">
                                       ⏳ Review
                                     </span>
                                   );
@@ -10149,50 +10123,38 @@ export default function AdminDashboardPage() {
                                 const pStatus = (reg.payment_status || "").toString();
                                 if (pStatus === "Rejected") {
                                   return (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                                    <span className="inline-flex items-center rounded-md bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 px-1.5 py-0.2 text-[10px] font-bold">
                                       ❌ Rejected
                                     </span>
                                   );
                                 }
                                 return (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap">
+                                  <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 text-[10px] font-semibold">
                                     ⚠️ Dropped
                                   </span>
                                 );
                               })()}
+                              <span className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">
+                                ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
+                              </span>
                             </div>
-                            <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">
-                              ₹{(Number(reg.payment_amount) || 0).toLocaleString("en-IN")}
-                            </div>
-                            {(Number(reg.pass_price) > 0 || Number(reg.award_nomination_fee) > 0) && (
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono flex flex-col gap-0.5">
-                                <span>Pass: ₹{(Number(reg.pass_price) || 0).toLocaleString("en-IN")}</span>
-                                {Number(reg.award_nomination_fee) > 0 && (
-                                  <span className="text-amber-600 dark:text-amber-400 font-semibold">Award: ₹{(Number(reg.award_nomination_fee) || 0).toLocaleString("en-IN")}</span>
-                                )}
-                                {Number(reg.gst_amount) > 0 && (
-                                  <span>GST: ₹{(Number(reg.gst_amount) || 0).toLocaleString("en-IN")}</span>
-                                )}
-                              </div>
-                            )}
-                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                               {reg.created_at ? new Date(reg.created_at).toLocaleDateString("en-IN") : "Recent"}
                             </div>
                           </td>
 
                           {/* 5. Actions */}
-                          <td className="py-3 px-3.5 align-middle text-right">
-                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          <td className="py-2.5 px-3 align-middle text-right">
+                            <div className="flex items-center justify-end gap-1">
                               {isDelegatePendingReview(reg) && (
-                                <div className="flex items-center gap-1">
+                                <>
                                   <button
                                     type="button"
                                     onClick={() => handleApproveFreeRegistration(reg.id, reg.email)}
-                                    title="Approve Free Pass and Send Ticket Pass"
-                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-600 hover:bg-emerald-700 px-2 py-1 text-[10px] font-bold text-white shadow-2xs cursor-pointer whitespace-nowrap"
+                                    title="Approve Free Pass"
+                                    className="inline-flex items-center rounded-md bg-emerald-600 hover:bg-emerald-700 p-1 text-white shadow-2xs cursor-pointer"
                                   >
-                                    <CheckCircle2 className="h-2.5 w-2.5" />
-                                    <span>Approve</span>
+                                    <CheckCircle2 className="h-3 w-3" />
                                   </button>
                                   <button
                                     type="button"
@@ -10202,7 +10164,7 @@ export default function AdminDashboardPage() {
                                   >
                                     <X className="h-3 w-3" />
                                   </button>
-                                </div>
+                                </>
                               )}
 
                               <button
@@ -10222,9 +10184,10 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRegDetail(reg)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer whitespace-nowrap"
+                                title="View Full Delegate Dossier & Payment Breakdown"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 dark:text-cyan-400 dark:hover:bg-slate-700 transition-all shadow-2xs cursor-pointer"
                               >
-                                <Eye className="h-3 w-3 text-cyan-600" />
+                                <Eye className="h-3.5 w-3.5 text-cyan-600" />
                                 <span>View</span>
                               </button>
                             </div>
