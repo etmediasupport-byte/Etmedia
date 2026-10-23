@@ -24637,33 +24637,32 @@ export default function AdminDashboardPage() {
             </form>
 
             {/* STICKY BOTTOM ACTION FOOTER */}
-            <div className="shrink-0 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setShowPaymentModal(false)}
-                className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
-              >
-                Cancel
-              </button>
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-slate-500 hidden sm:inline">
-                  {paymentModalTab === "awards" ? "Award categories & nomination settings" : "Ready to save configuration"}
-                </span>
+            <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span className="font-medium">Changes apply immediately to registration</span>
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   form="paymentConfigForm"
                   disabled={paymentSaving}
-                  className="px-6 py-2.5 rounded-xl gradient-brand text-xs font-black text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl gradient-brand text-xs font-bold text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {paymentSaving ? (
                     <>
-                      <span className="animate-spin">⏳</span>
-                      <span>Saving Configuration...</span>
+                      <span className="inline-block animate-spin">⏳</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
-                    <>
-                      <span>💾 Save Payment Settings & Pricing Tiers</span>
-                    </>
+                    <span>Save Payment Settings</span>
                   )}
                 </button>
               </div>
