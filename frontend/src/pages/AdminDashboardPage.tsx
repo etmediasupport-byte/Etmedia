@@ -11830,16 +11830,18 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* ATTENDANCE DELEGATE TABLE */}
-              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs custom-scrollbar">
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs custom-scrollbar min-h-[460px]">
                 <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
-                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     <tr>
-                      <th className="py-2.5 px-2 w-8 text-center">#</th>
-                      <th className="py-2.5 px-3">Attendee Profile</th>
-                      <th className="py-2.5 px-3">Company & Role</th>
-                      <th className="py-2.5 px-3">Summit / Pass</th>
-                      <th className="py-2.5 px-3 text-center">Gate Status</th>
-                      <th className="py-2.5 px-3 text-right w-36">Actions</th>
+                      <th className="py-3 px-2 w-7 text-center">#</th>
+                      <th className="py-3 px-2.5">Attendee Profile</th>
+                      <th className="py-3 px-2.5">Company & Role</th>
+                      <th className="py-3 px-2.5">Summit / Event</th>
+                      <th className="py-3 px-2">Pass Tier</th>
+                      <th className="py-3 px-2 text-center">Gate Status</th>
+                      <th className="py-3 px-2">Check-In Details</th>
+                      <th className="py-3 px-2.5 text-right w-36">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
@@ -11857,21 +11859,21 @@ export default function AdminDashboardPage() {
                               isPresent ? "bg-emerald-50/30 dark:bg-emerald-950/10" : ""
                             }`}
                           >
-                            <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px] text-center">
+                            <td className="py-3 px-2 text-slate-400 font-mono text-[11px] text-center">
                               {idx + 1}
                             </td>
 
                             {/* Attendee Profile (Name, Pass ID, Email) */}
-                            <td className="py-2.5 px-3">
-                              <div className="space-y-0.5">
+                            <td className="py-3 px-2.5">
+                              <div className="space-y-0.5 min-w-0">
                                 <strong
-                                  className="font-bold text-slate-900 dark:text-white capitalize text-xs block truncate max-w-[170px]"
+                                  className="font-bold text-slate-900 dark:text-white capitalize text-xs block truncate max-w-[150px]"
                                   title={attendeeName}
                                 >
                                   {attendeeName}
                                 </strong>
                                 <div className="flex items-center gap-1 text-[10px] font-mono text-cyan-700 dark:text-cyan-400">
-                                  <span className="truncate max-w-[130px]">{del.id}</span>
+                                  <span className="truncate max-w-[110px]">{del.id}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -11887,7 +11889,7 @@ export default function AdminDashboardPage() {
                                 {del.email && (
                                   <a
                                     href={`mailto:${del.email}`}
-                                    className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-cyan-600 truncate block max-w-[170px]"
+                                    className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-cyan-600 truncate block max-w-[150px]"
                                     title={del.email}
                                   >
                                     {del.email}
@@ -11897,19 +11899,19 @@ export default function AdminDashboardPage() {
                             </td>
 
                             {/* Company & Role */}
-                            <td className="py-2.5 px-3">
-                              <div className="space-y-0.5">
+                            <td className="py-3 px-2.5">
+                              <div className="space-y-0.5 min-w-0">
                                 <span
-                                  className="font-bold text-slate-900 dark:text-slate-100 block text-xs truncate max-w-[160px]"
+                                  className="font-bold text-slate-900 dark:text-slate-100 block text-xs truncate max-w-[135px]"
                                   title={del.organization || "Independent"}
                                 >
                                   {del.organization || "Independent"}
                                 </span>
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-[150px]">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-[130px]">
                                   {del.designation || "Executive"}
                                 </span>
                                 {del.city && (
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[125px]">
                                     <MapPin className="h-2.5 w-2.5 shrink-0" />
                                     <span>{del.city}</span>
                                   </span>
@@ -11917,38 +11919,37 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
 
-                            {/* Summit & Pass Tier */}
-                            <td className="py-2.5 px-3">
-                              <div className="space-y-1">
+                            {/* Summit / Event */}
+                            <td className="py-3 px-2.5">
+                              <div className="space-y-0.5 min-w-0">
                                 <span
-                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs max-w-[170px]"
+                                  className="font-bold text-slate-800 dark:text-slate-200 block truncate text-xs max-w-[145px]"
                                   title={del.event_title || del.event_id}
                                 >
                                   {del.event_title || del.event_id || "Executive Conclave"}
                                 </span>
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[160px]">
-                                  {del.pass_name || del.registration_category || "Delegate Pass"}
-                                </span>
+                                {del.created_at && (
+                                  <span className="text-[10px] font-mono text-slate-400 block">
+                                    Reg: {new Date(del.created_at).toLocaleDateString("en-IN")}
+                                  </span>
+                                )}
                               </div>
                             </td>
 
+                            {/* Pass Tier */}
+                            <td className="py-3 px-2">
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[120px]" title={del.pass_name || del.registration_category || "Delegate Pass"}>
+                                {del.pass_name || del.registration_category || "Delegate Pass"}
+                              </span>
+                            </td>
+
                             {/* Gate Status */}
-                            <td className="py-2.5 px-3 text-center">
+                            <td className="py-3 px-2 text-center">
                               {isPresent ? (
-                                <div className="inline-flex flex-col items-center">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
-                                    <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                                    <span>Present</span>
-                                  </span>
-                                  {del.checked_in_at && (
-                                    <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5 font-bold whitespace-nowrap">
-                                      {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </span>
-                                  )}
-                                </div>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap shadow-xs">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Present</span>
+                                </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
                                   <Clock className="h-3 w-3" />
@@ -11957,8 +11958,27 @@ export default function AdminDashboardPage() {
                               )}
                             </td>
 
+                            {/* Check-In Details */}
+                            <td className="py-3 px-2 text-xs font-mono text-slate-600 dark:text-slate-400">
+                              {del.checked_in_at ? (
+                                <div className="space-y-0.5">
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-400 block text-[11px]">
+                                    {new Date(del.checked_in_at).toLocaleTimeString("en-IN", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 block">
+                                    {new Date(del.checked_in_at).toLocaleDateString("en-IN")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Awaiting scan</span>
+                              )}
+                            </td>
+
                             {/* Actions */}
-                            <td className="py-2.5 px-3 text-right">
+                            <td className="py-3 px-2.5 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 {isPresent ? (
                                   <>
@@ -11975,7 +11995,7 @@ export default function AdminDashboardPage() {
                                       type="button"
                                       onClick={() => handleSendCertificate(del.id, del.name)}
                                       disabled={sendingCertId === del.id}
-                                      className={`h-7 px-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
+                                      className={`h-7 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-2xs cursor-pointer flex items-center gap-1 disabled:opacity-50 ${
                                         del.certificate_sent_at
                                           ? "border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
                                           : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black"
@@ -12009,7 +12029,7 @@ export default function AdminDashboardPage() {
                                   <button
                                     type="button"
                                     onClick={() => handleQuickCheckin(del.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                                    className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                                   >
                                     Check In
                                   </button>
@@ -12050,7 +12070,7 @@ export default function AdminDashboardPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center">
+                        <td colSpan={8} className="py-12 text-center">
                           <div className="max-w-md mx-auto space-y-3">
                             <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
                               <Search className="h-6 w-6" />
@@ -13069,17 +13089,17 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar">
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs custom-scrollbar min-h-[460px]">
                 <table className="w-full text-left text-xs divide-y divide-slate-200 dark:divide-slate-800">
-                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[11px]">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 uppercase tracking-wider font-extrabold text-[10px]">
                     <tr>
-                      <th className="py-2.5 px-3">Status</th>
-                      <th className="py-2.5 px-3">Sender</th>
-                      <th className="py-2.5 px-3">Contact Info</th>
-                      <th className="py-2.5 px-3">Category</th>
-                      <th className="py-2.5 px-3">Message</th>
-                      <th className="py-2.5 px-3">Submitted At</th>
-                      <th className="py-2.5 px-3 text-right">Actions</th>
+                      <th className="py-3 px-2.5">Status</th>
+                      <th className="py-3 px-2.5">Sender</th>
+                      <th className="py-3 px-2.5">Contact Info</th>
+                      <th className="py-3 px-2.5">Category</th>
+                      <th className="py-3 px-2.5">Message</th>
+                      <th className="py-3 px-2.5">Submitted At</th>
+                      <th className="py-3 px-2.5 text-right w-28">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -13088,7 +13108,7 @@ export default function AdminDashboardPage() {
                       const isReplied = con.status === "replied";
                       return (
                         <tr key={con.id} className={`transition-colors ${isUnread ? "bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50/70 dark:hover:bg-purple-950/40" : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"}`}>
-                          <td className="py-3.5 px-4 align-middle">
+                          <td className="py-3 px-2.5 align-middle">
                             <button
                               type="button"
                               onClick={() => handleToggleContactReadStatus(con)}
@@ -13108,76 +13128,77 @@ export default function AdminDashboardPage() {
                             </button>
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle font-bold text-slate-900 dark:text-slate-100">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 font-bold text-xs shadow-2xs">
+                          <td className="py-3 px-2.5 align-middle font-bold text-slate-900 dark:text-slate-100">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 font-bold text-xs shadow-2xs">
                                 {con.name.charAt(0).toUpperCase()}
                               </div>
-                              <div>
-                                <span className="block font-black text-slate-900 dark:text-slate-100">{con.name}</span>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">ID: {con.id}</span>
+                              <div className="min-w-0">
+                                <span className="block font-bold text-slate-900 dark:text-slate-100 truncate max-w-[125px]" title={con.name}>{con.name}</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate block max-w-[125px]">ID: {con.id}</span>
                               </div>
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle text-slate-700 dark:text-slate-300">
-                            <div className="flex flex-col">
-                              <a href={`mailto:${con.email}`} className="flex items-center gap-1 text-purple-700 dark:text-purple-400 font-medium hover:underline">
-                                <Mail className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                                {con.email}
+                          <td className="py-3 px-2.5 align-middle text-slate-700 dark:text-slate-300">
+                            <div className="flex flex-col min-w-0">
+                              <a href={`mailto:${con.email}`} className="flex items-center gap-1 text-purple-700 dark:text-purple-400 font-medium hover:underline truncate max-w-[145px]" title={con.email}>
+                                <Mail className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                                <span className="truncate">{con.email}</span>
                               </a>
-                              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[11px] font-mono mt-0.5">
-                                <Phone className="h-3 w-3 text-slate-400" />
-                                {con.phone}
+                              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px] font-mono mt-0.5 truncate max-w-[145px]">
+                                <Phone className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                                <span>{con.phone}</span>
                               </span>
                             </div>
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle">
-                            <span className="rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-3 py-1 text-purple-800 dark:text-purple-300 font-bold text-[11px]">
+                          <td className="py-3 px-2.5 align-middle">
+                            <span className="rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-0.5 text-purple-800 dark:text-purple-300 font-bold text-[10px] truncate max-w-[130px] block text-center" title={con.enquiry_type}>
                               {con.enquiry_type}
                             </span>
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle text-slate-700 dark:text-slate-300 max-w-xs">
-                            <p className="line-clamp-2 leading-relaxed font-sans">{con.message}</p>
+                          <td className="py-3 px-2.5 align-middle text-slate-700 dark:text-slate-300">
+                            <p className="line-clamp-2 leading-relaxed font-sans text-xs max-w-[200px]" title={con.message}>{con.message}</p>
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                            {new Date(con.created_at).toLocaleString()}
+                          <td className="py-3 px-2.5 align-middle text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+                            {new Date(con.created_at).toLocaleDateString("en-IN")},<br />
+                            {new Date(con.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                           </td>
 
-                          <td className="py-3.5 px-4 align-middle text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="py-3 px-2.5 align-middle text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 onClick={() => {
                                   setSelectedContactDetail(con);
                                   setContactReplyText(`Dear ${con.name},\n\nThank you for reaching out to Executive Talks Media Business Intelligence regarding ${con.enquiry_type}.\n\nOur executive management team has received your enquiry and would like to schedule a discussion...\n\nBest regards,\nExecutive Talks Media Business Intelligence Team\ninfo@executivetalksmedia.in`);
                                 }}
-                                className="inline-flex items-center gap-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1.5 text-xs font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all cursor-pointer shadow-xs"
+                                className="inline-flex items-center gap-1 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/60 px-2 py-1 text-[11px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all cursor-pointer shadow-xs whitespace-nowrap"
                                 title="Reply via Dashboard"
                               >
-                                <MessageSquare className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                                <MessageSquare className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                                 <span>Reply</span>
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => handleToggleContactReadStatus(con)}
-                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                                 title={isUnread ? "Mark as Read" : "Mark as Unread"}
                               >
-                                <CheckCircle2 className={`h-4 w-4 ${!isUnread ? "text-emerald-600" : "text-slate-400"}`} />
+                                <CheckCircle2 className={`h-3.5 w-3.5 ${!isUnread ? "text-emerald-600" : "text-slate-400"}`} />
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => handleDeleteContactSubmission(con.id)}
-                                className="p-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
                                 title="Delete Message"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           </td>
@@ -22439,18 +22460,18 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* 4. Issued Certificates Data Table */}
-                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden min-h-[460px]">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900 text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                          <th className="py-3.5 px-4">Certificate ID / Number</th>
-                          <th className="py-3.5 px-4">Candidate / Delegate</th>
-                          <th className="py-3.5 px-4">Organization & City</th>
-                          <th className="py-3.5 px-4">Conference / Event</th>
-                          <th className="py-3.5 px-4 text-center">Gate Attendance</th>
-                          <th className="py-3.5 px-4 text-center">E-Certificate Email</th>
-                          <th className="py-3.5 px-4 text-right">Actions</th>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                          <th className="py-3 px-2.5">Certificate ID / Number</th>
+                          <th className="py-3 px-2.5">Candidate / Delegate</th>
+                          <th className="py-3 px-2.5">Organization & City</th>
+                          <th className="py-3 px-2.5">Conference / Event</th>
+                          <th className="py-3 px-2 text-center">Gate Attendance</th>
+                          <th className="py-3 px-2 text-center">E-Certificate Email</th>
+                          <th className="py-3 px-2.5 text-right w-36">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -22483,10 +22504,10 @@ export default function AdminDashboardPage() {
                                 className="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors group"
                               >
                                 {/* Certificate ID Column */}
-                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                <td className="py-3 px-2.5">
                                   {hasCertId ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="font-mono font-black text-xs text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-xl shadow-2xs">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-mono font-black text-xs text-amber-900 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-lg shadow-2xs truncate max-w-[125px]">
                                         {reg.certificate_id}
                                       </span>
                                       <button
@@ -22498,7 +22519,7 @@ export default function AdminDashboardPage() {
                                         className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
                                         title="Copy Certificate Number"
                                       >
-                                        <Copy className="h-3.5 w-3.5" />
+                                        <Copy className="h-3 w-3" />
                                       </button>
                                       <button
                                         type="button"
@@ -22513,12 +22534,12 @@ export default function AdminDashboardPage() {
                                         className="p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900 text-slate-400 hover:text-amber-600 transition-colors"
                                         title="Edit Certificate Number"
                                       >
-                                        <Edit3 className="h-3.5 w-3.5" />
+                                        <Edit3 className="h-3 w-3" />
                                       </button>
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-[11px] text-slate-400 italic">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono text-[10px] text-slate-400 italic">
                                         Unassigned
                                       </span>
                                       <button
@@ -22533,92 +22554,91 @@ export default function AdminDashboardPage() {
                                         }}
                                         className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition-all cursor-pointer"
                                       >
-                                        + Assign ID
+                                        + Assign
                                       </button>
                                     </div>
                                   )}
-                                  <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                  <p className="text-[10px] font-mono text-slate-400 mt-0.5 truncate max-w-[120px]">
                                     Ref: {reg.id}
                                   </p>
                                 </td>
 
                                 {/* Candidate Details */}
-                                <td className="py-3.5 px-4">
-                                  <div className="font-black text-slate-900 dark:text-slate-100">
+                                <td className="py-3 px-2.5">
+                                  <div className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[150px]" title={reg.name}>
                                     {reg.name || `${reg.first_name || ""} ${reg.last_name || ""}`.trim() || "Executive Delegate"}
                                   </div>
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
                                     {reg.designation || "Executive Delegate"}
                                   </div>
-                                  <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 mt-0.5">
-                                    <span>{reg.email || reg.official_email || "No email"}</span>
-                                    {reg.phone && reg.phone !== "N/A" && <span>• {reg.phone}</span>}
+                                  <div className="text-[10px] font-mono text-slate-400 truncate max-w-[150px] mt-0.5">
+                                    {reg.email || reg.official_email || "No email"}
                                   </div>
                                 </td>
 
                                 {/* Organization */}
-                                <td className="py-3.5 px-4">
-                                  <div className="font-bold text-slate-800 dark:text-slate-200">
+                                <td className="py-3 px-2.5">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[135px]" title={reg.organization}>
                                     {reg.organization || "Independent Leader"}
                                   </div>
-                                  <div className="text-[11px] text-slate-400">
+                                  <div className="text-[11px] text-slate-400 truncate max-w-[130px]">
                                     {reg.city || "Hyderabad"}, {reg.country || "India"}
                                   </div>
                                 </td>
 
                                 {/* Conference */}
-                                <td className="py-3.5 px-4 max-w-[220px]">
-                                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate" title={reg.event_title}>
+                                <td className="py-3 px-2.5">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[145px]" title={reg.event_title}>
                                     🎪 {reg.event_title || "Executive Leadership Summit"}
                                   </div>
-                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[9px] font-mono font-medium text-slate-500 dark:text-slate-400 truncate max-w-[130px]">
                                     {reg.pass_name || reg.registration_category || "VIP Delegate"}
                                   </span>
                                 </td>
 
                                 {/* Gate Attendance */}
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                <td className="py-3 px-2 text-center">
                                   {isCheckedIn ? (
                                     <div>
-                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                                         <CheckCircle2 className="h-3 w-3" />
                                         Present
                                       </span>
                                       {reg.checked_in_at && (
-                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
                                           {new Date(reg.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                         </p>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-500">
-                                      Absent / Not Scanned
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-500 whitespace-nowrap">
+                                      Absent
                                     </span>
                                   )}
                                 </td>
 
                                 {/* Email Status */}
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                <td className="py-3 px-2 text-center">
                                   {hasSentEmail ? (
                                     <div>
-                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                                         <MailCheck className="h-3 w-3" />
                                         Emailed
                                       </span>
-                                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      <p className="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
                                         {new Date(reg.certificate_sent_at!).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                                       </p>
                                     </div>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold text-amber-700 dark:text-amber-400">
-                                      Pending Dispatch
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                                      Pending
                                     </span>
                                   )}
                                 </td>
 
                                 {/* Action Hub Buttons */}
-                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                                  <div className="flex items-center justify-end gap-1.5">
+                                <td className="py-3 px-2.5 text-right">
+                                  <div className="flex items-center justify-end gap-1">
                                     {/* 1. Review Live Certificate */}
                                     <button
                                       type="button"
@@ -22641,10 +22661,10 @@ export default function AdminDashboardPage() {
                                           certificate_settings: parsedCertSettings,
                                         } as any);
                                       }}
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950 text-slate-700 dark:text-slate-200 hover:text-amber-700 transition-all cursor-pointer shadow-2xs"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950 text-slate-700 dark:text-slate-200 hover:text-amber-700 transition-all cursor-pointer shadow-2xs"
                                       title="Review Live Certificate"
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-3.5 w-3.5" />
                                     </button>
 
                                     {/* 2. Dispatch Email */}
@@ -22652,13 +22672,13 @@ export default function AdminDashboardPage() {
                                       type="button"
                                       onClick={() => handleSendCertificate(reg.id, reg.name)}
                                       disabled={sendingCertId === reg.id || (!reg.email && !reg.official_email)}
-                                      className="p-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
                                       title={hasSentEmail ? "Resend E-Certificate Email" : "Send E-Certificate Email"}
                                     >
                                       {sendingCertId === reg.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (
-                                        <Mail className="h-4 w-4" />
+                                        <Mail className="h-3.5 w-3.5" />
                                       )}
                                     </button>
 
@@ -22670,10 +22690,10 @@ export default function AdminDashboardPage() {
                                         navigator.clipboard.writeText(certUrl);
                                         toast.success("Public verification URL copied to clipboard!");
                                       }}
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
                                       title="Copy Public Certificate Link"
                                     >
-                                      <Share2 className="h-4 w-4" />
+                                      <Share2 className="h-3.5 w-3.5" />
                                     </button>
 
                                     {/* 4. Open in New Tab */}
@@ -22681,10 +22701,10 @@ export default function AdminDashboardPage() {
                                       href={`/certificate/${encodeURIComponent(reg.id)}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer shadow-2xs"
                                       title="Open Public Certificate Page"
                                     >
-                                      <ExternalLink className="h-4 w-4" />
+                                      <ExternalLink className="h-3.5 w-3.5" />
                                     </a>
                                   </div>
                                 </td>
@@ -23655,20 +23675,20 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Transactions Ledger Table */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs custom-scrollbar min-h-[460px]">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                  <thead className="bg-slate-50 dark:bg-slate-800/80 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                      <th className="py-3 px-3">#</th>
-                      <th className="py-3 px-3">Candidate & Contact</th>
-                      <th className="py-3 px-3">Organization & City</th>
-                      <th className="py-3 px-3">Event & Pass Tier</th>
-                      <th className="py-3 px-3 text-right">Pass Base</th>
-                      <th className="py-3 px-3 text-right">Award Fee</th>
-                      <th className="py-3 px-3 text-right">GST (18%)</th>
-                      <th className="py-3 px-3 text-right">Grand Total Paid</th>
-                      <th className="py-3 px-3">Transaction ID & Date</th>
-                      <th className="py-3 px-3 text-center">Receipt</th>
+                      <th className="py-3 px-1.5 w-6 text-center">#</th>
+                      <th className="py-3 px-2">Candidate & Contact</th>
+                      <th className="py-3 px-2">Organization & City</th>
+                      <th className="py-3 px-2">Event & Pass Tier</th>
+                      <th className="py-3 px-2 text-right">Pass Base</th>
+                      <th className="py-3 px-2 text-right">Award Fee</th>
+                      <th className="py-3 px-2 text-right">GST (18%)</th>
+                      <th className="py-3 px-2 text-right">Grand Total</th>
+                      <th className="py-3 px-2">Transaction ID & Date</th>
+                      <th className="py-3 px-1.5 text-center w-12">Receipt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -23692,58 +23712,58 @@ export default function AdminDashboardPage() {
                           key={item.id || idx}
                           className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                         >
-                          <td className="py-3 px-3 text-slate-400 font-mono text-[11px] align-middle">
+                          <td className="py-3 px-1.5 text-slate-400 font-mono text-[10px] align-middle text-center">
                             {idx + 1}
                           </td>
 
                           {/* Candidate & Contact */}
-                          <td className="py-3 px-3 align-middle">
-                            <strong className="text-slate-900 dark:text-slate-100 block font-bold text-xs">
+                          <td className="py-3 px-2 align-middle">
+                            <strong className="text-slate-900 dark:text-slate-100 block font-bold text-xs truncate max-w-[135px]" title={item.name}>
                               {item.name || `${item.first_name || ""} ${item.last_name || ""}`.trim() || "N/A"}
                             </strong>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 space-y-0.5">
-                              {item.email && <div className="truncate max-w-[200px]">{item.email}</div>}
-                              {item.phone && <div className="font-mono text-[10px] text-slate-600 dark:text-slate-400">{item.phone}</div>}
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 space-y-0.5 min-w-0">
+                              {item.email && <div className="truncate max-w-[135px]" title={item.email}>{item.email}</div>}
+                              {item.phone && <div className="font-mono text-[9px] text-slate-600 dark:text-slate-400 truncate max-w-[130px]">{item.phone}</div>}
                             </div>
                           </td>
 
                           {/* Organization & City */}
-                          <td className="py-3 px-3 align-middle">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[160px]">
+                          <td className="py-3 px-2 align-middle">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate max-w-[125px]" title={item.organization}>
                               {item.organization || "Independent"}
                             </span>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
                               {item.designation || "Delegate"}
                             </div>
                             {(item.city || item.registering_city) && (
-                              <span className="inline-block mt-0.5 text-[10px] font-medium text-slate-400">
+                              <span className="inline-block mt-0.5 text-[9px] font-medium text-slate-400 truncate max-w-[115px]">
                                 📍 {item.city || item.registering_city}
                               </span>
                             )}
                           </td>
 
                           {/* Event & Pass Tier */}
-                          <td className="py-3 px-3 align-middle space-y-1">
-                            <div className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[180px]" title={item.event_title}>
+                          <td className="py-3 px-2 align-middle space-y-1">
+                            <div className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[130px] text-xs" title={item.event_title}>
                               {item.event_title || item.event_id}
                             </div>
                             <div className="flex items-center gap-1 flex-wrap">
-                              <span className="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
+                              <span className="inline-block rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 truncate max-w-[120px]" title={item.pass_name || item.registration_category || "Delegate Pass"}>
                                 {item.pass_name || item.registration_category || "Delegate Pass"}
                               </span>
                             </div>
                           </td>
 
                           {/* Pass Base */}
-                          <td className="py-3 px-3 text-right align-middle font-mono font-bold text-slate-900 dark:text-slate-100">
+                          <td className="py-3 px-2 text-right align-middle font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                             ₹{item.passBase.toLocaleString("en-IN")}
                           </td>
 
                           {/* Award Fee */}
-                          <td className="py-3 px-3 text-right align-middle">
+                          <td className="py-3 px-2 text-right align-middle whitespace-nowrap">
                             {item.hasAward ? (
                               <div>
-                                <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 mb-0.5">
+                                <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.2 text-[9px] font-bold tracking-wider bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 mb-0.5 truncate max-w-[85px]" title={item.awardCategory}>
                                   🏆 {item.awardCategory}
                                 </span>
                                 <div className="font-mono font-bold text-amber-800 dark:text-amber-300">
@@ -23756,44 +23776,44 @@ export default function AdminDashboardPage() {
                           </td>
 
                           {/* GST Breakdown (18%) */}
-                          <td className="py-3 px-3 text-right align-middle">
+                          <td className="py-3 px-2 text-right align-middle whitespace-nowrap">
                             <strong className="font-mono font-bold text-purple-800 dark:text-purple-300 block">
                               ₹{item.gstAmount.toLocaleString("en-IN")}
                             </strong>
-                            <span className="text-[10px] text-slate-400 block font-mono">
+                            <span className="text-[9px] text-slate-400 block font-mono">
                               C: ₹{item.cgst} + S: ₹{item.sgst}
                             </span>
                           </td>
 
                           {/* Grand Total Paid */}
-                          <td className="py-3 px-3 text-right align-middle">
-                            <strong className="font-mono font-black text-sm text-emerald-700 dark:text-emerald-400 block">
+                          <td className="py-3 px-2 text-right align-middle whitespace-nowrap">
+                            <strong className="font-mono font-black text-xs text-emerald-700 dark:text-emerald-400 block">
                               ₹{item.grossAmount.toLocaleString("en-IN")}
                             </strong>
-                            <span className="inline-block rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 text-[9px] font-black uppercase">
+                            <span className="inline-block rounded-md bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-1 py-0.2 text-[8px] font-black uppercase">
                               Paid Confirmed
                             </span>
                           </td>
 
                           {/* Transaction ID & Date */}
-                          <td className="py-3 px-3 align-middle">
-                            <span className="font-mono text-[10px] text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded block truncate max-w-[150px]">
+                          <td className="py-3 px-2 align-middle">
+                            <span className="font-mono text-[9px] text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded block truncate max-w-[105px]" title={item.payment_id || item.transaction_id || "Direct"}>
                               {item.payment_id || item.transaction_id || "Direct"}
                             </span>
-                            <div className="text-[10px] text-slate-400 mt-0.5">
+                            <div className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
                               {item.regDate ? item.regDate.toLocaleDateString("en-IN") : "N/A"}
                             </div>
                           </td>
 
                           {/* Action / View Full Modal */}
-                          <td className="py-3 px-3 text-center align-middle">
+                          <td className="py-3 px-1.5 text-center align-middle">
                             <button
                               type="button"
                               onClick={() => setSelectedRegDetail(item)}
                               title="View Full Tax Invoice & Receipt Details"
-                              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-cyan-600 transition-colors cursor-pointer"
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-cyan-600 transition-colors cursor-pointer"
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3.5 w-3.5" />
                             </button>
                           </td>
                         </tr>
