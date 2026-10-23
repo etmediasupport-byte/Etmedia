@@ -1500,11 +1500,6 @@ export async function seedDefaultEventPayments() {
           )`,
           [hrRecallAwardCats, hrRecallTeamCats]
         );
-      } else if (!hrRows[0].award_categories || hrRows[0].award_categories === "[]" || hrRows[0].award_categories === "") {
-        await pool.query(
-          "UPDATE event_payment_settings SET award_nomination_enabled = 1, award_nomination_fee = 5000.00, award_categories = ?, award_team_categories = ? WHERE id = ? OR event_id = 'hr-recall-2k26'",
-          [hrRecallAwardCats, hrRecallTeamCats, hrRows[0].id]
-        );
       }
     } catch (hrErr) {
       console.warn("[MySQL] Warning seeding HR Recall award settings:", hrErr);

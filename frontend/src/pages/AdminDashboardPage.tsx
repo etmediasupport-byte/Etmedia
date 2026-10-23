@@ -2348,7 +2348,6 @@ export default function AdminDashboardPage() {
   const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons" | "awards">("general");
   const [previewTierModalConfig, setPreviewTierModalConfig] = useState<EventPaymentConfig | null>(null);
   const [newAwardCatInput, setNewAwardCatInput] = useState("");
-  const [newTeamCatInput, setNewTeamCatInput] = useState("");
 
   const handleOpenAddPaymentConfig = () => {
     setEditingPaymentConfig(null);
@@ -2417,14 +2416,7 @@ export default function AdminDashboardPage() {
         "HR Transformation Leader of the Year",
         "HR Technology Leader of the Year",
       ],
-      award_team_categories: [
-        "Best HR Team of the Year",
-        "Excellence in Talent Acquisition Team",
-        "Best Learning & Development Initiative",
-        "Best Employee Experience & Engagement Initiative",
-        "Best Diversity, Equity & Inclusion Initiative",
-        "Best HR Digital Transformation Initiative",
-      ],
+      award_team_categories: [],
     });
     setShowPaymentModal(true);
   };
@@ -2507,6 +2499,7 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
+        invalidateClientCache();
         toast.success(editingPaymentConfig ? "Event payment settings updated!" : "Event payment configuration created!");
         setShowPaymentModal(false);
         fetchDashboardData();
@@ -23769,80 +23762,83 @@ export default function AdminDashboardPage() {
       {/* ADD / EDIT PAYMENT CONFIGURATION DRAWER / MODAL */}
       {/* ========================================== */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setShowPaymentModal(false)}
-              className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] overflow-hidden">
+            {/* STICKY HEADER */}
+            <div className="shrink-0 p-5 sm:p-6 pb-0 border-b border-slate-100 bg-white relative">
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute top-5 right-5 rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
 
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
-              <CreditCard className="h-4 w-4" />
-              <span>{editingPaymentConfig ? "Edit Event Payment Settings" : "Add New Event Payment Configuration"}</span>
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-cyan-600">
+                <CreditCard className="h-4 w-4" />
+                <span>{editingPaymentConfig ? "Edit Event Payment Settings" : "Add New Event Payment Configuration"}</span>
+              </div>
+
+              <h3 className="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900 truncate pr-10">
+                {editingPaymentConfig ? editingPaymentConfig.event_title || editingPaymentConfig.event_id : "Configure Event Pricing & GST"}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Manage base fees, GST %, tiered registration plans (Gold, Premium, Platinum), early bird discounts, and active coupons.
+              </p>
+
+              {/* TAB NAVIGATION HEADER */}
+              <div className="flex border-b border-slate-200 mt-4 gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("general")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
+                    paymentModalTab === "general"
+                      ? "border-cyan-600 text-cyan-700 bg-cyan-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  1. General & Taxes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("plans")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    paymentModalTab === "plans"
+                      ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Crown className="h-3.5 w-3.5 text-amber-500" />
+                  <span>2. Tier Registration Plans</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("coupons")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${
+                    paymentModalTab === "coupons"
+                      ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  3. Early Bird & Coupons
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("awards")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    paymentModalTab === "awards"
+                      ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Award className="h-3.5 w-3.5 text-amber-500" />
+                  <span>4. Awards & Nominations</span>
+                </button>
+              </div>
             </div>
 
-            <h3 className="mt-1 text-2xl font-extrabold text-slate-900">
-              {editingPaymentConfig ? editingPaymentConfig.event_title || editingPaymentConfig.event_id : "Configure Event Pricing & GST"}
-            </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Manage base fees, GST %, tiered registration plans (Gold, Premium, Platinum), early bird discounts, and active coupons.
-            </p>
-
-            {/* TAB NAVIGATION HEADER */}
-            <div className="flex border-b border-slate-200 mt-5 gap-2">
-              <button
-                type="button"
-                onClick={() => setPaymentModalTab("general")}
-                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  paymentModalTab === "general"
-                    ? "border-cyan-600 text-cyan-700 bg-cyan-50/50 rounded-t-xl"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                1. General & Taxes
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentModalTab("plans")}
-                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                  paymentModalTab === "plans"
-                    ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <Crown className="h-3.5 w-3.5 text-amber-500" />
-                <span>2. Tier Registration Plans (Gold/Premium/Platinum)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentModalTab("coupons")}
-                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  paymentModalTab === "coupons"
-                    ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                3. Early Bird & Coupons
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentModalTab("awards")}
-                className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                  paymentModalTab === "awards"
-                    ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <Award className="h-3.5 w-3.5 text-amber-500" />
-                <span>4. Awards & Nominations</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePaymentConfigSubmit} className="mt-6 space-y-6 text-xs">
+            <form id="paymentConfigForm" onSubmit={handleSavePaymentConfigSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 text-xs custom-scrollbar">
               {/* TAB 1: GENERAL & TAXES */}
               {paymentModalTab === "general" && (
                 <div className="space-y-6">
@@ -24519,13 +24515,13 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Individual Award Categories Manager */}
+                  {/* Award Categories Manager */}
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
                       <div>
                         <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                           <Crown className="h-4 w-4 text-amber-500" />
-                          <span>Individual Award Categories ({(paymentForm.award_categories || []).length})</span>
+                          <span>Award Categories ({(paymentForm.award_categories || []).length})</span>
                         </h4>
                         <p className="text-[11px] text-slate-500">
                           These options appear in "Which Award Category Would You Like to Nominate Yourself For?".
@@ -24636,138 +24632,42 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Team Award Categories Manager (Optional) */}
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
-                      <div>
-                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="h-4 w-4 text-purple-600" />
-                          <span>Team Award Categories ({(paymentForm.award_team_categories || []).length})</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500">
-                          These options appear in "Which Award Category Would You Like to Nominate Your Team For?".
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const hrRecallTeamCats = [
-                              "Best HR Team of the Year",
-                              "Excellence in Talent Acquisition Team",
-                              "Best Learning & Development Initiative",
-                              "Best Employee Experience & Engagement Initiative",
-                              "Best Diversity, Equity & Inclusion Initiative",
-                              "Best HR Digital Transformation Initiative",
-                            ];
-                            setPaymentForm({ ...paymentForm, award_team_categories: hrRecallTeamCats });
-                            toast.success("Loaded 6 Team Award Categories!");
-                          }}
-                          className="px-2.5 py-1 rounded-lg border border-purple-300 bg-purple-50 text-[10px] font-bold text-purple-900 hover:bg-purple-100 transition-colors cursor-pointer"
-                        >
-                          Load Team Categories
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPaymentForm({ ...paymentForm, award_team_categories: [] });
-                          }}
-                          className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Add Team Category Input */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newTeamCatInput}
-                        onChange={(e) => setNewTeamCatInput(e.target.value)}
-                        placeholder="e.g. Best HR Team of the Year"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            if (!newTeamCatInput.trim()) return;
-                            const current = Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : [];
-                            setPaymentForm({ ...paymentForm, award_team_categories: [...current, newTeamCatInput.trim()] });
-                            setNewTeamCatInput("");
-                          }
-                        }}
-                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-600 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!newTeamCatInput.trim()) return;
-                          const current = Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : [];
-                          setPaymentForm({ ...paymentForm, award_team_categories: [...current, newTeamCatInput.trim()] });
-                          setNewTeamCatInput("");
-                        }}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
-                      >
-                        + Add Team Category
-                      </button>
-                    </div>
-
-                    {/* Team Categories List */}
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                      {(Array.isArray(paymentForm.award_team_categories) ? paymentForm.award_team_categories : []).length === 0 ? (
-                        <div className="text-center py-4 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs">
-                          No team categories configured (Optional).
-                        </div>
-                      ) : (
-                        (paymentForm.award_team_categories as string[]).map((catName: string, cIdx: number) => (
-                          <div
-                            key={cIdx}
-                            className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-purple-300 transition-colors"
-                          >
-                            <span className="flex items-center gap-2">
-                              <span className="h-5 w-5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black flex items-center justify-center shrink-0">
-                                {cIdx + 1}
-                              </span>
-                              <span>{catName}</span>
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = (paymentForm.award_team_categories as string[]).filter((_, i) => i !== cIdx);
-                                setPaymentForm({ ...paymentForm, award_team_categories: updated });
-                              }}
-                              className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
-                              title="Delete Category"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
+            </form>
 
-              {/* ACTION BUTTONS */}
-              <div className="flex gap-3 pt-4 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-100 py-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
+            {/* STICKY BOTTOM ACTION FOOTER */}
+            <div className="shrink-0 flex items-center justify-between gap-3 px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-extrabold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-slate-500 hidden sm:inline">
+                  {paymentModalTab === "awards" ? "Award categories & nomination settings" : "Ready to save configuration"}
+                </span>
                 <button
                   type="submit"
+                  form="paymentConfigForm"
                   disabled={paymentSaving}
-                  className="flex-1 rounded-xl gradient-brand py-3 text-xs font-bold text-white shadow-md hover:scale-[1.01] transition-transform disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl gradient-brand text-xs font-black text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:scale-[1.01] transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
                 >
-                  {paymentSaving ? "Saving Configuration..." : "Save Payment Settings & Pricing Tiers"}
+                  {paymentSaving ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      <span>Saving Configuration...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💾 Save Payment Settings & Pricing Tiers</span>
+                    </>
+                  )}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

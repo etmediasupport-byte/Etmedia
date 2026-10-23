@@ -6426,6 +6426,20 @@ async function upsertEventPaymentSettings(data: any) {
   const event_id = data.event_id || data.id;
   if (!event_id) throw new Error("Event selection is required");
 
+  let event_slug = data.event_slug || "";
+  let event_title = data.event_title || "";
+  if (pool && (!event_slug || !event_title)) {
+    try {
+      const [evRows]: any = await pool.query("SELECT id, title, slug FROM events WHERE id = ? OR slug = ?", [event_id, event_id]);
+      if (evRows && evRows.length > 0) {
+        if (!event_slug) event_slug = evRows[0].slug || evRows[0].id;
+        if (!event_title) event_title = evRows[0].title || "";
+      }
+    } catch (_) {}
+  }
+  if (!event_slug) event_slug = event_id;
+  if (!event_title) event_title = data.event_title || event_id;
+
   const id = data.id || `PAY-${event_id}`;
   const regTypePricesStr = typeof data.registration_type_prices === "string" ? data.registration_type_prices : JSON.stringify(data.registration_type_prices || {});
   const pricingPlansStr = typeof data.pricing_plans === "string" ? data.pricing_plans : JSON.stringify(data.pricing_plans || []);
@@ -6436,10 +6450,15 @@ async function upsertEventPaymentSettings(data: any) {
 
   await ensureEventPaymentsTable();
 
-  // Safely check existing row by event_id or id
+  // Also sync pricing_plans to events table
+  try {
+    await pool.query("UPDATE events SET pricing_plans = ? WHERE id = ? OR slug = ?", [pricingPlansStr, event_id, event_slug]);
+  } catch (_) {}
+
+  // Safely check existing row by event_id, event_slug, or id
   let existingRows: any[] = [];
   try {
-    const [rows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE event_id = ? OR id = ?", [event_id, id]);
+    const [rows]: any = await pool.query("SELECT * FROM event_payment_settings WHERE event_id = ? OR event_slug = ? OR id = ?", [event_id, event_slug, id]);
     existingRows = rows || [];
   } catch (err) {
     try {
@@ -6467,7 +6486,7 @@ async function upsertEventPaymentSettings(data: any) {
           award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
         WHERE event_id = ? OR id = ?`,
         [
-          id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
           regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
           data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
@@ -6493,7 +6512,7 @@ async function upsertEventPaymentSettings(data: any) {
           award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
         WHERE event_id = ?`,
         [
-          event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
           regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
           data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
@@ -6507,6 +6526,8 @@ async function upsertEventPaymentSettings(data: any) {
         ]
       );
     }
+    invalidateFastCache("event_payment_");
+    invalidateFastCache("events_");
     return id;
   } else {
     try {
@@ -6521,7 +6542,7 @@ async function upsertEventPaymentSettings(data: any) {
           award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id, event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
           regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
           data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
@@ -6545,7 +6566,7 @@ async function upsertEventPaymentSettings(data: any) {
           award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          event_id, data.event_title || "", data.event_slug || "", data.registration_fee || 0, data.currency || "INR",
+          event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
           regTypePricesStr, pricingPlansStr, data.early_bird_enabled ? 1 : 0, data.early_bird_price || 0,
           data.early_bird_start_date || "", data.early_bird_end_date || "", specialPricesStr, data.total_seats || 100,
@@ -6558,6 +6579,8 @@ async function upsertEventPaymentSettings(data: any) {
         ]
       );
     }
+    invalidateFastCache("event_payment_");
+    invalidateFastCache("events_");
     return id;
   }
 }
@@ -6618,10 +6641,13 @@ app.post("/api/admin/event-payments/bulk", authenticateAdmin, async (req, res) =
 // 6. Public Endpoint: Get Payment Config by Event ID or Slug (Cached & Hash-Resilient)
 app.get("/api/event-payments/event/:eventId", async (req, res) => {
   const { eventId } = req.params;
+  const isNoCache = req.query._t !== undefined || req.headers["cache-control"] === "no-cache";
   const cacheKey = `event_payment_${eventId}`;
-  const cached = getFastCache(cacheKey);
-  if (cached) {
-    return res.json(cached);
+  if (!isNoCache) {
+    const cached = getFastCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
   }
 
   try {
@@ -6638,7 +6664,10 @@ app.get("/api/event-payments/event/:eventId", async (req, res) => {
         const result = isPublished
           ? { success: true, pricingAvailable: true, payment }
           : { success: true, pricingAvailable: false, payment: null, message: "Pricing for this event is in Draft mode." };
-        setFastCache(cacheKey, result, 60);
+        if (!isNoCache) {
+          setFastCache(cacheKey, result, 60);
+        }
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         return res.json(result);
       }
     }
@@ -6648,9 +6677,13 @@ app.get("/api/event-payments/event/:eventId", async (req, res) => {
       payment: null,
       message: "Pricing not configured for this event in Admin Dashboard.",
     };
-    setFastCache(cacheKey, notFoundResult, 60);
+    if (!isNoCache) {
+      setFastCache(cacheKey, notFoundResult, 60);
+    }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     return res.json(notFoundResult);
   } catch (err) {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     return res.json({ success: true, pricingAvailable: false, payment: null });
   }
 });

@@ -372,32 +372,29 @@ export default function EventRegistrationWizardPage() {
       if (typeof data.award_nomination_fee !== "undefined" && data.award_nomination_fee !== null) {
         setAwardNominationFee(Number(data.award_nomination_fee) || 0);
       }
-      if (data.award_categories) {
+      if (typeof data.award_categories !== "undefined") {
         let cats: string[] = [];
         if (typeof data.award_categories === "string") {
           try { cats = JSON.parse(data.award_categories); } catch (_) {}
         } else if (Array.isArray(data.award_categories)) {
           cats = data.award_categories;
         }
-        if (Array.isArray(cats) && cats.length > 0) {
-          setAwardCategoriesList(cats);
-        }
+        setAwardCategoriesList(Array.isArray(cats) ? cats : []);
       }
-      if (data.award_team_categories) {
+      if (typeof data.award_team_categories !== "undefined") {
         let teamCats: string[] = [];
         if (typeof data.award_team_categories === "string") {
           try { teamCats = JSON.parse(data.award_team_categories); } catch (_) {}
         } else if (Array.isArray(data.award_team_categories)) {
           teamCats = data.award_team_categories;
         }
-        if (Array.isArray(teamCats) && teamCats.length > 0) {
-          setAwardTeamCategoriesList(teamCats);
-        }
+        setAwardTeamCategoriesList(Array.isArray(teamCats) ? teamCats : []);
       }
     };
 
     // 1. Fetch Event details & attached payment config
-    fetchWithCache(`/api/events/${activeSlug}`)
+    fetch(`/api/events/${activeSlug}?_t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => res.json())
       .then((json) => {
         if (!isMounted) return;
         if (json.success && json.event) {
@@ -424,7 +421,8 @@ export default function EventRegistrationWizardPage() {
       });
 
     // 2. Fetch specific Event Payment Config (Dynamic Pricing Packages from Admin)
-    fetchWithCache(`/api/event-payments/event/${activeSlug}`)
+    fetch(`/api/event-payments/event/${activeSlug}?_t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => res.json())
       .then((json) => {
         if (!isMounted) return;
         if (json.success && json.payment) {
@@ -445,7 +443,8 @@ export default function EventRegistrationWizardPage() {
           }
           applyAwardSettings(payment);
         } else if (cleanActiveSlug !== activeSlug) {
-          fetchWithCache(`/api/event-payments/event/${cleanActiveSlug}`)
+          fetch(`/api/event-payments/event/${cleanActiveSlug}?_t=${Date.now()}`, { cache: "no-store" })
+            .then((res) => res.json())
             .then((cleanJson) => {
               if (!isMounted) return;
               if (cleanJson.success && cleanJson.payment) {
@@ -2156,13 +2155,18 @@ export default function EventRegistrationWizardPage() {
                                 : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-500/10"
                             }`}
                           >
-                            <option value="">Choose</option>
-                            {(awardCategoriesList.length > 0 ? awardCategoriesList : HR_RECALL_DEFAULT_CATEGORIES).map((cat) => (
+                            <option value="">Choose an award category</option>
+                            {awardCategoriesList.map((cat) => (
                               <option key={cat} value={cat}>
                                 {cat}
                               </option>
                             ))}
                           </select>
+                          {awardCategoriesList.length === 0 && (
+                            <p className="text-[11px] text-amber-600 mt-1">
+                              ℹ️ No award categories have been configured yet.
+                            </p>
+                          )}
                           {awardCategoryError && !selectedAwardCategory && (
                             <p className="text-xs font-bold text-rose-500 mt-1">
                               ⚠️ {awardCategoryError}
@@ -2170,24 +2174,6 @@ export default function EventRegistrationWizardPage() {
                           )}
                         </div>
 
-                        {/* Question 3: Team Category (Optional) */}
-                        <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
-                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                            Which Award Category Would You Like to Nominate Your Team For? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span>
-                          </label>
-                          <select
-                            value={selectedTeamCategory}
-                            onChange={(e) => setSelectedTeamCategory(e.target.value)}
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
-                          >
-                            <option value="">Choose (Optional)</option>
-                            {(awardTeamCategoriesList.length > 0 ? awardTeamCategoriesList : HR_RECALL_DEFAULT_TEAM_CATEGORIES).map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
 
                         {/* Transparent Fee Alert Box */}
                         <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 p-4 sm:p-5 flex items-start gap-3.5">
