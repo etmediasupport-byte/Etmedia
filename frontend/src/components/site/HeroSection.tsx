@@ -285,85 +285,76 @@ export function HeroSection() {
         <div className="grid gap-4 lg:grid-cols-12 items-center">
           
           {/* LEFT COLUMN: BRANDING, HEADLINE, LOCATIONS & CTAS */}
-          <div className="lg:col-span-6 space-y-3 sm:space-y-4">
-            
-            {/* Extraordinary Glassmorphism Highlight Card */}
-            <div className="relative rounded-3xl border border-white/15 bg-slate-950/50 backdrop-blur-xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-              {/* Subtle neon top beam */}
-              <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+          <div className="lg:col-span-6 space-y-4 sm:space-y-5">
+            {/* Kicker badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-4 py-1.5 backdrop-blur-md text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-cyan-300 shadow-[0_0_15px_rgba(0,174,239,0.25)]">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+              <span>{currentPhrase.kicker}</span>
+            </div>
 
-              <div className="space-y-3">
-                {/* Kicker badge */}
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-purple-500/20 px-3.5 py-1 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-cyan-300 shadow-[0_0_15px_rgba(0,174,239,0.25)]">
-                  <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                  <span>{currentPhrase.kicker}</span>
-                </div>
+            {/* Animated Headline & Subtext */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={phraseIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="space-y-3"
+              >
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] font-black tracking-tight text-white font-display leading-[1.12] drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+                  <span className="block sm:whitespace-nowrap">
+                    {currentPhrase.prefix}{" "}
+                    <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(0,174,239,0.5)]">
+                      {currentPhrase.gradientText}
+                    </span>
+                  </span>
+                  <span className="block">{currentPhrase.line2}</span>
+                </h1>
 
-                {/* Animated Headline */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={phraseIndex}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="space-y-2"
-                  >
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.65rem] font-black tracking-tight text-white font-display leading-[1.12]">
-                      <span className="block sm:whitespace-nowrap">
-                        {currentPhrase.prefix}{" "}
-                        <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(0,174,239,0.4)]">
-                          {currentPhrase.gradientText}
-                        </span>
-                      </span>
-                      <span className="block">{currentPhrase.line2}</span>
-                    </h1>
+                <p className="text-sm sm:text-base lg:text-lg text-slate-200 font-medium max-w-xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {currentPhrase.subtext}
+                </p>
+              </motion.div>
+            </AnimatePresence>
 
-                    <p className="text-xs sm:text-sm lg:text-[15px] text-slate-200 font-medium max-w-xl leading-relaxed">
-                      {currentPhrase.subtext}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
+            {/* Phrase Selector Dots */}
+            <div className="flex items-center gap-1.5 pt-0.5">
+              {heroPhrases.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Phrase ${i + 1}`}
+                  onClick={() => setPhraseIndex(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === phraseIndex
+                      ? "w-7 bg-gradient-to-r from-cyan-400 to-purple-500 shadow-[0_0_12px_#00AEEF]"
+                      : "w-1.5 bg-white/30 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
 
-                {/* Phrase Selector Dots */}
-                <div className="flex items-center gap-1.5 pt-1">
-                  {heroPhrases.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-label={`Phrase ${i + 1}`}
-                      onClick={() => setPhraseIndex(i)}
-                      className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                        i === phraseIndex
-                          ? "w-7 bg-gradient-to-r from-cyan-400 to-purple-500 shadow-[0_0_12px_#00AEEF]"
-                          : "w-1.5 bg-white/20 hover:bg-white/40"
-                      }`}
-                    />
-                  ))}
-                </div>
+            {/* ACTION BUTTONS */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <MagneticButton
+                strength={20}
+                className="gradient-brand rounded-full px-7 sm:px-9 py-3.5 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(0,174,239,0.55)] hover:shadow-[0_15px_40px_rgba(0,174,239,0.8)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
+              >
+                <Link to="/events" className="flex items-center gap-2 font-btn">
+                  <span>Explore Events</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </MagneticButton>
 
-                {/* ACTION BUTTONS */}
-                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
-                  <MagneticButton
-                    strength={20}
-                    className="gradient-brand rounded-full px-6 sm:px-8 py-3 text-xs sm:text-sm font-extrabold text-white shadow-[0_10px_35px_rgba(0,174,239,0.55)] hover:shadow-[0_15px_40px_rgba(0,174,239,0.8)] hover:scale-[1.03] transition-all duration-300 cursor-pointer"
-                  >
-                    <Link to="/events" className="flex items-center gap-2 font-btn">
-                      <span>Explore Events</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </MagneticButton>
-
-                  <MagneticButton
-                    strength={15}
-                    className="rounded-full border border-white/20 bg-white/10 hover:bg-white/20 px-5 sm:px-7 py-3 text-xs sm:text-sm font-extrabold text-white backdrop-blur-md shadow-lg hover:border-cyan-400/50 hover:text-cyan-200 transition-all duration-200 cursor-pointer"
-                  >
-                    <Link to="/events/partner" className="font-btn">
-                      Partner With Us
-                    </Link>
-                  </MagneticButton>
-                </div>
-              </div>
+              <MagneticButton
+                strength={15}
+                className="rounded-full border border-white/25 bg-black/40 hover:bg-black/60 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-extrabold text-white backdrop-blur-md shadow-lg hover:border-cyan-400/60 hover:text-cyan-200 transition-all duration-200 cursor-pointer"
+              >
+                <Link to="/events/partner" className="font-btn">
+                  Partner With Us
+                </Link>
+              </MagneticButton>
             </div>
           </div>
 
