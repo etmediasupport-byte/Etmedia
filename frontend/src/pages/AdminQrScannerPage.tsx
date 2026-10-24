@@ -898,8 +898,9 @@ export default function AdminQrScannerPage() {
                           const del = scanResult?.delegate;
                           if (!del || !scanQrDataUrl) return;
                           const name = del.name || del.full_name || "Delegate";
-                          const org = del.organization || del.company_name || "Enterprise";
-                          downloadBadgeImage(name, org, scanQrDataUrl);
+                          const org = del.organization || del.company_name || "Enterprise Delegate";
+                          const evtTitle = del.event_title || del.eventTitle || eventsList.find((e) => e.id === selectedEventId)?.title || "Executive Leadership Summit 2026";
+                          downloadBadgeImage(name, org, scanQrDataUrl, evtTitle);
                         }}
                         disabled={!scanQrDataUrl}
                         className="py-2.5 px-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
@@ -915,8 +916,9 @@ export default function AdminQrScannerPage() {
                           const del = scanResult?.delegate;
                           if (!del || !scanQrDataUrl) return;
                           const name = del.name || del.full_name || "Delegate";
-                          const org = del.organization || del.company_name || "Enterprise";
-                          downloadBadgePdf(name, org, scanQrDataUrl);
+                          const org = del.organization || del.company_name || "Enterprise Delegate";
+                          const evtTitle = del.event_title || del.eventTitle || eventsList.find((e) => e.id === selectedEventId)?.title || "Executive Leadership Summit 2026";
+                          downloadBadgePdf(name, org, scanQrDataUrl, evtTitle);
                         }}
                         disabled={!scanQrDataUrl}
                         className="py-2.5 px-3 rounded-xl border border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"

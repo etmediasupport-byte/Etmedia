@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
-import { Printer, X, CheckCircle2, Copy, Sparkles, RefreshCw, Download, Image as ImageIcon, FileText } from "lucide-react";
+import { Printer, X, CheckCircle2, Copy, Sparkles, RefreshCw, Image as ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ThermalBadgeAttendee {
@@ -22,66 +22,140 @@ export interface ThermalBadgeAttendee {
 }
 
 /**
- * Downloads a high-resolution PNG image containing ONLY:
- * 1. Person Name
- * 2. Company Name
- * 3. Scannable QR Code
+ * Downloads a high-resolution PNG image containing:
+ * - High contrast outer & inner badge border
+ * - Executive Talks Media & Event Title Header
+ * - Explicit "NAME OF THE PERSON" label & large bold name
+ * - Explicit "NAME OF THE COMPANY" label & bold organization
+ * - Centered framed QR Code
+ * - Admission Verified footer
  */
 export const downloadBadgeImage = async (
   name: string,
   company: string,
-  qrDataUrl: string
+  qrDataUrl: string,
+  eventTitle?: string
 ): Promise<void> => {
   return new Promise((resolve) => {
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 720;
+      canvas.width = 640;
+      canvas.height = 840;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         toast.error("Canvas context not available");
         return resolve();
       }
 
-      // Background
+      // 1. Clean Crisp White Background
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Slip Outer Border (High Contrast Monochrome)
+      // 2. High Contrast Outer Border
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 6;
-      ctx.strokeRect(20, 20, 560, 680);
+      ctx.strokeRect(20, 20, 600, 800);
 
-      // 1. Person Name (Large, Bold, Centered)
+      // Inner Accent Border
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(28, 28, 584, 784);
+
+      // 3. Header: Brand & Event
       ctx.fillStyle = "#000000";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = "900 34px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      const upperName = (name || "DELEGATE").toUpperCase();
-      ctx.fillText(upperName, 300, 95, 520);
+      ctx.font = "900 22px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillText("EXECUTIVE TALKS MEDIA", 320, 62, 540);
 
-      // 2. Company Name (Bold, Centered)
-      ctx.font = "700 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      const upperCompany = (company || "ENTERPRISE").toUpperCase();
-      ctx.fillText(upperCompany, 300, 155, 520);
+      const upperEvent = (eventTitle || "LEADERSHIP SUMMIT 2026").toUpperCase();
+      ctx.font = "700 14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillStyle = "#333333";
+      ctx.fillText(upperEvent, 320, 92, 540);
 
-      // Divider line
-      ctx.lineWidth = 2;
+      // Badge Pill
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(180, 114, 280, 26);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillText("★ OFFICIAL GATE ADMISSION PASS ★", 320, 127);
+
+      // Divider Line
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(60, 195);
-      ctx.lineTo(540, 195);
+      ctx.moveTo(40, 155);
+      ctx.lineTo(600, 155);
       ctx.stroke();
 
-      // 3. QR Code (High-res, Centered)
+      // 4. PERSON NAME (With Explicit Label)
+      ctx.fillStyle = "#555555";
+      ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillText("NAME OF THE PERSON", 320, 185, 520);
+
+      ctx.fillStyle = "#000000";
+      ctx.font = "900 32px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      const upperName = (name || "DELEGATE").toUpperCase();
+      ctx.fillText(upperName, 320, 225, 520);
+
+      // Dashed Divider
+      ctx.strokeStyle = "#888888";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(80, 260);
+      ctx.lineTo(560, 260);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 5. COMPANY NAME (With Explicit Label)
+      ctx.fillStyle = "#555555";
+      ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.fillText("NAME OF THE COMPANY", 320, 290, 520);
+
+      ctx.fillStyle = "#000000";
+      ctx.font = "800 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
+      ctx.fillText(upperCompany, 320, 330, 520);
+
+      // Solid Divider
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(40, 365);
+      ctx.lineTo(600, 365);
+      ctx.stroke();
+
+      // 6. QR Code (Framed & Centered)
       if (qrDataUrl) {
         const qrImg = new Image();
         qrImg.crossOrigin = "anonymous";
         qrImg.onload = () => {
-          ctx.drawImage(qrImg, 100, 230, 400, 400);
+          // QR box frame
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(170, 395, 300, 300);
+
+          ctx.drawImage(qrImg, 185, 410, 270, 270);
+
+          ctx.fillStyle = "#000000";
+          ctx.font = "900 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.fillText("SCAN TO VERIFY PASS", 320, 715);
+
+          // Divider
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(40, 740);
+          ctx.lineTo(600, 740);
+          ctx.stroke();
+
+          // Footer
+          ctx.font = "900 14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.fillText("✓ ADMISSION VERIFIED • ALL-ACCESS", 320, 770);
 
           const a = document.createElement("a");
           const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-          a.download = `Badge_${safeName || "Pass"}.png`;
+          a.download = `Gate_Badge_${safeName || "Pass"}.png`;
           a.href = canvas.toDataURL("image/png");
           document.body.appendChild(a);
           a.click();
@@ -107,56 +181,104 @@ export const downloadBadgeImage = async (
 };
 
 /**
- * Downloads a clean PDF file formatted for 80mm thermal slip containing ONLY:
- * 1. Person Name
- * 2. Company Name
- * 3. Scannable QR Code
+ * Downloads a clean PDF formatted for 80mm thermal paper or badge card printing
  */
 export const downloadBadgePdf = async (
   name: string,
   company: string,
-  qrDataUrl: string
+  qrDataUrl: string,
+  eventTitle?: string
 ): Promise<void> => {
   try {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: [80, 105], // 80mm thermal paper standard slip size
+      format: [80, 125], // 80mm thermal paper standard slip size
     });
 
     // White background
     doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, 80, 105, "F");
+    doc.rect(0, 0, 80, 125, "F");
 
-    // Outer border
+    // Outer & Inner Borders
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.8);
-    doc.rect(3, 3, 74, 99);
+    doc.rect(3, 3, 74, 119);
+    doc.setLineWidth(0.2);
+    doc.rect(4.2, 4.2, 71.6, 116.6);
 
-    // 1. Person Name (Large, Bold)
+    // Header: Brand & Event
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    const upperName = (name || "DELEGATE").toUpperCase();
-    doc.text(upperName, 40, 15, { align: "center", maxWidth: 68 });
+    doc.setFontSize(10.5);
+    doc.text("EXECUTIVE TALKS MEDIA", 40, 11, { align: "center", maxWidth: 68 });
 
-    // 2. Company Name
+    const upperEvent = (eventTitle || "LEADERSHIP SUMMIT 2026").toUpperCase();
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(upperEvent, 40, 16, { align: "center", maxWidth: 68 });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("★ GATE ADMISSION PASS ★", 40, 21, { align: "center" });
+
+    // Separator line
+    doc.setLineWidth(0.4);
+    doc.line(6, 24, 74, 24);
+
+    // 1. PERSON NAME (With Explicit Label)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    doc.text("NAME OF THE PERSON", 40, 29, { align: "center" });
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    const upperName = (name || "DELEGATE").toUpperCase();
+    doc.text(upperName, 40, 36, { align: "center", maxWidth: 68 });
+
+    // Separator dashed
+    doc.setLineWidth(0.2);
+    doc.line(10, 41, 70, 41);
+
+    // 2. COMPANY NAME (With Explicit Label)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    doc.text("NAME OF THE COMPANY", 40, 46, { align: "center" });
+
+    doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    const upperCompany = (company || "ENTERPRISE").toUpperCase();
-    doc.text(upperCompany, 40, 24, { align: "center", maxWidth: 68 });
+    const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
+    doc.text(upperCompany, 40, 52, { align: "center", maxWidth: 68 });
 
-    // Separator
-    doc.setLineWidth(0.3);
-    doc.line(8, 29, 72, 29);
+    // Separator line
+    doc.setLineWidth(0.4);
+    doc.line(6, 57, 74, 57);
 
-    // 3. QR Code
+    // 3. QR Code with Box
     if (qrDataUrl) {
-      doc.addImage(qrDataUrl, "PNG", 14, 34, 52, 52);
+      doc.setLineWidth(0.3);
+      doc.rect(17, 61, 46, 46);
+      doc.addImage(qrDataUrl, "PNG", 18.5, 62.5, 43, 43);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.text("SCAN TO VERIFY PASS", 40, 111, { align: "center" });
     }
 
+    // Separator line
+    doc.setLineWidth(0.3);
+    doc.line(6, 114, 74, 114);
+
+    // Footer
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.text("✓ ADMISSION VERIFIED • ALL-ACCESS", 40, 119, { align: "center" });
+
     const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-    doc.save(`Badge_${safeName || "Pass"}.pdf`);
+    doc.save(`Gate_Badge_${safeName || "Pass"}.pdf`);
     toast.success("Badge PDF downloaded successfully!");
   } catch (err) {
     console.error("Download PDF error:", err);
@@ -196,6 +318,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const delegateName = attendee?.name || "Summit Attendee";
   const delegateOrg =
     attendee?.organization || attendee?.company_name || "";
+  const eventTitle =
+    attendee?.event_title || attendee?.eventTitle || defaultEventTitle;
 
   // Generate QR code data URL whenever attendee changes
   useEffect(() => {
@@ -204,7 +328,6 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
       return;
     }
 
-    // QR payload can be scanned by verification page or gate scanner
     const origin = typeof window !== "undefined" ? window.location.origin : "https://executivetalksmedia.in";
     const qrPayload = `${origin}/verify-pass/${encodeURIComponent(attendee.id)}`;
 
@@ -230,7 +353,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
     if (!slipRef.current) return;
     setIsPrinting(true);
 
-    const printContent = slipRef.current.innerHTML;
+    // Use outerHTML so the .thermal-pass-card wrapper and its border are 100% PRESERVED
+    const printContent = slipRef.current.outerHTML;
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -247,11 +371,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Badge Pass - ${delegateName}</title>
+            <title>Gate Badge Pass - ${delegateName}</title>
             <style>
               @page {
-                size: 80mm auto;
-                margin: 2mm;
+                size: auto;
+                margin: 4mm;
               }
               * {
                 box-sizing: border-box;
@@ -263,47 +387,54 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
-              body {
-                width: 76mm;
-                margin: 0 auto;
-                padding: 1mm;
-                background: #fff;
-              }
-              .thermal-pass-card {
+              html, body {
                 width: 100%;
-                border: 2px solid #000;
-                border-radius: 4px;
-                padding: 6mm 3mm;
-                text-align: center;
-              }
-              .delegate-name {
-                font-size: 19px;
-                font-weight: 900;
-                text-transform: uppercase;
-                line-height: 1.2;
-                margin: 2mm 0 2mm 0;
-                word-break: break-word;
-              }
-              .company-name {
-                font-size: 14px;
-                font-weight: 800;
-                text-transform: uppercase;
-                line-height: 1.25;
-                margin-bottom: 4mm;
-                word-break: break-word;
-              }
-              .qr-container {
-                margin: 2mm auto 1mm auto;
+                background: #ffffff !important;
                 display: flex;
                 justify-content: center;
-                align-items: center;
+                align-items: flex-start;
+                padding: 4mm 0;
+              }
+              .thermal-pass-card {
+                width: 78mm !important;
+                max-width: 95vw !important;
+                border: 3px solid #000000 !important;
+                border-radius: 8px !important;
+                padding: 5mm 4mm !important;
+                text-align: center !important;
+                background: #ffffff !important;
+                page-break-inside: avoid !important;
+                margin: 0 auto !important;
+              }
+              .delegate-name {
+                font-size: 20px !important;
+                font-weight: 900 !important;
+                text-transform: uppercase !important;
+                line-height: 1.15 !important;
+                margin: 1.5mm 0 !important;
+                word-break: break-word !important;
+              }
+              .company-name {
+                font-size: 14.5px !important;
+                font-weight: 800 !important;
+                text-transform: uppercase !important;
+                line-height: 1.2 !important;
+                margin: 1.5mm 0 !important;
+                word-break: break-word !important;
+              }
+              .qr-container {
+                margin: 2mm auto 1mm auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
               }
               .qr-img {
-                width: 44mm;
-                height: 44mm;
-                display: block;
-                margin: 0 auto;
-                image-rendering: pixelated;
+                width: 44mm !important;
+                height: 44mm !important;
+                display: block !important;
+                margin: 0 auto !important;
+                image-rendering: pixelated !important;
               }
             </style>
           </head>
@@ -324,7 +455,9 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         } finally {
           setIsPrinting(false);
           setTimeout(() => {
-            document.body.removeChild(iframe);
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
           }, 1500);
         }
       }, 300);
@@ -338,7 +471,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const handleDownloadImg = async () => {
     if (!qrDataUrl) return;
     setIsDownloadingImage(true);
-    await downloadBadgeImage(delegateName, delegateOrg || "Enterprise", qrDataUrl);
+    await downloadBadgeImage(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, eventTitle);
     setIsDownloadingImage(false);
   };
 
@@ -346,7 +479,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const handleDownloadPdf = async () => {
     if (!qrDataUrl) return;
     setIsDownloadingPdf(true);
-    await downloadBadgePdf(delegateName, delegateOrg || "Enterprise", qrDataUrl);
+    await downloadBadgePdf(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, eventTitle);
     setIsDownloadingPdf(false);
   };
 
@@ -366,27 +499,24 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, qrDataUrl]);
 
-  // Handle auto-print if enabled
+  // Auto-print triggered upon modal display
   useEffect(() => {
-    if (!isOpen || !autoPrint || !qrDataUrl) {
-      return;
+    if (isOpen && (autoPrint || autoPrintEnabled) && qrDataUrl) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 400);
+      return () => clearTimeout(timer);
     }
-    const timer = setTimeout(() => {
-      handlePrint();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [isOpen, autoPrint, qrDataUrl]);
+  }, [isOpen, autoPrint, autoPrintEnabled, qrDataUrl]);
 
   if (!isOpen || !attendee) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[95vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850">
           <div className="flex items-center gap-3">
@@ -403,7 +533,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                TVS Electronics Thermal Printer Compatible (80mm / 76mm Slip)
+                High-Contrast Monochrome Pass • Thermal & Standard Printer Ready
               </p>
             </div>
           </div>
@@ -421,35 +551,81 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         {/* Modal Body: Thermal Badge Slip Preview */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1 bg-slate-100/70 dark:bg-slate-950/50">
           {/* Slip Container with Thermal Paper Shadow */}
-          <div className="mx-auto w-[310px] bg-white text-black p-4 rounded-xl shadow-lg border border-slate-300">
-            {/* The printable slip component - ONLY Person Name, Company Name, and QR Code */}
+          <div className="mx-auto w-[320px] bg-white text-black p-4 rounded-xl shadow-lg border border-slate-300">
+            {/* The printable slip component - Crisp badge card with clear border, labels, and alignment */}
             <div
               ref={slipRef}
-              className="thermal-pass-card w-full border-[2px] border-black rounded-[4px] p-4 text-center bg-white text-black select-none"
+              className="thermal-pass-card w-full border-[3px] border-black rounded-[8px] p-4 text-center bg-white text-black select-none shadow-sm"
               style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
             >
-              {/* 1. Person Name (Large, Bold) */}
-              <div className="delegate-name text-[20px] font-black uppercase leading-tight tracking-tight text-black my-2 break-words">
-                {delegateName}
+              {/* Header: Organization & Pass Title */}
+              <div className="border-b-[2px] border-black pb-2.5 mb-3">
+                <div className="text-[12px] font-black uppercase tracking-[1.5px] text-black">
+                  Executive Talks Media
+                </div>
+                <div className="text-[10px] font-bold text-slate-700 uppercase mt-0.5 line-clamp-1">
+                  {eventTitle}
+                </div>
+                <div className="inline-block mt-1.5 px-2.5 py-0.5 rounded-[4px] border border-black text-[9px] font-black uppercase tracking-wider bg-slate-50">
+                  ★ Official Gate Admission Pass ★
+                </div>
               </div>
 
-              {/* 2. Company Name (Bold) */}
-              <div className="company-name text-[14px] font-black uppercase leading-snug text-black mb-3 break-words">
-                {delegateOrg || "Enterprise"}
+              {/* 1. Person Name (With Explicit Label) */}
+              <div className="py-1">
+                <div className="text-[9.5px] font-black uppercase tracking-[1.2px] text-slate-600 mb-0.5">
+                  Name of the Person
+                </div>
+                <div className="delegate-name text-[21px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                  {delegateName}
+                </div>
               </div>
 
-              {/* 3. QR Code */}
-              <div className="qr-container my-2 flex justify-center items-center">
-                {qrDataUrl ? (
-                  <img
-                    src={qrDataUrl}
-                    alt="Attendee Verification QR Code"
-                    className="qr-img w-[140px] h-[140px] mx-auto block border border-black/40 p-1"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                ) : (
-                  <div className="w-[140px] h-[140px] mx-auto flex items-center justify-center bg-slate-100 border border-black text-[10px] font-mono">
-                    Generating QR...
+              {/* Divider */}
+              <div className="my-2 border-t border-dashed border-slate-400" />
+
+              {/* 2. Company Name (With Explicit Label) */}
+              <div className="py-1">
+                <div className="text-[9.5px] font-black uppercase tracking-[1.2px] text-slate-600 mb-0.5">
+                  Name of the Company
+                </div>
+                <div className="company-name text-[15px] font-black uppercase leading-snug text-black break-words">
+                  {delegateOrg || "Enterprise Delegate"}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="my-2.5 border-t-[2px] border-black" />
+
+              {/* 3. Scannable QR Code */}
+              <div className="qr-container my-1 flex flex-col justify-center items-center">
+                <div className="p-1.5 border-[1.5px] border-black rounded-[6px] bg-white inline-block">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="Attendee Verification QR Code"
+                      className="qr-img w-[130px] h-[130px] block"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                  ) : (
+                    <div className="w-[130px] h-[130px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
+                      Generating QR...
+                    </div>
+                  )}
+                </div>
+                <div className="text-[8.5px] font-black uppercase tracking-wider text-slate-700 mt-1">
+                  Scan to Verify Pass
+                </div>
+              </div>
+
+              {/* Footer Divider & Status */}
+              <div className="mt-2.5 pt-2 border-t-[2px] border-black">
+                <div className="text-[9.5px] font-black uppercase tracking-wide text-black">
+                  ✓ Admission Verified • All-Access
+                </div>
+                {attendee?.checked_in_at && (
+                  <div className="text-[8px] font-bold text-slate-500 mt-0.5">
+                    Checked In: {new Date(attendee.checked_in_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 )}
               </div>
@@ -460,7 +636,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2">
             <span className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-              <span>Crisp monochrome vector output for direct thermal printing</span>
+              <span>Monochrome vector layout with clear borders & labels</span>
             </span>
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
@@ -567,4 +743,3 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
     </div>
   );
 };
-

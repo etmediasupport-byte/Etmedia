@@ -101,17 +101,19 @@ export default function RegistrationSuccessPage() {
   // When Admin hides invoices, NO user can view or print invoice, and NO payment/amount details appear on pass!
   const isUserInvoiceHidden = (
     globalInvoiceEnabled === false ||
-    regDetails?.global_show_invoice === 0 ||
-    regDetails?.global_show_invoice === false ||
-    regDetails?.show_invoice_to_user === 0 ||
-    regDetails?.show_invoice_to_user === false ||
-    regDetails?.show_invoice === 0 ||
-    regDetails?.show_invoice === false ||
-    eventData?.show_invoice_to_user === 0 ||
-    eventData?.show_invoice_to_user === false
+    (globalInvoiceEnabled === null && (
+      regDetails?.global_show_invoice === 0 ||
+      regDetails?.global_show_invoice === false ||
+      regDetails?.show_invoice_to_user === 0 ||
+      regDetails?.show_invoice_to_user === false ||
+      regDetails?.show_invoice === 0 ||
+      regDetails?.show_invoice === false ||
+      eventData?.show_invoice_to_user === 0 ||
+      eventData?.show_invoice_to_user === false
+    ))
   );
 
-  const canShowInvoice = !isUserInvoiceHidden || isAdmin;
+  const canShowInvoice = isAdmin || !isUserInvoiceHidden;
 
   // Auto fallback to pass view if invoice view is hidden from user
   useEffect(() => {

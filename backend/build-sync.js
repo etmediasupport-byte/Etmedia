@@ -37,6 +37,14 @@ if (fs.existsSync(frontendDist)) {
     fs.rmSync(tempUploads, { recursive: true, force: true });
   }
 
+  const fontsSource = path.resolve(__dirname, "fonts");
+  const fontsDist = path.resolve(__dirname, "dist/fonts");
+  if (fs.existsSync(fontsSource)) {
+    fs.mkdirSync(fontsDist, { recursive: true });
+    fs.cpSync(fontsSource, fontsDist, { recursive: true, force: true });
+    console.log("✅ [Build Sync] Synced fonts to backend/dist/fonts");
+  }
+
   console.log("✅ [Build Sync] Successfully updated backend/public with latest frontend production build!");
 } else {
   console.error("❌ [Build Sync] Error: ../frontend/dist directory does not exist!");

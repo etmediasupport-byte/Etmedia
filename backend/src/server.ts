@@ -4335,6 +4335,40 @@ function getCertificateBgDataUri(): string {
   return "";
 }
 
+// Helper to resolve bundled font files for high-fidelity certificate rendering
+function getCertificateFontFiles(): string[] {
+  const fontNames = [
+    "Cinzel-Bold.ttf",
+    "Cinzel-Black.ttf",
+    "Montserrat-Medium.ttf",
+    "Montserrat-SemiBold.ttf",
+    "Montserrat-Bold.ttf",
+    "Montserrat-ExtraBold.ttf",
+  ];
+
+  const candidateDirs = [
+    path.resolve(__dirname, "../fonts"),
+    path.resolve(__dirname, "fonts"),
+    path.resolve(process.cwd(), "fonts"),
+    path.resolve(process.cwd(), "backend/fonts"),
+    path.resolve(__dirname, "../../fonts"),
+    path.resolve(process.cwd(), "dist/fonts"),
+    path.resolve(process.cwd(), "backend/dist/fonts"),
+  ];
+
+  const found: string[] = [];
+  for (const name of fontNames) {
+    for (const dir of candidateDirs) {
+      const candidatePath = path.join(dir, name);
+      if (fs.existsSync(candidatePath) && !found.includes(candidatePath)) {
+        found.push(candidatePath);
+        break;
+      }
+    }
+  }
+  return found;
+}
+
 // Helper to generate HD PNG Certificate Buffer matching CertificatePage exactly
 function generateCertificatePngBuffer(candidate: {
   name: string;
@@ -4381,7 +4415,7 @@ function generateCertificatePngBuffer(candidate: {
   
   <g transform="translate(285, 580)">
     <rect x="0" y="0" width="230" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
-    <text x="12" y="17" font-family="monospace, Arial, sans-serif" font-size="11" font-weight="800" fill="#475569">
+    <text x="12" y="17" font-family="'Montserrat', monospace, Arial, sans-serif" font-size="11" font-weight="800" fill="#475569">
       CERT NO: <tspan fill="#0f172a" font-weight="900">${candidate.certId}</tspan>
     </text>
   </g>
@@ -4392,8 +4426,14 @@ function generateCertificatePngBuffer(candidate: {
 </svg>
 `;
 
+    const fontFiles = getCertificateFontFiles();
     const resvg = new Resvg(svg, {
       fitTo: { mode: "width", value: 1024 },
+      font: {
+        fontFiles,
+        loadSystemFonts: true,
+        defaultFontFamily: "Montserrat",
+      },
     });
     return resvg.render().asPng();
   } catch (err) {

@@ -1522,8 +1522,8 @@ export default function AdminDashboardPage() {
         setGlobalInvoiceVisible(Boolean(data.show_invoice));
         toast.success(
           data.show_invoice
-            ? "👁️ Invoices enabled globally! Registered users can now view invoices."
-            : "🙈 Invoices hidden globally! Registered users will only see Delegate Pass (No invoice)."
+            ? "👁️ Invoice set to VIEW! Registered users can now see and print invoices."
+            : "🙈 Invoice set to HIDE! Invoice button hidden from users; only Delegate Pass will be shown."
         );
       } else {
         toast.error(data.message || "Failed to toggle invoice visibility");
@@ -8479,17 +8479,17 @@ export default function AdminDashboardPage() {
                   ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
                   : "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
               }`}
-              title="Global Setting: Controls whether registered users see the invoice on the success page"
+              title={globalInvoiceVisible ? "Current: Invoice is set to VIEW (Visible to users). Click to HIDE." : "Current: Invoice is set to HIDE (Hidden from users). Click to VIEW."}
             >
               {globalInvoiceVisible ? (
                 <>
                   <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden md:inline">User Invoice: </span><span className="hidden xs:inline">Visible</span>
+                  <span className="hidden md:inline">Invoice: </span><span>View</span>
                 </>
               ) : (
                 <>
                   <EyeOff className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
-                  <span className="hidden md:inline">User Invoice: </span><span className="hidden xs:inline font-extrabold text-rose-700 dark:text-rose-400">Hidden</span>
+                  <span className="hidden md:inline">Invoice: </span><span className="font-extrabold text-rose-700 dark:text-rose-400">Hide</span>
                 </>
               )}
             </button>
@@ -24385,17 +24385,17 @@ export default function AdminDashboardPage() {
                     ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                     : "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
                 }`}
-                title="Global Switch: When hidden, no user can see or print invoices after payment"
+                title={globalInvoiceVisible ? "Current: Invoice is set to VIEW. Click to HIDE." : "Current: Invoice is set to HIDE. Click to VIEW."}
               >
                 {globalInvoiceVisible ? (
                   <>
                     <Eye className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>User Invoices: Visible (Click to Hide)</span>
+                    <span>Invoice: View (Click to Hide)</span>
                   </>
                 ) : (
                   <>
                     <EyeOff className="h-3.5 w-3.5 text-rose-600" />
-                    <span>User Invoices: Hidden (Click to Show)</span>
+                    <span>Invoice: Hide (Click to View)</span>
                   </>
                 )}
               </button>
