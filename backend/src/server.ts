@@ -40,6 +40,11 @@ const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia
 const supportEmail = process.env.SUPPORT_EMAIL || "registration@executivetalksmedia.in";
 
 const mailTransporter = nodemailer.createTransport({
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 5,
   host: smtpHost,
   port: smtpPort,
   secure: smtpPort === 465 ? true : process.env.SMTP_SECURE !== "false",
@@ -458,37 +463,42 @@ async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload)
   const adminScannerUrl = `${baseUrl}/admin/scanner`;
   const adminLoginUrl = `${baseUrl}/admin/login`;
 
-  // Encode pure Secure Gate Token into the QR code so personal mobile phone cameras cannot open any website
+  // Encode pure Secure Gate Token into the QR code
   const qrTokenPayload = `ETM-GATE:${regId}`;
+  const delegateSubjectConfigId = payStatus === "Approved (Free Pass)" ? "free_pass_granted" : "delegate_pass";
 
-  let qrCodeBuffer: Buffer | null = null;
-  try {
-    qrCodeBuffer = await QRCode.toBuffer(qrTokenPayload, {
+  // ⚡ INSTANT PRE-FETCH: Fetch QR Buffer, Dynamic Subjects, and Event Terms concurrently in parallel
+  const [qrCodeBuffer, dynamicUserSubject, dynamicAdminSubject, termsData] = await Promise.all([
+    QRCode.toBuffer(qrTokenPayload, {
       errorCorrectionLevel: "M",
       type: "png",
-      width: 320,
-      margin: 2,
+      width: 280,
+      margin: 1,
       color: {
         dark: "#0891B2",
         light: "#FFFFFF",
       },
-    });
-  } catch (qrErr) {
-    console.error("[Nodemailer] Error generating QR Code PNG Buffer:", qrErr);
-  }
-
-  const delegateSubjectConfigId = payStatus === "Approved (Free Pass)" ? "free_pass_granted" : "delegate_pass";
-  const dynamicUserSubject = await getDynamicEmailSubject(delegateSubjectConfigId, {
-    event_name: eventName,
-    delegate_name: effectiveFullName,
-    pass_id: regId,
-    category: regCategory,
-    company: regOrg,
-    city: regCity,
-  }, `🎉 Official Delegate Pass: ${eventName} (${regId})`);
-
-  // Dynamically fetch Terms & Conditions for this specific event
-  const termsData = await getEventTerms(data.eventId || data.eventTitle);
+    }).catch((qrErr) => {
+      console.error("[Nodemailer] Error generating QR Code PNG Buffer:", qrErr);
+      return null;
+    }),
+    getDynamicEmailSubject(delegateSubjectConfigId, {
+      event_name: eventName,
+      delegate_name: effectiveFullName,
+      pass_id: regId,
+      category: regCategory,
+      company: regOrg,
+      city: regCity,
+    }, `🎉 Official Delegate Pass: ${eventName} (${regId})`),
+    getDynamicEmailSubject("admin_new_registration", {
+      event_name: eventName,
+      delegate_name: effectiveFullName,
+      pass_id: regId,
+      category: regCategory,
+      company: regOrg,
+    }, `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`),
+    getEventTerms(data.eventId || data.eventTitle),
+  ]);
   const termsPlainList = termsData.clauses
     .map((c) => `${c.num}. ${c.title}: ${c.content}`)
     .join("\n");
@@ -520,8 +530,8 @@ DELEGATE PASS DETAILS:
 - Email: ${userEmail}
 - Pass Category: ${regCategory}
 - Event / Summit: ${eventName}
-- Registration / Pass ID: ${regId}
-- Digital Pass & E-Certificate Link: ${baseUrl}/certificate/${encodeURIComponent(regId)}
+- Pass ID: ${regId}
+- Official Pass Verification Link: ${baseUrl}/verify-pass/${encodeURIComponent(regId)}
 
 VENUE CHECK-IN INSTRUCTION:
 Present the attached official QR code ticket upon arrival at the venue reception desk. Event coordinators will scan your pass using the authorized gate scanner to issue your admission badge.
@@ -531,7 +541,7 @@ ${termsData.title.toUpperCase()}:
 ${termsPlainList}
 
 Regards,
-Executive Talks Media Business Intelligence
+ET Media Business Intelligence
 registration@executivetalksmedia.in
 www.executivetalksmedia.in
 `,
@@ -540,7 +550,7 @@ www.executivetalksmedia.in
         
         <!-- HEADER BANNER -->
         <div style="background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); padding: 28px 20px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE</h1>
+          <h1 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">ET MEDIA BUSINESS INTELLIGENCE</h1>
           <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.5px;">Official Executive Delegate Pass</p>
         </div>
 
@@ -578,14 +588,6 @@ www.executivetalksmedia.in
                 <td style="padding: 6px 0; font-weight: 600;">Pass ID:</td>
                 <td style="padding: 6px 0; font-family: monospace; font-weight: 700; color: #4b1fa7;">${regId}</td>
               </tr>
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Digital Pass & Certificate:</td>
-                <td style="padding: 6px 0;">
-                  <a href="${baseUrl}/certificate/${encodeURIComponent(regId)}" target="_blank" style="display: inline-block; background-color: #0891b2; color: #ffffff; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
-                    🎓 View Pass / E-Certificate
-                  </a>
-                </td>
-              </tr>
               ${data.awardNomination === "Yes" ? `
               <tr style="border-top: 1px dashed #cbd5e1;">
                 <td style="padding: 6px 0; font-weight: 600; color: #b45309;">Award Nomination:</td>
@@ -597,16 +599,16 @@ www.executivetalksmedia.in
             </table>
           </div>
 
-          <!-- PAYMENT BREAKDOWN & TAX RECEIPT CARD -->
+          <!-- PAYMENT BREAKDOWN CARD -->
           ${payAmount > 0 ? `
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
             <h3 style="margin: 0 0 12px 0; color: #0891b2; font-size: 15px; font-weight: 700; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">
-              🧾 Payment & Tax Invoice Breakdown
+              🧾 Payment Summary
             </h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
               <tr>
-                <td style="padding: 6px 0; font-weight: 600; width: 45%;">Pass Value (Base Rate):</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${(data.passPrice || taxableBase).toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 600; width: 45%;">Delegate Pass Fee:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${payAmount.toLocaleString("en-IN")}</td>
               </tr>
               ${data.awardNomination === "Yes" && (data.awardNominationFee || 0) > 0 ? `
               <tr>
@@ -620,10 +622,6 @@ www.executivetalksmedia.in
                 <td style="padding: 6px 0; font-weight: 700; color: #16a34a;">- ₹${(data.discountAmount || 0).toLocaleString("en-IN")}</td>
               </tr>
               ` : ""}
-              <tr>
-                <td style="padding: 6px 0; font-weight: 600;">GST (18% - SAC 998397):</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">+ ₹${(data.gstAmount || gstTotal).toLocaleString("en-IN")}</td>
-              </tr>
               <tr style="border-top: 1px dashed #cbd5e1;">
                 <td style="padding: 8px 0; font-weight: 800; font-size: 14px; color: #0891b2;">Total Paid Amount:</td>
                 <td style="padding: 8px 0; font-weight: 800; font-size: 15px; color: #0891b2;">₹${payAmount.toLocaleString("en-IN")}</td>
@@ -644,8 +642,8 @@ www.executivetalksmedia.in
             <img src="cid:delegate-qrcode" alt="Registration QR Code" style="width: 170px; height: 170px; display: block; margin: 0 auto; border: 3px solid #0891b2; border-radius: 12px; padding: 8px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" />
             <p style="margin: 10px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #0891b2;">Pass ID: ${regId}</p>
             <div style="margin-top: 14px;">
-              <a href="${baseUrl}/certificate/${encodeURIComponent(regId)}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); color: #ffffff; padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);">
-                🎓 VIEW / PRINT OFFICIAL E-CERTIFICATE & PASS
+              <a href="${baseUrl}/verify-pass/${encodeURIComponent(regId)}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0891b2 0%, #4b1fa7 100%); color: #ffffff; padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);">
+                🎟️ VIEW / VERIFY OFFICIAL PASS
               </a>
             </div>
           </div>
@@ -696,14 +694,6 @@ www.executivetalksmedia.in
       ...adminEmail.split(",").map((e) => e.trim()),
     ].filter(Boolean))
   );
-
-  const dynamicAdminSubject = await getDynamicEmailSubject("admin_new_registration", {
-    event_name: eventName,
-    delegate_name: effectiveFullName,
-    pass_id: regId,
-    category: regCategory,
-    company: regOrg,
-  }, `🚨 [New Delegate Registration] ${effectiveFullName} (${regCategory}) — ${eventName}`);
 
   const adminMailOptions: any = {
     from: `"Executive Talks Media Registration System" <${smtpUser}>`,
@@ -839,24 +829,26 @@ Admin Portal Login: ${adminLoginUrl}
     `,
   };
 
-  let userSent = false;
-  let adminSent = false;
+  // ⚡ INSTANT PARALLEL DISPATCH: Transmit user pass and admin notification simultaneously via warm connection pool
+  const [userResult, adminResult] = await Promise.allSettled([
+    mailTransporter.sendMail(userMailOptions).then((userInfo) => {
+      console.log(`[Nodemailer] ⚡ Delegate pass sent immediately to ${userEmail} (${userInfo.messageId})`);
+      return true;
+    }).catch((userErr: any) => {
+      console.error(`[Nodemailer] Error sending registration pass to ${userEmail}:`, userErr.message);
+      return false;
+    }),
+    mailTransporter.sendMail(adminMailOptions).then((adminInfo) => {
+      console.log(`[Nodemailer] Admin registration alert sent to ${adminRecipients.join(", ")} (${adminInfo.messageId})`);
+      return true;
+    }).catch((adminErr: any) => {
+      console.error(`[Nodemailer] Error sending admin registration alert:`, adminErr.message);
+      return false;
+    }),
+  ]);
 
-  try {
-    const userInfo = await mailTransporter.sendMail(userMailOptions);
-    console.log(`[Nodemailer] Delegate pass & invoice sent successfully to ${userEmail} (${userInfo.messageId})`);
-    userSent = true;
-  } catch (userErr: any) {
-    console.error(`[Nodemailer] Error sending registration pass to ${userEmail}:`, userErr.message);
-  }
-
-  try {
-    const adminInfo = await mailTransporter.sendMail(adminMailOptions);
-    console.log(`[Nodemailer] Admin registration alert sent successfully to ${adminRecipients.join(", ")} (${adminInfo.messageId})`);
-    adminSent = true;
-  } catch (adminErr: any) {
-    console.error(`[Nodemailer] Error sending admin registration alert:`, adminErr.message);
-  }
+  const userSent = userResult.status === "fulfilled" && userResult.value === true;
+  const adminSent = adminResult.status === "fulfilled" && adminResult.value === true;
 
   return userSent || adminSent;
 }
@@ -3384,12 +3376,101 @@ app.get("/api/registrations/:registrationId", async (req, res) => {
     if (pool && registrationId) {
       const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [registrationId]);
       if (rows && rows.length > 0) {
-        return res.json({ success: true, registration: rows[0] });
+        const reg = { ...rows[0] };
+        // Check event payment setting for invoice visibility
+        try {
+          const [payRows]: any = await pool.query(
+            "SELECT show_invoice_to_user FROM event_payment_settings WHERE event_id = ? OR event_slug = ? LIMIT 1",
+            [reg.event_id, reg.event_id]
+          );
+          if (payRows && payRows.length > 0 && payRows[0].show_invoice_to_user !== undefined) {
+            reg.show_invoice_to_user = Number(payRows[0].show_invoice_to_user);
+          } else {
+            reg.show_invoice_to_user = 1;
+          }
+        } catch (_) {
+          reg.show_invoice_to_user = 1;
+        }
+
+        // Global admin toggle for invoice visibility
+        try {
+          const [globRows]: any = await pool.query(
+            "SELECT setting_value FROM website_settings WHERE setting_key = 'global_invoice_visibility' LIMIT 1"
+          );
+          if (globRows && globRows.length > 0) {
+            reg.global_show_invoice = (globRows[0].setting_value === "hide" || globRows[0].setting_value === "0") ? 0 : 1;
+          } else {
+            reg.global_show_invoice = 1;
+          }
+        } catch (_) {
+          reg.global_show_invoice = 1;
+        }
+
+        return res.json({ success: true, registration: reg });
       }
     }
     return res.status(404).json({ success: false, message: "Registration record not found." });
   } catch (err: any) {
     console.error("[API] Error fetching registration:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/global-invoice-visibility - Check whether invoices are globally enabled/disabled for users
+app.get("/api/global-invoice-visibility", async (req, res) => {
+  try {
+    if (pool) {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS website_settings (
+          setting_key VARCHAR(100) PRIMARY KEY,
+          setting_value LONGTEXT NOT NULL
+        )
+      `).catch(() => {});
+      const [rows]: any = await pool.query(
+        "SELECT setting_value FROM website_settings WHERE setting_key = 'global_invoice_visibility' LIMIT 1"
+      );
+      if (rows && rows.length > 0) {
+        const val = rows[0].setting_value;
+        const isVisible = val !== "hide" && val !== "0" && val !== 0;
+        return res.json({ success: true, show_invoice: isVisible ? 1 : 0 });
+      }
+    }
+    return res.json({ success: true, show_invoice: 1 });
+  } catch (err: any) {
+    return res.json({ success: true, show_invoice: 1 });
+  }
+});
+
+// POST /api/admin/toggle-global-invoice - Admin global toggle for invoice visibility
+app.post("/api/admin/toggle-global-invoice", authenticateAdmin, async (req, res) => {
+  try {
+    const { show_invoice } = req.body;
+    let nextVal: string;
+    if (show_invoice !== undefined) {
+      nextVal = show_invoice === 0 || show_invoice === false || show_invoice === "0" || show_invoice === "hide" ? "hide" : "show";
+    } else {
+      if (pool) {
+        const [rows]: any = await pool.query(
+          "SELECT setting_value FROM website_settings WHERE setting_key = 'global_invoice_visibility' LIMIT 1"
+        );
+        const curr = rows && rows.length > 0 ? rows[0].setting_value : "show";
+        nextVal = curr === "hide" ? "show" : "hide";
+      } else {
+        nextVal = "hide";
+      }
+    }
+
+    if (pool) {
+      await pool.query(
+        "INSERT INTO website_settings (setting_key, setting_value) VALUES ('global_invoice_visibility', ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+        [nextVal, nextVal]
+      );
+    }
+    const isVisible = nextVal === "show" ? 1 : 0;
+    io.emit("global_invoice_visibility_updated", { show_invoice: isVisible });
+    return res.json({ success: true, show_invoice: isVisible });
+  } catch (err: any) {
+    console.error("[API] Toggle Global Invoice Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -4341,9 +4422,9 @@ function buildECertificateEmailHtml(candidate: {
   <meta charset="utf-8">
   <title>Official Certificate of Appreciation — Executive Talks Media</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b1329; font-family: 'Segoe UI', Arial, sans-serif;">
-  <div style="background-color: #0b1329; padding: 32px 14px; color: #ffffff;">
-    <div style="max-width: 760px; margin: 0 auto; background-color: #0f172a; border-radius: 20px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 25px 60px rgba(0,0,0,0.55);">
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif;">
+  <div style="background-color: #f8fafc; padding: 32px 14px; color: #1e293b;">
+    <div style="max-width: 760px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
       
       <!-- TOP STATUS BAR -->
       <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #4338ca 100%); padding: 22px 20px; text-align: center; color: #ffffff;">
@@ -4359,14 +4440,14 @@ function buildECertificateEmailHtml(candidate: {
       </div>
 
       <!-- EXACT HD CERTIFICATE ARTWORK VIEW (IDENTICAL TO PORTAL) -->
-      <div style="padding: 24px 20px 28px 20px; text-align: center; background-color: #0f172a;">
+      <div style="padding: 24px 20px 28px 20px; text-align: center; background-color: #ffffff;">
         
-        <p style="margin: 0 0 16px 0; font-size: 15px; color: #e2e8f0;">
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #0f172a;">
           Dear <strong>${name}</strong>, your official executive certificate has been generated and validated:
         </p>
 
         <!-- CERTIFICATE DISPLAY CONTAINER (100% IDENTICAL TO PORTAL DOWNLOAD CANVAS) -->
-        <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 12px 35px rgba(0,0,0,0.5); border: 2px solid #334155; display: inline-block; max-width: 100%; background: #ffffff;">
+        <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border: 2px solid #e2e8f0; display: inline-block; max-width: 100%; background: #ffffff;">
           <a href="${certUrl}" target="_blank" style="display: block;" title="Click to view and download full HD / PDF Certificate">
             <img src="cid:official-certificate-image" alt="Official Certificate of Appreciation - ${name}" style="width: 100%; max-width: 720px; height: auto; display: block;" />
           </a>
@@ -4374,25 +4455,25 @@ function buildECertificateEmailHtml(candidate: {
 
         <!-- ACTION BUTTON FOR HD PDF / PRINT -->
         <div style="margin-top: 26px;">
-          <a href="${certUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; text-decoration: none; font-size: 14px; font-weight: 900; padding: 14px 34px; border-radius: 12px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
+          <a href="${certUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #00aeef 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; padding: 14px 34px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">
             🎓 PRINT / DOWNLOAD OFFICIAL CERTIFICATE (HD / PDF)
           </a>
         </div>
 
         <!-- VERIFICATION METADATA CHIPS -->
-        <div style="margin-top: 20px; padding: 14px 18px; background-color: #1e293b; border-radius: 12px; display: inline-block; max-width: 90%;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #94a3b8;">
+        <div style="margin-top: 20px; padding: 14px 18px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: inline-block; max-width: 90%;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #475569;">
             <tr>
               <td style="text-align: left; padding: 4px 12px 4px 0;">
-                Certificate ID: <strong style="color: #fbbf24; font-family: monospace; font-size: 13px;">${certId}</strong>
+                Certificate ID: <strong style="color: #0f172a; font-family: monospace; font-size: 13px;">${certId}</strong>
               </td>
-              <td style="text-align: right; padding: 4px 0 4px 12px; color: #34d399; font-weight: 700;">
+              <td style="text-align: right; padding: 4px 0 4px 12px; color: #16a34a; font-weight: 700;">
                 ✓ Real Database Verified Gate Attendance
               </td>
             </tr>
             <tr>
-              <td colspan="2" style="text-align: center; padding-top: 8px; border-top: 1px solid #334155; color: #94a3b8; font-size: 11px;">
-                Direct Verification Link: <a href="${certUrl}" style="color: #38bdf8; text-decoration: none; font-weight: 600;">${certUrl}</a>
+              <td colspan="2" style="text-align: center; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 11px;">
+                Direct Verification Link: <a href="${certUrl}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${certUrl}</a>
               </td>
             </tr>
           </table>
@@ -4401,9 +4482,9 @@ function buildECertificateEmailHtml(candidate: {
       </div>
 
       <!-- FOOTER -->
-      <div style="background-color: #090d16; border-top: 1px solid #1e293b; padding: 18px 20px; text-align: center; color: #64748b; font-size: 11px;">
-        <p style="margin: 0; color: #94a3b8; font-weight: 600;">Executive Talks Media Business Intelligence Directorate</p>
-        <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">www.executivetalksmedia.in</a></p>
+      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 20px; text-align: center; color: #64748b; font-size: 11px;">
+        <p style="margin: 0; color: #334155; font-weight: 700;">Executive Talks Media Business Intelligence Directorate</p>
+        <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #0284c7; text-decoration: none; font-weight: 600;">www.executivetalksmedia.in</a></p>
       </div>
 
     </div>
@@ -4740,22 +4821,22 @@ async function sendEventAlertEmail(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${emailContent.subject}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #cbd5e1;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0b1120; padding: 25px 12px;">
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 30px 12px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #0f172a; border-radius: 18px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 45px rgba(0,0,0,0.6);">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
           
           <!-- BRAND TOP BAR -->
           <tr>
-            <td style="padding: 22px 28px; background: linear-gradient(135deg, #090d16 0%, #0f172a 100%); border-bottom: 1px solid #1e293b;">
+            <td style="padding: 20px 28px; background-color: #ffffff; border-bottom: 2px solid #00aeef;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
                     <img src="https://executivetalksmedia.in/assets/executivetalks-logo-Br69z8Hu.jpeg" alt="Executive Talks Media" height="38" style="height: 38px; max-width: 175px; object-fit: contain; display: block;" />
                   </td>
                   <td align="right">
-                    <span style="display: inline-block; background: rgba(0, 174, 239, 0.12); border: 1px solid rgba(0, 174, 239, 0.4); color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 5px 12px; border-radius: 20px;">
+                    <span style="display: inline-block; background-color: #e0f2fe; border: 1px solid #7dd3fc; color: #0284c7; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 5px 12px; border-radius: 20px;">
                       ⏰ EVENT ALERT
                     </span>
                   </td>
@@ -4766,66 +4847,66 @@ async function sendEventAlertEmail(params: {
 
           <!-- EVENT BANNER -->
           <tr>
-            <td style="padding: 26px 28px 18px 28px; background: linear-gradient(180deg, rgba(0, 174, 239, 0.08) 0%, transparent 100%);">
-              <span style="display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #00aeef; margin-bottom: 6px;">
+            <td style="padding: 24px 28px 16px 28px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+              <span style="display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #0284c7; margin-bottom: 6px;">
                 EXECUTIVE BRIEFING & ATTENDANCE UPDATE
               </span>
-              <h1 style="margin: 0 0 6px 0; color: #ffffff; font-size: 21px; font-weight: 800; line-height: 1.3;">
+              <h1 style="margin: 0 0 6px 0; color: #0f172a; font-size: 22px; font-weight: 800; line-height: 1.3;">
                 ${eventTitle}
               </h1>
-              <p style="margin: 0; color: #94a3b8; font-size: 13px; font-weight: 500;">
-                Personalized delegate update for <strong style="color: #ffffff;">${candidateName}</strong>
+              <p style="margin: 0; color: #475569; font-size: 13px; font-weight: 500;">
+                Personalized delegate update for <strong style="color: #0f172a;">${candidateName}</strong>
               </p>
             </td>
           </tr>
 
           <!-- CONTENT BODY -->
           <tr>
-            <td style="padding: 0 28px 24px 28px;">
-              <p style="margin: 0 0 16px 0; color: #ffffff; font-size: 15px; font-weight: 700;">
+            <td style="padding: 24px 28px;">
+              <p style="margin: 0 0 16px 0; color: #0f172a; font-size: 15px; font-weight: 700;">
                 ${emailContent.intro}
               </p>
               
-              <div style="color: #cbd5e1; font-size: 14px; line-height: 1.65;">
+              <div style="color: #1e293b; font-size: 14px; line-height: 1.7;">
                 ${emailContent.bodyHtml}
               </div>
 
               <!-- KEY LOGISTICS CARD -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 22px 0; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 22px 0; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
                 <tr>
-                  <td style="padding: 12px 18px; border-bottom: 1px solid #334155; background-color: #151e2e;">
-                    <span style="color: #38bdf8; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <td style="padding: 12px 18px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc;">
+                    <span style="color: #0284c7; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                       📍 Official Summit Details & Pass Coordinates
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 16px 18px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #cbd5e1;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #1e293b;">
                       <tr>
-                        <td style="padding: 6px 0; width: 34%; color: #94a3b8; font-weight: 600;">📅 Summit Date:</td>
-                        <td style="padding: 6px 0; color: #ffffff; font-weight: 700;">${eventDate}</td>
+                        <td style="padding: 7px 0; width: 34%; color: #64748b; font-weight: 600;">📅 Summit Date:</td>
+                        <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${eventDate}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">⏰ Timing:</td>
-                        <td style="padding: 6px 0; color: #ffffff; font-weight: 700;">${eventTime}</td>
+                        <td style="padding: 7px 0; color: #64748b; font-weight: 600;">⏰ Timing:</td>
+                        <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${eventTime}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🏢 Venue:</td>
-                        <td style="padding: 6px 0; color: #38bdf8; font-weight: 700;">${eventVenue}</td>
+                        <td style="padding: 7px 0; color: #64748b; font-weight: 600;">🏢 Venue:</td>
+                        <td style="padding: 7px 0; color: #0284c7; font-weight: 700;">${eventVenue}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">📍 City:</td>
-                        <td style="padding: 6px 0; color: #ffffff; font-weight: 600;">${eventCity}</td>
+                        <td style="padding: 7px 0; color: #64748b; font-weight: 600;">📍 City:</td>
+                        <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${eventCity}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🎫 Delegate ID:</td>
-                        <td style="padding: 6px 0; color: #fbbf24; font-family: monospace; font-weight: 800; font-size: 13px;">${passId}</td>
+                        <td style="padding: 7px 0; color: #64748b; font-weight: 600;">🎫 Delegate ID:</td>
+                        <td style="padding: 7px 0; color: #d97706; font-family: monospace; font-weight: 800; font-size: 13px;">${passId}</td>
                       </tr>
                       ${organization ? `
                       <tr>
-                        <td style="padding: 6px 0; color: #94a3b8; font-weight: 600;">🏢 Organization:</td>
-                        <td style="padding: 6px 0; color: #ffffff; font-weight: 600;">${organization}</td>
+                        <td style="padding: 7px 0; color: #64748b; font-weight: 600;">🏢 Organization:</td>
+                        <td style="padding: 7px 0; color: #0f172a; font-weight: 700;">${organization}</td>
                       </tr>` : ""}
                     </table>
                   </td>
@@ -4833,13 +4914,13 @@ async function sendEventAlertEmail(params: {
               </table>
 
               ${emailContent.notes ? `
-              <p style="margin: 14px 0 0 0; color: #94a3b8; font-size: 12px; font-style: italic; border-left: 2px solid #0284c7; padding-left: 10px;">
+              <p style="margin: 14px 0 0 0; color: #475569; font-size: 12px; font-style: italic; border-left: 3px solid #0284c7; background-color: #f0f9ff; padding: 10px 14px; border-radius: 4px;">
                 ${emailContent.notes}
               </p>` : ""}
 
               <!-- PORTAL CTA -->
               <div style="text-align: center; margin-top: 26px;">
-                <a href="https://www.executivetalksmedia.in/events" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #00aeef 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
+                <a href="https://www.executivetalksmedia.in/events" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #00aeef 100%); color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">
                   🌐 View Official Event Portal
                 </a>
               </div>
@@ -4848,10 +4929,10 @@ async function sendEventAlertEmail(params: {
 
           <!-- FOOTER -->
           <tr>
-            <td style="background-color: #090d16; border-top: 1px solid #1e293b; padding: 20px; text-align: center; color: #64748b; font-size: 11px;">
-              <p style="margin: 0; color: #94a3b8; font-weight: 600;">Executive Talks Media Business Intelligence Directorate</p>
-              <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">www.executivetalksmedia.in</a></p>
-              <p style="margin: 6px 0 0 0; color: #475569;">For registration inquiries or venue assistance: <a href="mailto:registration@executivetalksmedia.in" style="color: #38bdf8; text-decoration: none;">registration@executivetalksmedia.in</a></p>
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; color: #64748b; font-size: 11px;">
+              <p style="margin: 0; color: #334155; font-weight: 700;">Executive Talks Media Business Intelligence Directorate</p>
+              <p style="margin: 4px 0 0 0;">Cyber City, Hyderabad, India • <a href="https://www.executivetalksmedia.in" style="color: #0284c7; text-decoration: none; font-weight: 600;">www.executivetalksmedia.in</a></p>
+              <p style="margin: 6px 0 0 0; color: #64748b;">For registration inquiries or venue assistance: <a href="mailto:registration@executivetalksmedia.in" style="color: #0284c7; text-decoration: none; font-weight: 600;">registration@executivetalksmedia.in</a></p>
             </td>
           </tr>
         </table>
@@ -6595,6 +6676,8 @@ async function upsertEventPaymentSettings(data: any) {
     }
   }
 
+  const showInvoiceToUser = data.show_invoice_to_user !== undefined ? (Number(data.show_invoice_to_user) ? 1 : 0) : 1;
+
   if (existingRows && existingRows.length > 0) {
     const targetKey = existingRows[0].id || existingRows[0].event_id || id;
     const targetEventId = existingRows[0].event_id || event_id;
@@ -6609,7 +6692,8 @@ async function upsertEventPaymentSettings(data: any) {
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
-          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
+          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
+          show_invoice_to_user = ?
         WHERE event_id = ? OR id = ?`,
         [
           id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
@@ -6622,6 +6706,7 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          showInvoiceToUser,
           targetEventId, targetKey
         ]
       );
@@ -6635,7 +6720,8 @@ async function upsertEventPaymentSettings(data: any) {
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
-          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?
+          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
+          show_invoice_to_user = ?
         WHERE event_id = ?`,
         [
           event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
@@ -6648,6 +6734,7 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          showInvoiceToUser,
           targetEventId
         ]
       );
@@ -6680,8 +6767,9 @@ async function upsertEventPaymentSettings(data: any) {
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
-          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
+          show_invoice_to_user
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6692,7 +6780,8 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          showInvoiceToUser
         ]
       );
     } catch (insErr) {
@@ -6704,8 +6793,9 @@ async function upsertEventPaymentSettings(data: any) {
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
-          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
+          show_invoice_to_user
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6716,7 +6806,8 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr
+          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          showInvoiceToUser
         ]
       );
     }

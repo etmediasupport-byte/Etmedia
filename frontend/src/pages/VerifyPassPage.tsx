@@ -20,6 +20,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import { SEOHead } from "@/components/site/SEOHead";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 
@@ -62,6 +63,7 @@ export default function VerifyPassPage() {
   const [passData, setPassData] = useState<PassData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [adminCheckingIn, setAdminCheckingIn] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   // Check admin authorization token
   const adminToken = typeof window !== "undefined" ? localStorage.getItem("etmedia_admin_token") : null;
@@ -190,6 +192,24 @@ export default function VerifyPassPage() {
   const qrUrl = `https://www.executivetalksmedia.in/verify-pass/${encodeURIComponent(
     passData?.id || regId || ""
   )}`;
+
+  useEffect(() => {
+    if (!qrUrl) return;
+    QRCode.toDataURL(qrUrl, {
+      errorCorrectionLevel: "H",
+      margin: 1,
+      width: 320,
+      color: {
+        dark: "#0f172a",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => setQrCodeDataUrl(url))
+      .catch((err) => {
+        console.error("Local QR code generation error:", err);
+        setQrCodeDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrUrl)}`);
+      });
+  }, [qrUrl]);
 
   const handleAdminCheckinFromPass = async () => {
     if (!regId || !adminToken) return;
@@ -453,14 +473,20 @@ export default function VerifyPassPage() {
                     <span>Gate Check-in QR</span>
                   </h4>
 
-                  <div className="h-44 w-44 bg-slate-50 p-2.5 rounded-2xl border-2 border-slate-200 flex items-center justify-center shadow-inner my-2">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-                        qrUrl
-                      )}`}
-                      alt="Scannable QR Verification Pass"
-                      className="w-full h-full object-contain"
-                    />
+                  <div className="h-44 w-44 bg-slate-50 p-2.5 rounded-2xl border-2 border-slate-200 flex items-center justify-center shadow-inner my-2 overflow-hidden">
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="Scannable QR Verification Pass"
+                        className="w-full h-full object-contain block"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-slate-400 font-mono">
+                        <div className="h-6 w-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mb-1" />
+                        <span>Generating QR...</span>
+                      </div>
+                    )}
                   </div>
 
                   <span className="text-[10px] font-black tracking-widest text-slate-700 uppercase block">

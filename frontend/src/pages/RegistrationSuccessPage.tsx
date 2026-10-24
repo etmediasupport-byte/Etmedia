@@ -21,6 +21,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import { events as defaultEvents } from "@/lib/site-data";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
 
@@ -78,6 +79,32 @@ export default function RegistrationSuccessPage() {
   const [eventData, setEventData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<"pass" | "invoice">("pass");
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+
+  // Admin view detection: Only active when opened explicitly from Admin Dashboard with ?admin=true
+  const isAdmin = searchParams.get("admin") === "true";
+
+  // User invoice visibility set globally by Admin in dashboard:
+  // When Admin hides invoices, NO user can view or print the invoice on this page!
+  const isUserInvoiceHidden = (
+    regDetails?.global_show_invoice === 0 ||
+    regDetails?.global_show_invoice === false ||
+    regDetails?.show_invoice_to_user === 0 ||
+    regDetails?.show_invoice_to_user === false ||
+    regDetails?.show_invoice === 0 ||
+    regDetails?.show_invoice === false ||
+    eventData?.show_invoice_to_user === 0 ||
+    eventData?.show_invoice_to_user === false
+  );
+
+  const canShowInvoice = !isUserInvoiceHidden || isAdmin;
+
+  // Auto fallback to pass view if invoice view is hidden from user
+  useEffect(() => {
+    if (!canShowInvoice && activeView === "invoice") {
+      setActiveView("pass");
+    }
+  }, [canShowInvoice, activeView]);
 
   useEffect(() => {
     const fetchRegistrationData = async () => {
@@ -152,6 +179,35 @@ export default function RegistrationSuccessPage() {
     fetchRegistrationData();
   }, [regId, slug]);
 
+  // Generate High-Res Scannable QR Code Data URL locally without relying on external third-party servers
+  useEffect(() => {
+    const activePassId = regDetails?.id || regId;
+    if (!activePassId) return;
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://executivetalksmedia.in";
+    // Universal QR payload: Scanning via mobile phone camera opens verify-pass page; scanning via gate scanner checks in
+    const qrPayload = `${origin}/verify-pass/${encodeURIComponent(activePassId)}`;
+
+    QRCode.toDataURL(qrPayload, {
+      errorCorrectionLevel: "H",
+      margin: 1,
+      width: 320,
+      color: {
+        dark: "#0f172a",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => {
+        setQrCodeDataUrl(url);
+      })
+      .catch((err) => {
+        console.error("Local QR code generation error:", err);
+        setQrCodeDataUrl(
+          `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrPayload)}`
+        );
+      });
+  }, [regDetails?.id, regId]);
+
   const fallbackEvent = defaultEvents[0] || {
     city: "Hyderabad",
     title: "HR Leadership Conclave 2026",
@@ -168,24 +224,22 @@ export default function RegistrationSuccessPage() {
     ) ||
     fallbackEvent;
 
-  // Pricing & GST Calculation
+  // Pricing & Amount Calculation
   const rawPayAmount = Number(regDetails?.payment_amount) || 0;
   const rawPassPrice = Number(regDetails?.pass_price) || 0;
   const rawAwardFee = Number(regDetails?.award_nomination_fee) || 0;
-  const rawGstAmount = Number(regDetails?.gst_amount) || 0;
   const rawDiscount = Number(regDetails?.discount_amount) || 0;
   const isAwardNominated = regDetails?.award_nomination === "Yes";
 
-  let passTaxable = rawPassPrice > 0 ? rawPassPrice : (rawPayAmount > 0 ? Math.round(rawPayAmount / 1.18) : 0);
-  let awardTaxable = (isAwardNominated && rawAwardFee > 0) ? rawAwardFee : 0;
-  let taxableBase = passTaxable + awardTaxable - rawDiscount;
-  if (taxableBase < 0) taxableBase = 0;
+  // Effective Total Paid by user (user pays total including any taxes, invoice shows full paid amount without GST breakdown)
+  const payAmount = rawPayAmount > 0
+    ? rawPayAmount
+    : Math.max(0, rawPassPrice + (isAwardNominated ? rawAwardFee : 0) - rawDiscount);
 
-  let gstTotal = rawGstAmount > 0 ? rawGstAmount : Math.round(taxableBase * 0.18);
-  let payAmount = rawPayAmount > 0 ? rawPayAmount : (taxableBase + gstTotal);
-
-  const cgst = Number((gstTotal / 2).toFixed(2));
-  const sgst = Number((gstTotal - cgst).toFixed(2));
+  const awardAmount = isAwardNominated && rawAwardFee > 0 ? rawAwardFee : 0;
+  const passAmount = payAmount > 0
+    ? (awardAmount > 0 ? Math.max(0, payAmount + rawDiscount - awardAmount) : (payAmount + rawDiscount))
+    : rawPassPrice;
 
   const invoiceNo = `ETM-INV-${(regDetails?.id || regId)
     .replace(/[^a-zA-Z0-9]/g, "")
@@ -199,10 +253,10 @@ export default function RegistrationSuccessPage() {
     // Dismiss all active toasts to ensure clean printable export without toast overlays
     toast.dismiss();
 
-    // Trigger print dialog cleanly
+    // Trigger print dialog cleanly after DOM render
     setTimeout(() => {
       window.print();
-    }, 150);
+    }, 250);
   };
 
   if (loading) {
@@ -210,7 +264,7 @@ export default function RegistrationSuccessPage() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-900 space-y-4 font-sans">
         <div className="h-12 w-12 rounded-full border-4 border-cyan-600 border-t-transparent animate-spin" />
         <p className="text-sm font-bold text-slate-700">
-          Generating Official Executive Pass & Tax Invoice...
+          Generating Official Executive Pass & Invoice...
         </p>
       </div>
     );
@@ -218,6 +272,27 @@ export default function RegistrationSuccessPage() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 pb-20 pt-24 sm:pt-28 font-sans selection:bg-cyan-500/20 print:p-0 print:m-0 print:bg-white print:text-black">
+      <style>{`
+        @media print {
+          @page {
+            margin: 8mm;
+            size: auto;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          img {
+            max-width: 100% !important;
+            display: block !important;
+            visibility: visible !important;
+          }
+          .print-document {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 print:p-0 print:m-0 print:max-w-none">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -239,38 +314,62 @@ export default function RegistrationSuccessPage() {
                   Registration Successful!
                 </h1>
                 <p className="text-xs text-slate-500">
-                  Official digital pass & 18% GST invoice sent to{" "}
-                  <strong className="text-cyan-700 font-semibold">{regDetails?.email}</strong>.
+                  {canShowInvoice ? (
+                    <>
+                      Official digital pass & receipt invoice sent to{" "}
+                      <strong className="text-cyan-700 font-semibold">{regDetails?.email}</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Official digital delegate pass sent to{" "}
+                      <strong className="text-cyan-700 font-semibold">{regDetails?.email}</strong>.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* View Switcher Tabs */}
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto">
-              <button
-                type="button"
-                onClick={() => setActiveView("pass")}
-                className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  activeView === "pass"
-                    ? "bg-slate-900 text-white shadow-md"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                }`}
-              >
-                <Ticket className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Delegate Pass (QR)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveView("invoice")}
-                className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  activeView === "invoice"
-                    ? "bg-purple-800 text-white shadow-md"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                }`}
-              >
-                <Receipt className="w-3.5 h-3.5 text-purple-300" />
-                <span>Official Tax Invoice</span>
-              </button>
+            {/* View Switcher Tabs (or Single Pass badge if invoice is hidden by Admin) */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+              {isAdmin && isUserInvoiceHidden && (
+                <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-wider">
+                  Admin View: Invoice Hidden from User
+                </span>
+              )}
+
+              {canShowInvoice ? (
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setActiveView("pass")}
+                    className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      activeView === "pass"
+                        ? "bg-slate-900 text-white shadow-md"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    }`}
+                  >
+                    <Ticket className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Delegate Pass (QR)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView("invoice")}
+                    className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      activeView === "invoice"
+                        ? "bg-purple-800 text-white shadow-md"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    }`}
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-purple-300" />
+                    <span>Official Invoice</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm">
+                  <Ticket className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Verified Delegate Pass</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -294,7 +393,7 @@ export default function RegistrationSuccessPage() {
                   </div>
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 block font-mono">
-                      EXECUTIVE TALKS MEDIA • OFFICIAL DELEGATE CREDENTIAL
+                      ET MEDIA BUSINESS INTELLIGENCE • OFFICIAL DELEGATE CREDENTIAL
                     </span>
                     <h2 className="text-lg sm:text-xl font-black text-white font-display leading-tight mt-0.5">
                       {regDetails?.event_title || effectiveEvent.title}
@@ -421,14 +520,20 @@ export default function RegistrationSuccessPage() {
 
                 {/* Scannable High-Res QR Ticket (4 Columns) */}
                 <div className="md:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-center">
-                  <div className="h-36 w-36 bg-white p-2 rounded-xl border-2 border-slate-300 flex items-center justify-center shadow-sm">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                        qrTokenPayload
-                      )}`}
-                      alt="Official QR Pass Token"
-                      className="w-full h-full object-contain"
-                    />
+                  <div className="h-36 w-36 bg-white p-2 rounded-xl border-2 border-slate-300 flex items-center justify-center shadow-sm overflow-hidden print:border-slate-400 print:bg-white">
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="Official QR Pass Token"
+                        className="w-full h-full object-contain block"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-[10px] text-slate-400 font-mono">
+                        <div className="h-5 w-5 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin mb-1" />
+                        <span>Generating QR...</span>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-black tracking-widest text-slate-800 uppercase block">
@@ -443,14 +548,14 @@ export default function RegistrationSuccessPage() {
 
               {/* Pass Security Disclaimer Footer Strip */}
               <div className="bg-slate-100 border-t border-slate-200 px-6 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2 text-[10px] text-slate-500 font-mono">
-                <span>Executive Talks Media Business Intelligence • Official Verified Pass</span>
+                <span>ET Media Business Intelligence • Official Verified Pass</span>
                 <span>Issued: {regDetails?.created_at || new Date().toLocaleDateString("en-IN")}</span>
               </div>
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* VIEW 2: OFFICIAL CORPORATE 18% GST TAX INVOICE                            */}
+          {/* VIEW 2: OFFICIAL CORPORATE INVOICE                                        */}
           {/* ========================================================================= */}
           {activeView === "invoice" && (
             <div
@@ -462,18 +567,15 @@ export default function RegistrationSuccessPage() {
                 <div className="flex items-center gap-3.5">
                   <img
                     src={executivetalksLogo}
-                    alt="Executive Talks Media"
+                    alt="ET Media Business Intelligence"
                     className="h-12 w-auto object-contain"
                   />
                   <div>
                     <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
-                      EXECUTIVE TALKS MEDIA BUSINESS INTELLIGENCE
+                      ET MEDIA BUSINESS INTELLIGENCE
                     </h2>
                     <p className="text-xs text-slate-600 font-semibold">
-                      Official GST Tax Invoice & Event Registration Receipt
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                      SAC Code: 998397 (Conferences, Corporate Summits & Industry Intelligence)
+                      Official Invoice & Event Registration Receipt
                     </p>
                   </div>
                 </div>
@@ -488,9 +590,6 @@ export default function RegistrationSuccessPage() {
                   <p className="text-[11px] text-slate-500 font-mono">
                     Date: {regDetails?.created_at || new Date().toLocaleDateString("en-IN")}
                   </p>
-                  <p className="text-[11px] text-slate-500 font-mono">
-                    Place of Supply: Telangana (State Code: 36)
-                  </p>
                 </div>
               </div>
 
@@ -501,7 +600,7 @@ export default function RegistrationSuccessPage() {
                     ISSUER / SERVICE PROVIDER
                   </span>
                   <p className="font-black text-slate-900 text-sm">
-                    Executive Talks Media Business Intelligence
+                    ET Media Business Intelligence
                   </p>
                   <p className="text-slate-600 leading-snug">
                     Unit No-1012, 10th Floor, Manjeera Trinity Corporate,
@@ -513,7 +612,7 @@ export default function RegistrationSuccessPage() {
                     Support: registration@executivetalksmedia.in | +91 91602 56777
                   </p>
                   <p className="text-slate-700 font-mono font-bold">
-                    GSTIN: 36AAECE1234F1Z5 • PAN: AAECE1234F
+                    PAN: AAECE1234F
                   </p>
                 </div>
 
@@ -563,17 +662,15 @@ export default function RegistrationSuccessPage() {
                 </div>
               </div>
 
-              {/* Itemized Tax Breakdown Table */}
+              {/* Itemized Breakdown Table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b-2 border-slate-300 bg-slate-100 text-slate-800 font-black uppercase">
                       <th className="py-2.5 px-3">#</th>
                       <th className="py-2.5 px-3">Item Description</th>
-                      <th className="py-2.5 px-3">SAC Code</th>
-                      <th className="py-2.5 px-3 text-right">Taxable Value</th>
-                      <th className="py-2.5 px-3 text-right">GST Rate</th>
-                      <th className="py-2.5 px-3 text-right">Total Amount</th>
+                      <th className="py-2.5 px-3 text-center">Qty</th>
+                      <th className="py-2.5 px-3 text-right">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -588,17 +685,13 @@ export default function RegistrationSuccessPage() {
                           Executive Gourmet Dining & Intelligence Report
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-mono font-semibold text-slate-600">998397</td>
-                      <td className="py-3 px-3 text-right font-semibold font-mono">
-                        ₹{passTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-3 text-right font-semibold">18%</td>
+                      <td className="py-3 px-3 text-center font-mono font-semibold text-slate-700">1</td>
                       <td className="py-3 px-3 text-right font-black text-sm text-slate-900 font-mono">
-                        ₹{Math.round(passTaxable * 1.18).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹{passAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
 
-                    {isAwardNominated && awardTaxable > 0 && (
+                    {isAwardNominated && awardAmount > 0 && (
                       <tr className="border-b border-slate-200 bg-amber-50/40">
                         <td className="py-3 px-3 font-mono font-bold text-amber-700">2</td>
                         <td className="py-3 px-3">
@@ -609,13 +702,9 @@ export default function RegistrationSuccessPage() {
                             Category: {regDetails?.award_category || "Executive Leadership Award"} {regDetails?.award_team_category ? `(${regDetails.award_team_category})` : ""}
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-mono font-semibold text-slate-600">998397</td>
-                        <td className="py-3 px-3 text-right font-semibold font-mono text-amber-900">
-                          ₹{awardTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-3 text-right font-semibold">18%</td>
+                        <td className="py-3 px-3 text-center font-mono font-semibold text-amber-900">1</td>
                         <td className="py-3 px-3 text-right font-black text-sm text-amber-900 font-mono">
-                          ₹{Math.round(awardTaxable * 1.18).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     )}
@@ -623,7 +712,7 @@ export default function RegistrationSuccessPage() {
                 </table>
               </div>
 
-              {/* Tax Calculations & Amount in Words */}
+              {/* Calculations & Amount in Words */}
               <div className="grid sm:grid-cols-12 gap-6 pt-2 items-start border-t border-slate-200">
                 <div className="sm:col-span-7 space-y-3 text-xs text-slate-600">
                   <div>
@@ -639,23 +728,23 @@ export default function RegistrationSuccessPage() {
                       • Paid via Online Payment Gateway (Razorpay PG).
                     </p>
                     <p className="text-slate-500">
-                      • This is an electronically generated tax invoice issued under Rule 48 of the CGST Act, 2017. No physical signature is required.
+                      • This is an electronically generated receipt / invoice. No physical signature is required.
                     </p>
                   </div>
                 </div>
 
                 <div className="sm:col-span-5 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>Pass Base Value:</span>
+                    <span>Delegate Pass Fee:</span>
                     <span className="font-mono font-semibold">
-                      ₹{passTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      ₹{passAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  {isAwardNominated && awardTaxable > 0 && (
+                  {isAwardNominated && awardAmount > 0 && (
                     <div className="flex justify-between py-1 border-b border-slate-200 text-amber-800">
                       <span>Award Nomination Fee:</span>
                       <span className="font-mono font-semibold">
-                        ₹{awardTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   )}
@@ -667,32 +756,8 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>Total Taxable Base:</span>
-                    <span className="font-mono font-semibold text-slate-900">
-                      ₹{taxableBase.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>CGST (9%):</span>
-                    <span className="font-mono font-semibold">
-                      ₹{cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>SGST (9%):</span>
-                    <span className="font-mono font-semibold">
-                      ₹{sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-200 text-slate-600">
-                    <span>Total GST Amount (18%):</span>
-                    <span className="font-mono font-semibold">
-                      ₹{gstTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
                   <div className="flex justify-between py-2 border-t-2 border-slate-900 text-sm font-black text-slate-900">
-                    <span>Grand Total Paid:</span>
+                    <span>Total Amount Paid:</span>
                     <span className="text-emerald-700 font-mono text-base">
                       ₹{payAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
@@ -704,7 +769,7 @@ export default function RegistrationSuccessPage() {
               <div className="pt-4 border-t-2 border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-[11px] text-slate-500">
                 <div className="space-y-0.5">
                   <p className="font-semibold text-slate-700">
-                    Executive Talks Media Business Intelligence
+                    ET Media Business Intelligence
                   </p>
                   <p>
                     Official Pass Token:{" "}
@@ -718,7 +783,7 @@ export default function RegistrationSuccessPage() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 block">
                     Authorized Signatory
                   </span>
-                  <p className="text-[10px] text-slate-400">Executive Talks Media</p>
+                  <p className="text-[10px] text-slate-400">ET Media Business Intelligence</p>
                 </div>
               </div>
             </div>
@@ -744,14 +809,16 @@ export default function RegistrationSuccessPage() {
                 <span>Print / Save Pass</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => handlePrintOrDownload("invoice")}
-                className="flex-1 sm:flex-initial py-3 px-5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 text-white text-xs font-black uppercase tracking-wider hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-purple-600/20"
-              >
-                <FileText className="w-4 h-4 text-purple-200" />
-                <span>Print / Save Tax Invoice</span>
-              </button>
+              {canShowInvoice && (
+                <button
+                  type="button"
+                  onClick={() => handlePrintOrDownload("invoice")}
+                  className="flex-1 sm:flex-initial py-3 px-5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 text-white text-xs font-black uppercase tracking-wider hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-purple-600/20"
+                >
+                  <FileText className="w-4 h-4 text-purple-200" />
+                  <span>Print / Save Invoice</span>
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

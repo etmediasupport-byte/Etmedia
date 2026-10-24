@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import QRCode from "qrcode";
 import {
   Camera,
   CameraOff,
@@ -27,11 +28,19 @@ import {
   RefreshCw,
   QrCode,
   Flame,
+  Download,
+  Image as ImageIcon,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
 import logo from "@/assets/UPDATED LOGO.jpeg";
-import { ThermalBadgePassModal, ThermalBadgeAttendee } from "@/components/admin/ThermalBadgePassModal";
+import {
+  ThermalBadgePassModal,
+  ThermalBadgeAttendee,
+  downloadBadgeImage,
+  downloadBadgePdf,
+} from "@/components/admin/ThermalBadgePassModal";
 
 interface Delegate {
   id: string;
@@ -91,6 +100,25 @@ export default function AdminQrScannerPage() {
   // TVS Electronics Thermal Badge Pass Print State
   const [thermalBadgeAttendee, setThermalBadgeAttendee] = useState<ThermalBadgeAttendee | null>(null);
   const [showThermalBadgeModal, setShowThermalBadgeModal] = useState<boolean>(false);
+  const [scanQrDataUrl, setScanQrDataUrl] = useState<string>("");
+
+  // Generate local QR code for scanned delegate
+  useEffect(() => {
+    if (!scanResult?.delegate?.id) {
+      setScanQrDataUrl("");
+      return;
+    }
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://executivetalksmedia.in";
+    const qrPayload = `${origin}/verify-pass/${encodeURIComponent(scanResult.delegate.id)}`;
+    QRCode.toDataURL(qrPayload, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 250,
+      color: { dark: "#000000", light: "#ffffff" },
+    })
+      .then((url) => setScanQrDataUrl(url))
+      .catch((err) => console.error("QR Code generate error:", err));
+  }, [scanResult?.delegate?.id]);
 
   // Manual search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -824,69 +852,82 @@ export default function AdminQrScannerPage() {
                   </button>
                 </div>
 
-                {/* Delegate Details If Found */}
+                {/* Delegate Details If Found - ONLY Person Name, Company Name, and QR Code */}
                 {scanResult.delegate && (
-                  <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 space-y-3 text-xs text-slate-300">
+                  <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 space-y-4 text-center">
+                    {/* 1. Person Name */}
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                        Delegate Name
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                        Person Name
                       </span>
-                      <strong className="text-sm font-black text-white capitalize block">
-                        {scanResult.delegate.name || scanResult.delegate.full_name}
+                      <strong className="text-lg font-black text-white uppercase block leading-tight">
+                        {scanResult.delegate.name || scanResult.delegate.full_name || "Delegate"}
                       </strong>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          Designation
-                        </span>
-                        <span className="text-white font-medium block truncate">
-                          {scanResult.delegate.designation || "Executive Delegate"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          Organization
-                        </span>
-                        <span className="text-white font-medium block truncate">
-                          {scanResult.delegate.organization || scanResult.delegate.company_name || "Enterprise"}
-                        </span>
+                    {/* 2. Company Name */}
+                    <div className="pt-2.5 border-t border-slate-800">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                        Company Name
+                      </span>
+                      <strong className="text-sm font-bold text-cyan-400 uppercase block leading-tight">
+                        {scanResult.delegate.organization || scanResult.delegate.company_name || "Enterprise"}
+                      </strong>
+                    </div>
+
+                    {/* 3. Scannable QR Code */}
+                    <div className="pt-2.5 border-t border-slate-800 flex flex-col items-center justify-center">
+                      <div className="h-32 w-32 bg-white p-2 rounded-xl border-2 border-slate-700 flex items-center justify-center shadow-md">
+                        {scanQrDataUrl ? (
+                          <img
+                            src={scanQrDataUrl}
+                            alt="QR Code"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-[10px] text-slate-500 font-mono">Generating QR...</div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          Pass Tier
-                        </span>
-                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">
-                          {scanResult.delegate.pass_name || scanResult.delegate.registration_category || "Delegate"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                          Pass ID
-                        </span>
-                        <span className="font-mono text-slate-300 text-[11px] block truncate">
-                          {scanResult.delegate.id}
-                        </span>
-                      </div>
+                    {/* Action Buttons: Download Image, Download PDF */}
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const del = scanResult?.delegate;
+                          if (!del || !scanQrDataUrl) return;
+                          const name = del.name || del.full_name || "Delegate";
+                          const org = del.organization || del.company_name || "Enterprise";
+                          downloadBadgeImage(name, org, scanQrDataUrl);
+                        }}
+                        disabled={!scanQrDataUrl}
+                        className="py-2.5 px-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                        title="Download Badge as PNG Image"
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>Download Image</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const del = scanResult?.delegate;
+                          if (!del || !scanQrDataUrl) return;
+                          const name = del.name || del.full_name || "Delegate";
+                          const org = del.organization || del.company_name || "Enterprise";
+                          downloadBadgePdf(name, org, scanQrDataUrl);
+                        }}
+                        disabled={!scanQrDataUrl}
+                        className="py-2.5 px-3 rounded-xl border border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                        title="Download Badge as PDF"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span>Download PDF</span>
+                      </button>
                     </div>
 
-                    {scanResult.checkedInAt && (
-                      <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Check-in Time:</span>
-                        <span className="font-mono text-cyan-400 font-bold">
-                          {new Date(scanResult.checkedInAt).toLocaleTimeString("en-IN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                    )}
-
+                    {/* Print Badge Slip */}
                     <button
                       type="button"
                       onClick={() => {
@@ -898,14 +939,16 @@ export default function AdminQrScannerPage() {
                           id: del.id || "",
                           name: del.name || del.full_name || "Delegate",
                           email: del.email || del.official_email || "",
+                          organization: del.organization || del.company_name || "",
+                          company_name: del.organization || del.company_name || "",
                           event_title: del.event_title || del.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
                           checked_in_at: scanResult?.checkedInAt || del.checked_in_at || new Date().toISOString(),
                         });
                         setShowThermalBadgeModal(true);
                       }}
-                      className="w-full mt-2.5 py-2.5 px-4 rounded-xl bg-gradient-to-r from-slate-900 to-black border border-slate-700 hover:border-slate-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                      className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                     >
-                      <Printer className="h-4 w-4 text-emerald-400" />
+                      <Printer className="h-4 w-4" />
                       <span>Print Badge Slip (TVS Thermal)</span>
                     </button>
                   </div>

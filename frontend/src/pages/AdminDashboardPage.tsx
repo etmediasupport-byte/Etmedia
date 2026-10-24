@@ -1488,6 +1488,53 @@ export default function AdminDashboardPage() {
 
   const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token") || "";
 
+  // -------------------------------------------------------------
+  // GLOBAL USER INVOICE VISIBILITY TOGGLE (ADMIN CONTROL)
+  // -------------------------------------------------------------
+  const [globalInvoiceVisible, setGlobalInvoiceVisible] = useState<boolean>(true);
+  const [isTogglingGlobalInvoice, setIsTogglingGlobalInvoice] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch("/api/global-invoice-visibility")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.show_invoice !== undefined) {
+          setGlobalInvoiceVisible(Boolean(data.show_invoice));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleGlobalInvoice = async () => {
+    setIsTogglingGlobalInvoice(true);
+    const targetStatus = !globalInvoiceVisible;
+    try {
+      const res = await fetch("/api/admin/toggle-global-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ show_invoice: targetStatus ? 1 : 0 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGlobalInvoiceVisible(Boolean(data.show_invoice));
+        toast.success(
+          data.show_invoice
+            ? "👁️ Invoices enabled globally! Registered users can now view invoices."
+            : "🙈 Invoices hidden globally! Registered users will only see Delegate Pass (No invoice)."
+        );
+      } else {
+        toast.error(data.message || "Failed to toggle invoice visibility");
+      }
+    } catch (err: any) {
+      toast.error("Error toggling invoice visibility: " + err.message);
+    } finally {
+      setIsTogglingGlobalInvoice(false);
+    }
+  };
+
   const fetchDashboardData = async () => {
     const activeToken = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
     if (!activeToken) {
@@ -8418,6 +8465,31 @@ export default function AdminDashboardPage() {
               <Radio className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse shrink-0" />
               <span className="whitespace-nowrap"><span className="hidden md:inline">Sockets: </span>{stats.activeLiveUsers} Online</span>
             </div>
+
+            {/* Global User Invoice Visibility Toggle Button */}
+            <button
+              type="button"
+              onClick={handleToggleGlobalInvoice}
+              disabled={isTogglingGlobalInvoice}
+              className={`flex items-center gap-1.5 rounded-xl border px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-black transition-all shadow-2xs cursor-pointer disabled:opacity-50 ${
+                globalInvoiceVisible
+                  ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                  : "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+              }`}
+              title="Global Setting: Controls whether registered users see the invoice on the success page"
+            >
+              {globalInvoiceVisible ? (
+                <>
+                  <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden xs:inline">User Invoice: </span><span>Visible</span>
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span className="hidden xs:inline">User Invoice: </span><span className="font-extrabold text-rose-700 dark:text-rose-400">Hidden</span>
+                </>
+              )}
+            </button>
 
             {/* Quick Export Buttons */}
             {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants" || activeTab === "newsletter") && (
@@ -24290,15 +24362,39 @@ export default function AdminDashboardPage() {
               </a>
 
               <a
-                href={`/events/${encodeURIComponent(selectedRegDetail.event_id || "hr-recall-2k26")}/registration-success?regId=${encodeURIComponent(selectedRegDetail.id)}`}
+                href={`/events/${encodeURIComponent(selectedRegDetail.event_id || "hr-recall-2k26")}/registration-success?regId=${encodeURIComponent(selectedRegDetail.id)}&admin=true`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-800 hover:bg-purple-100 transition-colors shadow-xs"
               >
                 <Receipt className="h-3.5 w-3.5 text-purple-600" />
-                <span>View Tax Invoice</span>
+                <span>View Invoice (Admin)</span>
                 <ExternalLink className="h-3 w-3" />
               </a>
+
+              <button
+                type="button"
+                onClick={handleToggleGlobalInvoice}
+                disabled={isTogglingGlobalInvoice}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-colors shadow-xs cursor-pointer disabled:opacity-50 ${
+                  globalInvoiceVisible
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                    : "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
+                }`}
+                title="Global Switch: When hidden, no user can see or print invoices after payment"
+              >
+                {globalInvoiceVisible ? (
+                  <>
+                    <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>User Invoices: Visible (Click to Hide)</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-3.5 w-3.5 text-rose-600" />
+                    <span>User Invoices: Hidden (Click to Show)</span>
+                  </>
+                )}
+              </button>
 
               <button
                 type="button"
@@ -24703,6 +24799,27 @@ export default function AdminDashboardPage() {
                           />
                           <span className="text-xs font-bold text-slate-800">Offline Bank Transfer Option</span>
                         </label>
+                      </div>
+
+                      {/* USER INVOICE VISIBILITY AFTER PAYMENT */}
+                      <div className="sm:col-span-2 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <Receipt className="h-4 w-4 text-purple-600" />
+                            <span>User Invoice Visibility After Payment</span>
+                          </label>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            Choose whether attendees can view and print/download the payment invoice on the post-checkout page.
+                          </p>
+                        </div>
+                        <select
+                          value={paymentForm.show_invoice_to_user !== undefined ? Number(paymentForm.show_invoice_to_user) : 1}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, show_invoice_to_user: Number(e.target.value) })}
+                          className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-black text-slate-900 cursor-pointer focus:border-cyan-600 focus:outline-none shrink-0"
+                        >
+                          <option value={1}>👁️ Show Invoice to User (Default)</option>
+                          <option value={0}>🙈 Hide Invoice from User (Pass Only)</option>
+                        </select>
                       </div>
                     </div>
                   </div>
