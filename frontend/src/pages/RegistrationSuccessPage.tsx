@@ -80,13 +80,27 @@ export default function RegistrationSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<"pass" | "invoice">("pass");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [globalInvoiceEnabled, setGlobalInvoiceEnabled] = useState<boolean | null>(null);
+
+  // Directly fetch global invoice visibility from server
+  useEffect(() => {
+    fetch("/api/global-invoice-visibility")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success) {
+          setGlobalInvoiceEnabled(data.show_invoice === 1);
+        }
+      })
+      .catch((err) => console.warn("Global invoice visibility fetch err:", err));
+  }, []);
 
   // Admin view detection: Only active when opened explicitly from Admin Dashboard with ?admin=true
   const isAdmin = searchParams.get("admin") === "true";
 
   // User invoice visibility set globally by Admin in dashboard:
-  // When Admin hides invoices, NO user can view or print the invoice on this page!
+  // When Admin hides invoices, NO user can view or print invoice, and NO payment/amount details appear on pass!
   const isUserInvoiceHidden = (
+    globalInvoiceEnabled === false ||
     regDetails?.global_show_invoice === 0 ||
     regDetails?.global_show_invoice === false ||
     regDetails?.show_invoice_to_user === 0 ||
@@ -422,6 +436,7 @@ export default function RegistrationSuccessPage() {
                 {/* Delegate Details (8 Columns) */}
                 <div className="md:col-span-8 space-y-5">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    {/* 1. Registration ID */}
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         Registration ID
@@ -431,25 +446,51 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
+                    {/* 2. Pass Category */}
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                        Payment Status
+                        Pass Category
                       </span>
-                      <span className="inline-flex items-center gap-1 font-black text-[11px] text-emerald-700 mt-0.5">
-                        <Check className="w-3 h-3 text-emerald-600" />
-                        {regDetails?.payment_status?.toUpperCase() || "PAID"}
+                      <span className="font-bold text-amber-700 text-xs mt-0.5 block truncate">
+                        {regDetails?.pass_name || "Official Delegate Pass"}
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                        Amount Paid
-                      </span>
-                      <span className="font-mono font-black text-xs text-slate-900 mt-0.5 block">
-                        ₹{payAmount > 0 ? payAmount.toLocaleString("en-IN") : "Complimentary"}
-                      </span>
-                    </div>
+                    {/* 3. If invoice is allowed, show Payment & Amount. If invoice is hidden, show Admission Status */}
+                    {canShowInvoice ? (
+                      <>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                            Payment Status
+                          </span>
+                          <span className="inline-flex items-center gap-1 font-black text-[11px] text-emerald-700 mt-0.5">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            {regDetails?.payment_status?.toUpperCase() || "PAID"}
+                          </span>
+                        </div>
 
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                            Amount Paid
+                          </span>
+                          <span className="font-mono font-black text-xs text-slate-900 mt-0.5 block">
+                            ₹{payAmount > 0 ? payAmount.toLocaleString("en-IN") : "Complimentary"}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                          Admission Status
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-black text-[11px] text-emerald-700 mt-0.5">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          CONFIRMED
+                        </span>
+                      </div>
+                    )}
+
+                    {/* 4. Delegate Name */}
                     <div className="sm:col-span-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         Delegate Name
@@ -459,6 +500,7 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
+                    {/* 5. Designation */}
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         Designation
@@ -468,6 +510,7 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
+                    {/* 6. Organization */}
                     <div className="sm:col-span-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         Organization
@@ -477,6 +520,7 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
+                    {/* 7. City & Country */}
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         City & Country
@@ -486,6 +530,7 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
+                    {/* 8. Official Email */}
                     <div className="sm:col-span-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
                         Official Email
@@ -495,14 +540,26 @@ export default function RegistrationSuccessPage() {
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                        Transaction ID
-                      </span>
-                      <span className="font-mono text-[11px] text-slate-600 mt-0.5 block truncate">
-                        {regDetails?.payment_id || `pay_${Date.now().toString().slice(-8)}`}
-                      </span>
-                    </div>
+                    {/* 9. Transaction ID if invoice enabled, or Event Date if invoice is hidden */}
+                    {canShowInvoice ? (
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                          Transaction ID
+                        </span>
+                        <span className="font-mono text-[11px] text-slate-600 mt-0.5 block truncate">
+                          {regDetails?.payment_id || `pay_${Date.now().toString().slice(-8)}`}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                          Event Date
+                        </span>
+                        <span className="font-semibold text-cyan-800 text-xs mt-0.5 block truncate">
+                          {effectiveEvent.date || "Upcoming Summit"}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Verification Status Banner */}
