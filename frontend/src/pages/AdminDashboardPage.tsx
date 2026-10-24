@@ -42,6 +42,7 @@ import {
   Download,
   Calendar,
   Building,
+  Building2,
   Briefcase,
   Mail,
   Phone,
