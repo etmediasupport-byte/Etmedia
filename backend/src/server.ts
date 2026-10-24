@@ -2974,7 +2974,10 @@ async function handlePaymentVerification(req: any, res: any) {
     const { 
       razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied,
       passPrice, gstAmount, discountAmount,
-      awardNomination, awardCategory, awardTeamCategory, awardNominationFee
+      awardNomination, awardCategory, awardTeamCategory, awardNominationFee,
+      teamAwardNomination, teamAwardCategory, teamAwardFee,
+      orgAwardNomination, orgAwardCategory, orgAwardFee,
+      attendingPoster
     } = req.body;
 
     const numAmount = Number(paymentAmount) || 0;
@@ -2988,9 +2991,22 @@ async function handlePaymentVerification(req: any, res: any) {
             status = 'Confirmed',
             payment_id = COALESCE(?, 'FREE-PASS'),
             payment_amount = 0,
-            coupon_applied = COALESCE(?, coupon_applied, 'Free Pass')
+            coupon_applied = COALESCE(?, coupon_applied, 'Free Pass'),
+            team_award_nomination = COALESCE(?, team_award_nomination),
+            team_award_category = COALESCE(?, team_award_category),
+            team_award_fee = COALESCE(?, team_award_fee),
+            org_award_nomination = COALESCE(?, org_award_nomination),
+            org_award_category = COALESCE(?, org_award_category),
+            org_award_fee = COALESCE(?, org_award_fee),
+            attending_poster = COALESCE(?, attending_poster)
           WHERE id = ?`,
-          [razorpay_payment_id || 'FREE-PASS', couponApplied || null, registrationId]
+          [
+            razorpay_payment_id || 'FREE-PASS', couponApplied || null,
+            teamAwardNomination || null, teamAwardCategory || null, teamAwardFee ? Number(teamAwardFee) : null,
+            orgAwardNomination || null, orgAwardCategory || null, orgAwardFee ? Number(orgAwardFee) : null,
+            attendingPoster || null,
+            registrationId
+          ]
         );
 
         const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ?", [registrationId]);
@@ -3110,7 +3126,14 @@ async function handlePaymentVerification(req: any, res: any) {
             award_nomination = COALESCE(?, award_nomination),
             award_category = COALESCE(?, award_category),
             award_team_category = COALESCE(?, award_team_category),
-            award_nomination_fee = COALESCE(?, award_nomination_fee)
+            award_nomination_fee = COALESCE(?, award_nomination_fee),
+            team_award_nomination = COALESCE(?, team_award_nomination),
+            team_award_category = COALESCE(?, team_award_category),
+            team_award_fee = COALESCE(?, team_award_fee),
+            org_award_nomination = COALESCE(?, org_award_nomination),
+            org_award_category = COALESCE(?, org_award_category),
+            org_award_fee = COALESCE(?, org_award_fee),
+            attending_poster = COALESCE(?, attending_poster)
           WHERE id = ?`,
           [
             razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid,
@@ -3119,6 +3142,11 @@ async function handlePaymentVerification(req: any, res: any) {
             discountAmount ? Number(discountAmount) : null,
             awardNomination || null, awardCategory || null, awardTeamCategory || null,
             awardNominationFee ? Number(awardNominationFee) : null,
+            teamAwardNomination || null, teamAwardCategory || null,
+            teamAwardFee ? Number(teamAwardFee) : null,
+            orgAwardNomination || null, orgAwardCategory || null,
+            orgAwardFee ? Number(orgAwardFee) : null,
+            attendingPoster || null,
             registrationId
           ]
         );
@@ -3287,7 +3315,10 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
     const { registrationId } = req.params;
     const { 
       passName, passPrice, paymentAmount, gstAmount, couponApplied,
-      awardNomination, awardCategory, awardTeamCategory, awardNominationFee
+      awardNomination, awardCategory, awardTeamCategory, awardNominationFee,
+      teamAwardNomination, teamAwardCategory, teamAwardFee,
+      orgAwardNomination, orgAwardCategory, orgAwardFee,
+      attendingPoster
     } = req.body;
     const numPassPrice = Number(passPrice) || 0;
     const numPaymentAmount = Number(paymentAmount) || (numPassPrice > 0 ? Math.round(numPassPrice * 1.18) : 0);
@@ -3305,12 +3336,24 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
           award_category = COALESCE(?, award_category),
           award_team_category = COALESCE(?, award_team_category),
           award_nomination_fee = COALESCE(?, award_nomination_fee),
+          team_award_nomination = COALESCE(?, team_award_nomination),
+          team_award_category = COALESCE(?, team_award_category),
+          team_award_fee = COALESCE(?, team_award_fee),
+          org_award_nomination = COALESCE(?, org_award_nomination),
+          org_award_category = COALESCE(?, org_award_category),
+          org_award_fee = COALESCE(?, org_award_fee),
+          attending_poster = COALESCE(?, attending_poster),
           payment_status = CASE WHEN payment_status = 'Paid' THEN 'Paid' ELSE 'Dropped (Pass Selected)' END
         WHERE id = ?`,
         [
           passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null,
           awardNomination || null, awardCategory || null, awardTeamCategory || null,
           awardNominationFee ? Number(awardNominationFee) : null,
+          teamAwardNomination || null, teamAwardCategory || null,
+          teamAwardFee ? Number(teamAwardFee) : null,
+          orgAwardNomination || null, orgAwardCategory || null,
+          orgAwardFee ? Number(orgAwardFee) : null,
+          attendingPoster || null,
           registrationId
         ]
       );
@@ -3326,9 +3369,9 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
 // 3. POST /api/registrations/calculate-payment - Step 3: Coupon & Tax Calculation
 app.post("/api/registrations/calculate-payment", async (req, res) => {
   try {
-    const { basePrice = 0, couponCode, gstPct = 18, awardNominationFee = 0 } = req.body;
+    const { basePrice = 0, couponCode, gstPct = 18, awardNominationFee = 0, teamAwardFee = 0, orgAwardFee = 0 } = req.body;
     const numBase = Number(basePrice) || 0;
-    const numAwardFee = Number(awardNominationFee) || 0;
+    const numAwardFee = (Number(awardNominationFee) || 0) + (Number(teamAwardFee) || 0) + (Number(orgAwardFee) || 0);
     const totalBase = numBase + numAwardFee;
     const numGstPct = Number(gstPct) || 18;
 
@@ -3484,6 +3527,13 @@ app.post("/api/registrations/complete-free", async (req, res) => {
       awardNomination = "No",
       awardCategory = "",
       awardTeamCategory = "",
+      teamAwardNomination,
+      teamAwardCategory,
+      teamAwardFee,
+      orgAwardNomination,
+      orgAwardCategory,
+      orgAwardFee,
+      attendingPoster,
       couponApplied,
       eventId,
       eventTitle,
@@ -3507,7 +3557,14 @@ app.post("/api/registrations/complete-free", async (req, res) => {
           coupon_applied = COALESCE(?, coupon_applied, 'Free Pass'),
           award_nomination = COALESCE(?, award_nomination),
           award_category = COALESCE(?, award_category),
-          award_team_category = COALESCE(?, award_team_category)
+          award_team_category = COALESCE(?, award_team_category),
+          team_award_nomination = COALESCE(?, team_award_nomination),
+          team_award_category = COALESCE(?, team_award_category),
+          team_award_fee = COALESCE(?, team_award_fee, 0),
+          org_award_nomination = COALESCE(?, org_award_nomination),
+          org_award_category = COALESCE(?, org_award_category),
+          org_award_fee = COALESCE(?, org_award_fee, 0),
+          attending_poster = COALESCE(?, attending_poster)
         WHERE id = ?`,
         [
           passName,
@@ -3515,6 +3572,13 @@ app.post("/api/registrations/complete-free", async (req, res) => {
           awardNomination || null,
           awardCategory || null,
           awardTeamCategory || null,
+          teamAwardNomination || null,
+          teamAwardCategory || null,
+          teamAwardFee ? Number(teamAwardFee) : 0,
+          orgAwardNomination || null,
+          orgAwardCategory || null,
+          orgAwardFee ? Number(orgAwardFee) : 0,
+          attendingPoster || null,
           registrationId
         ]
       );
@@ -6694,6 +6758,14 @@ async function upsertEventPaymentSettings(data: any) {
   const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
   const awardCatsStr = typeof data.award_categories === "string" ? data.award_categories : JSON.stringify(data.award_categories || []);
   const awardTeamCatsStr = typeof data.award_team_categories === "string" ? data.award_team_categories : JSON.stringify(data.award_team_categories || []);
+  const teamAwardCatsStr = typeof data.team_award_categories === "string" ? data.team_award_categories : JSON.stringify(data.team_award_categories || data.award_team_categories || []);
+  const orgAwardCatsStr = typeof data.org_award_categories === "string" ? data.org_award_categories : JSON.stringify(data.org_award_categories || []);
+  const teamNomEnabled = data.team_award_nomination_enabled !== undefined ? (data.team_award_nomination_enabled ? 1 : 0) : 0;
+  const teamNomFee = Number(data.team_award_nomination_fee) || 0;
+  const orgNomEnabled = data.org_award_nomination_enabled !== undefined ? (data.org_award_nomination_enabled ? 1 : 0) : 0;
+  const orgNomFee = Number(data.org_award_nomination_fee) || 0;
+  const posterEnabled = data.attending_poster_enabled !== undefined ? (data.attending_poster_enabled ? 1 : 0) : 1;
+  const posterWhatsapp = data.attending_poster_whatsapp || "+91 94930 87788";
 
   await ensureEventPaymentsTable();
 
@@ -6733,6 +6805,9 @@ async function upsertEventPaymentSettings(data: any) {
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
           award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
+          team_award_nomination_enabled = ?, team_award_nomination_fee = ?, team_award_categories = ?,
+          org_award_nomination_enabled = ?, org_award_nomination_fee = ?, org_award_categories = ?,
+          attending_poster_enabled = ?, attending_poster_whatsapp = ?,
           show_invoice_to_user = ?
         WHERE event_id = ? OR id = ?`,
         [
@@ -6746,6 +6821,9 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee, teamAwardCatsStr,
+          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          posterEnabled, posterWhatsapp,
           showInvoiceToUser,
           targetEventId, targetKey
         ]
@@ -6761,6 +6839,9 @@ async function upsertEventPaymentSettings(data: any) {
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
           award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
+          team_award_nomination_enabled = ?, team_award_nomination_fee = ?, team_award_categories = ?,
+          org_award_nomination_enabled = ?, org_award_nomination_fee = ?, org_award_categories = ?,
+          attending_poster_enabled = ?, attending_poster_whatsapp = ?,
           show_invoice_to_user = ?
         WHERE event_id = ?`,
         [
@@ -6774,6 +6855,9 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee, teamAwardCatsStr,
+          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          posterEnabled, posterWhatsapp,
           showInvoiceToUser,
           targetEventId
         ]
@@ -6808,8 +6892,11 @@ async function upsertEventPaymentSettings(data: any) {
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
           award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
+          team_award_nomination_enabled, team_award_nomination_fee, team_award_categories,
+          org_award_nomination_enabled, org_award_nomination_fee, org_award_categories,
+          attending_poster_enabled, attending_poster_whatsapp,
           show_invoice_to_user
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6821,6 +6908,9 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee, teamAwardCatsStr,
+          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          posterEnabled, posterWhatsapp,
           showInvoiceToUser
         ]
       );
@@ -6834,8 +6924,11 @@ async function upsertEventPaymentSettings(data: any) {
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
           award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
+          team_award_nomination_enabled, team_award_nomination_fee, team_award_categories,
+          org_award_nomination_enabled, org_award_nomination_fee, org_award_categories,
+          attending_poster_enabled, attending_poster_whatsapp,
           show_invoice_to_user
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6847,6 +6940,9 @@ async function upsertEventPaymentSettings(data: any) {
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
           data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee, teamAwardCatsStr,
+          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          posterEnabled, posterWhatsapp,
           showInvoiceToUser
         ]
       );

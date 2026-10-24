@@ -1236,6 +1236,14 @@ export interface EventPaymentConfig {
   award_nomination_fee?: number;
   award_categories?: string | string[];
   award_team_categories?: string | string[];
+  team_award_nomination_enabled?: number | boolean;
+  team_award_nomination_fee?: number;
+  team_award_categories?: string | string[];
+  org_award_nomination_enabled?: number | boolean;
+  org_award_nomination_fee?: number;
+  org_award_categories?: string | string[];
+  attending_poster_enabled?: number | boolean;
+  attending_poster_whatsapp?: string;
   created_at?: string;
   updated_at?: string;
 }

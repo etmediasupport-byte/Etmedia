@@ -88,6 +88,14 @@ interface EventData {
   award_nomination_fee?: number | string;
   award_categories?: any;
   award_team_categories?: any;
+  team_award_nomination_enabled?: boolean | number;
+  team_award_nomination_fee?: number | string;
+  team_award_categories?: any;
+  org_award_nomination_enabled?: boolean | number;
+  org_award_nomination_fee?: number | string;
+  org_award_categories?: any;
+  attending_poster_enabled?: boolean | number;
+  attending_poster_whatsapp?: string;
 }
 
 export const HR_RECALL_DEFAULT_CATEGORIES = [
@@ -113,6 +121,15 @@ export const HR_RECALL_DEFAULT_TEAM_CATEGORIES = [
   "Best Employee Experience & Engagement Initiative",
   "Best Diversity, Equity & Inclusion Initiative",
   "Best HR Digital Transformation Initiative",
+];
+
+export const HR_RECALL_DEFAULT_ORG_CATEGORIES = [
+  "Best Organization for Women Leadership",
+  "Best Workplace for Innovation & Culture",
+  "Excellence in Employee Well-being",
+  "Best Learning Enterprise of the Year",
+  "Outstanding Diversity & Inclusion Employer",
+  "HR Technology Adopter Organization of the Year",
 ];
 
 interface RegistrationFieldErrors {
@@ -287,12 +304,32 @@ export default function EventRegistrationWizardPage() {
   // --- STEP 5 FORM STATE: Award Nomination (Optional with fee) ---
   const [wantsAwardNomination, setWantsAwardNomination] = useState<string>(""); // "" | "No" | "Yes"
   const [selectedAwardCategory, setSelectedAwardCategory] = useState<string>("");
-  const [selectedTeamCategory, setSelectedTeamCategory] = useState<string>("");
   const [awardCategoriesList, setAwardCategoriesList] = useState<string[]>([]);
-  const [awardTeamCategoriesList, setAwardTeamCategoriesList] = useState<string[]>([]);
   const [awardNominationFee, setAwardNominationFee] = useState<number>(5000);
   const [awardNominationEnabled, setAwardNominationEnabled] = useState<boolean>(true);
   const [awardCategoryError, setAwardCategoryError] = useState<string>("");
+
+  // Team & Group Award Nominations
+  const [wantsTeamNomination, setWantsTeamNomination] = useState<string>(""); // "" | "No" | "Yes"
+  const [selectedTeamCategory, setSelectedTeamCategory] = useState<string>("");
+  const [teamAwardCategoriesList, setTeamAwardCategoriesList] = useState<string[]>([]);
+  const [teamAwardNominationFee, setTeamAwardNominationFee] = useState<number>(10000);
+  const [teamAwardNominationEnabled, setTeamAwardNominationEnabled] = useState<boolean>(true);
+  const [teamAwardCategoryError, setTeamAwardCategoryError] = useState<string>("");
+
+  // Organization Award Nominations
+  const [wantsOrgNomination, setWantsOrgNomination] = useState<string>(""); // "" | "No" | "Yes"
+  const [selectedOrgCategory, setSelectedOrgCategory] = useState<string>("");
+  const [orgAwardCategoriesList, setOrgAwardCategoriesList] = useState<string[]>([]);
+  const [orgAwardNominationFee, setOrgAwardNominationFee] = useState<number>(15000);
+  const [orgAwardNominationEnabled, setOrgAwardNominationEnabled] = useState<boolean>(true);
+  const [orgAwardCategoryError, setOrgAwardCategoryError] = useState<string>("");
+
+  // "I'm Attending" Poster
+  const [attendingPosterChoice, setAttendingPosterChoice] = useState<string>("");
+  const [attendingPosterEnabled, setAttendingPosterEnabled] = useState<boolean>(true);
+  const [attendingPosterWhatsapp, setAttendingPosterWhatsapp] = useState<string>("+91 94930 87788");
+  const [posterChoiceError, setPosterChoiceError] = useState<string>("");
 
   // --- STEP 6 FORM STATE: Coupon & Summary ---
   const [couponCode, setCouponCode] = useState("");
@@ -306,6 +343,9 @@ export default function EventRegistrationWizardPage() {
     basePrice: 0,
     passBase: 0,
     nominationFeeAmount: 0,
+    individualNominationFee: 0,
+    teamNominationFee: 0,
+    orgNominationFee: 0,
     discountAmount: 0,
     discountedBase: 0,
     gstPct: 18,
@@ -380,16 +420,44 @@ export default function EventRegistrationWizardPage() {
         } else if (Array.isArray(data.award_categories)) {
           cats = data.award_categories;
         }
-        setAwardCategoriesList(Array.isArray(cats) ? cats : []);
+        setAwardCategoriesList(Array.isArray(cats) && cats.length > 0 ? cats : HR_RECALL_DEFAULT_CATEGORIES);
       }
-      if (typeof data.award_team_categories !== "undefined") {
+      if (typeof data.team_award_nomination_enabled !== "undefined") {
+        setTeamAwardNominationEnabled(data.team_award_nomination_enabled === 1 || data.team_award_nomination_enabled === true);
+      }
+      if (typeof data.team_award_nomination_fee !== "undefined" && data.team_award_nomination_fee !== null) {
+        setTeamAwardNominationFee(Number(data.team_award_nomination_fee) || 0);
+      }
+      if (typeof data.team_award_categories !== "undefined" || typeof data.award_team_categories !== "undefined") {
+        const rawTeam = data.team_award_categories || data.award_team_categories;
         let teamCats: string[] = [];
-        if (typeof data.award_team_categories === "string") {
-          try { teamCats = JSON.parse(data.award_team_categories); } catch (_) {}
-        } else if (Array.isArray(data.award_team_categories)) {
-          teamCats = data.award_team_categories;
+        if (typeof rawTeam === "string") {
+          try { teamCats = JSON.parse(rawTeam); } catch (_) {}
+        } else if (Array.isArray(rawTeam)) {
+          teamCats = rawTeam;
         }
-        setAwardTeamCategoriesList(Array.isArray(teamCats) ? teamCats : []);
+        setTeamAwardCategoriesList(Array.isArray(teamCats) && teamCats.length > 0 ? teamCats : HR_RECALL_DEFAULT_TEAM_CATEGORIES);
+      }
+      if (typeof data.org_award_nomination_enabled !== "undefined") {
+        setOrgAwardNominationEnabled(data.org_award_nomination_enabled === 1 || data.org_award_nomination_enabled === true);
+      }
+      if (typeof data.org_award_nomination_fee !== "undefined" && data.org_award_nomination_fee !== null) {
+        setOrgAwardNominationFee(Number(data.org_award_nomination_fee) || 0);
+      }
+      if (typeof data.org_award_categories !== "undefined") {
+        let orgCats: string[] = [];
+        if (typeof data.org_award_categories === "string") {
+          try { orgCats = JSON.parse(data.org_award_categories); } catch (_) {}
+        } else if (Array.isArray(data.org_award_categories)) {
+          orgCats = data.org_award_categories;
+        }
+        setOrgAwardCategoriesList(Array.isArray(orgCats) && orgCats.length > 0 ? orgCats : HR_RECALL_DEFAULT_ORG_CATEGORIES);
+      }
+      if (typeof data.attending_poster_enabled !== "undefined") {
+        setAttendingPosterEnabled(data.attending_poster_enabled === 1 || data.attending_poster_enabled === true);
+      }
+      if (typeof data.attending_poster_whatsapp === "string" && data.attending_poster_whatsapp.trim()) {
+        setAttendingPosterWhatsapp(data.attending_poster_whatsapp.trim());
       }
     };
 
@@ -532,7 +600,7 @@ export default function EventRegistrationWizardPage() {
     (eventData as any)?.allow_paid_registration === 0 ||
     (eventData as any)?.allow_paid_registration === false;
 
-  // Recalculate Payment when Plan, Coupon, or Award Nomination changes
+  // Recalculate Payment when Plan, Coupon, or Award Nominations change
   useEffect(() => {
     if (!selectedPlan) return;
 
@@ -540,7 +608,11 @@ export default function EventRegistrationWizardPage() {
       ? selectedPlan.early_bird_price
       : Number(selectedPlan.price) || 0;
 
-    const nominationFeeAmount = wantsAwardNomination === "Yes" ? (Number(awardNominationFee) || 0) : 0;
+    const individualNominationFee = wantsAwardNomination === "Yes" ? (Number(awardNominationFee) || 0) : 0;
+    const teamNominationFee = wantsTeamNomination === "Yes" ? (Number(teamAwardNominationFee) || 0) : 0;
+    const orgNominationFee = wantsOrgNomination === "Yes" ? (Number(orgAwardNominationFee) || 0) : 0;
+    const nominationFeeAmount = individualNominationFee + teamNominationFee + orgNominationFee;
+
     const basePrice = passBase + nominationFeeAmount;
 
     const gstPct = Number(eventData?.gst_percentage) || 18;
@@ -562,13 +634,27 @@ export default function EventRegistrationWizardPage() {
       basePrice,
       passBase,
       nominationFeeAmount,
+      individualNominationFee,
+      teamNominationFee,
+      orgNominationFee,
       discountAmount: discount,
       discountedBase,
       gstPct,
       gstAmount,
       finalAmount,
     });
-  }, [selectedPlan, appliedCoupon, isEarlyBirdActive, eventData, wantsAwardNomination, awardNominationFee]);
+  }, [
+    selectedPlan,
+    appliedCoupon,
+    isEarlyBirdActive,
+    eventData,
+    wantsAwardNomination,
+    awardNominationFee,
+    wantsTeamNomination,
+    teamAwardNominationFee,
+    wantsOrgNomination,
+    orgAwardNominationFee,
+  ]);
 
   // Validation errors state
   const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({});
@@ -799,19 +885,53 @@ export default function EventRegistrationWizardPage() {
 
   // ================= STEP 5: AWARD NOMINATION SUBMIT =================
   const handleStep5AwardSubmit = async () => {
-    if (!wantsAwardNomination) {
-      setAwardCategoryError("Please select whether you wish to nominate yourself or your team (Yes or No).");
-      toast.error("Please answer the nomination question to proceed.");
+    // 1. Validate Individual Award Nomination
+    if (awardNominationEnabled && !wantsAwardNomination) {
+      setAwardCategoryError("Please select whether you wish to nominate yourself (Yes or No).");
+      toast.error("Please answer the individual award nomination question.");
+      return;
+    }
+    if (awardNominationEnabled && wantsAwardNomination === "Yes" && !selectedAwardCategory.trim()) {
+      setAwardCategoryError("Please select an Award Category to nominate yourself for.");
+      toast.error("Please choose your individual award category.");
       return;
     }
 
-    if (wantsAwardNomination === "Yes" && !selectedAwardCategory.trim()) {
-      setAwardCategoryError("Please select an Award Category to nominate yourself for.");
-      toast.error("Please choose an award category.");
+    // 2. Validate Team Award Nomination
+    if (teamAwardNominationEnabled && !wantsTeamNomination) {
+      setTeamAwardCategoryError("Please select whether you wish to nominate your team (Yes or No).");
+      toast.error("Please answer the team award nomination question.");
+      return;
+    }
+    if (teamAwardNominationEnabled && wantsTeamNomination === "Yes" && !selectedTeamCategory.trim()) {
+      setTeamAwardCategoryError("Please select a Team Award Category.");
+      toast.error("Please choose your team award category.");
+      return;
+    }
+
+    // 3. Validate Organization Award Nomination
+    if (orgAwardNominationEnabled && !wantsOrgNomination) {
+      setOrgAwardCategoryError("Please select whether you wish to nominate your organization (Yes or No).");
+      toast.error("Please answer the organization award nomination question.");
+      return;
+    }
+    if (orgAwardNominationEnabled && wantsOrgNomination === "Yes" && !selectedOrgCategory.trim()) {
+      setOrgAwardCategoryError("Please select an Organization Award Category.");
+      toast.error("Please choose your organization award category.");
+      return;
+    }
+
+    // 4. Validate Attending Poster Question
+    if (attendingPosterEnabled && !attendingPosterChoice) {
+      setPosterChoiceError("Please choose your preference for the 'I'm Attending' poster.");
+      toast.error("Please answer the poster question.");
       return;
     }
 
     setAwardCategoryError("");
+    setTeamAwardCategoryError("");
+    setOrgAwardCategoryError("");
+    setPosterChoiceError("");
 
     try {
       if (registrationId) {
@@ -821,16 +941,23 @@ export default function EventRegistrationWizardPage() {
           body: JSON.stringify({
             passName: selectedPlan?.name,
             passPrice: paymentBreakdown.passBase,
-            awardNomination: wantsAwardNomination,
+            awardNomination: wantsAwardNomination || "No",
             awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
             awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
+            teamAwardNomination: wantsTeamNomination || "No",
+            teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+            teamAwardFee: wantsTeamNomination === "Yes" ? (teamAwardNominationFee || 0) : 0,
+            orgAwardNomination: wantsOrgNomination || "No",
+            orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+            orgAwardFee: wantsOrgNomination === "Yes" ? (orgAwardNominationFee || 0) : 0,
+            attendingPoster: attendingPosterChoice || "No, Thank you",
             paymentAmount: paymentBreakdown.finalAmount,
             gstAmount: paymentBreakdown.gstAmount,
           }),
         });
       }
-      toast.success(wantsAwardNomination === "Yes" ? "Award nomination recorded!" : "Proceeding to summary.");
+      toast.success("Award & summit preferences recorded!");
       setCurrentStep(6);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
@@ -853,7 +980,9 @@ export default function EventRegistrationWizardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           basePrice: paymentBreakdown.passBase || paymentBreakdown.basePrice,
-          awardNominationFee: paymentBreakdown.nominationFeeAmount,
+          awardNominationFee: paymentBreakdown.individualNominationFee,
+          teamAwardFee: paymentBreakdown.teamNominationFee,
+          orgAwardFee: paymentBreakdown.orgNominationFee,
           couponCode,
           gstPct: eventData?.gst_percentage || 18,
         }),
@@ -894,10 +1023,17 @@ export default function EventRegistrationWizardPage() {
           body: JSON.stringify({
             passName: selectedPlan?.name || "Executive Delegate Pass",
             passPrice: 0,
-            awardNomination: wantsAwardNomination,
+            awardNomination: wantsAwardNomination || "No",
             awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
             awardNominationFee: 0,
+            teamAwardNomination: wantsTeamNomination || "No",
+            teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+            teamAwardFee: 0,
+            orgAwardNomination: wantsOrgNomination || "No",
+            orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+            orgAwardFee: 0,
+            attendingPoster: attendingPosterChoice || "No, Thank you",
             paymentAmount: 0,
             gstAmount: 0,
             couponApplied: appliedCoupon || "Free Pass",
@@ -911,9 +1047,16 @@ export default function EventRegistrationWizardPage() {
         body: JSON.stringify({
           registrationId,
           passName: selectedPlan?.name || "Executive Delegate Pass",
-          awardNomination: wantsAwardNomination,
+          awardNomination: wantsAwardNomination || "No",
           awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-          awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+          awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+          teamAwardNomination: wantsTeamNomination || "No",
+          teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+          teamAwardFee: 0,
+          orgAwardNomination: wantsOrgNomination || "No",
+          orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+          orgAwardFee: 0,
+          attendingPoster: attendingPosterChoice || "No, Thank you",
           couponApplied: appliedCoupon || "Free Pass",
           eventId: eventData?.id || slug,
           eventTitle: eventData?.title || "Executive Summit 2026",
@@ -950,10 +1093,17 @@ export default function EventRegistrationWizardPage() {
           body: JSON.stringify({
             passName: selectedPlan?.name || "Delegate Pass",
             passPrice: paymentBreakdown.passBase,
-            awardNomination: wantsAwardNomination,
+            awardNomination: wantsAwardNomination || "No",
             awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-            awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+            awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
             awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
+            teamAwardNomination: wantsTeamNomination || "No",
+            teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+            teamAwardFee: wantsTeamNomination === "Yes" ? (teamAwardNominationFee || 0) : 0,
+            orgAwardNomination: wantsOrgNomination || "No",
+            orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+            orgAwardFee: wantsOrgNomination === "Yes" ? (orgAwardNominationFee || 0) : 0,
+            attendingPoster: attendingPosterChoice || "No, Thank you",
             paymentAmount: paymentBreakdown.finalAmount,
             gstAmount: paymentBreakdown.gstAmount,
             couponApplied: appliedCoupon || undefined,
@@ -1022,6 +1172,11 @@ export default function EventRegistrationWizardPage() {
         pass_name: selectedPlan?.name,
         award_nomination: wantsAwardNomination,
         award_category: selectedAwardCategory,
+        team_award_nomination: wantsTeamNomination,
+        team_award_category: selectedTeamCategory,
+        org_award_nomination: wantsOrgNomination,
+        org_award_category: selectedOrgCategory,
+        attending_poster: attendingPosterChoice,
       },
       theme: {
         color: "#0891B2",
@@ -1043,8 +1198,15 @@ export default function EventRegistrationWizardPage() {
               couponApplied: appliedCoupon || undefined,
               awardNomination: wantsAwardNomination,
               awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-              awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+              awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
               awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
+              teamAwardNomination: wantsTeamNomination,
+              teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+              teamAwardFee: wantsTeamNomination === "Yes" ? (teamAwardNominationFee || 0) : 0,
+              orgAwardNomination: wantsOrgNomination,
+              orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+              orgAwardFee: wantsOrgNomination === "Yes" ? (orgAwardNominationFee || 0) : 0,
+              attendingPoster: attendingPosterChoice,
             }),
           });
           const verifyData = await verifyRes.json();
@@ -1107,8 +1269,15 @@ export default function EventRegistrationWizardPage() {
           couponApplied: appliedCoupon || undefined,
           awardNomination: wantsAwardNomination,
           awardCategory: wantsAwardNomination === "Yes" ? selectedAwardCategory : "",
-          awardTeamCategory: wantsAwardNomination === "Yes" ? selectedTeamCategory : "",
+          awardTeamCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
           awardNominationFee: wantsAwardNomination === "Yes" ? (awardNominationFee || 0) : 0,
+          teamAwardNomination: wantsTeamNomination,
+          teamAwardCategory: wantsTeamNomination === "Yes" ? selectedTeamCategory : "",
+          teamAwardFee: wantsTeamNomination === "Yes" ? (teamAwardNominationFee || 0) : 0,
+          orgAwardNomination: wantsOrgNomination,
+          orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
+          orgAwardFee: wantsOrgNomination === "Yes" ? (orgAwardNominationFee || 0) : 0,
+          attendingPoster: attendingPosterChoice,
         }),
       });
       const data = await res.json();
@@ -1375,9 +1544,33 @@ export default function EventRegistrationWizardPage() {
                     {wantsAwardNomination === "Yes" && (
                       <div className="pt-1 border-t border-cyan-200/60 flex items-center justify-between text-[11px]">
                         <span className="text-amber-800 font-bold flex items-center gap-1">
-                          <Award className="w-3.5 h-3.5 text-amber-600" /> Award Entry
+                          <Award className="w-3.5 h-3.5 text-amber-600" /> Individual Award
                         </span>
-                        <span className="text-amber-900 font-black">+₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                        <span className="text-amber-900 font-black">+₹{paymentBreakdown.individualNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    {wantsTeamNomination === "Yes" && (
+                      <div className="pt-1 border-t border-cyan-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-blue-800 font-bold flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5 text-blue-600" /> Team Award
+                        </span>
+                        <span className="text-blue-900 font-black">+₹{paymentBreakdown.teamNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    {wantsOrgNomination === "Yes" && (
+                      <div className="pt-1 border-t border-cyan-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-purple-800 font-bold flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5 text-purple-600" /> Org Award
+                        </span>
+                        <span className="text-purple-900 font-black">+₹{paymentBreakdown.orgNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    {attendingPosterChoice && attendingPosterChoice.includes("WhatsApp") && (
+                      <div className="pt-1 border-t border-cyan-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-emerald-800 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Attending Poster
+                        </span>
+                        <span className="text-emerald-900 font-black">Free</span>
                       </div>
                     )}
                   </div>
@@ -2200,11 +2393,18 @@ export default function EventRegistrationWizardPage() {
                   </div>
 
                   <div className="space-y-6">
-                    {/* Question 1: Would you like to nominate yourself or your team */}
-                    <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
-                      <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                        Would you like to nominate yourself or your team for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
-                      </label>
+                    {/* SECTION 1: Individual Award Nomination (Tab 4 in Admin) */}
+                    <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                          Would you like to nominate yourself for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                        </label>
+                        {awardNominationFee > 0 && (
+                          <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                            Fee: ₹{awardNominationFee.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
                       <select
                         value={wantsAwardNomination}
                         onChange={(e) => {
@@ -2213,7 +2413,6 @@ export default function EventRegistrationWizardPage() {
                           setAwardCategoryError("");
                           if (val !== "Yes") {
                             setSelectedAwardCategory("");
-                            setSelectedTeamCategory("");
                           }
                         }}
                         className="w-full sm:w-80 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
@@ -2227,27 +2426,16 @@ export default function EventRegistrationWizardPage() {
                           ⚠️ {awardCategoryError}
                         </p>
                       )}
-                    </div>
 
-                    {/* If No: Friendly confirmation */}
-                    {wantsAwardNomination === "No" && (
-                      <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>No award nomination selected. No additional nomination fee will be charged. You can proceed directly to summary.</span>
-                      </div>
-                    )}
-
-                    {/* If Yes: Category Selection and Fee Information */}
-                    {wantsAwardNomination === "Yes" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-6"
-                      >
-                        {/* Question 2: Individual Category */}
-                        <div className="p-5 sm:p-6 rounded-2xl bg-cyan-50/40 border border-cyan-200 space-y-3">
-                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                      {/* If Yes: Individual Category Selection */}
+                      {wantsAwardNomination === "Yes" && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pt-3 border-t border-slate-200 space-y-3"
+                        >
+                          <label className="block text-xs sm:text-sm font-bold text-slate-900 leading-snug">
                             Which Award Category Would You Like to Nominate Yourself For? <span className="text-slate-500 font-normal">( T&C Apply )</span> <span className="text-rose-500">*</span>
                           </label>
                           <select
@@ -2269,38 +2457,226 @@ export default function EventRegistrationWizardPage() {
                               </option>
                             ))}
                           </select>
-                          {awardCategoriesList.length === 0 && (
-                            <p className="text-[11px] text-amber-600 mt-1">
-                              ℹ️ No award categories have been configured yet.
-                            </p>
-                          )}
                           {awardCategoryError && !selectedAwardCategory && (
                             <p className="text-xs font-bold text-rose-500 mt-1">
                               ⚠️ {awardCategoryError}
                             </p>
                           )}
-                        </div>
-
-
-                        {/* Transparent Fee Alert Box */}
-                        <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 p-4 sm:p-5 flex items-start gap-3.5">
-                          <div className="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
-                            <Trophy className="w-5 h-5" />
+                          <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 flex items-center justify-between text-xs text-amber-900 font-semibold">
+                            <span>Individual Nomination Fee:</span>
+                            <span className="font-black text-amber-950">₹{awardNominationFee.toLocaleString("en-IN")}</span>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black uppercase tracking-wider text-amber-900">Official Award Nomination Entry</span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200/80 text-amber-900">
-                                Fee: ₹{awardNominationFee.toLocaleString("en-IN")}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-600 leading-relaxed">
-                              Your nomination profile will be formally registered and submitted to the Executive Jury Board for evaluation. The nomination fee of ₹{awardNominationFee.toLocaleString("en-IN")} will be added to your order summary at the next step.
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* SECTION 2: Team Award Nomination (Tab 5 in Admin) */}
+                    <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                          Would you like to nominate your team for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                        </label>
+                        {teamAwardNominationFee > 0 && (
+                          <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-100 text-blue-900 border border-blue-300 shrink-0">
+                            Fee: ₹{teamAwardNominationFee.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        value={wantsTeamNomination}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWantsTeamNomination(val);
+                          setTeamAwardCategoryError("");
+                          if (val !== "Yes") {
+                            setSelectedTeamCategory("");
+                          }
+                        }}
+                        className="w-full sm:w-80 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
+                      >
+                        <option value="">Choose</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                      {teamAwardCategoryError && !wantsTeamNomination && (
+                        <p className="text-xs font-bold text-rose-500 mt-1">
+                          ⚠️ {teamAwardCategoryError}
+                        </p>
+                      )}
+
+                      {/* If Yes: Team Category Selection */}
+                      {wantsTeamNomination === "Yes" && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pt-3 border-t border-slate-200 space-y-3"
+                        >
+                          <label className="block text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                            Which Award Category Would You Like to Nominate Your Team For? <span className="text-slate-500 font-normal">( T&C Apply )</span> <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={selectedTeamCategory}
+                            onChange={(e) => {
+                              setSelectedTeamCategory(e.target.value);
+                              if (e.target.value) setTeamAwardCategoryError("");
+                            }}
+                            className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-4 shadow-sm cursor-pointer ${
+                              teamAwardCategoryError && !selectedTeamCategory
+                                ? "border-rose-500 focus:ring-rose-500/10"
+                                : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-500/10"
+                            }`}
+                          >
+                            <option value="">Choose a team award category</option>
+                            {teamAwardCategoriesList.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                          {teamAwardCategoryError && !selectedTeamCategory && (
+                            <p className="text-xs font-bold text-rose-500 mt-1">
+                              ⚠️ {teamAwardCategoryError}
                             </p>
+                          )}
+                          <div className="rounded-xl bg-blue-500/10 border border-blue-500/30 p-3 flex items-center justify-between text-xs text-blue-900 font-semibold">
+                            <span>Team Nomination Fee:</span>
+                            <span className="font-black text-blue-950">₹{teamAwardNominationFee.toLocaleString("en-IN")}</span>
                           </div>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* SECTION 3: Organization Award Nomination (Tab 6 in Admin) */}
+                    <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                          Would You Like to Nominate Your Organization? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                        </label>
+                        {orgAwardNominationFee > 0 && (
+                          <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-purple-100 text-purple-900 border border-purple-300 shrink-0">
+                            Fee: ₹{orgAwardNominationFee.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        value={wantsOrgNomination}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWantsOrgNomination(val);
+                          setOrgAwardCategoryError("");
+                          if (val !== "Yes") {
+                            setSelectedOrgCategory("");
+                          }
+                        }}
+                        className="w-full sm:w-80 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 shadow-sm cursor-pointer"
+                      >
+                        <option value="">Choose</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                      {orgAwardCategoryError && !wantsOrgNomination && (
+                        <p className="text-xs font-bold text-rose-500 mt-1">
+                          ⚠️ {orgAwardCategoryError}
+                        </p>
+                      )}
+
+                      {/* If Yes: Organization Category Selection */}
+                      {wantsOrgNomination === "Yes" && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pt-3 border-t border-slate-200 space-y-3"
+                        >
+                          <label className="block text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                            Which Award Category Would You Like to Nominate Your Organization For? <span className="text-slate-500 font-normal">( T&C Apply )</span> <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={selectedOrgCategory}
+                            onChange={(e) => {
+                              setSelectedOrgCategory(e.target.value);
+                              if (e.target.value) setOrgAwardCategoryError("");
+                            }}
+                            className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-4 shadow-sm cursor-pointer ${
+                              orgAwardCategoryError && !selectedOrgCategory
+                                ? "border-rose-500 focus:ring-rose-500/10"
+                                : "border-slate-300 focus:border-cyan-500 focus:ring-cyan-500/10"
+                            }`}
+                          >
+                            <option value="">Choose an organization award category</option>
+                            {orgAwardCategoriesList.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                          {orgAwardCategoryError && !selectedOrgCategory && (
+                            <p className="text-xs font-bold text-rose-500 mt-1">
+                              ⚠️ {orgAwardCategoryError}
+                            </p>
+                          )}
+                          <div className="rounded-xl bg-purple-500/10 border border-purple-500/30 p-3 flex items-center justify-between text-xs text-purple-900 font-semibold">
+                            <span>Organization Nomination Fee:</span>
+                            <span className="font-black text-purple-950">₹{orgAwardNominationFee.toLocaleString("en-IN")}</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* SECTION 4: "I'm Attending" Poster (Tab 7 in Admin, Image 3) */}
+                    <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50/70 border border-emerald-200 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                          Would you like an “I’m Attending {eventData?.title || "HR RECALL 2K26"}” poster featuring your photo and name? <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                          Complimentary Feature
+                        </span>
+                      </div>
+                      <select
+                        value={attendingPosterChoice}
+                        onChange={(e) => {
+                          setAttendingPosterChoice(e.target.value);
+                          setPosterChoiceError("");
+                        }}
+                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-4 shadow-sm cursor-pointer ${
+                          posterChoiceError && !attendingPosterChoice
+                            ? "border-rose-500 focus:ring-rose-500/10"
+                            : "border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/10"
+                        }`}
+                      >
+                        <option value="">Choose</option>
+                        <option value={`If yes, Please send your photo to ${attendingPosterWhatsapp} via WhatsApp.`}>
+                          If yes, Please send your photo to {attendingPosterWhatsapp} via WhatsApp.
+                        </option>
+                        <option value="No, Thank you">No, Thank you</option>
+                      </select>
+                      {posterChoiceError && !attendingPosterChoice && (
+                        <p className="text-xs font-bold text-rose-500 mt-1">
+                          ⚠️ {posterChoiceError}
+                        </p>
+                      )}
+
+                      {/* When Poster Yes is selected: Quick WhatsApp direct link button */}
+                      {attendingPosterChoice.includes("WhatsApp") && (
+                        <div className="rounded-xl bg-emerald-100/80 border border-emerald-300 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900">
+                          <div className="space-y-0.5">
+                            <span className="font-black block">📱 Send your high-res headshot to Executive Talks:</span>
+                            <span className="text-emerald-800">WhatsApp: <strong>{attendingPosterWhatsapp}</strong></span>
+                          </div>
+                          <a
+                            href={`https://wa.me/${attendingPosterWhatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello Executive Talks Team, I am registering for ${eventData?.title || "the summit"}. Here is my photo for the "I'm Attending" poster.`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 shrink-0 transition-all"
+                          >
+                            <span>Open WhatsApp</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
                         </div>
-                      </motion.div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Step 5 Navigation Buttons */}
                     <div className="flex items-center justify-between pt-6 border-t border-slate-100">
@@ -2366,9 +2742,30 @@ export default function EventRegistrationWizardPage() {
                     </div>
 
                     {wantsAwardNomination === "Yes" && (
-                      <div className="flex justify-between items-center text-xs font-bold text-amber-800 bg-amber-50/70 p-2 rounded-xl">
-                        <span>Award Nomination Fee ({selectedAwardCategory || "Award Category"})</span>
-                        <span>+ ₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                      <div className="flex justify-between items-center text-xs font-bold text-amber-800 bg-amber-50/70 p-2.5 rounded-xl">
+                        <span>Individual Award Nomination ({selectedAwardCategory || "Category Selected"})</span>
+                        <span>+ ₹{paymentBreakdown.individualNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+
+                    {wantsTeamNomination === "Yes" && (
+                      <div className="flex justify-between items-center text-xs font-bold text-blue-800 bg-blue-50/70 p-2.5 rounded-xl">
+                        <span>Team Award Nomination ({selectedTeamCategory || "Category Selected"})</span>
+                        <span>+ ₹{paymentBreakdown.teamNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+
+                    {wantsOrgNomination === "Yes" && (
+                      <div className="flex justify-between items-center text-xs font-bold text-purple-800 bg-purple-50/70 p-2.5 rounded-xl">
+                        <span>Organization Award Nomination ({selectedOrgCategory || "Category Selected"})</span>
+                        <span>+ ₹{paymentBreakdown.orgNominationFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+
+                    {attendingPosterChoice && attendingPosterChoice.includes("WhatsApp") && (
+                      <div className="flex justify-between items-center text-xs font-bold text-emerald-800 bg-emerald-50/70 p-2.5 rounded-xl">
+                        <span>“I’m Attending” Custom Poster</span>
+                        <span className="text-emerald-700">Included (Complimentary)</span>
                       </div>
                     )}
 
@@ -2606,46 +3003,59 @@ export default function EventRegistrationWizardPage() {
                       </div>
                     </div>
 
-                    {/* 5. Award Nomination Review Card */}
+                    {/* 5. Award & Preferences Review Card */}
                     <div className="rounded-3xl border border-slate-200 p-6 space-y-3 bg-slate-50/50">
                       <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                         <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                           <Award className="w-4 h-4 text-amber-500" />
-                          <span>Award Nomination</span>
+                          <span>Award Nominations & Poster Selection</span>
                         </h3>
                         <button
                           type="button"
                           onClick={() => setCurrentStep(5)}
                           className="text-xs font-extrabold text-cyan-700 hover:underline cursor-pointer"
                         >
-                          Edit Award Selection
+                          Edit Selections
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold">
-                        <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Nomination Status</span>
-                          <span className={`font-black ${wantsAwardNomination === "Yes" ? "text-amber-800" : "text-slate-700"}`}>
-                            {wantsAwardNomination === "Yes" ? "Nominated (Yes)" : "No Nomination"}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-semibold">
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Individual Award</span>
+                          <span className={`font-black block ${wantsAwardNomination === "Yes" ? "text-amber-800" : "text-slate-600"}`}>
+                            {wantsAwardNomination === "Yes" ? `Yes (${selectedAwardCategory || "Selected"})` : "No"}
                           </span>
+                          {wantsAwardNomination === "Yes" && (
+                            <span className="text-[10px] font-bold text-slate-500">Fee: ₹{paymentBreakdown.individualNominationFee.toLocaleString("en-IN")}</span>
+                          )}
                         </div>
-                        {wantsAwardNomination === "Yes" && (
-                          <>
-                            <div>
-                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Award Category</span>
-                              <span className="text-cyan-700 font-black">{selectedAwardCategory}</span>
-                            </div>
-                            {selectedTeamCategory && (
-                              <div>
-                                <span className="text-slate-400 block text-[10px] uppercase font-bold">Team Category</span>
-                                <span className="text-slate-900 font-black">{selectedTeamCategory}</span>
-                              </div>
-                            )}
-                            <div>
-                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Nomination Fee</span>
-                              <span className="text-amber-800 font-black">₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
-                            </div>
-                          </>
-                        )}
+
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Team Award</span>
+                          <span className={`font-black block ${wantsTeamNomination === "Yes" ? "text-blue-800" : "text-slate-600"}`}>
+                            {wantsTeamNomination === "Yes" ? `Yes (${selectedTeamCategory || "Selected"})` : "No"}
+                          </span>
+                          {wantsTeamNomination === "Yes" && (
+                            <span className="text-[10px] font-bold text-slate-500">Fee: ₹{paymentBreakdown.teamNominationFee.toLocaleString("en-IN")}</span>
+                          )}
+                        </div>
+
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Organization Award</span>
+                          <span className={`font-black block ${wantsOrgNomination === "Yes" ? "text-purple-800" : "text-slate-600"}`}>
+                            {wantsOrgNomination === "Yes" ? `Yes (${selectedOrgCategory || "Selected"})` : "No"}
+                          </span>
+                          {wantsOrgNomination === "Yes" && (
+                            <span className="text-[10px] font-bold text-slate-500">Fee: ₹{paymentBreakdown.orgNominationFee.toLocaleString("en-IN")}</span>
+                          )}
+                        </div>
+
+                        <div className="p-3 rounded-2xl bg-white border border-slate-200 space-y-1">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">“I’m Attending” Poster</span>
+                          <span className={`font-black block ${attendingPosterChoice && attendingPosterChoice.includes("WhatsApp") ? "text-emerald-700" : "text-slate-600"}`}>
+                            {attendingPosterChoice && attendingPosterChoice.includes("WhatsApp") ? "Yes (Via WhatsApp)" : "No"}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600">Complimentary</span>
+                        </div>
                       </div>
                     </div>
 

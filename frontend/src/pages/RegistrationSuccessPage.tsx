@@ -244,17 +244,25 @@ export default function RegistrationSuccessPage() {
   const rawPayAmount = Number(regDetails?.payment_amount) || 0;
   const rawPassPrice = Number(regDetails?.pass_price) || 0;
   const rawAwardFee = Number(regDetails?.award_nomination_fee) || 0;
+  const rawTeamFee = Number(regDetails?.team_award_fee) || 0;
+  const rawOrgFee = Number(regDetails?.org_award_fee) || 0;
   const rawDiscount = Number(regDetails?.discount_amount) || 0;
   const isAwardNominated = regDetails?.award_nomination === "Yes";
+  const isTeamNominated = regDetails?.team_award_nomination === "Yes" || Boolean(regDetails?.team_award_category);
+  const isOrgNominated = regDetails?.org_award_nomination === "Yes" || Boolean(regDetails?.org_award_category);
+
+  const awardAmount = isAwardNominated && rawAwardFee > 0 ? rawAwardFee : 0;
+  const teamAmount = isTeamNominated && rawTeamFee > 0 ? rawTeamFee : 0;
+  const orgAmount = isOrgNominated && rawOrgFee > 0 ? rawOrgFee : 0;
+  const totalExtraFees = awardAmount + teamAmount + orgAmount;
 
   // Effective Total Paid by user (user pays total including any taxes, invoice shows full paid amount without GST breakdown)
   const payAmount = rawPayAmount > 0
     ? rawPayAmount
-    : Math.max(0, rawPassPrice + (isAwardNominated ? rawAwardFee : 0) - rawDiscount);
+    : Math.max(0, rawPassPrice + totalExtraFees - rawDiscount);
 
-  const awardAmount = isAwardNominated && rawAwardFee > 0 ? rawAwardFee : 0;
   const passAmount = payAmount > 0
-    ? (awardAmount > 0 ? Math.max(0, payAmount + rawDiscount - awardAmount) : (payAmount + rawDiscount))
+    ? (totalExtraFees > 0 ? Math.max(0, payAmount + rawDiscount - totalExtraFees) : (payAmount + rawDiscount))
     : rawPassPrice;
 
   const invoiceNo = `ETM-INV-${(regDetails?.id || regId)
@@ -755,15 +763,69 @@ export default function RegistrationSuccessPage() {
                         <td className="py-3 px-3 font-mono font-bold text-amber-700">2</td>
                         <td className="py-3 px-3">
                           <span className="font-bold text-sm text-amber-900 flex items-center gap-1.5">
-                            <span>🏆 Official Award Nomination</span>
+                            <span>🏆 Individual Award Nomination</span>
                           </span>
                           <span className="text-[11px] text-amber-700 block mt-0.5 leading-snug font-medium">
-                            Category: {regDetails?.award_category || "Executive Leadership Award"} {regDetails?.award_team_category ? `(${regDetails.award_team_category})` : ""}
+                            Category: {regDetails?.award_category || "Executive Leadership Award"}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-semibold text-amber-900">1</td>
                         <td className="py-3 px-3 text-right font-black text-sm text-amber-900 font-mono">
                           ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )}
+
+                    {isTeamNominated && teamAmount > 0 && (
+                      <tr className="border-b border-slate-200 bg-blue-50/40">
+                        <td className="py-3 px-3 font-mono font-bold text-blue-700">3</td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-sm text-blue-900 flex items-center gap-1.5">
+                            <span>👥 Team & Group Award Nomination</span>
+                          </span>
+                          <span className="text-[11px] text-blue-700 block mt-0.5 leading-snug font-medium">
+                            Category: {regDetails?.team_award_category || regDetails?.award_team_category || "Team Excellence Award"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center font-mono font-semibold text-blue-900">1</td>
+                        <td className="py-3 px-3 text-right font-black text-sm text-blue-900 font-mono">
+                          ₹{teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )}
+
+                    {isOrgNominated && orgAmount > 0 && (
+                      <tr className="border-b border-slate-200 bg-purple-50/40">
+                        <td className="py-3 px-3 font-mono font-bold text-purple-700">4</td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-sm text-purple-900 flex items-center gap-1.5">
+                            <span>🏢 Organization Award Nomination</span>
+                          </span>
+                          <span className="text-[11px] text-purple-700 block mt-0.5 leading-snug font-medium">
+                            Category: {regDetails?.org_award_category || "Organization Leadership Award"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center font-mono font-semibold text-purple-900">1</td>
+                        <td className="py-3 px-3 text-right font-black text-sm text-purple-900 font-mono">
+                          ₹{orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )}
+
+                    {regDetails?.attending_poster && regDetails.attending_poster.includes("WhatsApp") && (
+                      <tr className="border-b border-slate-200 bg-emerald-50/40">
+                        <td className="py-3 px-3 font-mono font-bold text-emerald-700">5</td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
+                            <span>🖼️ “I’m Attending” Custom Poster</span>
+                          </span>
+                          <span className="text-[11px] text-emerald-700 block mt-0.5 leading-snug font-medium">
+                            {regDetails.attending_poster}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center font-mono font-semibold text-emerald-900">1</td>
+                        <td className="py-3 px-3 text-right font-black text-sm text-emerald-700 font-mono">
+                          Complimentary
                         </td>
                       </tr>
                     )}
@@ -801,9 +863,25 @@ export default function RegistrationSuccessPage() {
                   </div>
                   {isAwardNominated && awardAmount > 0 && (
                     <div className="flex justify-between py-1 border-b border-slate-200 text-amber-800">
-                      <span>Award Nomination Fee:</span>
+                      <span>Individual Award Fee:</span>
                       <span className="font-mono font-semibold">
                         ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {isTeamNominated && teamAmount > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-blue-800">
+                      <span>Team Award Fee:</span>
+                      <span className="font-mono font-semibold">
+                        ₹{teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+                  {isOrgNominated && orgAmount > 0 && (
+                    <div className="flex justify-between py-1 border-b border-slate-200 text-purple-800">
+                      <span>Org Award Fee:</span>
+                      <span className="font-mono font-semibold">
+                        ₹{orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   )}

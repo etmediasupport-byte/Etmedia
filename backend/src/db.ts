@@ -149,9 +149,23 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN award_category VARCHAR(255) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN award_team_category VARCHAR(255) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN award_nomination_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN team_award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN team_award_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN team_award_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN org_award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN org_award_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN org_award_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN attending_poster VARCHAR(255) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN show_invoice TINYINT(1) DEFAULT 1;"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN show_invoice TINYINT(1) DEFAULT 1;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN org_award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN org_award_category VARCHAR(255) NULL;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN org_award_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN attending_poster VARCHAR(255) NULL;"); } catch (e) {}
 
 
     await pool.query(`
@@ -1262,6 +1276,14 @@ export async function ensureEventPaymentsTable() {
       { name: "award_nomination_fee", type: "DECIMAL(10,2) DEFAULT 0.00" },
       { name: "award_categories", type: "LONGTEXT" },
       { name: "award_team_categories", type: "LONGTEXT" },
+      { name: "team_award_nomination_enabled", type: "TINYINT(1) DEFAULT 0" },
+      { name: "team_award_nomination_fee", type: "DECIMAL(10,2) DEFAULT 0.00" },
+      { name: "team_award_categories", type: "LONGTEXT" },
+      { name: "org_award_nomination_enabled", type: "TINYINT(1) DEFAULT 0" },
+      { name: "org_award_nomination_fee", type: "DECIMAL(10,2) DEFAULT 0.00" },
+      { name: "org_award_categories", type: "LONGTEXT" },
+      { name: "attending_poster_enabled", type: "TINYINT(1) DEFAULT 1" },
+      { name: "attending_poster_whatsapp", type: "VARCHAR(100) DEFAULT '+91 94930 87788'" },
       { name: "show_invoice_to_user", type: "TINYINT(1) DEFAULT 1" },
     ];
 

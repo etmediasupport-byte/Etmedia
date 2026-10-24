@@ -171,6 +171,13 @@ interface Registration {
   award_category?: string;
   award_team_category?: string;
   award_nomination_fee?: number;
+  team_award_nomination?: string;
+  team_award_category?: string;
+  team_award_fee?: number;
+  org_award_nomination?: string;
+  org_award_category?: string;
+  org_award_fee?: number;
+  attending_poster?: string;
   coupon_applied?: string;
   checkin_status?: string;
   checked_in_at?: string;
@@ -2438,9 +2445,30 @@ export default function AdminDashboardPage() {
   };
 
   // --- EVENT PAYMENT MANAGEMENT HANDLERS ---
-  const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons" | "awards">("general");
+  const [paymentModalTab, setPaymentModalTab] = useState<"general" | "plans" | "coupons" | "awards" | "team_awards" | "org_awards" | "poster">("general");
   const [previewTierModalConfig, setPreviewTierModalConfig] = useState<EventPaymentConfig | null>(null);
   const [newAwardCatInput, setNewAwardCatInput] = useState("");
+  const [newTeamAwardCatInput, setNewTeamAwardCatInput] = useState("");
+  const [newOrgAwardCatInput, setNewOrgAwardCatInput] = useState("");
+
+  const HR_RECALL_DEFAULT_TEAM_CATS = [
+    "Best HR Team of the Year",
+    "Excellence in Talent Acquisition Team",
+    "Best Learning & Development Initiative",
+    "Best Employee Experience & Engagement Initiative",
+    "Best Diversity, Equity & Inclusion Initiative",
+    "Best HR Digital Transformation Initiative",
+    "HR Technology Team of the Year",
+  ];
+
+  const HR_RECALL_DEFAULT_ORG_CATS = [
+    "Best Use of AI in HR Award",
+    "Best Employer of the Year",
+    "Excellence in Workplace Culture & Well-being",
+    "Best Organization for Women Leaders",
+    "Exemplary Corporate Learning & Leadership Org",
+    "Best Tech Innovation in HR Award",
+  ];
 
   const handleOpenAddPaymentConfig = () => {
     setEditingPaymentConfig(null);
@@ -2493,7 +2521,7 @@ export default function AdminDashboardPage() {
       event_end_date: defaultEvent.date || "2026-10-16",
       payment_status: "Enabled",
       award_nomination_enabled: true,
-      award_nomination_fee: 5000,
+      award_nomination_fee: 10000,
       award_categories: [
         "CHRO of the Year",
         "HR Leader of the Year",
@@ -2509,7 +2537,15 @@ export default function AdminDashboardPage() {
         "HR Transformation Leader of the Year",
         "HR Technology Leader of the Year",
       ],
-      award_team_categories: [],
+      award_team_categories: HR_RECALL_DEFAULT_TEAM_CATS,
+      team_award_nomination_enabled: true,
+      team_award_nomination_fee: 15000,
+      team_award_categories: HR_RECALL_DEFAULT_TEAM_CATS,
+      org_award_nomination_enabled: true,
+      org_award_nomination_fee: 25000,
+      org_award_categories: HR_RECALL_DEFAULT_ORG_CATS,
+      attending_poster_enabled: true,
+      attending_poster_whatsapp: "+91 94930 87788",
     });
     setShowPaymentModal(true);
   };
@@ -2536,9 +2572,13 @@ export default function AdminDashboardPage() {
     if (typeof parsedAwardCats === "string") {
       try { parsedAwardCats = JSON.parse(parsedAwardCats); } catch (e) { }
     }
-    let parsedTeamCats = item.award_team_categories;
+    let parsedTeamCats = item.team_award_categories || item.award_team_categories;
     if (typeof parsedTeamCats === "string") {
       try { parsedTeamCats = JSON.parse(parsedTeamCats); } catch (e) { }
+    }
+    let parsedOrgCats = item.org_award_categories;
+    if (typeof parsedOrgCats === "string") {
+      try { parsedOrgCats = JSON.parse(parsedOrgCats); } catch (e) { }
     }
     setPaymentForm({
       ...item,
@@ -2546,9 +2586,31 @@ export default function AdminDashboardPage() {
       pricing_plans: parsedPlans,
       coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
       award_nomination_enabled: item.award_nomination_enabled === 1 || item.award_nomination_enabled === true,
-      award_nomination_fee: Number(item.award_nomination_fee) || 5000,
-      award_categories: Array.isArray(parsedAwardCats) ? parsedAwardCats : [],
-      award_team_categories: Array.isArray(parsedTeamCats) ? parsedTeamCats : [],
+      award_nomination_fee: Number(item.award_nomination_fee) || 10000,
+      award_categories: Array.isArray(parsedAwardCats) && parsedAwardCats.length > 0 ? parsedAwardCats : [
+        "CHRO of the Year",
+        "HR Leader of the Year",
+        "HR Professional of the Year",
+        "Emerging HR Leader of the Year",
+        "HR Rising Star of the Year",
+        "Young HR Professional of the Year",
+        "Talent Acquisition Leader of the Year",
+        "Talent Management Leader of the Year",
+        "Learning & Development Leader of the Year",
+        "HR Business Partner of the Year",
+        "Employee Experience Leader of the Year",
+        "HR Transformation Leader of the Year",
+        "HR Technology Leader of the Year",
+      ],
+      team_award_nomination_enabled: item.team_award_nomination_enabled !== undefined ? (item.team_award_nomination_enabled === 1 || item.team_award_nomination_enabled === true) : true,
+      team_award_nomination_fee: Number(item.team_award_nomination_fee) || 15000,
+      team_award_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
+      award_team_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
+      org_award_nomination_enabled: item.org_award_nomination_enabled !== undefined ? (item.org_award_nomination_enabled === 1 || item.org_award_nomination_enabled === true) : true,
+      org_award_nomination_fee: Number(item.org_award_nomination_fee) || 25000,
+      org_award_categories: Array.isArray(parsedOrgCats) && parsedOrgCats.length > 0 ? parsedOrgCats : HR_RECALL_DEFAULT_ORG_CATS,
+      attending_poster_enabled: item.attending_poster_enabled !== undefined ? (item.attending_poster_enabled === 1 || item.attending_poster_enabled === true) : true,
+      attending_poster_whatsapp: item.attending_poster_whatsapp || "+91 94930 87788",
     });
     setShowPaymentModal(true);
   };
@@ -7431,6 +7493,25 @@ export default function AdminDashboardPage() {
             (Number(r.award_nomination_fee) > 0);
           if (!hasAward) return false;
         }
+        if (regFilterStatus === "team_awards") {
+          const hasTeamAward =
+            r.team_award_nomination === "Yes" ||
+            Boolean(r.team_award_category && r.team_award_category.trim()) ||
+            Boolean(r.award_team_category && r.award_team_category.trim()) ||
+            Number(r.team_award_fee) > 0;
+          if (!hasTeamAward) return false;
+        }
+        if (regFilterStatus === "org_awards") {
+          const hasOrgAward =
+            r.org_award_nomination === "Yes" ||
+            Boolean(r.org_award_category && r.org_award_category.trim()) ||
+            Number(r.org_award_fee) > 0;
+          if (!hasOrgAward) return false;
+        }
+        if (regFilterStatus === "poster") {
+          const hasPoster = Boolean(r.attending_poster && (r.attending_poster.includes("WhatsApp") || r.attending_poster === "Yes"));
+          if (!hasPoster) return false;
+        }
         if ((regFilterStatus === "free_granted" || regFilterStatus === "free") && !isFreeGranted) return false;
         if ((regFilterStatus === "pending_review" || regFilterStatus === "pending") && !isPendingReview) return false;
         if (regFilterStatus === "offline" && !isDelegateOffline(r)) return false;
@@ -9914,7 +9995,10 @@ export default function AdminDashboardPage() {
                     >
                       <option value="all">💳 All Statuses</option>
                       <option value="paid">💳 Paid Passes (Confirmed)</option>
-                      <option value="awards">🏆 Award & Nominations</option>
+                      <option value="awards">🏆 Individual Award Nominations</option>
+                      <option value="team_awards">👥 Team Award Nominations</option>
+                      <option value="org_awards">🏢 Organization Award Nominations</option>
+                      <option value="poster">🖼️ "I'm Attending" Poster Requests</option>
                       <option value="pending_review">⏳ Free Applications (Awaiting Grant)</option>
                       <option value="free_granted">🎟️ Granted Free Passes (Passes Issued ✅)</option>
                       <option value="offline">📂 Offline Registrations (Excel Imports)</option>
@@ -24486,32 +24570,24 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* 2b. Award Nomination Details Card (if nominated) */}
-              {selectedRegDetail.award_nomination === "Yes" && (
+              {/* 2b. Individual Award Nomination Details Card (if nominated) */}
+              {(selectedRegDetail.award_nomination === "Yes" || Boolean(selectedRegDetail.award_category)) && (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 space-y-3">
                   <div className="flex items-center justify-between border-b border-amber-200 pb-2">
                     <span className="text-[11px] font-black uppercase text-amber-900 tracking-wider flex items-center gap-1.5">
-                      <span>🏆 Official Award Nomination</span>
+                      <span>🏆 Official Individual Award Nomination</span>
                     </span>
                     <span className="rounded-full bg-amber-200/80 text-amber-900 px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
                       Nominated
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-amber-800/70 block text-[10px] font-black uppercase">Category</span>
                       <strong className="text-amber-950 font-bold block">
                         {selectedRegDetail.award_category || "General Executive Award"}
                       </strong>
                     </div>
-                    {selectedRegDetail.award_team_category && (
-                      <div>
-                        <span className="text-amber-800/70 block text-[10px] font-black uppercase">Sub / Team Category</span>
-                        <strong className="text-amber-950 font-bold block">
-                          {selectedRegDetail.award_team_category}
-                        </strong>
-                      </div>
-                    )}
                     <div>
                       <span className="text-amber-800/70 block text-[10px] font-black uppercase">Nomination Fee</span>
                       <strong className="text-amber-900 font-mono text-sm block font-black">
@@ -24519,6 +24595,79 @@ export default function AdminDashboardPage() {
                       </strong>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* 2c. Team Award Nomination Details Card (if nominated) */}
+              {(selectedRegDetail.team_award_nomination === "Yes" || Boolean(selectedRegDetail.team_award_category) || Boolean(selectedRegDetail.award_team_category)) && (
+                <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-blue-900 tracking-wider flex items-center gap-1.5">
+                      <span>👥 Team & Group Award Nomination</span>
+                    </span>
+                    <span className="rounded-full bg-blue-200/80 text-blue-900 px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+                      Team Nominated
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-blue-800/70 block text-[10px] font-black uppercase">Team Category</span>
+                      <strong className="text-blue-950 font-bold block">
+                        {selectedRegDetail.team_award_category || selectedRegDetail.award_team_category || "Team Excellence Award"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-blue-800/70 block text-[10px] font-black uppercase">Team Nomination Fee</span>
+                      <strong className="text-blue-900 font-mono text-sm block font-black">
+                        ₹{(Number(selectedRegDetail.team_award_fee) || 0).toLocaleString("en-IN")}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2d. Organization Award Nomination Details Card (if nominated) */}
+              {(selectedRegDetail.org_award_nomination === "Yes" || Boolean(selectedRegDetail.org_award_category)) && (
+                <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-purple-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-purple-900 tracking-wider flex items-center gap-1.5">
+                      <span>🏢 Organization Award Nomination</span>
+                    </span>
+                    <span className="rounded-full bg-purple-200/80 text-purple-900 px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+                      Org Nominated
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-purple-800/70 block text-[10px] font-black uppercase">Organization Category</span>
+                      <strong className="text-purple-950 font-bold block">
+                        {selectedRegDetail.org_award_category || "Organization Leadership Award"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-purple-800/70 block text-[10px] font-black uppercase">Org Nomination Fee</span>
+                      <strong className="text-purple-900 font-mono text-sm block font-black">
+                        ₹{(Number(selectedRegDetail.org_award_fee) || 0).toLocaleString("en-IN")}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2e. "I'm Attending" Poster Status Card */}
+              {selectedRegDetail.attending_poster && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-emerald-900 tracking-wider flex items-center gap-1.5">
+                      <span>🖼️ “I’m Attending” Custom Poster</span>
+                    </span>
+                    <span className="rounded-full bg-emerald-200/80 text-emerald-900 px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+                      {selectedRegDetail.attending_poster.includes("WhatsApp") ? "Requested via WhatsApp" : "Selected"}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-emerald-950 leading-relaxed">
+                    {selectedRegDetail.attending_poster}
+                  </p>
                 </div>
               )}
 
@@ -24568,11 +24717,13 @@ export default function AdminDashboardPage() {
                   const payAmount = Number(selectedRegDetail.payment_amount) || 0;
                   const rawPassPrice = Number(selectedRegDetail.pass_price) || 0;
                   const rawAwardFee = Number(selectedRegDetail.award_nomination_fee) || 0;
+                  const rawTeamFee = Number(selectedRegDetail.team_award_fee) || 0;
+                  const rawOrgFee = Number(selectedRegDetail.org_award_fee) || 0;
                   const rawDiscount = Number(selectedRegDetail.discount_amount) || 0;
                   const rawGst = Number(selectedRegDetail.gst_amount) || 0;
 
                   const passBase = rawPassPrice > 0 ? rawPassPrice : (payAmount > 0 ? Math.round(payAmount / 1.18) : 0);
-                  const totalTaxable = passBase + rawAwardFee - rawDiscount;
+                  const totalTaxable = passBase + rawAwardFee + rawTeamFee + rawOrgFee - rawDiscount;
                   const totalGst = rawGst > 0 ? rawGst : (totalTaxable > 0 ? Math.round(totalTaxable * 0.18) : 0);
                   const grandTotal = payAmount > 0 ? payAmount : (totalTaxable + totalGst);
 
@@ -24586,6 +24737,12 @@ export default function AdminDashboardPage() {
                       <span>Pass Value: <strong className="text-slate-900">₹{passBase.toLocaleString("en-IN")}</strong></span>
                       {rawAwardFee > 0 && (
                         <span>Award Fee: <strong className="text-amber-800">₹{rawAwardFee.toLocaleString("en-IN")}</strong></span>
+                      )}
+                      {rawTeamFee > 0 && (
+                        <span>Team Award Fee: <strong className="text-blue-800">₹{rawTeamFee.toLocaleString("en-IN")}</strong></span>
+                      )}
+                      {rawOrgFee > 0 && (
+                        <span>Org Award Fee: <strong className="text-purple-800">₹{rawOrgFee.toLocaleString("en-IN")}</strong></span>
                       )}
                       {rawDiscount > 0 && (
                         <span>Discount: <strong className="text-emerald-700">- ₹{rawDiscount.toLocaleString("en-IN")}</strong></span>
@@ -24684,6 +24841,39 @@ export default function AdminDashboardPage() {
                 >
                   <Award className="h-3.5 w-3.5 text-amber-500" />
                   <span>4. Awards & Nominations</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("team_awards")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "team_awards"
+                      ? "border-blue-600 text-blue-700 bg-blue-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                    }`}
+                >
+                  <Users className="h-3.5 w-3.5 text-blue-600" />
+                  <span>5. Team Nominations</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("org_awards")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "org_awards"
+                      ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                    }`}
+                >
+                  <Building2 className="h-3.5 w-3.5 text-purple-600" />
+                  <span>6. Organization Nominations</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModalTab("poster")}
+                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "poster"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl"
+                      : "border-transparent text-slate-500 hover:text-slate-900"
+                    }`}
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>7. Attending Poster</span>
                 </button>
               </div>
             </div>
@@ -25500,6 +25690,424 @@ export default function AdminDashboardPage() {
                           </div>
                         ))
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: TEAM AWARD NOMINATIONS */}
+              {paymentModalTab === "team_awards" && (
+                <div className="space-y-6">
+                  {/* Enable Switch & Fee Box */}
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-600 shrink-0" />
+                        <div>
+                          <h4 className="text-xs font-black text-blue-950 uppercase tracking-wider">
+                            Team & Group Award Nominations
+                          </h4>
+                          <p className="text-[11px] text-blue-800 font-medium">
+                            Enable team award nominations on the delegate registration wizard and set nomination categories & fees.
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-blue-300 shadow-xs shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentForm.team_award_nomination_enabled)}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_enabled: e.target.checked })}
+                          className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-xs font-black text-blue-950">
+                          {paymentForm.team_award_nomination_enabled ? "🟢 Enabled in Wizard" : "⚪ Disabled"}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-blue-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-blue-950 uppercase mb-1">
+                          Team Award Nomination Fee (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={paymentForm.team_award_nomination_fee ?? 15000}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_fee: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-blue-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-blue-600 focus:outline-none"
+                            placeholder="15000"
+                          />
+                        </div>
+                        <p className="text-[10px] text-blue-800 mt-1">
+                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for team awards.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 rounded-xl border border-blue-200 p-3 flex flex-col justify-center">
+                        <span className="text-[10px] font-black uppercase text-blue-700">Quick Note</span>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          When enabled, delegates will see the Team Award Nomination question with a Yes/No option and your dynamic team category dropdown.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Team Award Categories Manager */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="h-4 w-4 text-blue-600" />
+                          <span>Team Award Categories ({(paymentForm.team_award_categories || []).length})</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          These options appear in "Which Award Category Would You Like to Nominate Your Team For?".
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, team_award_categories: HR_RECALL_DEFAULT_TEAM_CATS });
+                            toast.success(`Loaded ${HR_RECALL_DEFAULT_TEAM_CATS.length} HR RECALL Team Categories!`);
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-blue-300 bg-blue-50 text-[10px] font-bold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
+                          Load Team Categories
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, team_award_categories: [] });
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Team Category Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newTeamAwardCatInput}
+                        onChange={(e) => setNewTeamAwardCatInput(e.target.value)}
+                        placeholder="e.g. HR Technology Team of the Year, Best L&D Initiative"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (!newTeamAwardCatInput.trim()) return;
+                            const current = Array.isArray(paymentForm.team_award_categories) ? paymentForm.team_award_categories : [];
+                            setPaymentForm({ ...paymentForm, team_award_categories: [...current, newTeamAwardCatInput.trim()] });
+                            setNewTeamAwardCatInput("");
+                          }
+                        }}
+                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newTeamAwardCatInput.trim()) return;
+                          const current = Array.isArray(paymentForm.team_award_categories) ? paymentForm.team_award_categories : [];
+                          setPaymentForm({ ...paymentForm, team_award_categories: [...current, newTeamAwardCatInput.trim()] });
+                          setNewTeamAwardCatInput("");
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
+                      >
+                        + Add Category
+                      </button>
+                    </div>
+
+                    {/* Categories List */}
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                      {(Array.isArray(paymentForm.team_award_categories) ? paymentForm.team_award_categories : []).length === 0 ? (
+                        <div className="text-center py-6 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs">
+                          No team categories added yet. Click "Load Team Categories" or type a category name above.
+                        </div>
+                      ) : (
+                        (paymentForm.team_award_categories as string[]).map((catName: string, cIdx: number) => (
+                          <div
+                            key={cIdx}
+                            className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-blue-300 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="h-5 w-5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black flex items-center justify-center shrink-0">
+                                {cIdx + 1}
+                              </span>
+                              <span>{catName}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (paymentForm.team_award_categories as string[]).filter((_, i) => i !== cIdx);
+                                setPaymentForm({ ...paymentForm, team_award_categories: updated });
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
+                              title="Delete Category"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: ORGANIZATION AWARD NOMINATIONS */}
+              {paymentModalTab === "org_awards" && (
+                <div className="space-y-6">
+                  {/* Enable Switch & Fee Box */}
+                  <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-purple-600 shrink-0" />
+                        <div>
+                          <h4 className="text-xs font-black text-purple-950 uppercase tracking-wider">
+                            Organization & Enterprise Award Nominations
+                          </h4>
+                          <p className="text-[11px] text-purple-800 font-medium">
+                            Enable organization award nominations on the delegate registration wizard and set nomination categories & fees.
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-purple-300 shadow-xs shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentForm.org_award_nomination_enabled)}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_enabled: e.target.checked })}
+                          className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-xs font-black text-purple-950">
+                          {paymentForm.org_award_nomination_enabled ? "🟢 Enabled in Wizard" : "⚪ Disabled"}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-purple-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-purple-950 uppercase mb-1">
+                          Organization Award Nomination Fee (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={paymentForm.org_award_nomination_fee ?? 25000}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_fee: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-purple-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-purple-600 focus:outline-none"
+                            placeholder="25000"
+                          />
+                        </div>
+                        <p className="text-[10px] text-purple-800 mt-1">
+                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for organization awards.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 rounded-xl border border-purple-200 p-3 flex flex-col justify-center">
+                        <span className="text-[10px] font-black uppercase text-purple-700">Quick Note</span>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          When enabled, delegates will see the Organization Award Nomination question with a Yes/No option and your dynamic org category dropdown.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Org Award Categories Manager */}
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Building2 className="h-4 w-4 text-purple-600" />
+                          <span>Organization Award Categories ({(paymentForm.org_award_categories || []).length})</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          These options appear in "Which Award Category Would You Like to Nominate Your Organization For?".
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, org_award_categories: HR_RECALL_DEFAULT_ORG_CATS });
+                            toast.success(`Loaded ${HR_RECALL_DEFAULT_ORG_CATS.length} HR RECALL Organization Categories!`);
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-purple-300 bg-purple-50 text-[10px] font-bold text-purple-900 hover:bg-purple-100 transition-colors cursor-pointer"
+                        >
+                          Load Org Categories
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentForm({ ...paymentForm, org_award_categories: [] });
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Add Org Category Input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newOrgAwardCatInput}
+                        onChange={(e) => setNewOrgAwardCatInput(e.target.value)}
+                        placeholder="e.g. Best Use of AI in HR Award, Best Employer of the Year"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (!newOrgAwardCatInput.trim()) return;
+                            const current = Array.isArray(paymentForm.org_award_categories) ? paymentForm.org_award_categories : [];
+                            setPaymentForm({ ...paymentForm, org_award_categories: [...current, newOrgAwardCatInput.trim()] });
+                            setNewOrgAwardCatInput("");
+                          }
+                        }}
+                        className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:border-purple-600 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newOrgAwardCatInput.trim()) return;
+                          const current = Array.isArray(paymentForm.org_award_categories) ? paymentForm.org_award_categories : [];
+                          setPaymentForm({ ...paymentForm, org_award_categories: [...current, newOrgAwardCatInput.trim()] });
+                          setNewOrgAwardCatInput("");
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
+                      >
+                        + Add Category
+                      </button>
+                    </div>
+
+                    {/* Categories List */}
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                      {(Array.isArray(paymentForm.org_award_categories) ? paymentForm.org_award_categories : []).length === 0 ? (
+                        <div className="text-center py-6 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs">
+                          No organization categories added yet. Click "Load Org Categories" or type a category name above.
+                        </div>
+                      ) : (
+                        (paymentForm.org_award_categories as string[]).map((catName: string, cIdx: number) => (
+                          <div
+                            key={cIdx}
+                            className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-purple-300 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="h-5 w-5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black flex items-center justify-center shrink-0">
+                                {cIdx + 1}
+                              </span>
+                              <span>{catName}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = (paymentForm.org_award_categories as string[]).filter((_, i) => i !== cIdx);
+                                setPaymentForm({ ...paymentForm, org_award_categories: updated });
+                              }}
+                              className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
+                              title="Delete Category"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 7: "I'M ATTENDING" POSTER SETTINGS */}
+              {paymentModalTab === "poster" && (
+                <div className="space-y-6">
+                  {/* Enable Switch & WhatsApp Box */}
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-5 w-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <h4 className="text-xs font-black text-emerald-950 uppercase tracking-wider">
+                            “I’m Attending” Customized Poster Service
+                          </h4>
+                          <p className="text-[11px] text-emerald-800 font-medium">
+                            Enable the personalized poster question in Step 5 of the delegate registration wizard.
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-xs shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentForm.attending_poster_enabled)}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, attending_poster_enabled: e.target.checked })}
+                          className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-xs font-black text-emerald-950">
+                          {paymentForm.attending_poster_enabled ? "🟢 Enabled in Wizard" : "⚪ Disabled"}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-emerald-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-emerald-950 uppercase mb-1">
+                          Official WhatsApp Contact Number *
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentForm.attending_poster_whatsapp || "+91 94930 87788"}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, attending_poster_whatsapp: e.target.value })}
+                          className="w-full rounded-xl border border-emerald-300 bg-white px-3.5 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
+                          placeholder="+91 94930 87788"
+                        />
+                        <p className="text-[10px] text-emerald-800 mt-1">
+                          Delegates will be instructed to send their high-res photo to this WhatsApp number for poster creation.
+                        </p>
+                      </div>
+
+                      <div className="bg-white/80 rounded-xl border border-emerald-200 p-3 flex flex-col justify-center">
+                        <span className="text-[10px] font-black uppercase text-emerald-700">Delegate Registration Experience</span>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Delegates will see the required question: <em>"Would you like an “I’m Attending {paymentForm.event_title || 'HR RECALL 2K26'}” poster featuring your photo and name?"</em>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live UI Preview (Image 3 Mockup) */}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>👁️ Live Wizard Preview (As Seen by Registering Delegates)</span>
+                      </span>
+                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[10px] font-bold">
+                        Step 5 Inclusions
+                      </span>
+                    </div>
+
+                    {/* Question Card Box */}
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 space-y-3">
+                      <label className="block text-sm font-bold text-slate-900 leading-snug">
+                        Would you like an “I’m Attending {paymentForm.event_title || 'HR RECALL 2K26'}” poster featuring your photo and name? <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-700 font-semibold space-y-2">
+                        <div className="text-slate-400 font-medium">Selectable dropdown options:</div>
+                        <div className="pl-2 border-l-2 border-cyan-500 space-y-1">
+                          <div className="text-slate-500">• Choose</div>
+                          <div className="text-emerald-700 font-bold">• If yes, Please send your photo to {paymentForm.attending_poster_whatsapp || "+91 94930 87788"} via WhatsApp.</div>
+                          <div className="text-slate-600">• No, Thank you</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
