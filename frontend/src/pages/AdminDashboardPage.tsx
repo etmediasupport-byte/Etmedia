@@ -8222,18 +8222,21 @@ export default function AdminDashboardPage() {
       <div className="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
         {/* Top Header Bar - Permanent Sticky Top Navbar */}
         <header className="shrink-0 z-40 relative flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-6 py-2 sm:py-3.5 shadow-2xs w-full max-w-full min-w-0 gap-1.5 sm:gap-4">
-          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-hidden">
-            {/* Mobile Open Sidebar Trigger */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Mobile Open Sidebar Trigger - Always permanently visible on mobile/tablet */}
             <button
+              type="button"
               onClick={() => setMobileSidebarOpen(true)}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1.5 sm:p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0"
-              title="Open Navigation Drawer"
+              className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1.5 sm:p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 lg:hidden cursor-pointer shrink-0 shadow-2xs"
+              title="Open Navigation Menu Drawer"
+              aria-label="Open Navigation Menu"
             >
-              <Menu className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+              <Menu className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-slate-800 dark:text-slate-200" />
             </button>
 
             {/* Desktop Collapse / Expand Sidebar Trigger */}
             <button
+              type="button"
               onClick={toggleSidebarCollapsed}
               className="hidden lg:flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all cursor-pointer shrink-0 shadow-2xs"
               title={sidebarCollapsed ? "Expand Sidebar (W-72)" : "Collapse Sidebar (W-20)"}
@@ -8245,11 +8248,11 @@ export default function AdminDashboardPage() {
               const activeNav = allNavItems.find((n) => n.id === activeTab) || allNavItems[0] || { label: "Dashboard", icon: LayoutDashboard };
               const IconComp = activeNav.icon || LayoutDashboard;
               return (
-                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
                   <div className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-950/80 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold shadow-2xs">
                     <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                  <div className="flex items-center gap-1.5 min-w-0 max-w-[80px] xs:max-w-[130px] sm:max-w-xs md:max-w-none overflow-hidden">
                     <h1 className="text-xs sm:text-base lg:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight truncate min-w-0">
                       {activeNav.label}
                     </h1>
@@ -8262,20 +8265,20 @@ export default function AdminDashboardPage() {
             })()}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0 ml-auto overflow-x-auto no-scrollbar max-w-[calc(100vw-110px)] sm:max-w-none py-0.5">
             {/* Universal Event Selector & Search Dropdown */}
             <div className="relative" ref={eventPickerRef}>
               <button
                 type="button"
                 onClick={() => setIsEventPickerOpen((prev) => !prev)}
-                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${selectedDashboardEventId !== "all"
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-1.5 sm:px-2.5 py-1 text-xs font-bold transition-all border cursor-pointer ${selectedDashboardEventId !== "all"
                     ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-700 text-purple-900 dark:text-purple-200 shadow-2xs ring-1 ring-purple-400/30"
                     : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
                   }`}
                 title="Filter entire dashboard by Event / Summit"
               >
                 <Ticket className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                <span className="max-w-[90px] xs:max-w-[120px] sm:max-w-[150px] md:max-w-[190px] truncate text-[11px] sm:text-xs">
+                <span className="max-w-[70px] xs:max-w-[110px] sm:max-w-[150px] md:max-w-[190px] truncate text-[10px] sm:text-xs">
                   {selectedDashboardEventId === "all"
                     ? `All Events (${cmsEvents.length})`
                     : (activeSelectedEvent?.title || activeSelectedEvent?.name || selectedDashboardEventId)}
@@ -8409,12 +8412,12 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Universal Date-wise Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2 sm:px-2.5 py-1 text-xs">
+            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 sm:px-2.5 py-1 text-xs">
               <CalendarDays className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
               <select
                 value={dateFilterRange}
                 onChange={(e) => setDateFilterRange(e.target.value as any)}
-                className="bg-transparent text-slate-800 dark:text-slate-200 font-bold text-[11px] sm:text-xs focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-slate-800 dark:text-slate-200 font-bold text-[10px] sm:text-xs focus:outline-none cursor-pointer pr-1 max-w-[75px] xs:max-w-none"
                 title="Filter records datewise"
               >
                 <option value="all">📅 All Time</option>
@@ -8450,13 +8453,13 @@ export default function AdminDashboardPage() {
             {/* Dark & Light Theme Switcher */}
             <button
               onClick={toggleAdminTheme}
-              className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
+              className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs shrink-0"
               title={adminTheme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
             >
               {adminTheme === "dark" ? (
-                <Sun className="h-4 w-4 text-amber-400 hover:rotate-90 transition-transform" />
+                <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 hover:rotate-90 transition-transform" />
               ) : (
-                <Moon className="h-4 w-4 text-indigo-600 hover:-rotate-12 transition-transform" />
+                <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 hover:-rotate-12 transition-transform" />
               )}
             </button>
 
@@ -8471,7 +8474,7 @@ export default function AdminDashboardPage() {
               type="button"
               onClick={handleToggleGlobalInvoice}
               disabled={isTogglingGlobalInvoice}
-              className={`flex items-center gap-1.5 rounded-xl border px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-black transition-all shadow-2xs cursor-pointer disabled:opacity-50 ${
+              className={`flex items-center gap-1 sm:gap-1.5 rounded-xl border px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black transition-all shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 ${
                 globalInvoiceVisible
                   ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
                   : "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
@@ -8481,19 +8484,19 @@ export default function AdminDashboardPage() {
               {globalInvoiceVisible ? (
                 <>
                   <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden xs:inline">User Invoice: </span><span>Visible</span>
+                  <span className="hidden md:inline">User Invoice: </span><span className="hidden xs:inline">Visible</span>
                 </>
               ) : (
                 <>
                   <EyeOff className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
-                  <span className="hidden xs:inline">User Invoice: </span><span className="font-extrabold text-rose-700 dark:text-rose-400">Hidden</span>
+                  <span className="hidden md:inline">User Invoice: </span><span className="hidden xs:inline font-extrabold text-rose-700 dark:text-rose-400">Hidden</span>
                 </>
               )}
             </button>
 
             {/* Quick Export Buttons */}
             {(activeTab === "event-registrations" || activeTab === "cms-delegates" || activeTab === "contacts" || activeTab === "career-applicants" || activeTab === "newsletter") && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => exportToExcel(activeTab as any)}
                   className="hidden md:flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-xs cursor-pointer"
@@ -8503,10 +8506,11 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   onClick={() => exportToPDF(activeTab as any)}
-                  className="flex items-center gap-1 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all shadow-xs cursor-pointer shrink-0"
+                  className="flex items-center gap-1 rounded-xl border border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 px-1.5 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-cyan-800 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all shadow-xs cursor-pointer shrink-0"
+                  title="Export PDF"
                 >
-                  <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                  <span className="hidden xs:inline">Download </span><span>PDF</span>
+                  <FileText className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                  <span className="hidden sm:inline">Download </span><span className="hidden xs:inline">PDF</span>
                 </button>
               </div>
             )}
