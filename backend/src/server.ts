@@ -614,24 +614,24 @@ www.executivetalksmedia.in
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
               <tr>
                 <td style="padding: 6px 0; font-weight: 600; width: 45%;">Delegate Pass Fee:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${(data.passPrice !== undefined ? data.passPrice : payAmount).toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${(data.passPrice !== undefined && Number(data.passPrice) === 0) ? "FREE / Complimentary (₹0)" : `₹${(data.passPrice !== undefined ? data.passPrice : payAmount).toLocaleString("en-IN")}`}</td>
               </tr>
-              ${data.awardNomination === "Yes" && (data.awardNominationFee || 0) > 0 ? `
+              ${data.awardNomination === "Yes" ? `
               <tr>
                 <td style="padding: 6px 0; font-weight: 600;">Individual Award Fee:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #b45309;">₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #b45309;">${(data.awardNominationFee || 0) > 0 ? `₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}</td>
               </tr>
               ` : ""}
-              ${data.teamAwardNomination === "Yes" && (data.teamAwardFee || 0) > 0 ? `
+              ${data.teamAwardNomination === "Yes" ? `
               <tr>
                 <td style="padding: 6px 0; font-weight: 600;">Team Award Fee:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #1d4ed8;">₹${(data.teamAwardFee || 0).toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #1d4ed8;">${(data.teamAwardFee || 0) > 0 ? `₹${(data.teamAwardFee || 0).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}</td>
               </tr>
               ` : ""}
-              ${data.orgAwardNomination === "Yes" && (data.orgAwardFee || 0) > 0 ? `
+              ${data.orgAwardNomination === "Yes" ? `
               <tr>
                 <td style="padding: 6px 0; font-weight: 600;">Organization Award Fee:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #7e22ce;">₹${(data.orgAwardFee || 0).toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #7e22ce;">${(data.orgAwardFee || 0) > 0 ? `₹${(data.orgAwardFee || 0).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}</td>
               </tr>
               ` : ""}
               ${(data.discountAmount || 0) > 0 ? `
@@ -785,7 +785,7 @@ Admin Portal Login: ${adminLoginUrl}
               <tr>
                 <td style="padding: 6px 0; color: #64748b;">Award Nomination:</td>
                 <td style="padding: 6px 0; font-weight: 700; color: #b45309;">
-                  🏆 ${data.awardCategory || "Executive Leadership Award"} ${data.awardTeamCategory ? `(${data.awardTeamCategory})` : ""} — Fee: ₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}
+                  🏆 ${data.awardCategory || "Executive Leadership Award"} ${data.awardTeamCategory ? `(${data.awardTeamCategory})` : ""} — Fee: ${(data.awardNominationFee || 0) > 0 ? `₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}
                 </td>
               </tr>
               ` : ""}
@@ -889,6 +889,16 @@ async function sendFreeApplicationNotificationEmails(data: {
   eventTitle: string;
   eventId?: string;
   reasonForAttending?: string;
+  awardNomination?: string;
+  awardCategory?: string;
+  awardNominationFee?: number;
+  teamAwardNomination?: string;
+  teamAwardCategory?: string;
+  teamAwardFee?: number;
+  orgAwardNomination?: string;
+  orgAwardCategory?: string;
+  orgAwardFee?: number;
+  attendingPoster?: string;
 }) {
   const regId = data.registrationId;
   const userEmail = data.email.trim();
@@ -1064,7 +1074,7 @@ Applicant Details:
 - Industry: ${data.industry || "N/A"}
 - LinkedIn: ${data.linkedinUrl || "N/A"}
 - Motivation: ${data.reasonForAttending || "N/A"}
-
+${data.awardNomination === "Yes" ? `- Individual Award Nomination: ${data.awardCategory} (Fee: ₹${Number(data.awardNominationFee || 0).toLocaleString("en-IN")})\n` : ""}${data.teamAwardNomination === "Yes" ? `- Team Award Nomination: ${data.teamAwardCategory} (Fee: ₹${Number(data.teamAwardFee || 0).toLocaleString("en-IN")})\n` : ""}${data.orgAwardNomination === "Yes" ? `- Organization Award Nomination: ${data.orgAwardCategory} (Fee: ₹${Number(data.orgAwardFee || 0).toLocaleString("en-IN")})\n` : ""}${data.attendingPoster ? `- Attending Poster: ${data.attendingPoster}\n` : ""}
 Event: ${eventName}
 Application ID: ${regId}
 
@@ -1090,6 +1100,10 @@ Review and approve in Admin Dashboard: ${baseUrl}/admin-login
             ${data.industry ? `<tr><td style="padding: 5px 0; color: #64748b;">Industry:</td><td>${data.industry}</td></tr>` : ""}
             ${data.linkedinUrl ? `<tr><td style="padding: 5px 0; color: #64748b;">LinkedIn:</td><td><a href="${data.linkedinUrl}" style="color: #0891b2;" target="_blank">${data.linkedinUrl}</a></td></tr>` : ""}
             ${data.reasonForAttending ? `<tr><td style="padding: 5px 0; color: #64748b;">Motivation / Reason:</td><td style="font-style: italic; color: #475569;">"${data.reasonForAttending}"</td></tr>` : ""}
+            ${data.awardNomination === "Yes" ? `<tr><td style="padding: 5px 0; color: #64748b;">Individual Award:</td><td style="font-weight: 700; color: #d97706;">${data.awardCategory} (Fee: ₹${Number(data.awardNominationFee || 0).toLocaleString("en-IN")})</td></tr>` : ""}
+            ${data.teamAwardNomination === "Yes" ? `<tr><td style="padding: 5px 0; color: #64748b;">Team Award:</td><td style="font-weight: 700; color: #2563eb;">${data.teamAwardCategory} (Fee: ₹${Number(data.teamAwardFee || 0).toLocaleString("en-IN")})</td></tr>` : ""}
+            ${data.orgAwardNomination === "Yes" ? `<tr><td style="padding: 5px 0; color: #64748b;">Org Award:</td><td style="font-weight: 700; color: #7c3aed;">${data.orgAwardCategory} (Fee: ₹${Number(data.orgAwardFee || 0).toLocaleString("en-IN")})</td></tr>` : ""}
+            ${data.attendingPoster ? `<tr><td style="padding: 5px 0; color: #64748b;">Attending Poster:</td><td style="font-weight: 600; color: #059669;">${data.attendingPoster}</td></tr>` : ""}
           </table>
 
           <div style="text-align: center; margin-top: 20px;">
@@ -2923,13 +2937,19 @@ app.get("/api/events/:slug", async (req, res) => {
             foundEvt.pricing_available = String(pay.payment_status || "Enabled").toLowerCase() === "enabled" || String(pay.payment_status || "Enabled").toLowerCase() === "published";
             foundEvt.award_nomination_enabled = pay.award_nomination_enabled;
             foundEvt.award_nomination_fee = pay.award_nomination_fee;
+            foundEvt.free_award_nomination_enabled = pay.free_award_nomination_enabled !== undefined ? pay.free_award_nomination_enabled : pay.award_nomination_enabled;
+            foundEvt.free_award_nomination_fee = pay.free_award_nomination_fee !== undefined ? pay.free_award_nomination_fee : 0;
             foundEvt.award_categories = pay.award_categories;
             foundEvt.award_team_categories = pay.team_award_categories || pay.award_team_categories;
             foundEvt.team_award_nomination_enabled = pay.team_award_nomination_enabled;
             foundEvt.team_award_nomination_fee = pay.team_award_nomination_fee;
+            foundEvt.free_team_award_nomination_enabled = pay.free_team_award_nomination_enabled !== undefined ? pay.free_team_award_nomination_enabled : pay.team_award_nomination_enabled;
+            foundEvt.free_team_award_nomination_fee = pay.free_team_award_nomination_fee !== undefined ? pay.free_team_award_nomination_fee : 0;
             foundEvt.team_award_categories = pay.team_award_categories || pay.award_team_categories;
             foundEvt.org_award_nomination_enabled = pay.org_award_nomination_enabled;
             foundEvt.org_award_nomination_fee = pay.org_award_nomination_fee;
+            foundEvt.free_org_award_nomination_enabled = pay.free_org_award_nomination_enabled !== undefined ? pay.free_org_award_nomination_enabled : pay.org_award_nomination_enabled;
+            foundEvt.free_org_award_nomination_fee = pay.free_org_award_nomination_fee !== undefined ? pay.free_org_award_nomination_fee : 0;
             foundEvt.org_award_categories = pay.org_award_categories;
             foundEvt.attending_poster_enabled = pay.attending_poster_enabled;
             foundEvt.attending_poster_whatsapp = pay.attending_poster_whatsapp;
@@ -2999,7 +3019,7 @@ async function handlePaymentVerification(req: any, res: any) {
   try {
     const { 
       razorpay_order_id, razorpay_payment_id, razorpay_signature, registrationId, paymentAmount, couponApplied,
-      passPrice, gstAmount, discountAmount,
+      passName, passPrice, gstAmount, discountAmount,
       awardNomination, awardCategory, awardTeamCategory, awardNominationFee,
       teamAwardNomination, teamAwardCategory, teamAwardFee,
       orgAwardNomination, orgAwardCategory, orgAwardFee,
@@ -3146,6 +3166,7 @@ async function handlePaymentVerification(req: any, res: any) {
             razorpay_order_id = ?, 
             payment_signature = ?, 
             payment_amount = CASE WHEN ? > 0 THEN ? ELSE payment_amount END,
+            pass_name = COALESCE(?, pass_name),
             pass_price = COALESCE(?, pass_price),
             gst_amount = COALESCE(?, gst_amount),
             discount_amount = COALESCE(?, discount_amount),
@@ -3163,15 +3184,16 @@ async function handlePaymentVerification(req: any, res: any) {
           WHERE id = ?`,
           [
             razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid,
-            passPrice ? Number(passPrice) : null,
+            passName || null,
+            (passPrice !== undefined && passPrice !== null) ? Number(passPrice) : null,
             gstAmount ? Number(gstAmount) : null,
             discountAmount ? Number(discountAmount) : null,
             awardNomination || null, awardCategory || null, awardTeamCategory || null,
-            awardNominationFee ? Number(awardNominationFee) : null,
+            (awardNominationFee !== undefined && awardNominationFee !== null && awardNominationFee !== "") ? Number(awardNominationFee) : null,
             teamAwardNomination || null, teamAwardCategory || null,
-            teamAwardFee ? Number(teamAwardFee) : null,
+            (teamAwardFee !== undefined && teamAwardFee !== null && teamAwardFee !== "") ? Number(teamAwardFee) : null,
             orgAwardNomination || null, orgAwardCategory || null,
-            orgAwardFee ? Number(orgAwardFee) : null,
+            (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
             attendingPoster || null,
             registrationId
           ]
@@ -3380,11 +3402,11 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
         [
           passName || "Delegate Pass", numPassPrice, numPaymentAmount, numGstAmount, couponApplied || null,
           awardNomination || null, awardCategory || null, awardTeamCategory || null,
-          awardNominationFee ? Number(awardNominationFee) : null,
+          (awardNominationFee !== undefined && awardNominationFee !== null && awardNominationFee !== "") ? Number(awardNominationFee) : null,
           teamAwardNomination || null, teamAwardCategory || null,
-          teamAwardFee ? Number(teamAwardFee) : null,
+          (teamAwardFee !== undefined && teamAwardFee !== null && teamAwardFee !== "") ? Number(teamAwardFee) : null,
           orgAwardNomination || null, orgAwardCategory || null,
-          orgAwardFee ? Number(orgAwardFee) : null,
+          (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
           attendingPoster || null,
           registrationId
         ]
@@ -3709,13 +3731,23 @@ app.post("/api/registrations/free-draft", async (req, res) => {
       eventId = "hr-recall-2k26",
       eventSlug,
       eventTitle = "HR RECALL 2K26",
+      awardNomination,
+      awardCategory,
+      awardNominationFee,
+      teamAwardNomination,
+      teamAwardCategory,
+      teamAwardFee,
+      orgAwardNomination,
+      orgAwardCategory,
+      orgAwardFee,
+      attendingPoster,
     } = req.body;
 
     const regId = registrationId || `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const fullName = `${firstName} ${lastName}`.trim() || firstName || "Interested Delegate";
     const effectiveEventSlug = eventSlug || eventId;
     const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
-    const dropStatus = step === 1 ? "Dropped (Free Step 1)" : "Dropped (Free Step 2)";
+    const dropStatus = step === 1 ? "Dropped (Free Step 1)" : step === 2 ? "Dropped (Free Step 2)" : "Dropped (Free Step 3)";
 
     if (pool) {
       const [existing]: any = await pool.query("SELECT id FROM registrations WHERE id = ? LIMIT 1", [regId]);
@@ -3737,12 +3769,27 @@ app.post("/api/registrations/free-draft", async (req, res) => {
             participation_preference = COALESCE(NULLIF(?, ''), participation_preference),
             interest_tracks = COALESCE(NULLIF(?, ''), interest_tracks),
             coupon_applied = COALESCE(NULLIF(?, ''), coupon_applied),
+            award_nomination = COALESCE(?, award_nomination),
+            award_category = COALESCE(?, award_category),
+            award_nomination_fee = COALESCE(?, award_nomination_fee),
+            team_award_nomination = COALESCE(?, team_award_nomination),
+            team_award_category = COALESCE(?, team_award_category),
+            team_award_fee = COALESCE(?, team_award_fee),
+            org_award_nomination = COALESCE(?, org_award_nomination),
+            org_award_category = COALESCE(?, org_award_category),
+            org_award_fee = COALESCE(?, org_award_fee),
+            attending_poster = COALESCE(?, attending_poster),
             payment_status = CASE WHEN payment_status = 'Approved (Free Pass)' OR payment_status = 'Pending Approval' THEN payment_status ELSE ? END
           WHERE id = ?`,
           [
             fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
             city, country, industry, linkedinUrl, category, participationPreference, tracksStr,
-            reasonForAttending ? `Motivation: ${reasonForAttending}` : null, dropStatus, regId
+            reasonForAttending ? `Motivation: ${reasonForAttending}` : null,
+            awardNomination || null, awardCategory || null, (awardNominationFee !== undefined && awardNominationFee !== null && awardNominationFee !== "") ? Number(awardNominationFee) : null,
+            teamAwardNomination || null, teamAwardCategory || null, (teamAwardFee !== undefined && teamAwardFee !== null && teamAwardFee !== "") ? Number(teamAwardFee) : null,
+            orgAwardNomination || null, orgAwardCategory || null, (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
+            attendingPoster || null,
+            dropStatus, regId
           ]
         );
       } else {
@@ -3750,13 +3797,21 @@ app.post("/api/registrations/free-draft", async (req, res) => {
           `INSERT INTO registrations (
             id, name, first_name, last_name, email, phone, organization, designation,
             city, country, industry, linkedin_url, registration_category, participation_preference,
-            interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Complimentary Pass (Draft)', ?, ?, ?, 'Incomplete', 0, ?, NOW())`,
+            interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied,
+            award_nomination, award_category, award_nomination_fee,
+            team_award_nomination, team_award_category, team_award_fee,
+            org_award_nomination, org_award_category, org_award_fee,
+            attending_poster, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Complimentary Pass (Draft)', ?, ?, ?, 'Incomplete', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
           [
             regId, fullName, firstName, lastName, (workEmail || "draft@etmedia.in").trim(), contactNumber || "N/A", companyName || "N/A", designation || "N/A",
             city || "N/A", country, industry || "Technology", linkedinUrl || "", category,
             participationPreference, tracksStr, effectiveEventSlug, eventTitle, dropStatus,
-            reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Draft"
+            reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Draft",
+            awardNomination || null, awardCategory || null, (awardNominationFee !== undefined && awardNominationFee !== null && awardNominationFee !== "") ? Number(awardNominationFee) : null,
+            teamAwardNomination || null, teamAwardCategory || null, (teamAwardFee !== undefined && teamAwardFee !== null && teamAwardFee !== "") ? Number(teamAwardFee) : null,
+            orgAwardNomination || null, orgAwardCategory || null, (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
+            attendingPoster || null
           ]
         );
       }
@@ -3791,6 +3846,16 @@ app.post("/api/registrations/free-start", async (req, res) => {
       eventId = "hr-recall-2k26",
       eventSlug,
       eventTitle = "HR RECALL 2K26",
+      awardNomination = "No",
+      awardCategory = "",
+      awardNominationFee = 0,
+      teamAwardNomination = "No",
+      teamAwardCategory = "",
+      teamAwardFee = 0,
+      orgAwardNomination = "No",
+      orgAwardCategory = "",
+      orgAwardFee = 0,
+      attendingPoster = "",
     } = req.body;
 
     if (!workEmail || !firstName || !lastName || !contactNumber || !companyName || !designation || !city) {
@@ -3848,6 +3913,16 @@ app.post("/api/registrations/free-start", async (req, res) => {
       payment_status: "Pending Approval",
       payment_amount: 0,
       coupon_applied: reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application",
+      award_nomination: awardNomination || "No",
+      award_category: awardCategory || null,
+      award_nomination_fee: Number(awardNominationFee) || 0,
+      team_award_nomination: teamAwardNomination || "No",
+      team_award_category: teamAwardCategory || null,
+      team_award_fee: Number(teamAwardFee) || 0,
+      org_award_nomination: orgAwardNomination || "No",
+      org_award_category: orgAwardCategory || null,
+      org_award_fee: Number(orgAwardFee) || 0,
+      attending_poster: attendingPoster || null,
       created_at: new Date().toISOString(),
     };
 
@@ -3856,8 +3931,12 @@ app.post("/api/registrations/free-start", async (req, res) => {
         `INSERT INTO registrations (
           id, name, first_name, last_name, email, phone, organization, designation,
           city, country, industry, linkedin_url, registration_category, participation_preference,
-          interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 'Pending', 0, ?, NOW())
+          interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied,
+          award_nomination, award_category, award_nomination_fee,
+          team_award_nomination, team_award_category, team_award_fee,
+          org_award_nomination, org_award_category, org_award_fee,
+          attending_poster, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 'Pending', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ON DUPLICATE KEY UPDATE
           name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
           phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
@@ -3865,12 +3944,26 @@ app.post("/api/registrations/free-start", async (req, res) => {
           linkedin_url = VALUES(linkedin_url), registration_category = VALUES(registration_category),
           participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks),
           pass_name = VALUES(pass_name), payment_status = 'Pending Approval', status = 'Pending',
-          coupon_applied = VALUES(coupon_applied);`,
+          coupon_applied = VALUES(coupon_applied),
+          award_nomination = VALUES(award_nomination),
+          award_category = VALUES(award_category),
+          award_nomination_fee = VALUES(award_nomination_fee),
+          team_award_nomination = VALUES(team_award_nomination),
+          team_award_category = VALUES(team_award_category),
+          team_award_fee = VALUES(team_award_fee),
+          org_award_nomination = VALUES(org_award_nomination),
+          org_award_category = VALUES(org_award_category),
+          org_award_fee = VALUES(org_award_fee),
+          attending_poster = VALUES(attending_poster);`,
         [
           regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
           city || "N/A", country, industry || "Technology", linkedinUrl || "", category,
           participationPreference, tracksStr, "Complimentary Pass (Pending Approval)", effectiveEventSlug, eventTitle,
-          reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application"
+          reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application",
+          awardNomination || "No", awardCategory || null, Number(awardNominationFee) || 0,
+          teamAwardNomination || "No", teamAwardCategory || null, Number(teamAwardFee) || 0,
+          orgAwardNomination || "No", orgAwardCategory || null, Number(orgAwardFee) || 0,
+          attendingPoster || null
         ]
       );
     }
@@ -3901,6 +3994,16 @@ app.post("/api/registrations/free-start", async (req, res) => {
       eventTitle,
       eventId: effectiveEventSlug || eventId,
       reasonForAttending,
+      awardNomination: awardNomination || "No",
+      awardCategory: awardCategory || "",
+      awardNominationFee: Number(awardNominationFee) || 0,
+      teamAwardNomination: teamAwardNomination || "No",
+      teamAwardCategory: teamAwardCategory || "",
+      teamAwardFee: Number(teamAwardFee) || 0,
+      orgAwardNomination: orgAwardNomination || "No",
+      orgAwardCategory: orgAwardCategory || "",
+      orgAwardFee: Number(orgAwardFee) || 0,
+      attendingPoster: attendingPoster || "",
     }).catch((emailErr) => {
       console.error("[API] Background free application email error:", emailErr);
     });
@@ -6793,10 +6896,21 @@ async function upsertEventPaymentSettings(data: any) {
   const teamAwardCatsStr = typeof rawTeam === "string" ? rawTeam : JSON.stringify(rawTeam || []);
   const awardTeamCatsStr = teamAwardCatsStr;
   const orgAwardCatsStr = typeof data.org_award_categories === "string" ? data.org_award_categories : JSON.stringify(data.org_award_categories || []);
+  const awardNomEnabled = data.award_nomination_enabled !== undefined ? (data.award_nomination_enabled ? 1 : 0) : 0;
+  const awardNomFee = (data.award_nomination_fee !== undefined && data.award_nomination_fee !== null) ? Number(data.award_nomination_fee) : 0;
+  const freeAwardEnabled = data.free_award_nomination_enabled !== undefined ? (data.free_award_nomination_enabled ? 1 : 0) : 1;
+  const freeAwardFee = (data.free_award_nomination_fee !== undefined && data.free_award_nomination_fee !== null) ? Number(data.free_award_nomination_fee) : 0;
+
   const teamNomEnabled = data.team_award_nomination_enabled !== undefined ? (data.team_award_nomination_enabled ? 1 : 0) : 0;
-  const teamNomFee = Number(data.team_award_nomination_fee) || 0;
+  const teamNomFee = (data.team_award_nomination_fee !== undefined && data.team_award_nomination_fee !== null) ? Number(data.team_award_nomination_fee) : 0;
+  const freeTeamEnabled = data.free_team_award_nomination_enabled !== undefined ? (data.free_team_award_nomination_enabled ? 1 : 0) : 1;
+  const freeTeamFee = (data.free_team_award_nomination_fee !== undefined && data.free_team_award_nomination_fee !== null) ? Number(data.free_team_award_nomination_fee) : 0;
+
   const orgNomEnabled = data.org_award_nomination_enabled !== undefined ? (data.org_award_nomination_enabled ? 1 : 0) : 0;
-  const orgNomFee = Number(data.org_award_nomination_fee) || 0;
+  const orgNomFee = (data.org_award_nomination_fee !== undefined && data.org_award_nomination_fee !== null) ? Number(data.org_award_nomination_fee) : 0;
+  const freeOrgEnabled = data.free_org_award_nomination_enabled !== undefined ? (data.free_org_award_nomination_enabled ? 1 : 0) : 1;
+  const freeOrgFee = (data.free_org_award_nomination_fee !== undefined && data.free_org_award_nomination_fee !== null) ? Number(data.free_org_award_nomination_fee) : 0;
+
   const posterEnabled = data.attending_poster_enabled !== undefined ? (data.attending_poster_enabled ? 1 : 0) : 1;
   const posterWhatsapp = data.attending_poster_whatsapp || "+91 94930 87788";
 
@@ -6837,9 +6951,15 @@ async function upsertEventPaymentSettings(data: any) {
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
-          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
-          team_award_nomination_enabled = ?, team_award_nomination_fee = ?, team_award_categories = ?,
-          org_award_nomination_enabled = ?, org_award_nomination_fee = ?, org_award_categories = ?,
+          award_nomination_enabled = ?, award_nomination_fee = ?,
+          free_award_nomination_enabled = ?, free_award_nomination_fee = ?,
+          award_categories = ?, award_team_categories = ?,
+          team_award_nomination_enabled = ?, team_award_nomination_fee = ?,
+          free_team_award_nomination_enabled = ?, free_team_award_nomination_fee = ?,
+          team_award_categories = ?,
+          org_award_nomination_enabled = ?, org_award_nomination_fee = ?,
+          free_org_award_nomination_enabled = ?, free_org_award_nomination_fee = ?,
+          org_award_categories = ?,
           attending_poster_enabled = ?, attending_poster_whatsapp = ?,
           show_invoice_to_user = ?
         WHERE event_id = ? OR id = ?`,
@@ -6853,9 +6973,15 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
-          teamNomEnabled, teamNomFee, teamAwardCatsStr,
-          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          awardNomEnabled, awardNomFee,
+          freeAwardEnabled, freeAwardFee,
+          awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee,
+          freeTeamEnabled, freeTeamFee,
+          teamAwardCatsStr,
+          orgNomEnabled, orgNomFee,
+          freeOrgEnabled, freeOrgFee,
+          orgAwardCatsStr,
           posterEnabled, posterWhatsapp,
           showInvoiceToUser,
           targetEventId, targetKey
@@ -6871,9 +6997,15 @@ async function upsertEventPaymentSettings(data: any) {
           coupons = ?, payment_required = ?, online_payment_enabled = ?, offline_payment_enabled = ?,
           free_registration_allowed = ?, auto_close_seats_full = ?, registration_open_date = ?, registration_close_date = ?,
           event_start_date = ?, event_end_date = ?, payment_status = ?,
-          award_nomination_enabled = ?, award_nomination_fee = ?, award_categories = ?, award_team_categories = ?,
-          team_award_nomination_enabled = ?, team_award_nomination_fee = ?, team_award_categories = ?,
-          org_award_nomination_enabled = ?, org_award_nomination_fee = ?, org_award_categories = ?,
+          award_nomination_enabled = ?, award_nomination_fee = ?,
+          free_award_nomination_enabled = ?, free_award_nomination_fee = ?,
+          award_categories = ?, award_team_categories = ?,
+          team_award_nomination_enabled = ?, team_award_nomination_fee = ?,
+          free_team_award_nomination_enabled = ?, free_team_award_nomination_fee = ?,
+          team_award_categories = ?,
+          org_award_nomination_enabled = ?, org_award_nomination_fee = ?,
+          free_org_award_nomination_enabled = ?, free_org_award_nomination_fee = ?,
+          org_award_categories = ?,
           attending_poster_enabled = ?, attending_poster_whatsapp = ?,
           show_invoice_to_user = ?
         WHERE event_id = ?`,
@@ -6887,9 +7019,15 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
-          teamNomEnabled, teamNomFee, teamAwardCatsStr,
-          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          awardNomEnabled, awardNomFee,
+          freeAwardEnabled, freeAwardFee,
+          awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee,
+          freeTeamEnabled, freeTeamFee,
+          teamAwardCatsStr,
+          orgNomEnabled, orgNomFee,
+          freeOrgEnabled, freeOrgFee,
+          orgAwardCatsStr,
           posterEnabled, posterWhatsapp,
           showInvoiceToUser,
           targetEventId
@@ -6924,12 +7062,18 @@ async function upsertEventPaymentSettings(data: any) {
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
-          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
-          team_award_nomination_enabled, team_award_nomination_fee, team_award_categories,
-          org_award_nomination_enabled, org_award_nomination_fee, org_award_categories,
+          award_nomination_enabled, award_nomination_fee,
+          free_award_nomination_enabled, free_award_nomination_fee,
+          award_categories, award_team_categories,
+          team_award_nomination_enabled, team_award_nomination_fee,
+          free_team_award_nomination_enabled, free_team_award_nomination_fee,
+          team_award_categories,
+          org_award_nomination_enabled, org_award_nomination_fee,
+          free_org_award_nomination_enabled, free_org_award_nomination_fee,
+          org_award_categories,
           attending_poster_enabled, attending_poster_whatsapp,
           show_invoice_to_user
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6940,9 +7084,15 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
-          teamNomEnabled, teamNomFee, teamAwardCatsStr,
-          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          awardNomEnabled, awardNomFee,
+          freeAwardEnabled, freeAwardFee,
+          awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee,
+          freeTeamEnabled, freeTeamFee,
+          teamAwardCatsStr,
+          orgNomEnabled, orgNomFee,
+          freeOrgEnabled, freeOrgFee,
+          orgAwardCatsStr,
           posterEnabled, posterWhatsapp,
           showInvoiceToUser
         ]
@@ -6956,12 +7106,18 @@ async function upsertEventPaymentSettings(data: any) {
           reserved_seats, vip_seats, speaker_seats, sponsor_seats, coupons_enabled, coupons, payment_required,
           online_payment_enabled, offline_payment_enabled, free_registration_allowed, auto_close_seats_full,
           registration_open_date, registration_close_date, event_start_date, event_end_date, payment_status,
-          award_nomination_enabled, award_nomination_fee, award_categories, award_team_categories,
-          team_award_nomination_enabled, team_award_nomination_fee, team_award_categories,
-          org_award_nomination_enabled, org_award_nomination_fee, org_award_categories,
+          award_nomination_enabled, award_nomination_fee,
+          free_award_nomination_enabled, free_award_nomination_fee,
+          award_categories, award_team_categories,
+          team_award_nomination_enabled, team_award_nomination_fee,
+          free_team_award_nomination_enabled, free_team_award_nomination_fee,
+          team_award_categories,
+          org_award_nomination_enabled, org_award_nomination_fee,
+          free_org_award_nomination_enabled, free_org_award_nomination_fee,
+          org_award_categories,
           attending_poster_enabled, attending_poster_whatsapp,
           show_invoice_to_user
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           event_id, event_title, event_slug, data.registration_fee || 0, data.currency || "INR",
           data.gst_percentage || 18, data.gst_included ? 1 : 0, data.platform_fee || 0, data.convenience_fee || 0,
@@ -6972,9 +7128,15 @@ async function upsertEventPaymentSettings(data: any) {
           data.online_payment_enabled ? 1 : 0, data.offline_payment_enabled ? 1 : 0, data.free_registration_allowed ? 1 : 0,
           data.auto_close_seats_full ? 1 : 0, data.registration_open_date || "", data.registration_close_date || "",
           data.event_start_date || "", data.event_end_date || "", data.payment_status || "Enabled",
-          data.award_nomination_enabled ? 1 : 0, Number(data.award_nomination_fee) || 0, awardCatsStr, awardTeamCatsStr,
-          teamNomEnabled, teamNomFee, teamAwardCatsStr,
-          orgNomEnabled, orgNomFee, orgAwardCatsStr,
+          awardNomEnabled, awardNomFee,
+          freeAwardEnabled, freeAwardFee,
+          awardCatsStr, awardTeamCatsStr,
+          teamNomEnabled, teamNomFee,
+          freeTeamEnabled, freeTeamFee,
+          teamAwardCatsStr,
+          orgNomEnabled, orgNomFee,
+          freeOrgEnabled, freeOrgFee,
+          orgAwardCatsStr,
           posterEnabled, posterWhatsapp,
           showInvoiceToUser
         ]

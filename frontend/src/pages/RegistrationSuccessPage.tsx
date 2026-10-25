@@ -744,8 +744,13 @@ export default function RegistrationSuccessPage() {
                     <tr className="border-b border-slate-200">
                       <td className="py-3 px-3 font-mono font-bold text-slate-600">1</td>
                       <td className="py-3 px-3">
-                        <span className="font-bold text-sm text-slate-900 block">
-                          Executive Delegate Pass — {regDetails?.pass_name || "VIP Gold Pass"}
+                        <span className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <span>Executive Delegate Pass — {regDetails?.pass_name || "VIP Pass"}</span>
+                          {passAmount === 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              FREE / COMPLIMENTARY
+                            </span>
+                          )}
                         </span>
                         <span className="text-[11px] text-slate-500 block mt-0.5 leading-snug">
                           Full Access Pass: Keynotes, C-Suite Networking Lounge, Panel Discussions,
@@ -754,16 +759,25 @@ export default function RegistrationSuccessPage() {
                       </td>
                       <td className="py-3 px-3 text-center font-mono font-semibold text-slate-700">1</td>
                       <td className="py-3 px-3 text-right font-black text-sm text-slate-900 font-mono">
-                        ₹{passAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {passAmount === 0 ? (
+                          <span className="text-emerald-700 font-black">FREE (₹0.00)</span>
+                        ) : (
+                          `₹${passAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                        )}
                       </td>
                     </tr>
 
-                    {isAwardNominated && awardAmount > 0 && (
+                    {isAwardNominated && (
                       <tr className="border-b border-slate-200 bg-amber-50/40">
                         <td className="py-3 px-3 font-mono font-bold text-amber-700">2</td>
                         <td className="py-3 px-3">
                           <span className="font-bold text-sm text-amber-900 flex items-center gap-1.5">
                             <span>🏆 Individual Award Nomination</span>
+                            {awardAmount === 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                FREE / COMPLIMENTARY
+                              </span>
+                            )}
                           </span>
                           <span className="text-[11px] text-amber-700 block mt-0.5 leading-snug font-medium">
                             Category: {regDetails?.award_category || "Executive Leadership Award"}
@@ -771,17 +785,22 @@ export default function RegistrationSuccessPage() {
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-semibold text-amber-900">1</td>
                         <td className="py-3 px-3 text-right font-black text-sm text-amber-900 font-mono">
-                          ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {awardAmount > 0 ? `₹${awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                         </td>
                       </tr>
                     )}
 
-                    {isTeamNominated && teamAmount > 0 && (
+                    {isTeamNominated && (
                       <tr className="border-b border-slate-200 bg-blue-50/40">
                         <td className="py-3 px-3 font-mono font-bold text-blue-700">3</td>
                         <td className="py-3 px-3">
                           <span className="font-bold text-sm text-blue-900 flex items-center gap-1.5">
                             <span>👥 Team & Group Award Nomination</span>
+                            {teamAmount === 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                FREE / COMPLIMENTARY
+                              </span>
+                            )}
                           </span>
                           <span className="text-[11px] text-blue-700 block mt-0.5 leading-snug font-medium">
                             Category: {regDetails?.team_award_category || regDetails?.award_team_category || "Team Excellence Award"}
@@ -789,17 +808,22 @@ export default function RegistrationSuccessPage() {
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-semibold text-blue-900">1</td>
                         <td className="py-3 px-3 text-right font-black text-sm text-blue-900 font-mono">
-                          ₹{teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {teamAmount > 0 ? `₹${teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                         </td>
                       </tr>
                     )}
 
-                    {isOrgNominated && orgAmount > 0 && (
+                    {isOrgNominated && (
                       <tr className="border-b border-slate-200 bg-purple-50/40">
                         <td className="py-3 px-3 font-mono font-bold text-purple-700">4</td>
                         <td className="py-3 px-3">
                           <span className="font-bold text-sm text-purple-900 flex items-center gap-1.5">
                             <span>🏢 Organization Award Nomination</span>
+                            {orgAmount === 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                FREE / COMPLIMENTARY
+                              </span>
+                            )}
                           </span>
                           <span className="text-[11px] text-purple-700 block mt-0.5 leading-snug font-medium">
                             Category: {regDetails?.org_award_category || "Organization Leadership Award"}
@@ -807,7 +831,7 @@ export default function RegistrationSuccessPage() {
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-semibold text-purple-900">1</td>
                         <td className="py-3 px-3 text-right font-black text-sm text-purple-900 font-mono">
-                          ₹{orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          {orgAmount > 0 ? `₹${orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                         </td>
                       </tr>
                     )}
@@ -861,27 +885,27 @@ export default function RegistrationSuccessPage() {
                       ₹{passAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  {isAwardNominated && awardAmount > 0 && (
+                  {isAwardNominated && (
                     <div className="flex justify-between py-1 border-b border-slate-200 text-amber-800">
                       <span>Individual Award Fee:</span>
                       <span className="font-mono font-semibold">
-                        ₹{awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {awardAmount > 0 ? `₹${awardAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                       </span>
                     </div>
                   )}
-                  {isTeamNominated && teamAmount > 0 && (
+                  {isTeamNominated && (
                     <div className="flex justify-between py-1 border-b border-slate-200 text-blue-800">
                       <span>Team Award Fee:</span>
                       <span className="font-mono font-semibold">
-                        ₹{teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {teamAmount > 0 ? `₹${teamAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                       </span>
                     </div>
                   )}
-                  {isOrgNominated && orgAmount > 0 && (
+                  {isOrgNominated && (
                     <div className="flex justify-between py-1 border-b border-slate-200 text-purple-800">
                       <span>Org Award Fee:</span>
                       <span className="font-mono font-semibold">
-                        ₹{orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {orgAmount > 0 ? `₹${orgAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)"}
                       </span>
                     </div>
                   )}

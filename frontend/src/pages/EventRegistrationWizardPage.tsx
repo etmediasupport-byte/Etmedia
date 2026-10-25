@@ -2425,11 +2425,19 @@ export default function EventRegistrationWizardPage() {
                       <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                            Would you like to nominate yourself for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                            Would you like to nominate yourself for the {eventData?.title || "HR RECALL 2K26"} Awards?{" "}
+                            <span className="text-slate-500 font-normal">
+                              {awardNominationFee > 0 ? "(Nomination Fee Applicable)" : "(Complimentary / Free Nomination)"}
+                            </span>{" "}
+                            <span className="text-rose-500">*</span>
                           </label>
-                          {awardNominationFee > 0 && (
+                          {awardNominationFee > 0 ? (
                             <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
                               Fee: ₹{awardNominationFee.toLocaleString("en-IN")}
+                            </span>
+                          ) : (
+                            <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                              ✨ Free / Complimentary
                             </span>
                           )}
                         </div>
@@ -2490,9 +2498,15 @@ export default function EventRegistrationWizardPage() {
                                 ⚠️ {awardCategoryError}
                               </p>
                             )}
-                            <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 flex items-center justify-between text-xs text-amber-900 font-semibold">
+                            <div className={`rounded-xl p-3 flex items-center justify-between text-xs font-semibold ${
+                              awardNominationFee > 0
+                                ? "bg-amber-500/10 border border-amber-500/30 text-amber-900"
+                                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-900"
+                            }`}>
                               <span>Individual Nomination Fee:</span>
-                              <span className="font-black text-amber-950">₹{awardNominationFee.toLocaleString("en-IN")}</span>
+                              <span className="font-black">
+                                {awardNominationFee > 0 ? `₹${awardNominationFee.toLocaleString("en-IN")}` : "Free / Complimentary (₹0)"}
+                              </span>
                             </div>
                           </motion.div>
                         )}
@@ -2504,11 +2518,19 @@ export default function EventRegistrationWizardPage() {
                       <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                            Would you like to nominate your team for the {eventData?.title || "HR RECALL 2K26"} Awards? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                            Would you like to nominate your team for the {eventData?.title || "HR RECALL 2K26"} Awards?{" "}
+                            <span className="text-slate-500 font-normal">
+                              {teamAwardNominationFee > 0 ? "(Nomination Fee Applicable)" : "(Complimentary / Free Nomination)"}
+                            </span>{" "}
+                            <span className="text-rose-500">*</span>
                           </label>
-                          {teamAwardNominationFee > 0 && (
+                          {teamAwardNominationFee > 0 ? (
                             <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-blue-100 text-blue-900 border border-blue-300 shrink-0">
                               Fee: ₹{teamAwardNominationFee.toLocaleString("en-IN")}
+                            </span>
+                          ) : (
+                            <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                              ✨ Free / Complimentary
                             </span>
                           )}
                         </div>
@@ -2569,9 +2591,15 @@ export default function EventRegistrationWizardPage() {
                                 ⚠️ {teamAwardCategoryError}
                               </p>
                             )}
-                            <div className="rounded-xl bg-blue-500/10 border border-blue-500/30 p-3 flex items-center justify-between text-xs text-blue-900 font-semibold">
+                            <div className={`rounded-xl p-3 flex items-center justify-between text-xs font-semibold ${
+                              teamAwardNominationFee > 0
+                                ? "bg-blue-500/10 border border-blue-500/30 text-blue-900"
+                                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-900"
+                            }`}>
                               <span>Team Nomination Fee:</span>
-                              <span className="font-black text-blue-950">₹{teamAwardNominationFee.toLocaleString("en-IN")}</span>
+                              <span className="font-black">
+                                {teamAwardNominationFee > 0 ? `₹${teamAwardNominationFee.toLocaleString("en-IN")}` : "Free / Complimentary (₹0)"}
+                              </span>
                             </div>
                           </motion.div>
                         )}
@@ -2583,11 +2611,19 @@ export default function EventRegistrationWizardPage() {
                       <div className="p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                            Would You Like to Nominate Your Organization? <span className="text-slate-500 font-normal">(Nomination Fee Applicable)</span> <span className="text-rose-500">*</span>
+                            Would You Like to Nominate Your Organization?{" "}
+                            <span className="text-slate-500 font-normal">
+                              {orgAwardNominationFee > 0 ? "(Nomination Fee Applicable)" : "(Complimentary / Free Nomination)"}
+                            </span>{" "}
+                            <span className="text-rose-500">*</span>
                           </label>
-                          {orgAwardNominationFee > 0 && (
+                          {orgAwardNominationFee > 0 ? (
                             <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-purple-100 text-purple-900 border border-purple-300 shrink-0">
                               Fee: ₹{orgAwardNominationFee.toLocaleString("en-IN")}
+                            </span>
+                          ) : (
+                            <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                              ✨ Free / Complimentary
                             </span>
                           )}
                         </div>
@@ -2648,9 +2684,15 @@ export default function EventRegistrationWizardPage() {
                                 ⚠️ {orgAwardCategoryError}
                               </p>
                             )}
-                            <div className="rounded-xl bg-purple-500/10 border border-purple-500/30 p-3 flex items-center justify-between text-xs text-purple-900 font-semibold">
+                            <div className={`rounded-xl p-3 flex items-center justify-between text-xs font-semibold ${
+                              orgAwardNominationFee > 0
+                                ? "bg-purple-500/10 border border-purple-500/30 text-purple-900"
+                                : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-900"
+                            }`}>
                               <span>Organization Nomination Fee:</span>
-                              <span className="font-black text-purple-950">₹{orgAwardNominationFee.toLocaleString("en-IN")}</span>
+                              <span className="font-black">
+                                {orgAwardNominationFee > 0 ? `₹${orgAwardNominationFee.toLocaleString("en-IN")}` : "Free / Complimentary (₹0)"}
+                              </span>
                             </div>
                           </motion.div>
                         )}
@@ -2779,21 +2821,21 @@ export default function EventRegistrationWizardPage() {
                     {wantsAwardNomination === "Yes" && (
                       <div className="flex justify-between items-center text-xs font-bold text-amber-800 bg-amber-50/70 p-2.5 rounded-xl">
                         <span>Individual Award Nomination ({selectedAwardCategory || "Category Selected"})</span>
-                        <span>+ ₹{paymentBreakdown.individualNominationFee.toLocaleString("en-IN")}</span>
+                        <span>{paymentBreakdown.individualNominationFee > 0 ? `+ ₹${paymentBreakdown.individualNominationFee.toLocaleString("en-IN")}` : "Complimentary (₹0)"}</span>
                       </div>
                     )}
 
                     {wantsTeamNomination === "Yes" && (
                       <div className="flex justify-between items-center text-xs font-bold text-blue-800 bg-blue-50/70 p-2.5 rounded-xl">
                         <span>Team Award Nomination ({selectedTeamCategory || "Category Selected"})</span>
-                        <span>+ ₹{paymentBreakdown.teamNominationFee.toLocaleString("en-IN")}</span>
+                        <span>{paymentBreakdown.teamNominationFee > 0 ? `+ ₹${paymentBreakdown.teamNominationFee.toLocaleString("en-IN")}` : "Complimentary (₹0)"}</span>
                       </div>
                     )}
 
                     {wantsOrgNomination === "Yes" && (
                       <div className="flex justify-between items-center text-xs font-bold text-purple-800 bg-purple-50/70 p-2.5 rounded-xl">
                         <span>Organization Award Nomination ({selectedOrgCategory || "Category Selected"})</span>
-                        <span>+ ₹{paymentBreakdown.orgNominationFee.toLocaleString("en-IN")}</span>
+                        <span>{paymentBreakdown.orgNominationFee > 0 ? `+ ₹${paymentBreakdown.orgNominationFee.toLocaleString("en-IN")}` : "Complimentary (₹0)"}</span>
                       </div>
                     )}
 
@@ -3114,10 +3156,10 @@ export default function EventRegistrationWizardPage() {
                         <span>Base Pass Rate:</span>
                         <span>₹{(paymentBreakdown.passBase || paymentBreakdown.basePrice).toLocaleString("en-IN")}</span>
                       </div>
-                      {paymentBreakdown.nominationFeeAmount > 0 && (
+                      {wantsAwardNomination === "Yes" && (
                         <div className="flex justify-between items-center text-xs font-bold text-amber-800">
                           <span>Award Nomination Fee:</span>
-                          <span>+ ₹{paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}</span>
+                          <span>{paymentBreakdown.nominationFeeAmount > 0 ? `+ ₹${paymentBreakdown.nominationFeeAmount.toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}</span>
                         </div>
                       )}
                       {paymentBreakdown.discountAmount > 0 && (
@@ -3228,7 +3270,7 @@ export default function EventRegistrationWizardPage() {
                             </span>
                           </div>
                           <span className="font-mono font-bold text-amber-900">
-                            ₹{(paymentBreakdown.nominationFeeAmount || 0).toLocaleString("en-IN")}
+                            {(paymentBreakdown.nominationFeeAmount || 0) > 0 ? `₹${(paymentBreakdown.nominationFeeAmount || 0).toLocaleString("en-IN")}` : "FREE (₹0)"}
                           </span>
                         </div>
                       )}

@@ -2587,7 +2587,9 @@ export default function AdminDashboardPage() {
       pricing_plans: parsedPlans,
       coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
       award_nomination_enabled: item.award_nomination_enabled === 1 || item.award_nomination_enabled === true,
-      award_nomination_fee: Number(item.award_nomination_fee) || 10000,
+      award_nomination_fee: (item.award_nomination_fee !== undefined && item.award_nomination_fee !== null && item.award_nomination_fee !== "") ? Number(item.award_nomination_fee) : 10000,
+      free_award_nomination_enabled: item.free_award_nomination_enabled !== undefined ? (item.free_award_nomination_enabled === 1 || item.free_award_nomination_enabled === true) : true,
+      free_award_nomination_fee: (item.free_award_nomination_fee !== undefined && item.free_award_nomination_fee !== null && item.free_award_nomination_fee !== "") ? Number(item.free_award_nomination_fee) : 0,
       award_categories: Array.isArray(parsedAwardCats) && parsedAwardCats.length > 0 ? parsedAwardCats : [
         "CHRO of the Year",
         "HR Leader of the Year",
@@ -2604,11 +2606,15 @@ export default function AdminDashboardPage() {
         "HR Technology Leader of the Year",
       ],
       team_award_nomination_enabled: item.team_award_nomination_enabled !== undefined ? (item.team_award_nomination_enabled === 1 || item.team_award_nomination_enabled === true) : true,
-      team_award_nomination_fee: Number(item.team_award_nomination_fee) || 15000,
+      team_award_nomination_fee: (item.team_award_nomination_fee !== undefined && item.team_award_nomination_fee !== null && item.team_award_nomination_fee !== "") ? Number(item.team_award_nomination_fee) : 15000,
+      free_team_award_nomination_enabled: item.free_team_award_nomination_enabled !== undefined ? (item.free_team_award_nomination_enabled === 1 || item.free_team_award_nomination_enabled === true) : true,
+      free_team_award_nomination_fee: (item.free_team_award_nomination_fee !== undefined && item.free_team_award_nomination_fee !== null && item.free_team_award_nomination_fee !== "") ? Number(item.free_team_award_nomination_fee) : 0,
       team_award_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
       award_team_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
       org_award_nomination_enabled: item.org_award_nomination_enabled !== undefined ? (item.org_award_nomination_enabled === 1 || item.org_award_nomination_enabled === true) : true,
-      org_award_nomination_fee: Number(item.org_award_nomination_fee) || 25000,
+      org_award_nomination_fee: (item.org_award_nomination_fee !== undefined && item.org_award_nomination_fee !== null && item.org_award_nomination_fee !== "") ? Number(item.org_award_nomination_fee) : 25000,
+      free_org_award_nomination_enabled: item.free_org_award_nomination_enabled !== undefined ? (item.free_org_award_nomination_enabled === 1 || item.free_org_award_nomination_enabled === true) : true,
+      free_org_award_nomination_fee: (item.free_org_award_nomination_fee !== undefined && item.free_org_award_nomination_fee !== null && item.free_org_award_nomination_fee !== "") ? Number(item.free_org_award_nomination_fee) : 0,
       org_award_categories: Array.isArray(parsedOrgCats) && parsedOrgCats.length > 0 ? parsedOrgCats : HR_RECALL_DEFAULT_ORG_CATS,
       attending_poster_enabled: item.attending_poster_enabled !== undefined ? (item.attending_poster_enabled === 1 || item.attending_poster_enabled === true) : true,
       attending_poster_whatsapp: item.attending_poster_whatsapp || "+91 94930 87788",
@@ -7494,6 +7500,43 @@ export default function AdminDashboardPage() {
             (Number(r.award_nomination_fee) > 0);
           if (!hasAward) return false;
         }
+        if (regFilterStatus === "awards_paid") {
+          const hasAward =
+            r.award_nomination === "Yes" ||
+            (r.award_nomination && r.award_nomination !== "No" && r.award_nomination !== "") ||
+            Boolean(r.award_category && r.award_category.trim());
+          const fee = Number(r.award_nomination_fee) || 0;
+          if (!hasAward || fee <= 0) return false;
+        }
+        if (regFilterStatus === "awards_free") {
+          const hasAward =
+            r.award_nomination === "Yes" ||
+            (r.award_nomination && r.award_nomination !== "No" && r.award_nomination !== "") ||
+            Boolean(r.award_category && r.award_category.trim());
+          const fee = Number(r.award_nomination_fee) || 0;
+          if (!hasAward || fee > 0) return false;
+        }
+        if (regFilterStatus === "free_reg_with_awards") {
+          const hasAnyAward =
+            r.award_nomination === "Yes" ||
+            Boolean(r.award_category && r.award_category.trim()) ||
+            r.team_award_nomination === "Yes" ||
+            Boolean(r.team_award_category && r.team_award_category.trim()) ||
+            r.org_award_nomination === "Yes" ||
+            Boolean(r.org_award_category && r.org_award_category.trim());
+          const isFree = isFreeGranted || isPendingReview || (r.tier_name && r.tier_name.toLowerCase().includes("free")) || (!isPaid && !isDelegateOffline(r));
+          if (!hasAnyAward || !isFree) return false;
+        }
+        if (regFilterStatus === "paid_reg_with_awards") {
+          const hasAnyAward =
+            r.award_nomination === "Yes" ||
+            Boolean(r.award_category && r.award_category.trim()) ||
+            r.team_award_nomination === "Yes" ||
+            Boolean(r.team_award_category && r.team_award_category.trim()) ||
+            r.org_award_nomination === "Yes" ||
+            Boolean(r.org_award_category && r.org_award_category.trim());
+          if (!hasAnyAward || !isPaid) return false;
+        }
         if (regFilterStatus === "team_awards") {
           const hasTeamAward =
             r.team_award_nomination === "Yes" ||
@@ -9996,7 +10039,11 @@ export default function AdminDashboardPage() {
                     >
                       <option value="all">💳 All Statuses</option>
                       <option value="paid">💳 Paid Passes (Confirmed)</option>
-                      <option value="awards">🏆 Individual Award Nominations</option>
+                      <option value="awards">🏆 All Award Nominations</option>
+                      <option value="awards_paid">💰 Paid Award Nominations</option>
+                      <option value="awards_free">🎁 Free / Complimentary Award Nominations</option>
+                      <option value="free_reg_with_awards">🎟️ Free Registrations with Awards</option>
+                      <option value="paid_reg_with_awards">💳 Paid Registrations with Awards</option>
                       <option value="team_awards">👥 Team Award Nominations</option>
                       <option value="org_awards">🏢 Organization Award Nominations</option>
                       <option value="poster">🖼️ "I'm Attending" Poster Requests</option>
@@ -10218,8 +10265,15 @@ export default function AdminDashboardPage() {
                                 {reg.pass_name || reg.registration_category || "Delegate Pass"}
                               </span>
                               {(reg.award_nomination === "Yes" || (reg.award_category && reg.award_category.trim()) || Number(reg.award_nomination_fee) > 0) && (
-                                <span className="inline-block rounded px-1.5 py-0.2 text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title={reg.award_category ? `Award: ${reg.award_category}` : "Nominated"}>
-                                  🏆 Award
+                                <span
+                                  className={`inline-block rounded px-1.5 py-0.2 text-[10px] font-bold border ${
+                                    Number(reg.award_nomination_fee) > 0
+                                      ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                      : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                                  }`}
+                                  title={reg.award_category ? `Award: ${reg.award_category} (${Number(reg.award_nomination_fee) > 0 ? `₹${Number(reg.award_nomination_fee).toLocaleString("en-IN")}` : "Free / Complimentary"})` : "Nominated"}
+                                >
+                                  🏆 Award {Number(reg.award_nomination_fee) > 0 ? `(₹${Number(reg.award_nomination_fee).toLocaleString("en-IN")})` : "(Free)"}
                                 </span>
                               )}
                             </div>
@@ -24591,8 +24645,8 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <span className="text-amber-800/70 block text-[10px] font-black uppercase">Nomination Fee</span>
-                      <strong className="text-amber-900 font-mono text-sm block font-black">
-                        ₹{(Number(selectedRegDetail.award_nomination_fee) || 0).toLocaleString("en-IN")}
+                      <strong className="font-mono text-sm block font-black text-amber-900">
+                        {Number(selectedRegDetail.award_nomination_fee) > 0 ? `₹${Number(selectedRegDetail.award_nomination_fee).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}
                       </strong>
                     </div>
                   </div>
@@ -24619,8 +24673,8 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <span className="text-blue-800/70 block text-[10px] font-black uppercase">Team Nomination Fee</span>
-                      <strong className="text-blue-900 font-mono text-sm block font-black">
-                        ₹{(Number(selectedRegDetail.team_award_fee) || 0).toLocaleString("en-IN")}
+                      <strong className="font-mono text-sm block font-black text-blue-900">
+                        {Number(selectedRegDetail.team_award_fee) > 0 ? `₹${Number(selectedRegDetail.team_award_fee).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}
                       </strong>
                     </div>
                   </div>
@@ -24647,8 +24701,8 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <span className="text-purple-800/70 block text-[10px] font-black uppercase">Org Nomination Fee</span>
-                      <strong className="text-purple-900 font-mono text-sm block font-black">
-                        ₹{(Number(selectedRegDetail.org_award_fee) || 0).toLocaleString("en-IN")}
+                      <strong className="font-mono text-sm block font-black text-purple-900">
+                        {Number(selectedRegDetail.org_award_fee) > 0 ? `₹${Number(selectedRegDetail.org_award_fee).toLocaleString("en-IN")}` : "FREE / Complimentary (₹0)"}
                       </strong>
                     </div>
                   </div>
@@ -24736,14 +24790,14 @@ export default function AdminDashboardPage() {
                   return (
                     <div className="pt-2 border-t border-cyan-200/60 flex flex-wrap justify-between text-[11px] text-slate-600 font-mono gap-3">
                       <span>Pass Value: <strong className="text-slate-900">₹{passBase.toLocaleString("en-IN")}</strong></span>
-                      {rawAwardFee > 0 && (
-                        <span>Award Fee: <strong className="text-amber-800">₹{rawAwardFee.toLocaleString("en-IN")}</strong></span>
+                      {(selectedRegDetail.award_nomination === "Yes" || Boolean(selectedRegDetail.award_category)) && (
+                        <span>Award Fee: <strong className={rawAwardFee > 0 ? "text-amber-800" : "text-emerald-700"}>{rawAwardFee > 0 ? `₹${rawAwardFee.toLocaleString("en-IN")}` : "FREE (₹0)"}</strong></span>
                       )}
-                      {rawTeamFee > 0 && (
-                        <span>Team Award Fee: <strong className="text-blue-800">₹{rawTeamFee.toLocaleString("en-IN")}</strong></span>
+                      {(selectedRegDetail.team_award_nomination === "Yes" || Boolean(selectedRegDetail.team_award_category)) && (
+                        <span>Team Award Fee: <strong className={rawTeamFee > 0 ? "text-blue-800" : "text-emerald-700"}>{rawTeamFee > 0 ? `₹${rawTeamFee.toLocaleString("en-IN")}` : "FREE (₹0)"}</strong></span>
                       )}
-                      {rawOrgFee > 0 && (
-                        <span>Org Award Fee: <strong className="text-purple-800">₹{rawOrgFee.toLocaleString("en-IN")}</strong></span>
+                      {(selectedRegDetail.org_award_nomination === "Yes" || Boolean(selectedRegDetail.org_award_category)) && (
+                        <span>Org Award Fee: <strong className={rawOrgFee > 0 ? "text-purple-800" : "text-emerald-700"}>{rawOrgFee > 0 ? `₹${rawOrgFee.toLocaleString("en-IN")}` : "FREE (₹0)"}</strong></span>
                       )}
                       {rawDiscount > 0 && (
                         <span>Discount: <strong className="text-emerald-700">- ₹{rawDiscount.toLocaleString("en-IN")}</strong></span>
@@ -25546,32 +25600,131 @@ export default function AdminDashboardPage() {
                       </label>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-amber-200">
-                      <div>
-                        <label className="block text-[11px] font-bold text-amber-950 uppercase mb-1">
-                          Award Nomination Fee (₹) *
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={paymentForm.award_nomination_fee ?? 5000}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_fee: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-amber-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-amber-600 focus:outline-none"
-                            placeholder="5000"
-                          />
+                    <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-amber-200">
+                      {/* CARD 1: Paid Delegate Registrations */}
+                      <div className="rounded-2xl border border-amber-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-amber-100 pb-2">
+                          <span className="text-xs font-black uppercase text-amber-950 flex items-center gap-1.5">
+                            <span>💳 Paid Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.award_nomination_enabled ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.award_nomination_enabled ? (Number(paymentForm.award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
                         </div>
-                        <p className="text-[10px] text-amber-800 mt-1">
-                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for awards.
-                        </p>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Paid Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.award_nomination_enabled ? "disabled" : (Number(paymentForm.award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, award_nomination_enabled: true, award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  award_nomination_enabled: true,
+                                  award_nomination_fee: Number(paymentForm.award_nomination_fee) > 0 ? paymentForm.award_nomination_fee : 10000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-amber-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Paid Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.award_nomination_enabled && Number(paymentForm.award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-amber-950 uppercase mb-1">
+                              Nomination Fee for Paid Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.award_nomination_fee ?? 10000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-amber-300 bg-amber-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-amber-600 focus:outline-none"
+                                placeholder="10000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-amber-800 mt-1">
+                              Charged on checkout for paid pass delegates.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="bg-white/80 rounded-xl border border-amber-200 p-3 flex flex-col justify-center">
-                        <span className="text-[10px] font-black uppercase text-amber-700">Quick Note</span>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
-                          When enabled, delegates will see the Award Nomination step before payment with a Yes/No option and your dynamic category dropdown.
-                        </p>
+                      {/* CARD 2: Free Delegate Registrations */}
+                      <div className="rounded-2xl border border-emerald-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                          <span className="text-xs font-black uppercase text-emerald-950 flex items-center gap-1.5">
+                            <span>🎟️ Free Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_award_nomination_enabled ? (Number(paymentForm.free_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Free Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.free_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, free_award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, free_award_nomination_enabled: true, free_award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  free_award_nomination_enabled: true,
+                                  free_award_nomination_fee: Number(paymentForm.free_award_nomination_fee) > 0 ? paymentForm.free_award_nomination_fee : 5000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Free Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.free_award_nomination_enabled && Number(paymentForm.free_award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
+                              Nomination Fee for Free Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.free_award_nomination_fee ?? 5000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
+                                placeholder="5000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-emerald-800 mt-1">
+                              Charged or displayed for free registration applicants.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -25727,32 +25880,131 @@ export default function AdminDashboardPage() {
                       </label>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-blue-200">
-                      <div>
-                        <label className="block text-[11px] font-bold text-blue-950 uppercase mb-1">
-                          Team Award Nomination Fee (₹) *
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={paymentForm.team_award_nomination_fee ?? 15000}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_fee: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-blue-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-blue-600 focus:outline-none"
-                            placeholder="15000"
-                          />
+                    <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-blue-200">
+                      {/* CARD 1: Paid Delegate Registrations */}
+                      <div className="rounded-2xl border border-blue-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                          <span className="text-xs font-black uppercase text-blue-950 flex items-center gap-1.5">
+                            <span>💳 Paid Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.team_award_nomination_enabled ? "bg-blue-100 text-blue-900 border border-blue-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.team_award_nomination_enabled ? (Number(paymentForm.team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.team_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
                         </div>
-                        <p className="text-[10px] text-blue-800 mt-1">
-                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for team awards.
-                        </p>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Paid Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.team_award_nomination_enabled ? "disabled" : (Number(paymentForm.team_award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, team_award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, team_award_nomination_enabled: true, team_award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  team_award_nomination_enabled: true,
+                                  team_award_nomination_fee: Number(paymentForm.team_award_nomination_fee) > 0 ? paymentForm.team_award_nomination_fee : 15000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-blue-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Paid Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.team_award_nomination_enabled && Number(paymentForm.team_award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-blue-950 uppercase mb-1">
+                              Nomination Fee for Paid Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.team_award_nomination_fee ?? 15000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-blue-300 bg-blue-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-blue-600 focus:outline-none"
+                                placeholder="15000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-blue-800 mt-1">
+                              Charged on checkout for paid pass delegates.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="bg-white/80 rounded-xl border border-blue-200 p-3 flex flex-col justify-center">
-                        <span className="text-[10px] font-black uppercase text-blue-700">Quick Note</span>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
-                          When enabled, delegates will see the Team Award Nomination question with a Yes/No option and your dynamic team category dropdown.
-                        </p>
+                      {/* CARD 2: Free Delegate Registrations */}
+                      <div className="rounded-2xl border border-emerald-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                          <span className="text-xs font-black uppercase text-emerald-950 flex items-center gap-1.5">
+                            <span>🎟️ Free Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_team_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_team_award_nomination_enabled ? (Number(paymentForm.free_team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_team_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Free Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.free_team_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_team_award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, free_team_award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, free_team_award_nomination_enabled: true, free_team_award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  free_team_award_nomination_enabled: true,
+                                  free_team_award_nomination_fee: Number(paymentForm.free_team_award_nomination_fee) > 0 ? paymentForm.free_team_award_nomination_fee : 5000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Free Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.free_team_award_nomination_enabled && Number(paymentForm.free_team_award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
+                              Nomination Fee for Free Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.free_team_award_nomination_fee ?? 5000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_team_award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
+                                placeholder="5000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-emerald-800 mt-1">
+                              Charged or displayed for free registration applicants.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -25915,32 +26167,131 @@ export default function AdminDashboardPage() {
                       </label>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-purple-200">
-                      <div>
-                        <label className="block text-[11px] font-bold text-purple-950 uppercase mb-1">
-                          Organization Award Nomination Fee (₹) *
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={paymentForm.org_award_nomination_fee ?? 25000}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_fee: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-purple-300 bg-white pl-8 pr-3.5 py-2 text-xs font-black text-slate-900 focus:border-purple-600 focus:outline-none"
-                            placeholder="25000"
-                          />
+                    <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-purple-200">
+                      {/* CARD 1: Paid Delegate Registrations */}
+                      <div className="rounded-2xl border border-purple-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                          <span className="text-xs font-black uppercase text-purple-950 flex items-center gap-1.5">
+                            <span>💳 Paid Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.org_award_nomination_enabled ? "bg-purple-100 text-purple-900 border border-purple-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.org_award_nomination_enabled ? (Number(paymentForm.org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.org_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
                         </div>
-                        <p className="text-[10px] text-purple-800 mt-1">
-                          This fee is automatically added to the delegate pass order if the attendee selects "Yes" for organization awards.
-                        </p>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Paid Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.org_award_nomination_enabled ? "disabled" : (Number(paymentForm.org_award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, org_award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, org_award_nomination_enabled: true, org_award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  org_award_nomination_enabled: true,
+                                  org_award_nomination_fee: Number(paymentForm.org_award_nomination_fee) > 0 ? paymentForm.org_award_nomination_fee : 25000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-purple-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Paid Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.org_award_nomination_enabled && Number(paymentForm.org_award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-purple-950 uppercase mb-1">
+                              Nomination Fee for Paid Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.org_award_nomination_fee ?? 25000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-purple-300 bg-purple-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-purple-600 focus:outline-none"
+                                placeholder="25000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-purple-800 mt-1">
+                              Charged on checkout for paid pass delegates.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="bg-white/80 rounded-xl border border-purple-200 p-3 flex flex-col justify-center">
-                        <span className="text-[10px] font-black uppercase text-purple-700">Quick Note</span>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
-                          When enabled, delegates will see the Organization Award Nomination question with a Yes/No option and your dynamic org category dropdown.
-                        </p>
+                      {/* CARD 2: Free Delegate Registrations */}
+                      <div className="rounded-2xl border border-emerald-300 bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                          <span className="text-xs font-black uppercase text-emerald-950 flex items-center gap-1.5">
+                            <span>🎟️ Free Registrations</span>
+                            <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_org_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_org_award_nomination_enabled ? (Number(paymentForm.free_org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_org_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                            Pricing for Free Attendees *
+                          </label>
+                          <select
+                            value={!paymentForm.free_org_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_org_award_nomination_fee) === 0 ? "free" : "paid")}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "disabled") {
+                                setPaymentForm({ ...paymentForm, free_org_award_nomination_enabled: false });
+                              } else if (val === "free") {
+                                setPaymentForm({ ...paymentForm, free_org_award_nomination_enabled: true, free_org_award_nomination_fee: 0 });
+                              } else {
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  free_org_award_nomination_enabled: true,
+                                  free_org_award_nomination_fee: Number(paymentForm.free_org_award_nomination_fee) > 0 ? paymentForm.free_org_award_nomination_fee : 10000,
+                                });
+                              }
+                            }}
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none cursor-pointer"
+                          >
+                            <option value="free">🎁 Free / Complimentary Nomination (₹0)</option>
+                            <option value="paid">💰 Paid Nomination (Dynamic Custom Fee)</option>
+                            <option value="disabled">⚪ Disabled (Hide from Free Flow)</option>
+                          </select>
+                        </div>
+
+                        {paymentForm.free_org_award_nomination_enabled && Number(paymentForm.free_org_award_nomination_fee) > 0 && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
+                              Nomination Fee for Free Attendees (₹) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={paymentForm.free_org_award_nomination_fee ?? 10000}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_org_award_nomination_fee: Number(e.target.value) })}
+                                className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
+                                placeholder="10000"
+                              />
+                            </div>
+                            <p className="text-[10px] text-emerald-800 mt-1">
+                              Charged or displayed for free registration applicants.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
