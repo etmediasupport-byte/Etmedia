@@ -2906,7 +2906,15 @@ app.get("/api/events/:slug", async (req, res) => {
             foundEvt.award_nomination_enabled = pay.award_nomination_enabled;
             foundEvt.award_nomination_fee = pay.award_nomination_fee;
             foundEvt.award_categories = pay.award_categories;
-            foundEvt.award_team_categories = pay.award_team_categories;
+            foundEvt.award_team_categories = pay.team_award_categories || pay.award_team_categories;
+            foundEvt.team_award_nomination_enabled = pay.team_award_nomination_enabled;
+            foundEvt.team_award_nomination_fee = pay.team_award_nomination_fee;
+            foundEvt.team_award_categories = pay.team_award_categories || pay.award_team_categories;
+            foundEvt.org_award_nomination_enabled = pay.org_award_nomination_enabled;
+            foundEvt.org_award_nomination_fee = pay.org_award_nomination_fee;
+            foundEvt.org_award_categories = pay.org_award_categories;
+            foundEvt.attending_poster_enabled = pay.attending_poster_enabled;
+            foundEvt.attending_poster_whatsapp = pay.attending_poster_whatsapp;
           }
         } catch (payErr) {
           console.warn("[/api/events/:slug] Failed to attach payment settings:", payErr);
@@ -6757,8 +6765,9 @@ async function upsertEventPaymentSettings(data: any) {
   const specialPricesStr = typeof data.special_prices === "string" ? data.special_prices : JSON.stringify(data.special_prices || {});
   const couponsStr = typeof data.coupons === "string" ? data.coupons : JSON.stringify(data.coupons || []);
   const awardCatsStr = typeof data.award_categories === "string" ? data.award_categories : JSON.stringify(data.award_categories || []);
-  const awardTeamCatsStr = typeof data.award_team_categories === "string" ? data.award_team_categories : JSON.stringify(data.award_team_categories || []);
-  const teamAwardCatsStr = typeof data.team_award_categories === "string" ? data.team_award_categories : JSON.stringify(data.team_award_categories || data.award_team_categories || []);
+  const rawTeam = data.team_award_categories || data.award_team_categories;
+  const teamAwardCatsStr = typeof rawTeam === "string" ? rawTeam : JSON.stringify(rawTeam || []);
+  const awardTeamCatsStr = teamAwardCatsStr;
   const orgAwardCatsStr = typeof data.org_award_categories === "string" ? data.org_award_categories : JSON.stringify(data.org_award_categories || []);
   const teamNomEnabled = data.team_award_nomination_enabled !== undefined ? (data.team_award_nomination_enabled ? 1 : 0) : 0;
   const teamNomFee = Number(data.team_award_nomination_fee) || 0;

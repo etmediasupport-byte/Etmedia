@@ -24775,7 +24775,7 @@ export default function AdminDashboardPage() {
       {/* ========================================== */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] overflow-hidden">
+          <div className="relative w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] overflow-hidden">
             {/* STICKY HEADER */}
             <div className="shrink-0 p-5 sm:p-6 pb-0 border-b border-slate-100 bg-white relative">
               {/* Close Button */}
@@ -24799,14 +24799,14 @@ export default function AdminDashboardPage() {
                 Manage base fees, GST %, tiered registration plans (Gold, Premium, Platinum), early bird discounts, and active coupons.
               </p>
 
-              {/* TAB NAVIGATION HEADER */}
-              <div className="flex border-b border-slate-200 mt-4 gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
+              {/* TAB NAVIGATION HEADER (FLEX WRAP TO ENSURE ALL 7 TABS ARE VISIBLE) */}
+              <div className="flex flex-wrap items-center border-b border-slate-200 mt-4 gap-1.5 pb-3">
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("general")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${paymentModalTab === "general"
-                      ? "border-cyan-600 text-cyan-700 bg-cyan-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer whitespace-nowrap ${paymentModalTab === "general"
+                      ? "border-cyan-600 text-cyan-800 bg-cyan-50 shadow-xs ring-2 ring-cyan-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   1. General & Taxes
@@ -24814,9 +24814,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("plans")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "plans"
-                      ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "plans"
+                      ? "border-amber-500 text-amber-800 bg-amber-50 shadow-xs ring-2 ring-amber-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <Crown className="h-3.5 w-3.5 text-amber-500" />
@@ -24825,9 +24825,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("coupons")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${paymentModalTab === "coupons"
-                      ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer whitespace-nowrap ${paymentModalTab === "coupons"
+                      ? "border-purple-600 text-purple-800 bg-purple-50 shadow-xs ring-2 ring-purple-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   3. Early Bird & Coupons
@@ -24835,9 +24835,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("awards")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "awards"
-                      ? "border-amber-500 text-amber-700 bg-amber-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "awards"
+                      ? "border-amber-500 text-amber-800 bg-amber-50 shadow-xs ring-2 ring-amber-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <Award className="h-3.5 w-3.5 text-amber-500" />
@@ -24846,9 +24846,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("team_awards")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "team_awards"
-                      ? "border-blue-600 text-blue-700 bg-blue-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "team_awards"
+                      ? "border-blue-600 text-blue-800 bg-blue-50 shadow-xs ring-2 ring-blue-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <Users className="h-3.5 w-3.5 text-blue-600" />
@@ -24857,9 +24857,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("org_awards")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "org_awards"
-                      ? "border-purple-600 text-purple-700 bg-purple-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "org_awards"
+                      ? "border-purple-600 text-purple-800 bg-purple-50 shadow-xs ring-2 ring-purple-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <Building2 className="h-3.5 w-3.5 text-purple-600" />
@@ -24868,9 +24868,9 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentModalTab("poster")}
-                  className={`px-3 sm:px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "poster"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl"
-                      : "border-transparent text-slate-500 hover:text-slate-900"
+                  className={`px-3 py-1.5 text-xs font-bold transition-all rounded-xl border cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${paymentModalTab === "poster"
+                      ? "border-emerald-600 text-emerald-800 bg-emerald-50 shadow-xs ring-2 ring-emerald-500/20"
+                      : "border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5 text-emerald-600" />
@@ -25774,7 +25774,11 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setPaymentForm({ ...paymentForm, team_award_categories: HR_RECALL_DEFAULT_TEAM_CATS });
+                            setPaymentForm({
+                              ...paymentForm,
+                              team_award_categories: HR_RECALL_DEFAULT_TEAM_CATS,
+                              award_team_categories: HR_RECALL_DEFAULT_TEAM_CATS,
+                            });
                             toast.success(`Loaded ${HR_RECALL_DEFAULT_TEAM_CATS.length} HR RECALL Team Categories!`);
                           }}
                           className="px-2.5 py-1 rounded-lg border border-blue-300 bg-blue-50 text-[10px] font-bold text-blue-900 hover:bg-blue-100 transition-colors cursor-pointer"
@@ -25784,7 +25788,11 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setPaymentForm({ ...paymentForm, team_award_categories: [] });
+                            setPaymentForm({
+                              ...paymentForm,
+                              team_award_categories: [],
+                              award_team_categories: [],
+                            });
                           }}
                           className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                         >
@@ -25805,7 +25813,12 @@ export default function AdminDashboardPage() {
                             e.preventDefault();
                             if (!newTeamAwardCatInput.trim()) return;
                             const current = Array.isArray(paymentForm.team_award_categories) ? paymentForm.team_award_categories : [];
-                            setPaymentForm({ ...paymentForm, team_award_categories: [...current, newTeamAwardCatInput.trim()] });
+                            const updated = [...current, newTeamAwardCatInput.trim()];
+                            setPaymentForm({
+                              ...paymentForm,
+                              team_award_categories: updated,
+                              award_team_categories: updated,
+                            });
                             setNewTeamAwardCatInput("");
                           }
                         }}
@@ -25816,7 +25829,12 @@ export default function AdminDashboardPage() {
                         onClick={() => {
                           if (!newTeamAwardCatInput.trim()) return;
                           const current = Array.isArray(paymentForm.team_award_categories) ? paymentForm.team_award_categories : [];
-                          setPaymentForm({ ...paymentForm, team_award_categories: [...current, newTeamAwardCatInput.trim()] });
+                          const updated = [...current, newTeamAwardCatInput.trim()];
+                          setPaymentForm({
+                            ...paymentForm,
+                            team_award_categories: updated,
+                            award_team_categories: updated,
+                          });
                           setNewTeamAwardCatInput("");
                         }}
                         className="px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold text-xs hover:bg-slate-800 transition-all cursor-pointer"
@@ -25847,7 +25865,11 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => {
                                 const updated = (paymentForm.team_award_categories as string[]).filter((_, i) => i !== cIdx);
-                                setPaymentForm({ ...paymentForm, team_award_categories: updated });
+                                setPaymentForm({
+                                  ...paymentForm,
+                                  team_award_categories: updated,
+                                  award_team_categories: updated,
+                                });
                               }}
                               className="text-rose-500 hover:text-rose-700 p-1 text-xs font-black cursor-pointer"
                               title="Delete Category"
