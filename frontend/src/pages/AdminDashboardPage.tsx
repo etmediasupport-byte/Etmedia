@@ -2587,8 +2587,10 @@ export default function AdminDashboardPage() {
       pricing_plans: parsedPlans,
       coupons: Array.isArray(parsedCoupons) ? parsedCoupons : [],
       award_nomination_enabled: item.award_nomination_enabled === 1 || item.award_nomination_enabled === true,
+      award_nomination_pricing_mode: (item.award_nomination_enabled === false || item.award_nomination_enabled === 0) ? "disabled" : (Number(item.award_nomination_fee) === 0 ? "free" : "paid"),
       award_nomination_fee: (item.award_nomination_fee !== undefined && item.award_nomination_fee !== null && item.award_nomination_fee !== "") ? Number(item.award_nomination_fee) : 10000,
       free_award_nomination_enabled: item.free_award_nomination_enabled !== undefined ? (item.free_award_nomination_enabled === 1 || item.free_award_nomination_enabled === true) : true,
+      free_award_nomination_pricing_mode: (item.free_award_nomination_enabled === false || item.free_award_nomination_enabled === 0) ? "disabled" : (Number(item.free_award_nomination_fee) === 0 ? "free" : "paid"),
       free_award_nomination_fee: (item.free_award_nomination_fee !== undefined && item.free_award_nomination_fee !== null && item.free_award_nomination_fee !== "") ? Number(item.free_award_nomination_fee) : 0,
       award_categories: Array.isArray(parsedAwardCats) && parsedAwardCats.length > 0 ? parsedAwardCats : [
         "CHRO of the Year",
@@ -2606,14 +2608,18 @@ export default function AdminDashboardPage() {
         "HR Technology Leader of the Year",
       ],
       team_award_nomination_enabled: item.team_award_nomination_enabled !== undefined ? (item.team_award_nomination_enabled === 1 || item.team_award_nomination_enabled === true) : true,
+      team_award_nomination_pricing_mode: (item.team_award_nomination_enabled === false || item.team_award_nomination_enabled === 0) ? "disabled" : (Number(item.team_award_nomination_fee) === 0 ? "free" : "paid"),
       team_award_nomination_fee: (item.team_award_nomination_fee !== undefined && item.team_award_nomination_fee !== null && item.team_award_nomination_fee !== "") ? Number(item.team_award_nomination_fee) : 15000,
       free_team_award_nomination_enabled: item.free_team_award_nomination_enabled !== undefined ? (item.free_team_award_nomination_enabled === 1 || item.free_team_award_nomination_enabled === true) : true,
+      free_team_award_nomination_pricing_mode: (item.free_team_award_nomination_enabled === false || item.free_team_award_nomination_enabled === 0) ? "disabled" : (Number(item.free_team_award_nomination_fee) === 0 ? "free" : "paid"),
       free_team_award_nomination_fee: (item.free_team_award_nomination_fee !== undefined && item.free_team_award_nomination_fee !== null && item.free_team_award_nomination_fee !== "") ? Number(item.free_team_award_nomination_fee) : 0,
       team_award_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
       award_team_categories: Array.isArray(parsedTeamCats) && parsedTeamCats.length > 0 ? parsedTeamCats : HR_RECALL_DEFAULT_TEAM_CATS,
       org_award_nomination_enabled: item.org_award_nomination_enabled !== undefined ? (item.org_award_nomination_enabled === 1 || item.org_award_nomination_enabled === true) : true,
+      org_award_nomination_pricing_mode: (item.org_award_nomination_enabled === false || item.org_award_nomination_enabled === 0) ? "disabled" : (Number(item.org_award_nomination_fee) === 0 ? "free" : "paid"),
       org_award_nomination_fee: (item.org_award_nomination_fee !== undefined && item.org_award_nomination_fee !== null && item.org_award_nomination_fee !== "") ? Number(item.org_award_nomination_fee) : 25000,
       free_org_award_nomination_enabled: item.free_org_award_nomination_enabled !== undefined ? (item.free_org_award_nomination_enabled === 1 || item.free_org_award_nomination_enabled === true) : true,
+      free_org_award_pricing_mode: (item.free_org_award_nomination_enabled === false || item.free_org_award_nomination_enabled === 0) ? "disabled" : (Number(item.free_org_award_nomination_fee) === 0 ? "free" : "paid"),
       free_org_award_nomination_fee: (item.free_org_award_nomination_fee !== undefined && item.free_org_award_nomination_fee !== null && item.free_org_award_nomination_fee !== "") ? Number(item.free_org_award_nomination_fee) : 0,
       org_award_categories: Array.isArray(parsedOrgCats) && parsedOrgCats.length > 0 ? parsedOrgCats : HR_RECALL_DEFAULT_ORG_CATS,
       attending_poster_enabled: item.attending_poster_enabled !== undefined ? (item.attending_poster_enabled === 1 || item.attending_poster_enabled === true) : true,
@@ -2648,7 +2654,15 @@ export default function AdminDashboardPage() {
       const url = editingPaymentConfig
         ? `/api/admin/event-payments/${editingPaymentConfig.id}`
         : "/api/admin/event-payments";
-      const method = editingPaymentConfig ? "PUT" : "POST";
+      const payloadToSave = {
+        ...paymentForm,
+        award_nomination_fee: paymentForm.award_nomination_pricing_mode === "free" ? 0 : (paymentForm.award_nomination_fee === "" || paymentForm.award_nomination_fee === undefined ? 10000 : Number(paymentForm.award_nomination_fee)),
+        free_award_nomination_fee: paymentForm.free_award_nomination_pricing_mode === "free" ? 0 : (paymentForm.free_award_nomination_fee === "" || paymentForm.free_award_nomination_fee === undefined ? 5000 : Number(paymentForm.free_award_nomination_fee)),
+        team_award_nomination_fee: paymentForm.team_award_nomination_pricing_mode === "free" ? 0 : (paymentForm.team_award_nomination_fee === "" || paymentForm.team_award_nomination_fee === undefined ? 15000 : Number(paymentForm.team_award_nomination_fee)),
+        free_team_award_nomination_fee: paymentForm.free_team_award_nomination_pricing_mode === "free" ? 0 : (paymentForm.free_team_award_nomination_fee === "" || paymentForm.free_team_award_nomination_fee === undefined ? 5000 : Number(paymentForm.free_team_award_nomination_fee)),
+        org_award_nomination_fee: paymentForm.org_award_nomination_pricing_mode === "free" ? 0 : (paymentForm.org_award_nomination_fee === "" || paymentForm.org_award_nomination_fee === undefined ? 25000 : Number(paymentForm.org_award_nomination_fee)),
+        free_org_award_nomination_fee: paymentForm.free_org_award_pricing_mode === "free" ? 0 : (paymentForm.free_org_award_nomination_fee === "" || paymentForm.free_org_award_nomination_fee === undefined ? 10000 : Number(paymentForm.free_org_award_nomination_fee)),
+      };
 
       const res = await fetch(url, {
         method,
@@ -2656,7 +2670,7 @@ export default function AdminDashboardPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(paymentForm),
+        body: JSON.stringify(payloadToSave),
       });
 
       const data = await res.json();
@@ -25608,8 +25622,8 @@ export default function AdminDashboardPage() {
                             <span>💳 Paid Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.award_nomination_enabled ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.award_nomination_enabled ? (Number(paymentForm.award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.award_nomination_pricing_mode !== "disabled" && paymentForm.award_nomination_enabled ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.award_nomination_pricing_mode === "disabled" || !paymentForm.award_nomination_enabled ? "Disabled" : (paymentForm.award_nomination_pricing_mode === "free" || Number(paymentForm.award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.award_nomination_fee === "" ? 0 : Number(paymentForm.award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -25618,18 +25632,19 @@ export default function AdminDashboardPage() {
                             Pricing for Paid Attendees *
                           </label>
                           <select
-                            value={!paymentForm.award_nomination_enabled ? "disabled" : (Number(paymentForm.award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.award_nomination_pricing_mode || (!paymentForm.award_nomination_enabled ? "disabled" : (Number(paymentForm.award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, award_nomination_pricing_mode: "disabled", award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, award_nomination_enabled: true, award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, award_nomination_pricing_mode: "free", award_nomination_enabled: true, award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  award_nomination_pricing_mode: "paid",
                                   award_nomination_enabled: true,
-                                  award_nomination_fee: Number(paymentForm.award_nomination_fee) > 0 ? paymentForm.award_nomination_fee : 10000,
+                                  award_nomination_fee: (paymentForm.award_nomination_fee !== "" && Number(paymentForm.award_nomination_fee) > 0) ? paymentForm.award_nomination_fee : 10000,
                                 });
                               }
                             }}
@@ -25641,7 +25656,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.award_nomination_enabled && Number(paymentForm.award_nomination_fee) > 0 && (
+                        {(paymentForm.award_nomination_pricing_mode === "paid" || (!paymentForm.award_nomination_pricing_mode && paymentForm.award_nomination_enabled && Number(paymentForm.award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-amber-950 uppercase mb-1">
                               Nomination Fee for Paid Attendees (₹) *
@@ -25651,10 +25666,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.award_nomination_fee ?? 10000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-amber-300 bg-amber-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-amber-600 focus:outline-none"
-                                placeholder="10000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-amber-800 mt-1">
@@ -25671,8 +25686,8 @@ export default function AdminDashboardPage() {
                             <span>🎟️ Free Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.free_award_nomination_enabled ? (Number(paymentForm.free_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_award_nomination_pricing_mode !== "disabled" && paymentForm.free_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_award_nomination_pricing_mode === "disabled" || !paymentForm.free_award_nomination_enabled ? "Disabled" : (paymentForm.free_award_nomination_pricing_mode === "free" || Number(paymentForm.free_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.free_award_nomination_fee === "" ? 0 : Number(paymentForm.free_award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -25681,18 +25696,19 @@ export default function AdminDashboardPage() {
                             Pricing for Free Attendees *
                           </label>
                           <select
-                            value={!paymentForm.free_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.free_award_nomination_pricing_mode || (!paymentForm.free_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, free_award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, free_award_nomination_pricing_mode: "disabled", free_award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, free_award_nomination_enabled: true, free_award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, free_award_nomination_pricing_mode: "free", free_award_nomination_enabled: true, free_award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  free_award_nomination_pricing_mode: "paid",
                                   free_award_nomination_enabled: true,
-                                  free_award_nomination_fee: Number(paymentForm.free_award_nomination_fee) > 0 ? paymentForm.free_award_nomination_fee : 5000,
+                                  free_award_nomination_fee: (paymentForm.free_award_nomination_fee !== "" && Number(paymentForm.free_award_nomination_fee) > 0) ? paymentForm.free_award_nomination_fee : 5000,
                                 });
                               }
                             }}
@@ -25704,7 +25720,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.free_award_nomination_enabled && Number(paymentForm.free_award_nomination_fee) > 0 && (
+                        {(paymentForm.free_award_nomination_pricing_mode === "paid" || (!paymentForm.free_award_nomination_pricing_mode && paymentForm.free_award_nomination_enabled && Number(paymentForm.free_award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
                               Nomination Fee for Free Attendees (₹) *
@@ -25714,10 +25730,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.free_award_nomination_fee ?? 5000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, free_award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.free_award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
-                                placeholder="5000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-emerald-800 mt-1">
@@ -25888,8 +25904,8 @@ export default function AdminDashboardPage() {
                             <span>💳 Paid Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.team_award_nomination_enabled ? "bg-blue-100 text-blue-900 border border-blue-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.team_award_nomination_enabled ? (Number(paymentForm.team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.team_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.team_award_nomination_pricing_mode !== "disabled" && paymentForm.team_award_nomination_enabled ? "bg-blue-100 text-blue-900 border border-blue-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.team_award_nomination_pricing_mode === "disabled" || !paymentForm.team_award_nomination_enabled ? "Disabled" : (paymentForm.team_award_nomination_pricing_mode === "free" || Number(paymentForm.team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.team_award_nomination_fee === "" ? 0 : Number(paymentForm.team_award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -25898,18 +25914,19 @@ export default function AdminDashboardPage() {
                             Pricing for Paid Attendees *
                           </label>
                           <select
-                            value={!paymentForm.team_award_nomination_enabled ? "disabled" : (Number(paymentForm.team_award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.team_award_nomination_pricing_mode || (!paymentForm.team_award_nomination_enabled ? "disabled" : (Number(paymentForm.team_award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, team_award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, team_award_nomination_pricing_mode: "disabled", team_award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, team_award_nomination_enabled: true, team_award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, team_award_nomination_pricing_mode: "free", team_award_nomination_enabled: true, team_award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  team_award_nomination_pricing_mode: "paid",
                                   team_award_nomination_enabled: true,
-                                  team_award_nomination_fee: Number(paymentForm.team_award_nomination_fee) > 0 ? paymentForm.team_award_nomination_fee : 15000,
+                                  team_award_nomination_fee: (paymentForm.team_award_nomination_fee !== "" && Number(paymentForm.team_award_nomination_fee) > 0) ? paymentForm.team_award_nomination_fee : 15000,
                                 });
                               }
                             }}
@@ -25921,7 +25938,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.team_award_nomination_enabled && Number(paymentForm.team_award_nomination_fee) > 0 && (
+                        {(paymentForm.team_award_nomination_pricing_mode === "paid" || (!paymentForm.team_award_nomination_pricing_mode && paymentForm.team_award_nomination_enabled && Number(paymentForm.team_award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-blue-950 uppercase mb-1">
                               Nomination Fee for Paid Attendees (₹) *
@@ -25931,10 +25948,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.team_award_nomination_fee ?? 15000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.team_award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, team_award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-blue-300 bg-blue-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-blue-600 focus:outline-none"
-                                placeholder="15000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-blue-800 mt-1">
@@ -25951,8 +25968,8 @@ export default function AdminDashboardPage() {
                             <span>🎟️ Free Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_team_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.free_team_award_nomination_enabled ? (Number(paymentForm.free_team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_team_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_team_award_nomination_pricing_mode !== "disabled" && paymentForm.free_team_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_team_award_nomination_pricing_mode === "disabled" || !paymentForm.free_team_award_nomination_enabled ? "Disabled" : (paymentForm.free_team_award_nomination_pricing_mode === "free" || Number(paymentForm.free_team_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.free_team_award_nomination_fee === "" ? 0 : Number(paymentForm.free_team_award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -25961,18 +25978,19 @@ export default function AdminDashboardPage() {
                             Pricing for Free Attendees *
                           </label>
                           <select
-                            value={!paymentForm.free_team_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_team_award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.free_team_award_nomination_pricing_mode || (!paymentForm.free_team_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_team_award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, free_team_award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, free_team_award_nomination_pricing_mode: "disabled", free_team_award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, free_team_award_nomination_enabled: true, free_team_award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, free_team_award_nomination_pricing_mode: "free", free_team_award_nomination_enabled: true, free_team_award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  free_team_award_nomination_pricing_mode: "paid",
                                   free_team_award_nomination_enabled: true,
-                                  free_team_award_nomination_fee: Number(paymentForm.free_team_award_nomination_fee) > 0 ? paymentForm.free_team_award_nomination_fee : 5000,
+                                  free_team_award_nomination_fee: (paymentForm.free_team_award_nomination_fee !== "" && Number(paymentForm.free_team_award_nomination_fee) > 0) ? paymentForm.free_team_award_nomination_fee : 5000,
                                 });
                               }
                             }}
@@ -25984,7 +26002,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.free_team_award_nomination_enabled && Number(paymentForm.free_team_award_nomination_fee) > 0 && (
+                        {(paymentForm.free_team_award_nomination_pricing_mode === "paid" || (!paymentForm.free_team_award_nomination_pricing_mode && paymentForm.free_team_award_nomination_enabled && Number(paymentForm.free_team_award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
                               Nomination Fee for Free Attendees (₹) *
@@ -25994,10 +26012,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.free_team_award_nomination_fee ?? 5000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, free_team_award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.free_team_award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_team_award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
-                                placeholder="5000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-emerald-800 mt-1">
@@ -26175,8 +26193,8 @@ export default function AdminDashboardPage() {
                             <span>💳 Paid Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.org_award_nomination_enabled ? "bg-purple-100 text-purple-900 border border-purple-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.org_award_nomination_enabled ? (Number(paymentForm.org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.org_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.org_award_nomination_pricing_mode !== "disabled" && paymentForm.org_award_nomination_enabled ? "bg-purple-100 text-purple-900 border border-purple-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.org_award_nomination_pricing_mode === "disabled" || !paymentForm.org_award_nomination_enabled ? "Disabled" : (paymentForm.org_award_nomination_pricing_mode === "free" || Number(paymentForm.org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.org_award_nomination_fee === "" ? 0 : Number(paymentForm.org_award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -26185,18 +26203,19 @@ export default function AdminDashboardPage() {
                             Pricing for Paid Attendees *
                           </label>
                           <select
-                            value={!paymentForm.org_award_nomination_enabled ? "disabled" : (Number(paymentForm.org_award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.org_award_nomination_pricing_mode || (!paymentForm.org_award_nomination_enabled ? "disabled" : (Number(paymentForm.org_award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, org_award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, org_award_nomination_pricing_mode: "disabled", org_award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, org_award_nomination_enabled: true, org_award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, org_award_nomination_pricing_mode: "free", org_award_nomination_enabled: true, org_award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  org_award_nomination_pricing_mode: "paid",
                                   org_award_nomination_enabled: true,
-                                  org_award_nomination_fee: Number(paymentForm.org_award_nomination_fee) > 0 ? paymentForm.org_award_nomination_fee : 25000,
+                                  org_award_nomination_fee: (paymentForm.org_award_nomination_fee !== "" && Number(paymentForm.org_award_nomination_fee) > 0) ? paymentForm.org_award_nomination_fee : 25000,
                                 });
                               }
                             }}
@@ -26208,7 +26227,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.org_award_nomination_enabled && Number(paymentForm.org_award_nomination_fee) > 0 && (
+                        {(paymentForm.org_award_nomination_pricing_mode === "paid" || (!paymentForm.org_award_nomination_pricing_mode && paymentForm.org_award_nomination_enabled && Number(paymentForm.org_award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-purple-950 uppercase mb-1">
                               Nomination Fee for Paid Attendees (₹) *
@@ -26218,10 +26237,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.org_award_nomination_fee ?? 25000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.org_award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, org_award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-purple-300 bg-purple-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-purple-600 focus:outline-none"
-                                placeholder="25000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-purple-800 mt-1">
@@ -26238,8 +26257,8 @@ export default function AdminDashboardPage() {
                             <span>🎟️ Free Registrations</span>
                             <span className="text-[10px] text-slate-400 lowercase font-normal">(/register-free)</span>
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_org_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
-                            {paymentForm.free_org_award_nomination_enabled ? (Number(paymentForm.free_org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(Number(paymentForm.free_org_award_nomination_fee) || 0).toLocaleString("en-IN")})`) : "Disabled"}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${paymentForm.free_org_award_pricing_mode !== "disabled" && paymentForm.free_org_award_nomination_enabled ? "bg-emerald-100 text-emerald-900 border border-emerald-300" : "bg-slate-100 text-slate-500"}`}>
+                            {paymentForm.free_org_award_pricing_mode === "disabled" || !paymentForm.free_org_award_nomination_enabled ? "Disabled" : (paymentForm.free_org_award_pricing_mode === "free" || Number(paymentForm.free_org_award_nomination_fee) === 0 ? "Free / Complimentary" : `Paid (₹${(paymentForm.free_org_award_nomination_fee === "" ? 0 : Number(paymentForm.free_org_award_nomination_fee) || 0).toLocaleString("en-IN")})`)}
                           </span>
                         </div>
 
@@ -26248,18 +26267,19 @@ export default function AdminDashboardPage() {
                             Pricing for Free Attendees *
                           </label>
                           <select
-                            value={!paymentForm.free_org_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_org_award_nomination_fee) === 0 ? "free" : "paid")}
+                            value={paymentForm.free_org_award_pricing_mode || (!paymentForm.free_org_award_nomination_enabled ? "disabled" : (Number(paymentForm.free_org_award_nomination_fee) === 0 ? "free" : "paid"))}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === "disabled") {
-                                setPaymentForm({ ...paymentForm, free_org_award_nomination_enabled: false });
+                                setPaymentForm({ ...paymentForm, free_org_award_pricing_mode: "disabled", free_org_award_nomination_enabled: false });
                               } else if (val === "free") {
-                                setPaymentForm({ ...paymentForm, free_org_award_nomination_enabled: true, free_org_award_nomination_fee: 0 });
+                                setPaymentForm({ ...paymentForm, free_org_award_pricing_mode: "free", free_org_award_nomination_enabled: true, free_org_award_nomination_fee: 0 });
                               } else {
                                 setPaymentForm({
                                   ...paymentForm,
+                                  free_org_award_pricing_mode: "paid",
                                   free_org_award_nomination_enabled: true,
-                                  free_org_award_nomination_fee: Number(paymentForm.free_org_award_nomination_fee) > 0 ? paymentForm.free_org_award_nomination_fee : 10000,
+                                  free_org_award_nomination_fee: (paymentForm.free_org_award_nomination_fee !== "" && Number(paymentForm.free_org_award_nomination_fee) > 0) ? paymentForm.free_org_award_nomination_fee : 10000,
                                 });
                               }
                             }}
@@ -26271,7 +26291,7 @@ export default function AdminDashboardPage() {
                           </select>
                         </div>
 
-                        {paymentForm.free_org_award_nomination_enabled && Number(paymentForm.free_org_award_nomination_fee) > 0 && (
+                        {(paymentForm.free_org_award_pricing_mode === "paid" || (!paymentForm.free_org_award_pricing_mode && paymentForm.free_org_award_nomination_enabled && Number(paymentForm.free_org_award_nomination_fee) > 0)) && (
                           <div>
                             <label className="block text-[10px] font-bold text-emerald-950 uppercase mb-1">
                               Nomination Fee for Free Attendees (₹) *
@@ -26281,10 +26301,10 @@ export default function AdminDashboardPage() {
                               <input
                                 type="number"
                                 min={1}
-                                value={paymentForm.free_org_award_nomination_fee ?? 10000}
-                                onChange={(e) => setPaymentForm({ ...paymentForm, free_org_award_nomination_fee: Number(e.target.value) })}
+                                value={paymentForm.free_org_award_nomination_fee ?? ""}
+                                onChange={(e) => setPaymentForm({ ...paymentForm, free_org_award_nomination_fee: e.target.value === "" ? "" : Number(e.target.value) })}
                                 className="w-full rounded-xl border border-emerald-300 bg-emerald-50/40 pl-7 pr-3 py-2 text-xs font-black text-slate-900 focus:border-emerald-600 focus:outline-none"
-                                placeholder="10000"
+                                placeholder="e.g. 501"
                               />
                             </div>
                             <p className="text-[10px] text-emerald-800 mt-1">

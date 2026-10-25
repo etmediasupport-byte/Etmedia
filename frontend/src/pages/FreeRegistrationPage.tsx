@@ -30,6 +30,8 @@ import {
   Lock,
   Crown,
   Users,
+  Receipt,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/site/SEOHead";
