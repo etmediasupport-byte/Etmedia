@@ -256,7 +256,7 @@ export default function RegistrationSuccessPage() {
   const orgAmount = isOrgNominated && rawOrgFee > 0 ? rawOrgFee : 0;
   const totalExtraFees = awardAmount + teamAmount + orgAmount;
 
-  // Effective Total Paid by user (user pays total including any taxes, invoice shows full paid amount without GST breakdown)
+  // Effective Total Paid by user (invoice shows full paid amount without GST breakdown)
   const payAmount = rawPayAmount > 0
     ? rawPayAmount
     : Math.max(0, rawPassPrice + totalExtraFees - rawDiscount);

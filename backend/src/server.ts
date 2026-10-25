@@ -225,6 +225,12 @@ interface RegistrationEmailPayload {
   awardCategory?: string;
   awardTeamCategory?: string;
   awardNominationFee?: number;
+  teamAwardNomination?: string;
+  teamAwardCategory?: string;
+  teamAwardFee?: number;
+  orgAwardNomination?: string;
+  orgAwardCategory?: string;
+  orgAwardFee?: number;
   couponApplied?: string;
   createdAt?: string;
 }
@@ -608,12 +614,24 @@ www.executivetalksmedia.in
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #334155;">
               <tr>
                 <td style="padding: 6px 0; font-weight: 600; width: 45%;">Delegate Pass Fee:</td>
-                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${payAmount.toLocaleString("en-IN")}</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">₹${(data.passPrice !== undefined ? data.passPrice : payAmount).toLocaleString("en-IN")}</td>
               </tr>
               ${data.awardNomination === "Yes" && (data.awardNominationFee || 0) > 0 ? `
               <tr>
-                <td style="padding: 6px 0; font-weight: 600;">Award Nomination Fee:</td>
+                <td style="padding: 6px 0; font-weight: 600;">Individual Award Fee:</td>
                 <td style="padding: 6px 0; font-weight: 700; color: #b45309;">₹${(data.awardNominationFee || 0).toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              ${data.teamAwardNomination === "Yes" && (data.teamAwardFee || 0) > 0 ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Team Award Fee:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #1d4ed8;">₹${(data.teamAwardFee || 0).toLocaleString("en-IN")}</td>
+              </tr>
+              ` : ""}
+              ${data.orgAwardNomination === "Yes" && (data.orgAwardFee || 0) > 0 ? `
+              <tr>
+                <td style="padding: 6px 0; font-weight: 600;">Organization Award Fee:</td>
+                <td style="padding: 6px 0; font-weight: 700; color: #7e22ce;">₹${(data.orgAwardFee || 0).toLocaleString("en-IN")}</td>
               </tr>
               ` : ""}
               ${(data.discountAmount || 0) > 0 ? `
@@ -3189,6 +3207,12 @@ async function handlePaymentVerification(req: any, res: any) {
             awardCategory: reg.award_category || awardCategory || "",
             awardTeamCategory: reg.award_team_category || awardTeamCategory || "",
             awardNominationFee: Number(reg.award_nomination_fee) || Number(awardNominationFee) || 0,
+            teamAwardNomination: reg.team_award_nomination || teamAwardNomination || "No",
+            teamAwardCategory: reg.team_award_category || teamAwardCategory || "",
+            teamAwardFee: Number(reg.team_award_fee) || Number(teamAwardFee) || 0,
+            orgAwardNomination: reg.org_award_nomination || orgAwardNomination || "No",
+            orgAwardCategory: reg.org_award_category || orgAwardCategory || "",
+            orgAwardFee: Number(reg.org_award_fee) || Number(orgAwardFee) || 0,
             couponApplied: reg.coupon_applied || couponApplied,
             createdAt: reg.created_at,
           });
