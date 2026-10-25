@@ -9,7 +9,6 @@ import { RegisterModal } from "@/components/site/RegisterModal";
 import { MembershipModal } from "@/components/site/MembershipModal";
 import { Preloader } from "@/components/site/Preloader";
 import { events as defaultEvents, EventItem } from "@/lib/site-data";
-import { Toaster } from "@/components/ui/sonner";
 import { ScrollProgressBar } from "@/components/site/ScrollProgressBar";
 
 import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
@@ -137,7 +136,6 @@ export function Layout() {
       <div className="print:hidden">
         <Footer />
         <FloatingActions />
-        <Toaster position="top-center" richColors />
 
         {/* Global Instant Register Now Modal */}
         <RegisterModal

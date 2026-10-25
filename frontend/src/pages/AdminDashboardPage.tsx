@@ -2654,6 +2654,7 @@ export default function AdminDashboardPage() {
       const url = editingPaymentConfig
         ? `/api/admin/event-payments/${editingPaymentConfig.id}`
         : "/api/admin/event-payments";
+      const method = editingPaymentConfig ? "PUT" : "POST";
       const payloadToSave = {
         ...paymentForm,
         award_nomination_fee: paymentForm.award_nomination_pricing_mode === "free" ? 0 : (paymentForm.award_nomination_fee === "" || paymentForm.award_nomination_fee === undefined ? 10000 : Number(paymentForm.award_nomination_fee)),
