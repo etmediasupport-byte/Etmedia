@@ -239,6 +239,9 @@ export async function initDatabase() {
     await seedDefaultEmailSubjects();
     await ensureTermsAndConditionsTable();
     await seedDefaultTermsAndConditions();
+    await ensurePromotionTemplatesTable();
+    await seedDefaultPromotionTemplates();
+
 
     // Seed default initial events if empty
     const [existingEvents]: any = await pool.query("SELECT COUNT(*) as count FROM events");
@@ -2074,6 +2077,177 @@ export async function seedDefaultTermsAndConditions() {
     console.error("[MySQL] Error seeding default terms and conditions:", err);
   }
 }
+
+export async function ensurePromotionTemplatesTable() {
+  if (!pool) return;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS promotion_templates (
+        id VARCHAR(100) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        theme_style VARCHAR(100) DEFAULT 'hr-recall-emerald',
+        badge_text VARCHAR(255) DEFAULT "I'M ONE OF THE 2,000+",
+        top_tagline VARCHAR(255) DEFAULT '2,000+ HR PROFESSIONALS ONE BIG GATHERING',
+        event_heading VARCHAR(255) DEFAULT 'AWARDS & CONNECT HR RECALL 2K26',
+        sub_heading VARCHAR(255) DEFAULT 'Remembering 2026. Calling 2027',
+        highlights TEXT,
+        cta_text VARCHAR(100) DEFAULT 'REGISTER NOW',
+        date_text VARCHAR(255) DEFAULT '11th December 2026',
+        venue_text VARCHAR(255) DEFAULT 'Gachibowli, Hyderabad',
+        contact_email VARCHAR(255) DEFAULT 'registration@executivetalksmedia.in',
+        primary_color VARCHAR(50) DEFAULT '#00A86B',
+        secondary_color VARCHAR(50) DEFAULT '#0F172A',
+        accent_color VARCHAR(50) DEFAULT '#EF4444',
+        footer_bg VARCHAR(50) DEFAULT '#064E3B',
+        qr_destination_url TEXT,
+        custom_logo_url TEXT,
+        is_active TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );
+    `);
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN photo_url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN photo_url LONGTEXT;"); } catch (e) {}
+    console.log("[MySQL] promotion_templates table verified!");
+  } catch (err) {
+    console.error("[MySQL] Error ensuring promotion_templates table:", err);
+  }
+}
+
+export const DEFAULT_PROMOTION_TEMPLATES = [
+  {
+    id: "tmpl-hr-recall-2k26",
+    title: "HR Recall 2K26 Summit Executive Badge",
+    theme_style: "hr-recall-emerald",
+    badge_text: "I'M ONE OF THE 2,000+",
+    top_tagline: "2,000+ HR PROFESSIONALS ONE BIG GATHERING",
+    event_heading: "AWARDS & CONNECT HR RECALL 2K26",
+    sub_heading: "Remembering 2026. Calling 2027",
+    highlights: JSON.stringify(["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]),
+    cta_text: "REGISTER NOW",
+    date_text: "11th December 2026",
+    venue_text: "Gachibowli, Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#00A86B",
+    secondary_color: "#0F172A",
+    accent_color: "#EF4444",
+    footer_bg: "#064E3B",
+    qr_destination_url: "/events/hr-recall-2k26",
+    custom_logo_url: "",
+    is_active: 1,
+  },
+  {
+    id: "tmpl-gold-vip-conclave",
+    title: "Leadership Conclave Gold VIP Badge",
+    theme_style: "gold-luxury",
+    badge_text: "VIP DELEGATE PASS",
+    top_tagline: "INDIA CXO & STRATEGY LEADERSHIP SUMMIT",
+    event_heading: "GLOBAL CXO CONCLAVE 2026",
+    sub_heading: "Shaping the Next Decade of Enterprise Innovation",
+    highlights: JSON.stringify(["500+ CXO Leaders", "Keynote Panels", "VIP Lounge", "Exclusive Gala"]),
+    cta_text: "CLAIM VIP PASS",
+    date_text: "24th October 2026",
+    venue_text: "HICC Novotel, Hyderabad",
+    contact_email: "vip@executivetalksmedia.in",
+    primary_color: "#D4AF37",
+    secondary_color: "#0B0F19",
+    accent_color: "#F59E0B",
+    footer_bg: "#111827",
+    qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+  {
+    id: "tmpl-sapphire-tech",
+    title: "Enterprise AI & Tech Summit Sapphire",
+    theme_style: "tech-sapphire",
+    badge_text: "ATTENDING TECH SUMMIT",
+    top_tagline: "ENTERPRISE AI & DIGITAL LEADERSHIP",
+    event_heading: "AI ENTERPRISE SUMMIT 2026",
+    sub_heading: "Engineering Intelligent Futures",
+    highlights: JSON.stringify(["1000+ Tech Leaders", "40+ CIO Keynotes", "AI Expo", "Tech Awards"]),
+    cta_text: "REGISTER NOW",
+    date_text: "5th December 2026",
+    venue_text: "Manjeera Trinity, Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#06B6D4",
+    secondary_color: "#0F172A",
+    accent_color: "#3B82F6",
+    footer_bg: "#082F49",
+    qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+  {
+    id: "tmpl-corporate-emerald",
+    title: "National Procurement & Supply Chain Forum",
+    theme_style: "corporate-emerald",
+    badge_text: "OFFICIAL DELEGATE",
+    top_tagline: "STRATEGIC SOURCING & PROCUREMENT 2026",
+    event_heading: "PROCUREMENT LEADERSHIP SUMMIT",
+    sub_heading: "Resilience, Sustainability & Digital Sourcing",
+    highlights: JSON.stringify(["Global CPOs", "B2B Matchmaking", "Procurement Awards", "Industry Whitepapers"]),
+    cta_text: "CONFIRM SEAT",
+    date_text: "19th June 2026",
+    venue_text: "Radisson Hotel, Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#10B981",
+    secondary_color: "#1E293B",
+    accent_color: "#6366F1",
+    footer_bg: "#064E3B",
+    qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+  {
+    id: "tmpl-ruby-excellence",
+    title: "National Excellence & Workplace Awards",
+    theme_style: "ruby-sunset",
+    badge_text: "HONOURED DELEGATE",
+    top_tagline: "CELEBRATING BENCHMARK WORKPLACE EXCELLENCE",
+    event_heading: "NATIONAL EXCELLENCE AWARDS 2026",
+    sub_heading: "Recognising High-Impact Leaders & Organizations",
+    highlights: JSON.stringify(["Red Carpet Gala", "30+ Award Categories", "Media Broadcast", "Celebrity Guests"]),
+    cta_text: "RESERVE SEAT",
+    date_text: "18th November 2026",
+    venue_text: "JW Marriott Hotel, Bengaluru",
+    contact_email: "awards@executivetalksmedia.in",
+    primary_color: "#E11D48",
+    secondary_color: "#18181B",
+    accent_color: "#F43F5E",
+    footer_bg: "#4C0519",
+    qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+];
+
+export async function seedDefaultPromotionTemplates() {
+  if (!pool) return;
+  try {
+    const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM promotion_templates");
+    if (!rows || rows[0]?.count === 0) {
+      for (const t of DEFAULT_PROMOTION_TEMPLATES) {
+        await pool.query(
+          `INSERT INTO promotion_templates (
+            id, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
+            highlights, cta_text, date_text, venue_text, contact_email,
+            primary_color, secondary_color, accent_color, footer_bg, qr_destination_url, custom_logo_url, is_active
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            t.id, t.title, t.theme_style, t.badge_text, t.top_tagline, t.event_heading, t.sub_heading,
+            t.highlights, t.cta_text, t.date_text, t.venue_text, t.contact_email,
+            t.primary_color, t.secondary_color, t.accent_color, t.footer_bg, t.qr_destination_url, t.custom_logo_url, t.is_active,
+          ]
+        );
+      }
+      console.log(`[MySQL] Seeded ${DEFAULT_PROMOTION_TEMPLATES.length} default promotion banner & badge templates!`);
+    }
+  } catch (err) {
+    console.error("[MySQL] Error seeding default promotion templates:", err);
+  }
+}
+
 
 
 

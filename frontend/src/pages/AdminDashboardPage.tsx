@@ -141,6 +141,7 @@ import { RegistrationPlansGrid } from "@/components/site/RegistrationPlansGrid";
 import { EarlyBirdCountdownTimer } from "@/components/site/EarlyBirdCountdownTimer";
 import { EventAdvertisementPopup } from "@/components/site/EventAdvertisementPopup";
 import { ExecutiveCertificate } from "@/components/certificate/ExecutiveCertificate";
+import RegisterPromotionBarStudio from "@/components/admin/RegisterPromotionBarStudio";
 
 interface Registration {
   id: string;
@@ -327,6 +328,7 @@ type TabType =
   | "attendance"
   | "certificates"
   | "issued-certificates"
+  | "promotion-bar"
   | "accounts"
   | "database";
 
@@ -8162,6 +8164,7 @@ export default function AdminDashboardPage() {
         items: [
           { id: "issued-certificates", label: "Issued Certificates", icon: Award, count: registrations.filter((r) => Boolean(r.certificate_id || r.certificate_sent_at)).length },
           { id: "certificates", label: "Certificate Designer", icon: Sparkles },
+          { id: "promotion-bar", label: "Register Promotion Bar", icon: Share2 },
           { id: "email-subjects", label: "Email Subject & Body Manager", icon: Mail, count: emailSubjectsList.length },
           { id: "terms-conditions", label: "Terms & Conditions", icon: ShieldCheck, count: termsTemplatesList.length },
           { id: "contacts", label: "Contact Inbox", icon: MessageSquare, count: contacts.length },
@@ -22238,6 +22241,16 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ========================================== */}
+          {/* REGISTER PROMOTION BAR & SOCIAL BADGE TAB  */}
+          {/* ========================================== */}
+          {activeTab === "promotion-bar" && (
+            <RegisterPromotionBarStudio
+              registrations={registrations}
+              events={events}
+            />
           )}
 
           {/* ========================================== */}

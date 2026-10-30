@@ -16,14 +16,15 @@ import {
   Phone,
   User,
   ExternalLink,
-  Clock,
   Sparkles,
   Check,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import { events as defaultEvents } from "@/lib/site-data";
 import executivetalksLogo from "@/assets/executivetalks-logo.jpeg";
+import PromotionBadgeCard, { PromotionTemplate } from "@/components/site/PromotionBadgeCard";
 
 // Helper function to convert numeric amount to Indian Currency Words
 function numberToWordsINR(amount: number): string {
@@ -78,11 +79,13 @@ export default function RegistrationSuccessPage() {
   const [regDetails, setRegDetails] = useState<any>(null);
   const [eventData, setEventData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"pass" | "invoice">("pass");
+  const [activeView, setActiveView] = useState<"pass" | "invoice" | "promotion">("pass");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [globalInvoiceEnabled, setGlobalInvoiceEnabled] = useState<boolean | null>(null);
+  const [activePromotionTemplate, setActivePromotionTemplate] = useState<PromotionTemplate | null>(null);
+  const [attendeePhoto, setAttendeePhoto] = useState<string>("");
 
-  // Directly fetch global invoice visibility from server
+  // Directly fetch global invoice visibility & active promotion template from server
   useEffect(() => {
     fetch("/api/global-invoice-visibility")
       .then((res) => res.json())
@@ -92,7 +95,32 @@ export default function RegistrationSuccessPage() {
         }
       })
       .catch((err) => console.warn("Global invoice visibility fetch err:", err));
+
+    fetch("/api/promotion-templates/active")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.template) {
+          setActivePromotionTemplate(data.template);
+        }
+      })
+      .catch((err) => console.warn("Active promotion template fetch err:", err));
   }, []);
+
+  const handleSaveAttendeePhoto = async (newPhotoUrl: string) => {
+    setAttendeePhoto(newPhotoUrl);
+    const activeId = regDetails?.id || regId;
+    if (!activeId) return;
+    try {
+      await fetch(`/api/registrations/${encodeURIComponent(activeId)}/photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photo_url: newPhotoUrl }),
+      });
+      toast.success("Photo synced to your registration profile!");
+    } catch (err) {
+      console.warn("Error updating photo to database:", err);
+    }
+  };
 
   // Admin view detection: Only active when opened explicitly from Admin Dashboard with ?admin=true
   const isAdmin = searchParams.get("admin") === "true";
@@ -353,7 +381,7 @@ export default function RegistrationSuccessPage() {
               </div>
             </div>
 
-            {/* View Switcher Tabs (or Single Pass badge if invoice is hidden by Admin) */}
+            {/* View Switcher Tabs (Pass, Invoice, and Social Promotion Badge) */}
             <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
               {isAdmin && isUserInvoiceHidden && (
                 <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-wider">
@@ -361,20 +389,21 @@ export default function RegistrationSuccessPage() {
                 </span>
               )}
 
-              {canShowInvoice ? (
-                <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setActiveView("pass")}
-                    className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      activeView === "pass"
-                        ? "bg-slate-900 text-white shadow-md"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                    }`}
-                  >
-                    <Ticket className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Delegate Pass (QR)</span>
-                  </button>
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0 w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveView("pass")}
+                  className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeView === "pass"
+                      ? "bg-slate-900 text-white shadow-md"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  <Ticket className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Delegate Pass (QR)</span>
+                </button>
+
+                {canShowInvoice && (
                   <button
                     type="button"
                     onClick={() => setActiveView("invoice")}
@@ -387,13 +416,21 @@ export default function RegistrationSuccessPage() {
                     <Receipt className="w-3.5 h-3.5 text-purple-300" />
                     <span>Official Invoice</span>
                   </button>
-                </div>
-              ) : (
-                <div className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm">
-                  <Ticket className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Verified Delegate Pass</span>
-                </div>
-              )}
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView("promotion")}
+                  className={`flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    activeView === "promotion"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-600/30"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Social Promotion Badge</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -401,6 +438,7 @@ export default function RegistrationSuccessPage() {
           {/* VIEW 1: OFFICIAL SCANNABLE DELEGATE PASS                                 */}
           {/* ========================================================================= */}
           {activeView === "pass" && (
+            <>
             <div
               id="printable-pass"
               className="print-document bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-lg overflow-hidden print:border print:border-slate-400 print:rounded-lg print:shadow-none"
@@ -619,6 +657,36 @@ export default function RegistrationSuccessPage() {
                 <span>Issued: {regDetails?.created_at || new Date().toLocaleDateString("en-IN")}</span>
               </div>
             </div>
+
+            {/* Social Promotion Badge Teaser Callout Card (Hidden during print) */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 rounded-2xl p-5 sm:p-6 text-white border border-emerald-500/30 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-5 print:hidden">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 animate-pulse" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    I'm Attending Social Badge
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white font-display">
+                    Announce Your Participation On LinkedIn & WhatsApp!
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Generate your personalized executive promotion badge with your name, designation, company & photo.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveView("promotion")}
+                className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shrink-0"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>View & Download My Badge</span>
+              </button>
+            </div>
+          </>
           )}
 
           {/* ========================================================================= */}
@@ -947,6 +1015,76 @@ export default function RegistrationSuccessPage() {
                   <p className="text-[10px] text-slate-400">ET Media Business Intelligence</p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* VIEW 3: DYNAMIC SOCIAL PROMOTION BADGE / POSTER                           */}
+          {/* ========================================================================= */}
+          {activeView === "promotion" && (
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-lg p-5 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <Sparkles className="w-3.5 h-3.5" /> Official Delegate Social Badge
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display">
+                    Your Personalized "I'm Attending" Promotion Badge
+                  </h2>
+                  <p className="text-xs text-slate-600">
+                    Share this high-impact badge on LinkedIn, WhatsApp, and social networks to showcase your presence at this premier executive gathering.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView("pass")}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Ticket className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>Back to Pass</span>
+                </button>
+              </div>
+
+              {/* Render Badge Card */}
+              <PromotionBadgeCard
+                template={
+                  activePromotionTemplate || {
+                    id: "tmpl-hr-recall-2k26",
+                    title: "HR Recall 2K26 Summit Executive Badge",
+                    theme_style: "hr-recall-emerald",
+                    badge_text: "I'M ONE OF THE 2,000+",
+                    top_tagline: "2,000+ HR PROFESSIONALS ONE BIG GATHERING",
+                    event_heading: "AWARDS & CONNECT HR RECALL 2K26",
+                    sub_heading: "Remembering 2026. Calling 2027",
+                    highlights: ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"],
+                    cta_text: "REGISTER NOW",
+                    date_text: effectiveEvent.date || "11th December 2026",
+                    venue_text: effectiveEvent.venue || effectiveEvent.city || "Gachibowli, Hyderabad",
+                    contact_email: "registration@executivetalksmedia.in",
+                    primary_color: "#00A86B",
+                    secondary_color: "#0F172A",
+                    accent_color: "#EF4444",
+                    footer_bg: "#064E3B",
+                  }
+                }
+                attendee={{
+                  id: regDetails?.id || regId,
+                  name:
+                    regDetails?.name ||
+                    (regDetails?.first_name ? `${regDetails.first_name} ${regDetails.last_name || ""}`.trim() : "") ||
+                    "VICTOR KOMAVARAPU",
+                  designation: regDetails?.designation || "Executive Delegate",
+                  organization: regDetails?.organization || regDetails?.company_name || "CARE HOSPITALS",
+                  photo_url: attendeePhoto || regDetails?.photo_url || "",
+                  event_title: regDetails?.event_title || effectiveEvent.title,
+                  date: effectiveEvent.date || "11th December 2026",
+                  venue: effectiveEvent.venue || effectiveEvent.city || "Gachibowli, Hyderabad",
+                  regId: regDetails?.id || regId,
+                }}
+                onPhotoChange={handleSaveAttendeePhoto}
+                allowPhotoUpload={true}
+              />
             </div>
           )}
 

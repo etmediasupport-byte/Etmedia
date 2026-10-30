@@ -15,7 +15,7 @@ import { rateLimit } from "express-rate-limit";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import QRCode from "qrcode";
-import { initDatabase, pool, ensureEventsTable, ensureMediaUploadsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES } from "./db.js";
+import { initDatabase, pool, ensureEventsTable, ensureMediaUploadsTable, ensureGalleryTable, ensureNewAdminTables, ensureEventPaymentsTable, ensureSectorsTable, DEFAULT_EMAIL_SUBJECT_CONFIGS, ensureTermsAndConditionsTable, seedDefaultTermsAndConditions, DEFAULT_TERMS_CLAUSES, ensurePromotionTemplatesTable, DEFAULT_PROMOTION_TEMPLATES } from "./db.js";
 import { Resvg } from "@resvg/resvg-js";
 
 dotenv.config();
@@ -10066,6 +10066,260 @@ app.get("/api/admin/analytics/visitors", authenticateAdmin, async (req, res) => 
       totalPageviews: 0,
       dailyTraffic: [],
     });
+  }
+});
+
+// =========================================================================
+// REGISTER PROMOTION BAR & BADGE TEMPLATES API ENDPOINTS
+// =========================================================================
+
+// 1. Get all promotion templates
+app.get("/api/promotion-templates", async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, templates: DEFAULT_PROMOTION_TEMPLATES });
+    await ensurePromotionTemplatesTable();
+    const [rows]: any = await pool.query("SELECT * FROM promotion_templates ORDER BY is_active DESC, created_at ASC");
+    if (!rows || rows.length === 0) {
+      return res.json({ success: true, templates: DEFAULT_PROMOTION_TEMPLATES });
+    }
+    const templates = rows.map((r: any) => {
+      let parsedHighlights = [];
+      try {
+        parsedHighlights = typeof r.highlights === "string" ? JSON.parse(r.highlights) : r.highlights;
+      } catch (e) {
+        parsedHighlights = (r.highlights || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+      }
+      return {
+        ...r,
+        highlights: parsedHighlights || [],
+        is_active: r.is_active === 1 || r.is_active === true,
+      };
+    });
+    return res.json({ success: true, templates });
+  } catch (err: any) {
+    console.error("[API] Error fetching promotion templates:", err);
+    return res.json({ success: true, templates: DEFAULT_PROMOTION_TEMPLATES });
+  }
+});
+
+// 2. Get active promotion template (for user badges & passes)
+app.get("/api/promotion-templates/active", async (req, res) => {
+  try {
+    if (!pool) return res.json({ success: true, template: DEFAULT_PROMOTION_TEMPLATES[0] });
+    await ensurePromotionTemplatesTable();
+    const [rows]: any = await pool.query("SELECT * FROM promotion_templates WHERE is_active = 1 LIMIT 1");
+    let activeItem = rows && rows.length > 0 ? rows[0] : null;
+    if (!activeItem) {
+      const [anyRows]: any = await pool.query("SELECT * FROM promotion_templates ORDER BY created_at ASC LIMIT 1");
+      activeItem = anyRows && anyRows.length > 0 ? anyRows[0] : DEFAULT_PROMOTION_TEMPLATES[0];
+    }
+    let parsedHighlights = [];
+    try {
+      parsedHighlights = typeof activeItem.highlights === "string" ? JSON.parse(activeItem.highlights) : activeItem.highlights;
+    } catch (e) {
+      parsedHighlights = (activeItem.highlights || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+    return res.json({
+      success: true,
+      template: {
+        ...activeItem,
+        highlights: parsedHighlights || [],
+        is_active: true,
+      },
+    });
+  } catch (err: any) {
+    console.error("[API] Error fetching active promotion template:", err);
+    return res.json({ success: true, template: DEFAULT_PROMOTION_TEMPLATES[0] });
+  }
+});
+
+// 3. Create or save promotion template
+app.post("/api/promotion-templates", async (req, res) => {
+  try {
+    const data = req.body || {};
+    const id = data.id || `tmpl-${Date.now()}`;
+    const highlightsStr = Array.isArray(data.highlights) ? JSON.stringify(data.highlights) : (data.highlights || "[]");
+
+    if (!pool) {
+      return res.json({ success: true, message: "Template saved (memory)", template: { ...data, id } });
+    }
+    await ensurePromotionTemplatesTable();
+
+    if (data.is_active) {
+      await pool.query("UPDATE promotion_templates SET is_active = 0");
+    }
+
+    await pool.query(
+      `INSERT INTO promotion_templates (
+        id, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
+        highlights, cta_text, date_text, venue_text, contact_email,
+        primary_color, secondary_color, accent_color, footer_bg, qr_destination_url, custom_logo_url, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        theme_style = VALUES(theme_style),
+        badge_text = VALUES(badge_text),
+        top_tagline = VALUES(top_tagline),
+        event_heading = VALUES(event_heading),
+        sub_heading = VALUES(sub_heading),
+        highlights = VALUES(highlights),
+        cta_text = VALUES(cta_text),
+        date_text = VALUES(date_text),
+        venue_text = VALUES(venue_text),
+        contact_email = VALUES(contact_email),
+        primary_color = VALUES(primary_color),
+        secondary_color = VALUES(secondary_color),
+        accent_color = VALUES(accent_color),
+        footer_bg = VALUES(footer_bg),
+        qr_destination_url = VALUES(qr_destination_url),
+        custom_logo_url = VALUES(custom_logo_url),
+        is_active = VALUES(is_active)`,
+      [
+        id,
+        data.title || "Custom Promotion Badge",
+        data.theme_style || "hr-recall-emerald",
+        data.badge_text || "I'M ONE OF THE 2,000+",
+        data.top_tagline || "2,000+ HR PROFESSIONALS ONE BIG GATHERING",
+        data.event_heading || "AWARDS & CONNECT HR RECALL 2K26",
+        data.sub_heading || "Remembering 2026. Calling 2027",
+        highlightsStr,
+        data.cta_text || "REGISTER NOW",
+        data.date_text || "11th December 2026",
+        data.venue_text || "Gachibowli, Hyderabad",
+        data.contact_email || "registration@executivetalksmedia.in",
+        data.primary_color || "#00A86B",
+        data.secondary_color || "#0F172A",
+        data.accent_color || "#EF4444",
+        data.footer_bg || "#064E3B",
+        data.qr_destination_url || "/events",
+        data.custom_logo_url || "",
+        data.is_active ? 1 : 0,
+      ]
+    );
+
+    io.emit("promotion_template_updated", { id, data });
+    return res.json({ success: true, message: "Promotion template saved successfully!", id });
+  } catch (err: any) {
+    console.error("[API] Error saving promotion template:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to save promotion template" });
+  }
+});
+
+// 4. Update promotion template
+app.put("/api/promotion-templates/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body || {};
+    const highlightsStr = Array.isArray(data.highlights) ? JSON.stringify(data.highlights) : (data.highlights || "[]");
+
+    if (!pool) return res.json({ success: true, message: "Updated in memory" });
+    await ensurePromotionTemplatesTable();
+
+    if (data.is_active) {
+      await pool.query("UPDATE promotion_templates SET is_active = 0");
+    }
+
+    await pool.query(
+      `UPDATE promotion_templates SET
+        title = COALESCE(?, title),
+        theme_style = COALESCE(?, theme_style),
+        badge_text = COALESCE(?, badge_text),
+        top_tagline = COALESCE(?, top_tagline),
+        event_heading = COALESCE(?, event_heading),
+        sub_heading = COALESCE(?, sub_heading),
+        highlights = COALESCE(?, highlights),
+        cta_text = COALESCE(?, cta_text),
+        date_text = COALESCE(?, date_text),
+        venue_text = COALESCE(?, venue_text),
+        contact_email = COALESCE(?, contact_email),
+        primary_color = COALESCE(?, primary_color),
+        secondary_color = COALESCE(?, secondary_color),
+        accent_color = COALESCE(?, accent_color),
+        footer_bg = COALESCE(?, footer_bg),
+        qr_destination_url = COALESCE(?, qr_destination_url),
+        custom_logo_url = COALESCE(?, custom_logo_url),
+        is_active = COALESCE(?, is_active)
+      WHERE id = ?`,
+      [
+        data.title,
+        data.theme_style,
+        data.badge_text,
+        data.top_tagline,
+        data.event_heading,
+        data.sub_heading,
+        highlightsStr,
+        data.cta_text,
+        data.date_text,
+        data.venue_text,
+        data.contact_email,
+        data.primary_color,
+        data.secondary_color,
+        data.accent_color,
+        data.footer_bg,
+        data.qr_destination_url,
+        data.custom_logo_url,
+        typeof data.is_active !== "undefined" ? (data.is_active ? 1 : 0) : null,
+        id,
+      ]
+    );
+
+    io.emit("promotion_template_updated", { id, data });
+    return res.json({ success: true, message: "Promotion template updated successfully!" });
+  } catch (err: any) {
+    console.error("[API] Error updating promotion template:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to update template" });
+  }
+});
+
+// 5. One-click activate promotion template
+app.put("/api/promotion-templates/:id/activate", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!pool) return res.json({ success: true, message: "Activated" });
+    await ensurePromotionTemplatesTable();
+
+    await pool.query("UPDATE promotion_templates SET is_active = 0");
+    await pool.query("UPDATE promotion_templates SET is_active = 1 WHERE id = ?", [id]);
+
+    io.emit("promotion_template_activated", { id });
+    return res.json({ success: true, message: "Active promotion template updated for all attendees!" });
+  } catch (err: any) {
+    console.error("[API] Error activating promotion template:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to activate template" });
+  }
+});
+
+// 6. Delete promotion template
+app.delete("/api/promotion-templates/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!pool) return res.json({ success: true, message: "Deleted" });
+    await pool.query("DELETE FROM promotion_templates WHERE id = ?", [id]);
+    return res.json({ success: true, message: "Promotion template removed." });
+  } catch (err: any) {
+    console.error("[API] Error deleting promotion template:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to delete template" });
+  }
+});
+
+// 7. Update attendee photo for badge / poster
+app.post("/api/registrations/:id/photo", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { photo_url } = req.body;
+    if (!photo_url) return res.status(400).json({ success: false, message: "Photo URL is required" });
+
+    if (pool) {
+      try {
+        await pool.query("ALTER TABLE registrations ADD COLUMN photo_url LONGTEXT;");
+      } catch (e) {}
+      await pool.query("UPDATE registrations SET photo_url = ? WHERE id = ?", [photo_url, id]);
+    }
+
+    return res.json({ success: true, message: "Attendee photo saved successfully!", photo_url });
+  } catch (err: any) {
+    console.error("[API] Error saving attendee photo:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to save photo" });
   }
 });
 
