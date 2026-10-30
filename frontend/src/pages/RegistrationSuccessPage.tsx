@@ -1087,6 +1087,7 @@ export default function RegistrationSuccessPage() {
                   organization: regDetails?.organization || regDetails?.company_name || "CARE HOSPITALS",
                   photo_url: attendeePhoto || regDetails?.photo_url || "",
                   event_title: regDetails?.event_title || effectiveEvent.title,
+                  event_slug: regDetails?.event_slug || effectiveEvent.slug || slug || "hr-recall-2k26",
                   date: effectiveEvent.date || "11th December 2026",
                   venue: effectiveEvent.venue || effectiveEvent.city || "Gachibowli, Hyderabad",
                   regId: regDetails?.id || regId,

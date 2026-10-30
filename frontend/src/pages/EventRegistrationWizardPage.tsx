@@ -3291,6 +3291,7 @@ export default function EventRegistrationWizardPage() {
                           organization: formData.companyName || "Organization",
                           photo_url: formData.photoUrl || "",
                           event_title: eventData?.title,
+                          event_slug: eventData?.slug || slug || "hr-recall-2k26",
                           date: eventData?.date,
                           venue: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData?.city,
                         }}

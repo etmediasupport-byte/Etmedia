@@ -52,6 +52,7 @@ export interface AttendeeBadgeData {
   organization?: string;
   photo_url?: string;
   event_title?: string;
+  event_slug?: string;
   date?: string;
   venue?: string;
   regId?: string;
@@ -119,14 +120,24 @@ export default function PromotionBadgeCard({
   const attendeeDesignation = attendee.designation || "Unit Head – HR(Manager)";
   const attendeeCompany = (attendee.organization || "CARE HOSPITALS").toUpperCase();
 
-  // QR destination
-  const qrTarget =
-    template.qr_destination_url ||
-    (typeof window !== "undefined"
-      ? `${window.location.origin}/events/hr-recall-2k26`
-      : "https://executivetalksmedia.in/events/hr-recall-2k26");
+  // Dynamic QR destination URL linking directly to the specific event's live registration / details page
+  const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://www.executivetalksmedia.in";
 
-  // Generate QR
+  const dynamicSlug =
+    (template.event_slug || "").trim() ||
+    (attendee.event_slug || "").trim() ||
+    (attendee.event_title
+      ? attendee.event_title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : "") ||
+    (template.title
+      ? template.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : "") ||
+    "hr-recall-2k26";
+
+  const eventPageUrl = `${origin}/events/${dynamicSlug}`;
+  const qrTarget = (template.qr_destination_url || "").trim() || eventPageUrl;
+
+  // Generate QR Code
   useEffect(() => {
     QRCode.toDataURL(qrTarget, {
       errorCorrectionLevel: "H",
@@ -304,10 +315,10 @@ export default function PromotionBadgeCard({
         ctx.font = "900 28px sans-serif";
         ctx.fillText(attendeeCompany, 50, 585);
 
-        // Right side: Circular Photo
+        // Right side: Circular Photo (Moved UP)
         const cx = W * 0.76;
-        const cy = H * 0.52;
-        const cr = 205;
+        const cy = 345;
+        const cr = 155;
 
         // Dark ring
         ctx.beginPath();
@@ -350,14 +361,14 @@ export default function PromotionBadgeCard({
         }
         ctx.restore();
 
-        // Badge Pill attached to circle
-        const px = cx - cr - 70;
-        const py = cy - cr + 40;
+        // Badge Pill attached to top of circle
+        const px = cx - 130;
+        const py = cy - cr - 22;
         ctx.fillStyle = "#FFFFFF";
         ctx.shadowColor = "rgba(0,0,0,0.25)";
         ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.roundRect(px, py, 260, 48, 24);
+        ctx.roundRect(px, py, 260, 46, 23);
         ctx.fill();
         ctx.shadowColor = "transparent";
 
@@ -366,44 +377,69 @@ export default function PromotionBadgeCard({
         ctx.stroke();
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 19px sans-serif";
+        ctx.font = "900 18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(badgeText, px + 130, py + 31);
+        ctx.fillText(badgeText, cx, py + 29);
 
-        // CTA Button
+        // Right side: QR Scanner in lower place
+        if (qrImg) {
+          const qrSize = 170;
+          const qrX = cx - qrSize / 2;
+          const qrY = 540;
+
+          // QR container card
+          ctx.fillStyle = "#FFFFFF";
+          ctx.shadowColor = "rgba(0,0,0,0.15)";
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.roundRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 55, 18);
+          ctx.fill();
+          ctx.shadowColor = "transparent";
+
+          ctx.strokeStyle = "#E2E8F0";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+          ctx.fillStyle = primaryColor;
+          ctx.font = "900 16px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("SCAN FOR EVENT PASS", cx, qrY + qrSize + 28);
+        }
+
+        // Left side: CTA Button
         ctx.fillStyle = primaryColor;
         ctx.beginPath();
-        ctx.roundRect(50, 680, 200, 46, 23);
+        ctx.roundRect(50, 620, 200, 46, 23);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "bold 19px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(ctaText, 150, 710);
+        ctx.fillText(ctaText, 150, 650);
 
-        // QR Code
-        if (qrImg) {
-          ctx.drawImage(qrImg, 50, 745, 160, 160);
-        }
-
-        // Bullets
+        // Left side: Bullets
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 21px sans-serif";
+        ctx.font = "900 22px sans-serif";
         ctx.textAlign = "left";
-        let by = 775;
-        highlights.forEach((h) => {
-          ctx.fillText(`• ${h}`, 235, by);
-          by += 34;
+        let by = 705;
+        highlights.slice(0, 4).forEach((h) => {
+          ctx.fillText(`• ${h}`, 50, by);
+          by += 38;
         });
 
-        // Footer
+        // Bottom Footer (Fixed height & fully visible)
+        ctx.fillStyle = footerBg;
+        ctx.fillRect(0, H * 0.88, W, H * 0.12);
+
         ctx.fillStyle = "#E2E8F0";
-        ctx.font = "600 20px sans-serif";
-        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, H * 0.935);
+        ctx.font = "600 21px sans-serif";
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, H * 0.925);
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 22px sans-serif";
-        ctx.fillText(`📅 Date: ${dateText}          📍 Venue: ${venueText}`, 50, H * 0.975);
+        ctx.font = "bold 23px sans-serif";
+        ctx.fillText(`📅 Date: ${dateText}          📍 Venue: ${venueText}`, 50, H * 0.965);
       }
 
       // -----------------------------------------------------------
@@ -958,167 +994,181 @@ export default function PromotionBadgeCard({
         {/* LAYOUT 1: HR RECALL GEOMETRIC CHEVRON (Exact 2nd Image)   */}
         {/* ========================================================= */}
         {themeStyle === "hr-recall-emerald" && (
-          <div className="relative w-full h-full bg-white flex flex-col justify-between">
+          <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden">
             {/* Top-right Angular Chevron Geometry */}
             <div
-              className="absolute top-0 right-0 w-[45%] h-[45%] pointer-events-none"
+              className="absolute top-0 right-0 w-[45%] h-[40%] pointer-events-none"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor} 60%, ${secondaryColor} 60%, ${secondaryColor} 100%)`,
                 clipPath: "polygon(0 0, 100% 0, 100% 100%, 30% 65%)",
               }}
             />
             <div
-              className="absolute bottom-[10%] right-0 w-[22%] h-[12%] pointer-events-none opacity-90"
+              className="absolute bottom-[14%] right-0 w-[20%] h-[10%] pointer-events-none opacity-90"
               style={{
                 background: primaryColor,
                 clipPath: "polygon(30% 100%, 100% 20%, 100% 100%)",
               }}
             />
 
-            {/* Main 2-Column Content Grid (Left 58% vs Right 42% - NO COLLISION) */}
-            <div className="relative z-10 p-5 sm:p-6 grid grid-cols-12 gap-3 h-full">
+            {/* Main 2-Column Content Grid */}
+            <div className="relative z-10 p-3.5 sm:p-5 grid grid-cols-12 gap-2 sm:gap-3 flex-1 min-h-0 overflow-hidden">
               {/* Left Column: Details & Brand (7 Columns) */}
-              <div className="col-span-7 flex flex-col justify-between h-full pr-1">
-                <div className="space-y-3">
+              <div className="col-span-7 flex flex-col justify-between h-full pr-1 overflow-hidden">
+                <div className="space-y-1.5 sm:space-y-2">
                   {/* Logo */}
-                  <div className="bg-white/95 backdrop-blur-xs p-1.5 rounded-xl shadow-xs border border-slate-200 inline-block">
+                  <div className="bg-white/95 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-xs border border-slate-200 inline-block">
                     <img
                       src={template.custom_logo_url || executivetalksLogo}
                       alt="Executive Talks"
-                      className="h-7 sm:h-9 w-auto object-contain"
+                      className="h-6 sm:h-8 w-auto object-contain"
                     />
                   </div>
 
                   {/* Top Tagline */}
                   <div className="space-y-0.5">
-                    <h2 className="text-xs sm:text-lg font-black text-slate-900 leading-tight uppercase font-display tracking-tight">
+                    <h2 className="text-[10px] sm:text-base font-black text-slate-900 leading-tight uppercase font-display tracking-tight">
                       {topTagline}
                     </h2>
                   </div>
 
                   {/* Event Brand Box */}
-                  <div className="space-y-0.5 pt-1">
-                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-900 block font-mono">
+                  <div className="space-y-0.5 pt-0.5">
+                    <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-widest text-slate-900 block font-mono">
                       AWARDS & CONNECT
                     </span>
-                    <h3 className="text-sm sm:text-xl font-black text-sky-600 uppercase tracking-tight leading-none font-display">
+                    <h3 className="text-xs sm:text-lg font-black text-sky-600 uppercase tracking-tight leading-none font-display">
                       {eventHeading}
                     </h3>
-                    <p className="text-[9px] sm:text-[11px] font-bold text-slate-700 tracking-tight">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-700 tracking-tight">
                       {subHeading}
                     </p>
                   </div>
 
                   {/* Attendee Name & Designation */}
-                  <div className="space-y-0.5 pt-1">
-                    <h4 className="text-xs sm:text-base font-black text-slate-900 uppercase font-display leading-tight truncate">
+                  <div className="space-y-0.5 pt-0.5">
+                    <h4 className="text-[11px] sm:text-sm font-black text-slate-900 uppercase font-display leading-tight truncate">
                       {attendeeName}
                     </h4>
                     <p
-                      className="text-[10px] sm:text-xs font-bold leading-tight"
+                      className="text-[9px] sm:text-[11px] font-bold leading-tight truncate"
                       style={{ color: accentColor }}
                     >
                       {attendeeDesignation}
                     </p>
-                    <p className="text-[9px] sm:text-[11px] font-black text-slate-800 uppercase tracking-tight leading-tight truncate">
+                    <p className="text-[8px] sm:text-[10px] font-black text-slate-800 uppercase tracking-tight leading-tight truncate">
                       {attendeeCompany}
                     </p>
                   </div>
                 </div>
 
-                {/* Bottom CTA Button & QR Code Box */}
-                <div className="space-y-2 pt-2">
+                {/* Bottom Left: CTA Button & 4 Highlights */}
+                <div className="space-y-1.5 pt-1">
                   <div
-                    className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-black uppercase tracking-wider text-white shadow-xs"
+                    className="inline-flex items-center justify-center px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-xs"
                     style={{ backgroundColor: primaryColor }}
                   >
                     {ctaText}
                   </div>
 
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-xs shrink-0">
-                      {qrDataUrl ? (
-                        <img
-                          src={qrDataUrl}
-                          alt="Event QR"
-                          className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 animate-pulse rounded" />
-                      )}
-                    </div>
-
-                    <div className="space-y-0.5 text-[8px] sm:text-[10px] font-black text-slate-800">
-                      {highlights.slice(0, 4).map((h, i) => (
-                        <div key={i} className="flex items-center gap-1">
-                          <span className="text-slate-400">•</span>
-                          <span>{h}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="space-y-0.5 text-[8px] sm:text-[10px] font-black text-slate-800 pt-0.5">
+                    {highlights.slice(0, 4).map((h, i) => (
+                      <div key={i} className="flex items-center gap-1.5 leading-tight">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="truncate">{h}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Circular Photo with attached Badge Pill (5 Columns) */}
-              <div className="col-span-5 flex flex-col items-center justify-center relative pt-8">
-                {/* Badge Pill attached to top of photo */}
-                <div className="relative -mb-3 z-20 bg-white border border-slate-300 shadow-md rounded-full px-2.5 sm:px-3 py-0.5 text-[8px] sm:text-[10px] font-black uppercase tracking-wide text-slate-900 text-center">
-                  {badgeText}
+              {/* Right Column: Photo moved UP, Scanner placed in lower place */}
+              <div className="col-span-5 flex flex-col items-center justify-between h-full pt-0.5 pb-1 overflow-hidden">
+                {/* 1. Photo Moved UP */}
+                <div className="flex flex-col items-center relative">
+                  {/* Badge Pill attached to top of photo */}
+                  <div className="relative -mb-2.5 z-20 bg-white border border-slate-300 shadow-md rounded-full px-2 sm:px-2.5 py-0.5 text-[7px] sm:text-[9px] font-black uppercase tracking-wide text-slate-900 text-center">
+                    {badgeText}
+                  </div>
+
+                  {/* Circular Photo Box */}
+                  <div
+                    className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-3 sm:border-4 border-white shadow-xl overflow-hidden bg-slate-900 flex items-center justify-center group shrink-0"
+                    style={{
+                      boxShadow: "0 8px 20px -4px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    {localPhoto ? (
+                      <img
+                        src={localPhoto}
+                        alt={attendeeName}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-white space-y-0.5">
+                        <span className="text-2xl sm:text-4xl font-black font-display">
+                          {attendeeName.charAt(0) || "E"}
+                        </span>
+                        <span className="text-[7px] sm:text-[8px] text-slate-300 uppercase tracking-widest font-mono">
+                          Delegate
+                        </span>
+                      </div>
+                    )}
+
+                    {allowPhotoUpload && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[8px] sm:text-[10px] font-bold transition-all cursor-pointer backdrop-blur-xs"
+                      >
+                        <Camera className="w-4 h-4 mb-0.5 text-cyan-400" />
+                        <span>Change Photo</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Circular Photo Box */}
-                <div
-                  className="relative w-28 h-28 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-xl overflow-hidden bg-slate-900 flex items-center justify-center group"
-                  style={{
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
-                  }}
+                {/* 2. QR Code Scanner Placed in Lower Place with Event URL link */}
+                <a
+                  href={qrTarget}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Scan or click to open: ${qrTarget}`}
+                  className="mt-1 flex flex-col items-center p-1.5 sm:p-2 rounded-2xl bg-white/95 border border-slate-200 shadow-md hover:border-emerald-500 hover:shadow-lg transition-all group shrink-0 cursor-pointer"
                 >
-                  {localPhoto ? (
-                    <img
-                      src={localPhoto}
-                      alt={attendeeName}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-white space-y-1">
-                      <span className="text-3xl sm:text-5xl font-black font-display">
-                        {attendeeName.charAt(0) || "E"}
-                      </span>
-                      <span className="text-[8px] text-slate-300 uppercase tracking-widest font-mono">
-                        Delegate
-                      </span>
-                    </div>
-                  )}
-
-                  {allowPhotoUpload && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] sm:text-xs font-bold transition-all cursor-pointer backdrop-blur-xs"
-                    >
-                      <Camera className="w-5 h-5 mb-1 text-cyan-400" />
-                      <span>Change Photo</span>
-                    </button>
-                  )}
-                </div>
+                  <div className="bg-white p-1 rounded-xl border border-slate-100 shadow-inner">
+                    {qrDataUrl ? (
+                      <img
+                        src={qrDataUrl}
+                        alt="Event QR Scanner"
+                        className="w-14 h-14 sm:w-18 sm:h-18 object-contain"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 sm:w-18 sm:h-18 bg-slate-100 animate-pulse rounded-lg" />
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-[7px] sm:text-[9px] font-black text-slate-700 group-hover:text-emerald-700 uppercase tracking-wider">
+                    <span>Scan for Event</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-emerald-600" />
+                  </div>
+                </a>
               </div>
             </div>
 
-            {/* Bottom Green Footer Strip */}
+            {/* Bottom Green Footer Strip - 100% Fully Visible & Never Cropped */}
             <div
-              className="py-2 px-5 sm:px-6 text-white text-[8px] sm:text-[10px] font-semibold flex flex-col justify-center space-y-0.5 z-20"
+              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-4 sm:px-6 text-white text-[8px] sm:text-[10px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md"
               style={{ backgroundColor: footerBg }}
             >
               <p className="text-slate-200 truncate">
                 For queries & registration: <span className="text-white font-bold">{contactEmail}</span>
               </p>
-              <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-white font-bold text-[8px] sm:text-[10px]">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-6 text-white font-bold text-[8px] sm:text-[10px]">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-emerald-300" /> Date: {dateText}
+                  <Calendar className="w-3 h-3 text-emerald-300 shrink-0" /> Date: {dateText}
                 </span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-rose-300" /> Venue: {venueText}
+                  <MapPin className="w-3 h-3 text-rose-300 shrink-0" /> Venue: {venueText}
                 </span>
               </div>
             </div>

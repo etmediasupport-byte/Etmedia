@@ -164,6 +164,7 @@ export default function FreeRegistrationPendingPage() {
                 organization: regDetails?.organization || "Organization",
                 photo_url: regDetails?.photo_url || "",
                 event_title: regDetails?.event_title || matchedEvent.title,
+                event_slug: regDetails?.event_slug || matchedEvent.slug || slug || "hr-recall-2k26",
                 date: matchedEvent.date,
                 venue: matchedEvent.venue ? `${matchedEvent.venue}, ${matchedEvent.city || ""}` : matchedEvent.city,
               }}
