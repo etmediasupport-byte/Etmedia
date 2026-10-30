@@ -95,8 +95,17 @@ export default function RegistrationSuccessPage() {
         }
       })
       .catch((err) => console.warn("Global invoice visibility fetch err:", err));
+  }, []);
 
-    fetch("/api/promotion-templates/active")
+  // Fetch active promotion template from server (event-specific or global fallback)
+  useEffect(() => {
+    const targetEventId = regDetails?.event_id || eventData?.id || "";
+    const targetSlug = slug || regDetails?.event_slug || eventData?.slug || "";
+    const query = new URLSearchParams();
+    if (targetEventId) query.set("eventId", targetEventId);
+    if (targetSlug) query.set("slug", targetSlug);
+
+    fetch(`/api/promotion-templates/active${query.toString() ? `?${query.toString()}` : ""}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.success && data.template) {
@@ -104,7 +113,7 @@ export default function RegistrationSuccessPage() {
         }
       })
       .catch((err) => console.warn("Active promotion template fetch err:", err));
-  }, []);
+  }, [slug, regDetails?.event_id, eventData?.id]);
 
   const handleSaveAttendeePhoto = async (newPhotoUrl: string) => {
     setAttendeePhoto(newPhotoUrl);

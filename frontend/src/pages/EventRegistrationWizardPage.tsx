@@ -32,7 +32,10 @@ import {
   Eye,
   X,
   Trophy,
+  Camera,
+  Upload,
 } from "lucide-react";
+import PromotionBadgeCard, { PromotionTemplate } from "@/components/site/PromotionBadgeCard";
 import { toast } from "sonner";
 import {
   events as defaultEvents,
@@ -283,6 +286,7 @@ export default function EventRegistrationWizardPage() {
     lastName: "",
     workEmail: "",
     contactNumber: "",
+    photoUrl: "", // Delegate Headshot for Badge & Pass
     // Step 2: Work & Organization
     designation: "",
     companyName: "",
@@ -296,6 +300,40 @@ export default function EventRegistrationWizardPage() {
     interestTracks: ["Leadership & Enterprise Strategy", "HR Tech & AI Transformation"],
     specialRequirements: "",
   });
+
+  // Active Event Promotion Badge Template (Configured by Admin for this specific Event)
+  const [eventPromotionTemplate, setEventPromotionTemplate] = useState<PromotionTemplate | null>(null);
+
+  useEffect(() => {
+    const targetEventId = eventData?.id || cleanTargetSlug;
+    const targetSlug = eventData?.slug || cleanTargetSlug;
+    fetch(`/api/promotion-templates/active?eventId=${encodeURIComponent(targetEventId)}&slug=${encodeURIComponent(targetSlug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.template) {
+          setEventPromotionTemplate(data.template);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch event promotion template:", err));
+  }, [eventData?.id, eventData?.slug, cleanTargetSlug]);
+
+  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Photo is too large (max 5MB). Please choose a smaller image.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const res = event.target?.result as string;
+      if (res) {
+        setFormData((prev) => ({ ...prev, photoUrl: res }));
+        toast.success("Headshot uploaded! It will be featured on your official badge & pass.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // --- STEP 4 FORM STATE: Selected Pass Tier ---
   const [pricingPlans, setPricingPlans] = useState<PricingPlanTier[]>(initialPlans);
@@ -1234,6 +1272,7 @@ export default function EventRegistrationWizardPage() {
               orgAwardCategory: wantsOrgNomination === "Yes" ? selectedOrgCategory : "",
               orgAwardFee: wantsOrgNomination === "Yes" ? (orgAwardNominationFee || 0) : 0,
               attendingPoster: attendingPosterChoice,
+              photo_url: formData.photoUrl,
             }),
           });
           const verifyData = await verifyRes.json();
@@ -1785,6 +1824,62 @@ export default function EventRegistrationWizardPage() {
                             ⚠️ {fieldErrors.contactNumber}
                           </p>
                         )}
+                      </div>
+
+                      {/* Delegate Profile Image / Headshot (For Official Badge & VIP Pass) */}
+                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-cyan-300 bg-cyan-50/40 p-4 transition-all hover:bg-cyan-50/70">
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                          <div className="relative group shrink-0">
+                            {formData.photoUrl ? (
+                              <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-cyan-500 shadow-md">
+                                <img
+                                  src={formData.photoUrl}
+                                  alt="Delegate Profile"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData((prev) => ({ ...prev, photoUrl: "" }))}
+                                  className="absolute top-1 right-1 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow transition-all cursor-pointer"
+                                  title="Remove photo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-100 to-blue-100 border-2 border-dashed border-cyan-400 flex flex-col items-center justify-center text-cyan-700 shadow-inner">
+                                <Camera className="w-6 h-6 mb-1 text-cyan-600" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">Photo</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex-1 text-center sm:text-left space-y-1">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
+                              <span className="text-xs font-black uppercase text-slate-900 tracking-wider">
+                                Delegate Profile Photo (For Official Badge & Pass)
+                              </span>
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800">
+                                Optional / Recommended
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              Upload your professional headshot. It will be automatically fixed onto your promotional badge card, "I'm Attending" social graphics, and VIP event pass.
+                            </p>
+                            <div className="pt-1">
+                              <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs shadow-md shadow-cyan-600/20 cursor-pointer transition-all hover:scale-[1.02]">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>{formData.photoUrl ? "Change Photo" : "Upload Headshot (Max 5MB)"}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={handleProfilePhotoUpload}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -3145,6 +3240,64 @@ export default function EventRegistrationWizardPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* 5.5 Official Event Promotion Badge Card (Admin Template + User Profile) */}
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 space-y-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                        <div>
+                          <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-600 tracking-wider">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Your Official Event Promotion Badge</span>
+                          </div>
+                          <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                            Live Badge Review & Social Share
+                          </h3>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-500">
+                          Template: <span className="font-extrabold text-slate-800">{eventPromotionTemplate?.title || "Event Standard"}</span>
+                        </span>
+                      </div>
+
+                      <PromotionBadgeCard
+                        template={
+                          eventPromotionTemplate || {
+                            id: "default-fallback",
+                            title: eventData?.title || "Official Event Badge",
+                            theme_style: "hr-recall-emerald",
+                            badge_text: "I AM ATTENDING",
+                            top_tagline: "EXECUTIVE TALKS SUMMIT",
+                            event_heading: eventData?.title || "NATIONAL LEADERSHIP CONCLAVE",
+                            sub_heading: eventData?.category || "SHAPING FUTURE LEADERSHIP & ENTERPRISE EXCELLENCE",
+                            highlights: [
+                              "Keynote Addresses & C-Suite Masterclasses",
+                              "High-Impact Networking with 500+ Industry Leaders",
+                              "Elite Award Felicitation Ceremony",
+                              "Exclusive Delegate Kit & Summit Access Pass"
+                            ],
+                            cta_text: "JOIN ME AT THE SUMMIT • REGISTER NOW",
+                            date_text: eventData?.date || "Summit Date",
+                            venue_text: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : (eventData?.city || "Venue TBA"),
+                            contact_email: "support@executivetalks.in",
+                            primary_color: "#059669",
+                            secondary_color: "#047857",
+                            accent_color: "#10b981",
+                            footer_bg: "#022c22"
+                          }
+                        }
+                        attendee={{
+                          id: registrationId || "DRAFT-BADGE",
+                          name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
+                          designation: formData.designation || "Executive Delegate",
+                          organization: formData.companyName || "Organization",
+                          photo_url: formData.photoUrl || "",
+                          event_title: eventData?.title,
+                          date: eventData?.date,
+                          venue: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData?.city,
+                        }}
+                        onPhotoChange={(newPhoto) => setFormData((prev) => ({ ...prev, photoUrl: newPhoto }))}
+                        allowPhotoUpload={true}
+                      />
+                    </div>
 
                     {/* 6. Financial Summary Card */}
                     <div className="rounded-3xl border border-cyan-200 bg-cyan-50/30 p-6 space-y-3">

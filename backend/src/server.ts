@@ -3023,8 +3023,12 @@ async function handlePaymentVerification(req: any, res: any) {
       awardNomination, awardCategory, awardTeamCategory, awardNominationFee,
       teamAwardNomination, teamAwardCategory, teamAwardFee,
       orgAwardNomination, orgAwardCategory, orgAwardFee,
-      attendingPoster
+      attendingPoster,
+      photo_url,
+      photoUrl
     } = req.body;
+
+    const userPhoto = photo_url || photoUrl || null;
 
     const numAmount = Number(paymentAmount) || 0;
 
@@ -3044,13 +3048,15 @@ async function handlePaymentVerification(req: any, res: any) {
             org_award_nomination = COALESCE(?, org_award_nomination),
             org_award_category = COALESCE(?, org_award_category),
             org_award_fee = COALESCE(?, org_award_fee),
-            attending_poster = COALESCE(?, attending_poster)
+            attending_poster = COALESCE(?, attending_poster),
+            photo_url = COALESCE(?, photo_url)
           WHERE id = ?`,
           [
             razorpay_payment_id || 'FREE-PASS', couponApplied || null,
             teamAwardNomination || null, teamAwardCategory || null, teamAwardFee ? Number(teamAwardFee) : null,
             orgAwardNomination || null, orgAwardCategory || null, orgAwardFee ? Number(orgAwardFee) : null,
             attendingPoster || null,
+            userPhoto,
             registrationId
           ]
         );
@@ -3180,7 +3186,8 @@ async function handlePaymentVerification(req: any, res: any) {
             org_award_nomination = COALESCE(?, org_award_nomination),
             org_award_category = COALESCE(?, org_award_category),
             org_award_fee = COALESCE(?, org_award_fee),
-            attending_poster = COALESCE(?, attending_poster)
+            attending_poster = COALESCE(?, attending_poster),
+            photo_url = COALESCE(?, photo_url)
           WHERE id = ?`,
           [
             razorpay_payment_id, razorpay_order_id, razorpay_signature, finalPaid, finalPaid,
@@ -3195,6 +3202,7 @@ async function handlePaymentVerification(req: any, res: any) {
             orgAwardNomination || null, orgAwardCategory || null,
             (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
             attendingPoster || null,
+            userPhoto,
             registrationId
           ]
         );
@@ -3296,7 +3304,10 @@ app.post("/api/registrations/start", async (req, res) => {
       eventId = "hr-recall-2k26",
       eventSlug,
       eventTitle = "HR RECALL 2K26",
+      photo_url,
+      photoUrl,
     } = req.body;
+    const userPhoto = photo_url || photoUrl || null;
 
     if (!workEmail || !firstName || !lastName || !contactNumber || !companyName || !designation || !city) {
       return res.status(400).json({ success: false, message: "Please fill in all mandatory personal and company details." });
@@ -3336,18 +3347,19 @@ app.post("/api/registrations/start", async (req, res) => {
         `INSERT INTO registrations (
           id, name, first_name, last_name, email, phone, organization, designation,
           city, country, industry, linkedin_url, registration_category, participation_preference,
-          interest_tracks, event_id, event_title, payment_status, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dropped (Step 1 Completed)', 'Incomplete', NOW())
+          interest_tracks, event_id, event_title, photo_url, payment_status, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dropped (Step 1 Completed)', 'Incomplete', NOW())
         ON DUPLICATE KEY UPDATE
           name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
           phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
           city = VALUES(city), country = VALUES(country), industry = VALUES(industry),
           linkedin_url = VALUES(linkedin_url), registration_category = VALUES(registration_category),
-          participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks);`,
+          participation_preference = VALUES(participation_preference), interest_tracks = VALUES(interest_tracks),
+          photo_url = COALESCE(VALUES(photo_url), photo_url);`,
         [
           regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
           city || "N/A", country, industry || "Technology", linkedinUrl || "", category || "Executive Delegate",
-          participationPreference || "In-Person Delegate", tracksStr, effectiveEventSlug, eventTitle
+          participationPreference || "In-Person Delegate", tracksStr, effectiveEventSlug, eventTitle, userPhoto
         ]
       );
     }
@@ -3372,8 +3384,11 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
       awardNomination, awardCategory, awardTeamCategory, awardNominationFee,
       teamAwardNomination, teamAwardCategory, teamAwardFee,
       orgAwardNomination, orgAwardCategory, orgAwardFee,
-      attendingPoster
+      attendingPoster,
+      photo_url,
+      photoUrl
     } = req.body;
+    const userPhoto = photo_url || photoUrl || null;
     const numPassPrice = Number(passPrice) || 0;
     const numPaymentAmount = Number(paymentAmount) || (numPassPrice > 0 ? Math.round(numPassPrice * 1.18) : 0);
     const numGstAmount = Number(gstAmount) || (numPaymentAmount - numPassPrice);
@@ -3397,6 +3412,7 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
           org_award_category = COALESCE(?, org_award_category),
           org_award_fee = COALESCE(?, org_award_fee),
           attending_poster = COALESCE(?, attending_poster),
+          photo_url = COALESCE(?, photo_url),
           payment_status = CASE WHEN payment_status = 'Paid' THEN 'Paid' ELSE 'Dropped (Pass Selected)' END
         WHERE id = ?`,
         [
@@ -3408,6 +3424,7 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
           orgAwardNomination || null, orgAwardCategory || null,
           (orgAwardFee !== undefined && orgAwardFee !== null && orgAwardFee !== "") ? Number(orgAwardFee) : null,
           attendingPoster || null,
+          userPhoto,
           registrationId
         ]
       );
@@ -3591,7 +3608,10 @@ app.post("/api/registrations/complete-free", async (req, res) => {
       couponApplied,
       eventId,
       eventTitle,
+      photo_url,
+      photoUrl,
     } = req.body;
+    const userPhoto = photo_url || photoUrl || null;
 
     if (!registrationId) {
       return res.status(400).json({ success: false, message: "Registration ID is required." });
@@ -3618,7 +3638,8 @@ app.post("/api/registrations/complete-free", async (req, res) => {
           org_award_nomination = COALESCE(?, org_award_nomination),
           org_award_category = COALESCE(?, org_award_category),
           org_award_fee = COALESCE(?, org_award_fee, 0),
-          attending_poster = COALESCE(?, attending_poster)
+          attending_poster = COALESCE(?, attending_poster),
+          photo_url = COALESCE(?, photo_url)
         WHERE id = ?`,
         [
           passName,
@@ -3633,6 +3654,7 @@ app.post("/api/registrations/complete-free", async (req, res) => {
           orgAwardCategory || null,
           orgAwardFee ? Number(orgAwardFee) : 0,
           attendingPoster || null,
+          userPhoto,
           registrationId
         ]
       );
@@ -3856,7 +3878,10 @@ app.post("/api/registrations/free-start", async (req, res) => {
       orgAwardCategory = "",
       orgAwardFee = 0,
       attendingPoster = "",
+      photo_url,
+      photoUrl,
     } = req.body;
+    const userPhoto = photo_url || photoUrl || null;
 
     if (!workEmail || !firstName || !lastName || !contactNumber || !companyName || !designation || !city) {
       return res.status(400).json({ success: false, message: "Please fill in all mandatory personal and organization details." });
@@ -3910,6 +3935,7 @@ app.post("/api/registrations/free-start", async (req, res) => {
       pass_name: "Complimentary Pass (Pending Approval)",
       event_id: effectiveEventSlug,
       event_title: eventTitle,
+      photo_url: userPhoto,
       payment_status: "Pending Approval",
       payment_amount: 0,
       coupon_applied: reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application",
@@ -3931,12 +3957,12 @@ app.post("/api/registrations/free-start", async (req, res) => {
         `INSERT INTO registrations (
           id, name, first_name, last_name, email, phone, organization, designation,
           city, country, industry, linkedin_url, registration_category, participation_preference,
-          interest_tracks, pass_name, event_id, event_title, payment_status, status, payment_amount, coupon_applied,
+          interest_tracks, pass_name, event_id, event_title, photo_url, payment_status, status, payment_amount, coupon_applied,
           award_nomination, award_category, award_nomination_fee,
           team_award_nomination, team_award_category, team_award_fee,
           org_award_nomination, org_award_category, org_award_fee,
           attending_poster, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 'Pending', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending Approval', 'Pending', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ON DUPLICATE KEY UPDATE
           name = VALUES(name), first_name = VALUES(first_name), last_name = VALUES(last_name),
           phone = VALUES(phone), organization = VALUES(organization), designation = VALUES(designation),
@@ -3954,11 +3980,13 @@ app.post("/api/registrations/free-start", async (req, res) => {
           org_award_nomination = VALUES(org_award_nomination),
           org_award_category = VALUES(org_award_category),
           org_award_fee = VALUES(org_award_fee),
-          attending_poster = VALUES(attending_poster);`,
+          attending_poster = VALUES(attending_poster),
+          photo_url = COALESCE(VALUES(photo_url), photo_url);`,
         [
           regId, fullName, firstName, lastName, workEmail.trim(), contactNumber, companyName, designation,
           city || "N/A", country, industry || "Technology", linkedinUrl || "", category,
           participationPreference, tracksStr, "Complimentary Pass (Pending Approval)", effectiveEventSlug, eventTitle,
+          userPhoto,
           reasonForAttending ? `Motivation: ${reasonForAttending}` : "Free Application",
           awardNomination || "No", awardCategory || null, Number(awardNominationFee) || 0,
           teamAwardNomination || "No", teamAwardCategory || null, Number(teamAwardFee) || 0,
@@ -10073,12 +10101,24 @@ app.get("/api/admin/analytics/visitors", authenticateAdmin, async (req, res) => 
 // REGISTER PROMOTION BAR & BADGE TEMPLATES API ENDPOINTS
 // =========================================================================
 
-// 1. Get all promotion templates
+// 1. Get all promotion templates (optionally filtered by eventId)
 app.get("/api/promotion-templates", async (req, res) => {
   try {
     if (!pool) return res.json({ success: true, templates: DEFAULT_PROMOTION_TEMPLATES });
     await ensurePromotionTemplatesTable();
-    const [rows]: any = await pool.query("SELECT * FROM promotion_templates ORDER BY is_active DESC, created_at ASC");
+    const { eventId, slug } = req.query as { eventId?: string; slug?: string };
+
+    let query = "SELECT * FROM promotion_templates";
+    let params: any[] = [];
+
+    if (eventId && eventId !== "all") {
+      query += " WHERE event_id = ? OR event_id = 'all' OR event_slug = ?";
+      params = [eventId, slug || eventId];
+    }
+
+    query += " ORDER BY is_active DESC, created_at ASC";
+
+    const [rows]: any = await pool.query(query, params);
     if (!rows || rows.length === 0) {
       return res.json({ success: true, templates: DEFAULT_PROMOTION_TEMPLATES });
     }
@@ -10091,6 +10131,8 @@ app.get("/api/promotion-templates", async (req, res) => {
       }
       return {
         ...r,
+        event_id: r.event_id || "all",
+        event_slug: r.event_slug || "all",
         highlights: parsedHighlights || [],
         is_active: r.is_active === 1 || r.is_active === true,
       };
@@ -10102,17 +10144,35 @@ app.get("/api/promotion-templates", async (req, res) => {
   }
 });
 
-// 2. Get active promotion template (for user badges & passes)
+// 2. Get active promotion template (for user badges & passes based on eventId / slug)
 app.get("/api/promotion-templates/active", async (req, res) => {
   try {
     if (!pool) return res.json({ success: true, template: DEFAULT_PROMOTION_TEMPLATES[0] });
     await ensurePromotionTemplatesTable();
-    const [rows]: any = await pool.query("SELECT * FROM promotion_templates WHERE is_active = 1 LIMIT 1");
-    let activeItem = rows && rows.length > 0 ? rows[0] : null;
+    const { eventId, slug } = req.query as { eventId?: string; slug?: string };
+
+    let activeItem: any = null;
+
+    if (eventId && eventId !== "all") {
+      const [eventRows]: any = await pool.query(
+        "SELECT * FROM promotion_templates WHERE is_active = 1 AND (event_id = ? OR event_slug = ?) LIMIT 1",
+        [eventId, slug || eventId]
+      );
+      if (eventRows && eventRows.length > 0) {
+        activeItem = eventRows[0];
+      }
+    }
+
+    if (!activeItem) {
+      const [rows]: any = await pool.query("SELECT * FROM promotion_templates WHERE is_active = 1 LIMIT 1");
+      activeItem = rows && rows.length > 0 ? rows[0] : null;
+    }
+
     if (!activeItem) {
       const [anyRows]: any = await pool.query("SELECT * FROM promotion_templates ORDER BY created_at ASC LIMIT 1");
       activeItem = anyRows && anyRows.length > 0 ? anyRows[0] : DEFAULT_PROMOTION_TEMPLATES[0];
     }
+
     let parsedHighlights = [];
     try {
       parsedHighlights = typeof activeItem.highlights === "string" ? JSON.parse(activeItem.highlights) : activeItem.highlights;
@@ -10123,6 +10183,8 @@ app.get("/api/promotion-templates/active", async (req, res) => {
       success: true,
       template: {
         ...activeItem,
+        event_id: activeItem.event_id || "all",
+        event_slug: activeItem.event_slug || "all",
         highlights: parsedHighlights || [],
         is_active: true,
       },
@@ -10139,6 +10201,8 @@ app.post("/api/promotion-templates", async (req, res) => {
     const data = req.body || {};
     const id = data.id || `tmpl-${Date.now()}`;
     const highlightsStr = Array.isArray(data.highlights) ? JSON.stringify(data.highlights) : (data.highlights || "[]");
+    const eventId = data.event_id || "all";
+    const eventSlug = data.event_slug || "all";
 
     if (!pool) {
       return res.json({ success: true, message: "Template saved (memory)", template: { ...data, id } });
@@ -10146,16 +10210,22 @@ app.post("/api/promotion-templates", async (req, res) => {
     await ensurePromotionTemplatesTable();
 
     if (data.is_active) {
-      await pool.query("UPDATE promotion_templates SET is_active = 0");
+      if (eventId !== "all") {
+        await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = ?", [eventId]);
+      } else {
+        await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = 'all' OR event_id IS NULL");
+      }
     }
 
     await pool.query(
       `INSERT INTO promotion_templates (
-        id, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
+        id, event_id, event_slug, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
         highlights, cta_text, date_text, venue_text, contact_email,
         primary_color, secondary_color, accent_color, footer_bg, qr_destination_url, custom_logo_url, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
+        event_id = VALUES(event_id),
+        event_slug = VALUES(event_slug),
         title = VALUES(title),
         theme_style = VALUES(theme_style),
         badge_text = VALUES(badge_text),
@@ -10176,6 +10246,8 @@ app.post("/api/promotion-templates", async (req, res) => {
         is_active = VALUES(is_active)`,
       [
         id,
+        eventId,
+        eventSlug,
         data.title || "Custom Promotion Badge",
         data.theme_style || "hr-recall-emerald",
         data.badge_text || "I'M ONE OF THE 2,000+",
@@ -10216,11 +10288,17 @@ app.put("/api/promotion-templates/:id", async (req, res) => {
     await ensurePromotionTemplatesTable();
 
     if (data.is_active) {
-      await pool.query("UPDATE promotion_templates SET is_active = 0");
+      if (data.event_id && data.event_id !== "all") {
+        await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = ?", [data.event_id]);
+      } else {
+        await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = 'all' OR event_id IS NULL");
+      }
     }
 
     await pool.query(
       `UPDATE promotion_templates SET
+        event_id = COALESCE(?, event_id),
+        event_slug = COALESCE(?, event_slug),
         title = COALESCE(?, title),
         theme_style = COALESCE(?, theme_style),
         badge_text = COALESCE(?, badge_text),
@@ -10241,6 +10319,8 @@ app.put("/api/promotion-templates/:id", async (req, res) => {
         is_active = COALESCE(?, is_active)
       WHERE id = ?`,
       [
+        data.event_id,
+        data.event_slug,
         data.title,
         data.theme_style,
         data.badge_text,
@@ -10278,11 +10358,18 @@ app.put("/api/promotion-templates/:id/activate", async (req, res) => {
     if (!pool) return res.json({ success: true, message: "Activated" });
     await ensurePromotionTemplatesTable();
 
-    await pool.query("UPDATE promotion_templates SET is_active = 0");
+    const [rows]: any = await pool.query("SELECT event_id FROM promotion_templates WHERE id = ? LIMIT 1", [id]);
+    const eventId = rows && rows[0] ? rows[0].event_id : "all";
+
+    if (eventId && eventId !== "all") {
+      await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = ?", [eventId]);
+    } else {
+      await pool.query("UPDATE promotion_templates SET is_active = 0 WHERE event_id = 'all' OR event_id IS NULL");
+    }
     await pool.query("UPDATE promotion_templates SET is_active = 1 WHERE id = ?", [id]);
 
-    io.emit("promotion_template_activated", { id });
-    return res.json({ success: true, message: "Active promotion template updated for all attendees!" });
+    io.emit("promotion_template_activated", { id, eventId });
+    return res.json({ success: true, message: "Active promotion template updated!" });
   } catch (err: any) {
     console.error("[API] Error activating promotion template:", err);
     return res.status(500).json({ success: false, message: err.message || "Failed to activate template" });

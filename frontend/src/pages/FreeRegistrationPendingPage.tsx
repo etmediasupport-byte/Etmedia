@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, Calendar, MapPin, ArrowLeft, CheckCircle, ShieldCheck, Mail, User, Building2 } from "lucide-react";
+import { Clock, Calendar, MapPin, ArrowLeft, CheckCircle, ShieldCheck, Mail, User, Building2, Sparkles } from "lucide-react";
 import { events as defaultEvents } from "@/lib/site-data";
+import PromotionBadgeCard, { PromotionTemplate } from "@/components/site/PromotionBadgeCard";
 
 export default function FreeRegistrationPendingPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -10,6 +11,9 @@ export default function FreeRegistrationPendingPage() {
   const regId = searchParams.get("regId") || `ETM-FREE-${Date.now().toString().slice(-6)}`;
 
   const [regDetails, setRegDetails] = useState<any>(null);
+  const [activePromotionTemplate, setActivePromotionTemplate] = useState<PromotionTemplate | null>(null);
+
+  const matchedEvent = defaultEvents.find((e) => (e.slug || "").toLowerCase() === (slug || "").toLowerCase()) || defaultEvents[0]!;
 
   useEffect(() => {
     const fetchReg = async () => {
@@ -24,7 +28,6 @@ export default function FreeRegistrationPendingPage() {
         }
       } catch (e) {}
 
-      const matchedEv = defaultEvents.find((e) => (e.slug || "").toLowerCase() === (slug || "").toLowerCase()) || defaultEvents[0]!;
       setRegDetails({
         id: regId,
         name: "Free Interest Delegate",
@@ -32,22 +35,33 @@ export default function FreeRegistrationPendingPage() {
         phone: "+91 98765 43210",
         organization: "Executive Enterprise",
         designation: "Executive Delegate",
-        city: matchedEv.city || "Hyderabad",
+        city: matchedEvent.city || "Hyderabad",
         country: "India",
-        event_title: matchedEv.title || "Executive Summit 2026",
+        event_title: matchedEvent.title || "Executive Summit 2026",
         payment_status: "Pending Approval",
         created_at: new Date().toLocaleString(),
       });
     };
 
     fetchReg();
-  }, [regId, slug]);
+  }, [regId, slug, matchedEvent]);
 
-  const matchedEvent = defaultEvents.find((e) => (e.slug || "").toLowerCase() === (slug || "").toLowerCase()) || defaultEvents[0]!;
+  useEffect(() => {
+    const targetEventId = regDetails?.event_id || matchedEvent.id || slug || "";
+    const targetEventSlug = regDetails?.event_slug || matchedEvent.slug || slug || "";
+    fetch(`/api/promotion-templates/active?eventId=${encodeURIComponent(targetEventId)}&slug=${encodeURIComponent(targetEventSlug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.template) {
+          setActivePromotionTemplate(data.template);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch event promotion template:", err));
+  }, [regDetails?.event_id, regDetails?.event_slug, matchedEvent.id, matchedEvent.slug, slug]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 pt-28 sm:pt-32">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -98,6 +112,63 @@ export default function FreeRegistrationPendingPage() {
                 <span className="text-slate-900 font-bold">{regDetails?.designation}</span>
               </div>
             </div>
+          </div>
+
+          {/* Official Promotional Badge Card for Social Sharing */}
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/50 p-4 sm:p-6 text-left space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-600 tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Your Official Event Promotion Badge</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                  Share Your Participation on Social Media
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-slate-500">
+                Template: <span className="font-extrabold text-slate-800">{activePromotionTemplate?.title || "Event Standard"}</span>
+              </span>
+            </div>
+
+            <PromotionBadgeCard
+              template={
+                activePromotionTemplate || {
+                  id: "default-fallback",
+                  title: matchedEvent.title || "Official Event Badge",
+                  theme_style: "hr-recall-emerald",
+                  badge_text: "I AM ATTENDING",
+                  top_tagline: "EXECUTIVE TALKS SUMMIT",
+                  event_heading: matchedEvent.title || "NATIONAL LEADERSHIP CONCLAVE",
+                  sub_heading: matchedEvent.category || "SHAPING FUTURE LEADERSHIP & ENTERPRISE EXCELLENCE",
+                  highlights: [
+                    "Keynote Addresses & C-Suite Masterclasses",
+                    "High-Impact Networking with 500+ Industry Leaders",
+                    "Elite Award Felicitation Ceremony",
+                    "Exclusive Delegate Kit & Summit Access Pass",
+                  ],
+                  cta_text: "JOIN ME AT THE SUMMIT • REGISTER NOW",
+                  date_text: matchedEvent.date || "Summit Date",
+                  venue_text: matchedEvent.venue ? `${matchedEvent.venue}, ${matchedEvent.city || ""}` : (matchedEvent.city || "Venue TBA"),
+                  contact_email: "support@executivetalks.in",
+                  primary_color: "#059669",
+                  secondary_color: "#047857",
+                  accent_color: "#10b981",
+                  footer_bg: "#022c22",
+                }
+              }
+              attendee={{
+                id: regDetails?.id || regId,
+                name: regDetails?.name || "Delegate Name",
+                designation: regDetails?.designation || "Executive Delegate",
+                organization: regDetails?.organization || "Organization",
+                photo_url: regDetails?.photo_url || "",
+                event_title: regDetails?.event_title || matchedEvent.title,
+                date: matchedEvent.date,
+                venue: matchedEvent.venue ? `${matchedEvent.venue}, ${matchedEvent.city || ""}` : matchedEvent.city,
+              }}
+              allowPhotoUpload={true}
+            />
           </div>
 
           {/* Explanation Banner */}

@@ -2108,6 +2108,9 @@ export async function ensurePromotionTemplatesTable() {
     `);
     try { await pool.query("ALTER TABLE registrations ADD COLUMN photo_url LONGTEXT;"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN photo_url LONGTEXT;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE promotion_templates ADD COLUMN event_id VARCHAR(100) DEFAULT 'all';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE promotion_templates ADD COLUMN event_slug VARCHAR(255) DEFAULT 'all';"); } catch (e) {}
+    try { await pool.query("ALTER TABLE events ADD COLUMN promotion_badge_settings LONGTEXT;"); } catch (e) {}
     console.log("[MySQL] promotion_templates table verified!");
   } catch (err) {
     console.error("[MySQL] Error ensuring promotion_templates table:", err);
