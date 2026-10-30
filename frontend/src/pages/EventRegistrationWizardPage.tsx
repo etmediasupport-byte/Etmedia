@@ -2850,6 +2850,66 @@ export default function EventRegistrationWizardPage() {
                       </div>
                     )}
 
+                    {/* SECTION 5: Official Event Promotion Poster & Live Review (1080×1350) */}
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 space-y-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                        <div>
+                          <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-600 tracking-wider">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Your Official Event Promotion Badge (1080×1350 Portrait)</span>
+                          </div>
+                          <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                            Live Badge Review, Download & Social Share
+                          </h3>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-500">
+                          Template: <span className="font-extrabold text-slate-800">{eventPromotionTemplate?.title || "Event Standard"}</span>
+                        </span>
+                      </div>
+
+                      <PromotionBadgeCard
+                        template={
+                          eventPromotionTemplate || {
+                            id: "default-fallback",
+                            title: eventData?.title || "Official Event Badge",
+                            theme_style: "hr-recall-emerald",
+                            badge_text: "I'M ONE OF THE 2,000+",
+                            top_tagline: "2,000+ HR PROFESSIONALS ONE BIG GATHERING",
+                            event_heading: eventData?.title || "AWARDS & CONNECT HR RECALL 2K26",
+                            sub_heading: eventData?.category || "Remembering 2026. Calling 2027",
+                            highlights: [
+                              "2000+ HR Pros",
+                              "50+ Speakers",
+                              "Awards Felicitation",
+                              "5-Star Networking Luncheon",
+                            ],
+                            cta_text: "REGISTER NOW",
+                            date_text: eventData?.date || "11th December 2026",
+                            venue_text: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : (eventData?.city || "Gachibowli, Hyderabad"),
+                            contact_email: "registration@executivetalksmedia.in",
+                            primary_color: "#00A86B",
+                            secondary_color: "#0F172A",
+                            accent_color: "#EF4444",
+                            footer_bg: "#064E3B",
+                          }
+                        }
+                        attendee={{
+                          id: registrationId || "DRAFT-BADGE",
+                          name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
+                          designation: formData.designation || "Executive Delegate",
+                          organization: formData.companyName || "Organization",
+                          photo_url: formData.photoUrl || "",
+                          event_title: eventData?.title || "HR RECALL 2K26",
+                          event_slug: eventData?.slug || slug || "hr-recall-2k26",
+                          date: eventData?.date || "11th December 2026",
+                          venue: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : (eventData?.city || "Gachibowli, Hyderabad"),
+                          regId: registrationId || "DELEGATE-PASS",
+                        }}
+                        onPhotoChange={(newPhoto) => setFormData((prev) => ({ ...prev, photoUrl: newPhoto }))}
+                        allowPhotoUpload={true}
+                      />
+                    </div>
+
                     {/* Step 5 Navigation Buttons */}
                     <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                       <button

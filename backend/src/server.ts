@@ -667,6 +667,66 @@ www.executivetalksmedia.in
           </div>
           ` : ""}
 
+          <!-- OFFICIAL PERSONALIZED 1080x1350 SUMMIT POSTER BADGE -->
+          <div style="border: 2px solid #00A86B; border-radius: 18px; padding: 22px 18px; background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%); margin-bottom: 25px; text-align: center; box-shadow: 0 4px 20px rgba(0, 168, 107, 0.12);">
+            <div style="display: inline-block; background-color: #064E3B; color: #ffffff; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+              🎉 YOUR OFFICIAL 1080×1350 SUMMIT ATTENDEE POSTER
+            </div>
+            <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 17px; font-weight: 900; text-transform: uppercase;">
+              I'M ATTENDING ${eventName}
+            </h3>
+            <p style="margin: 0 0 16px 0; color: #475569; font-size: 13px; line-height: 1.5;">
+              Your personalized promotional poster (1080×1350 Portrait) has been created! Share it directly with your professional network on WhatsApp, Instagram, LinkedIn, Facebook, and X.
+            </p>
+
+            <!-- MINI VISUAL POSTER CARD -->
+            <div style="max-width: 420px; margin: 0 auto 16px auto; border-radius: 16px; overflow: hidden; border: 2px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background-color: #ffffff; text-align: left;">
+              <div style="background: linear-gradient(135deg, #00A86B 0%, #00A86B 60%, #0F172A 60%, #0F172A 100%); padding: 14px 18px; color: #ffffff;">
+                <p style="margin: 0; font-size: 11px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">EXECUTIVE TALKS MEDIA</p>
+                <p style="margin: 3px 0 0 0; font-size: 14px; font-weight: 800; text-transform: uppercase;">${eventName}</p>
+              </div>
+              <div style="padding: 16px 18px; background-color: #ffffff;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="width: 58px; vertical-align: middle;">
+                      <div style="width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #00A86B, #0F172A); color: #ffffff; font-size: 24px; font-weight: 900; text-align: center; line-height: 54px; border: 3px solid #00A86B;">
+                        ${(effectiveFullName.charAt(0) || "D").toUpperCase()}
+                      </div>
+                    </td>
+                    <td style="padding-left: 14px; vertical-align: middle;">
+                      <h4 style="margin: 0; font-size: 15px; font-weight: 900; color: #0f172a; text-transform: uppercase;">${effectiveFullName}</h4>
+                      <p style="margin: 2px 0 0 0; font-size: 12px; font-weight: 700; color: #EF4444;">${regDesig}</p>
+                      <p style="margin: 2px 0 0 0; font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase;">${regOrg}</p>
+                    </td>
+                  </tr>
+                </table>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 11px; color: #334155; line-height: 1.6;">
+                  <div>🌟 <strong>Pass Category:</strong> ${regCategory}</div>
+                  <div>📍 <strong>Venue:</strong> ${regCity}, India</div>
+                  <div>🆔 <strong>Pass ID:</strong> ${regId}</div>
+                </div>
+              </div>
+              <div style="background-color: #064E3B; padding: 10px 14px; text-align: center; color: #ffffff; font-size: 11px; font-weight: 700;">
+                📅 Official Verified Attendee Credential
+              </div>
+            </div>
+
+            <!-- ONE-CLICK ACTION BUTTONS -->
+            <div style="margin-top: 14px;">
+              <a href="${baseUrl}/verify-pass/${encodeURIComponent(regId)}" target="_blank" style="display: inline-block; background: #00A86B; color: #ffffff; padding: 12px 26px; border-radius: 12px; font-weight: 800; font-size: 13px; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 168, 107, 0.35); text-transform: uppercase; margin-bottom: 12px;">
+                ⬇️ VIEW & DOWNLOAD 1080×1350 POSTER (PNG)
+              </a>
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                <span style="font-weight: 700; color: #1e293b;">Direct Social Share:</span><br/>
+                <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(`I am attending ${eventName}! View my delegate pass and join me: ${baseUrl}/verify-pass/${encodeURIComponent(regId)}`)}" target="_blank" style="display: inline-block; background-color: #25D366; color: #ffffff; padding: 5px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 4px 2px; font-size: 11px;">WhatsApp</a>
+                <a href="https://www.instagram.com/" target="_blank" style="display: inline-block; background: linear-gradient(45deg, #833AB4, #FD1D1D, #F77737); color: #ffffff; padding: 5px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 4px 2px; font-size: 11px;">Instagram</a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${baseUrl}/verify-pass/${encodeURIComponent(regId)}`)}" target="_blank" style="display: inline-block; background-color: #0A66C2; color: #ffffff; padding: 5px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 4px 2px; font-size: 11px;">LinkedIn</a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${baseUrl}/verify-pass/${encodeURIComponent(regId)}`)}" target="_blank" style="display: inline-block; background-color: #1877F2; color: #ffffff; padding: 5px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 4px 2px; font-size: 11px;">Facebook</a>
+                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`I am excited to attend ${eventName}!`)}&url=${encodeURIComponent(`${baseUrl}/verify-pass/${encodeURIComponent(regId)}`)}" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 5px 12px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 4px 2px; font-size: 11px;">X (Twitter)</a>
+              </div>
+            </div>
+          </div>
+
           <!-- TERMS & CONDITIONS SECTION -->
           <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background-color: #f8fafc; margin-bottom: 22px;">
             <div style="border-bottom: 2px solid #0891b2; padding-bottom: 8px; margin-bottom: 12px;">

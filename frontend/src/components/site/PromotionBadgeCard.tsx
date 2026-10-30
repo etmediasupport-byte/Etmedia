@@ -10,6 +10,8 @@ import {
   ExternalLink,
   MessageCircle,
   Linkedin,
+  Facebook,
+  Instagram,
   RefreshCw,
   Camera,
   QrCode,
@@ -191,14 +193,14 @@ export default function PromotionBadgeCard({
   };
 
   // =========================================================================
-  // HIGH-RESOLUTION 1200x1200px HTML5 CANVAS EXPORTER (SUPPORTS ALL 5 THEMES)
+  // HIGH-RESOLUTION 1080x1350px (Instagram 4:5 Portrait) CANVAS EXPORTER
   // =========================================================================
   const handleDownloadImage = async () => {
     try {
       setExporting(true);
       const canvas = document.createElement("canvas");
-      const W = 1200;
-      const H = 1200;
+      const W = 1080;
+      const H = 1350;
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext("2d");
@@ -236,33 +238,29 @@ export default function PromotionBadgeCard({
         // Top right diagonal polygon (emerald + dark navy)
         ctx.fillStyle = primaryColor;
         ctx.beginPath();
-        ctx.moveTo(W * 0.58, 0);
+        ctx.moveTo(W * 0.52, 0);
         ctx.lineTo(W, 0);
-        ctx.lineTo(W, H * 0.42);
-        ctx.lineTo(W * 0.72, H * 0.28);
+        ctx.lineTo(W, H * 0.35);
+        ctx.lineTo(W * 0.68, H * 0.22);
         ctx.closePath();
         ctx.fill();
 
         ctx.fillStyle = secondaryColor;
         ctx.beginPath();
-        ctx.moveTo(W * 0.72, 0);
+        ctx.moveTo(W * 0.68, 0);
         ctx.lineTo(W, 0);
-        ctx.lineTo(W, H * 0.28);
+        ctx.lineTo(W, H * 0.22);
         ctx.closePath();
         ctx.fill();
 
-        // Bottom right emerald triangle
+        // Bottom right emerald accent
         ctx.fillStyle = primaryColor;
         ctx.beginPath();
-        ctx.moveTo(W * 0.82, H * 0.89);
+        ctx.moveTo(W * 0.80, H * 0.88);
         ctx.lineTo(W, H * 0.76);
-        ctx.lineTo(W, H * 0.89);
+        ctx.lineTo(W, H * 0.88);
         ctx.closePath();
         ctx.fill();
-
-        // Bottom footer banner
-        ctx.fillStyle = footerBg;
-        ctx.fillRect(0, H * 0.89, W, H * 0.11);
 
         // Logo
         if (logoImg) {
@@ -275,14 +273,14 @@ export default function PromotionBadgeCard({
 
         // Top Tagline
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 38px sans-serif";
+        ctx.font = "900 36px sans-serif";
         ctx.textAlign = "left";
         const tagParts = topTagline.includes("\n")
           ? topTagline.split("\n")
           : topTagline.length > 26
           ? [topTagline.slice(0, 26).trim(), topTagline.slice(26).trim()]
           : [topTagline];
-        let ty = 180;
+        let ty = 175;
         tagParts.forEach((tp, i) => {
           if (i === 1) ctx.fillStyle = "#1E1B4B";
           ctx.fillText(tp, 50, ty);
@@ -292,43 +290,44 @@ export default function PromotionBadgeCard({
         // Event Brand
         ctx.fillStyle = "#0F172A";
         ctx.font = "800 18px sans-serif";
-        ctx.fillText("AWARDS & CONNECT", 50, 310);
+        ctx.fillText("AWARDS & CONNECT", 50, ty + 20);
 
         ctx.fillStyle = "#0284C7";
-        ctx.font = "900 46px sans-serif";
-        ctx.fillText(eventHeading, 50, 365);
+        ctx.font = "900 44px sans-serif";
+        ctx.fillText(eventHeading, 50, ty + 72);
 
         ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 20px sans-serif";
-        ctx.fillText(subHeading, 50, 405);
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillText(subHeading, 50, ty + 112);
 
         // Name, Designation, Company
+        const ny = ty + 195;
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 42px sans-serif";
-        ctx.fillText(attendeeName, 50, 500);
+        ctx.font = "900 46px sans-serif";
+        ctx.fillText(attendeeName, 50, ny);
 
         ctx.fillStyle = accentColor;
-        ctx.font = "bold 26px sans-serif";
-        ctx.fillText(attendeeDesignation, 50, 545);
+        ctx.font = "bold 28px sans-serif";
+        ctx.fillText(attendeeDesignation, 50, ny + 46);
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 28px sans-serif";
-        ctx.fillText(attendeeCompany, 50, 585);
+        ctx.font = "900 30px sans-serif";
+        ctx.fillText(attendeeCompany, 50, ny + 90);
 
-        // Right side: Circular Photo (Moved UP)
-        const cx = W * 0.76;
-        const cy = 345;
-        const cr = 155;
+        // Right side: Circular Photo (Enlarged & Prominent)
+        const cx = W * 0.75;
+        const cy = 340;
+        const cr = 185;
 
         // Dark ring
         ctx.beginPath();
-        ctx.arc(cx, cy, cr + 10, 0, Math.PI * 2);
+        ctx.arc(cx, cy, cr + 12, 0, Math.PI * 2);
         ctx.fillStyle = secondaryColor;
         ctx.fill();
 
         // White ring
         ctx.beginPath();
-        ctx.arc(cx, cy, cr + 5, 0, Math.PI * 2);
+        ctx.arc(cx, cy, cr + 6, 0, Math.PI * 2);
         ctx.fillStyle = "#FFFFFF";
         ctx.fill();
 
@@ -362,13 +361,13 @@ export default function PromotionBadgeCard({
         ctx.restore();
 
         // Badge Pill attached to top of circle
-        const px = cx - 130;
-        const py = cy - cr - 22;
+        const px = cx - 145;
+        const py = cy - cr - 24;
         ctx.fillStyle = "#FFFFFF";
         ctx.shadowColor = "rgba(0,0,0,0.25)";
         ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.roundRect(px, py, 260, 46, 23);
+        ctx.roundRect(px, py, 290, 48, 24);
         ctx.fill();
         ctx.shadowColor = "transparent";
 
@@ -377,22 +376,22 @@ export default function PromotionBadgeCard({
         ctx.stroke();
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 18px sans-serif";
+        ctx.font = "900 19px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(badgeText, cx, py + 29);
+        ctx.fillText(badgeText, cx, py + 31);
 
-        // Right side: QR Scanner in lower place
+        // Right side: QR Scanner sitting directly below photo
         if (qrImg) {
-          const qrSize = 170;
+          const qrSize = 200;
           const qrX = cx - qrSize / 2;
-          const qrY = 540;
+          const qrY = 570;
 
           // QR container card
           ctx.fillStyle = "#FFFFFF";
           ctx.shadowColor = "rgba(0,0,0,0.15)";
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 12;
           ctx.beginPath();
-          ctx.roundRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 55, 18);
+          ctx.roundRect(qrX - 18, qrY - 16, qrSize + 36, qrSize + 70, 22);
           ctx.fill();
           ctx.shadowColor = "transparent";
 
@@ -405,41 +404,88 @@ export default function PromotionBadgeCard({
           ctx.fillStyle = primaryColor;
           ctx.font = "900 16px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText("SCAN FOR EVENT PASS", cx, qrY + qrSize + 28);
+          ctx.fillText("SCAN FOR EVENT PASS", cx, qrY + qrSize + 36);
         }
 
         // Left side: CTA Button
         ctx.fillStyle = primaryColor;
         ctx.beginPath();
-        ctx.roundRect(50, 620, 200, 46, 23);
+        ctx.roundRect(50, ny + 150, 240, 52, 26);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 19px sans-serif";
+        ctx.font = "bold 20px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(ctaText, 150, 650);
+        ctx.fillText(ctaText, 170, ny + 183);
 
         // Left side: Bullets
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 22px sans-serif";
+        ctx.font = "900 24px sans-serif";
         ctx.textAlign = "left";
-        let by = 705;
+        let by = ny + 250;
         highlights.slice(0, 4).forEach((h) => {
           ctx.fillText(`• ${h}`, 50, by);
-          by += 38;
+          by += 44;
         });
+
+        // Middle Verification Strip (Fills middle vertical space with prestige)
+        ctx.fillStyle = "#F0FDF4";
+        ctx.beginPath();
+        ctx.roundRect(50, 890, W - 100, 95, 16);
+        ctx.fill();
+        ctx.strokeStyle = "#BBF7D0";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#065F46";
+        ctx.font = "900 22px sans-serif";
+        ctx.fillText("✓ OFFICIAL EXECUTIVE DELEGATE PASS & CREDENTIAL", 80, 935);
+
+        ctx.fillStyle = "#166534";
+        ctx.font = "bold 17px sans-serif";
+        ctx.fillText(`Verified Delegate: ${attendeeName}  |  Pass: ${attendee.regId || "CONCLAVE VIP"}`, 80, 965);
+
+        // Additional VIP Showcase Strip (Eliminates dead vertical space)
+        ctx.fillStyle = "#F8FAFC";
+        ctx.beginPath();
+        ctx.roundRect(50, 1010, W - 100, 155, 18);
+        ctx.fill();
+        ctx.strokeStyle = "#E2E8F0";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "900 20px sans-serif";
+        ctx.fillText("🏆 AWARDS FELICITATION", 80, 1060);
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillStyle = "#475569";
+        ctx.fillText("National Leadership Recognition", 80, 1095);
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "900 20px sans-serif";
+        ctx.fillText("🤝 5-STAR LUNCHEON", 420, 1060);
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillStyle = "#475569";
+        ctx.fillText("C-Suite & CXO Masterclasses", 420, 1095);
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "900 20px sans-serif";
+        ctx.fillText("🎟️ FAST-TRACK ENTRY", 760, 1060);
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillStyle = "#475569";
+        ctx.fillText("Digital Pass QR Check-in", 760, 1095);
 
         // Bottom Footer (Fixed height & fully visible)
         ctx.fillStyle = footerBg;
-        ctx.fillRect(0, H * 0.88, W, H * 0.12);
+        ctx.fillRect(0, 1200, W, 150);
 
         ctx.fillStyle = "#E2E8F0";
         ctx.font = "600 21px sans-serif";
-        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, H * 0.925);
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, 1250);
 
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "bold 23px sans-serif";
-        ctx.fillText(`📅 Date: ${dateText}          📍 Venue: ${venueText}`, 50, H * 0.965);
+        ctx.fillText(`📅 Date: ${dateText}          📍 Venue: ${venueText}`, 50, 1300);
       }
 
       // -----------------------------------------------------------
@@ -630,79 +676,79 @@ export default function PromotionBadgeCard({
         // Right Column (White Card Details)
         ctx.fillStyle = "#FFFFFF";
         ctx.beginPath();
-        ctx.roundRect(520, 50, 630, H - 100, 24);
+        ctx.roundRect(510, 50, 520, H - 100, 24);
         ctx.fill();
 
         // Right content
         if (logoImg) {
-          ctx.drawImage(logoImg, 560, 90, 200, 65);
+          ctx.drawImage(logoImg, 550, 90, 200, 65);
         }
 
         ctx.fillStyle = primaryColor;
         ctx.font = "900 16px sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText("OFFICIAL DELEGATE CREDENTIAL", 560, 200);
+        ctx.fillText("OFFICIAL DELEGATE CREDENTIAL", 550, 200);
 
         ctx.fillStyle = "#0F172A";
         ctx.font = "900 36px sans-serif";
-        ctx.fillText(topTagline, 560, 245);
+        ctx.fillText(topTagline, 550, 245);
 
         ctx.fillStyle = "#0284C7";
         ctx.font = "900 32px sans-serif";
-        ctx.fillText(eventHeading, 560, 320);
+        ctx.fillText(eventHeading, 550, 320);
 
         ctx.fillStyle = "#64748B";
         ctx.font = "bold 18px sans-serif";
-        ctx.fillText(subHeading, 560, 360);
+        ctx.fillText(subHeading, 550, 360);
 
         // Attendee Name
         ctx.fillStyle = "#0F172A";
         ctx.font = "900 40px sans-serif";
-        ctx.fillText(attendeeName, 560, 450);
+        ctx.fillText(attendeeName, 550, 450);
 
         ctx.fillStyle = accentColor;
         ctx.font = "bold 24px sans-serif";
-        ctx.fillText(attendeeDesignation, 560, 490);
+        ctx.fillText(attendeeDesignation, 550, 490);
 
         ctx.fillStyle = "#0F172A";
         ctx.font = "900 26px sans-serif";
-        ctx.fillText(attendeeCompany, 560, 530);
+        ctx.fillText(attendeeCompany, 550, 530);
 
         // QR Code & Highlights Box
         ctx.fillStyle = "#F1F5F9";
         ctx.beginPath();
-        ctx.roundRect(560, 570, 550, 220, 16);
+        ctx.roundRect(550, 580, 440, 260, 16);
         ctx.fill();
 
         if (qrImg) {
-          ctx.drawImage(qrImg, 580, 590, 180, 180);
+          ctx.drawImage(qrImg, 570, 610, 190, 190);
         }
 
         ctx.fillStyle = "#0F172A";
         ctx.font = "bold 18px sans-serif";
-        ctx.fillText(ctaText, 790, 625);
+        ctx.fillText(ctaText, 780, 635);
 
-        let ey = 665;
+        let ey = 675;
         highlights.forEach((h) => {
           ctx.font = "600 16px sans-serif";
           ctx.fillStyle = "#334155";
-          ctx.fillText(`• ${h}`, 790, ey);
-          ey += 30;
+          ctx.fillText(`• ${h}`, 780, ey);
+          ey += 32;
         });
 
         // Bottom right footer inside card
         ctx.fillStyle = footerBg;
         ctx.beginPath();
-        ctx.roundRect(560, 820, 550, 110, 16);
+        ctx.roundRect(550, 870, 440, 120, 16);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "bold 18px sans-serif";
-        ctx.fillText(`📅 ${dateText}`, 585, 860);
-        ctx.fillText(`📍 ${venueText}`, 585, 895);
+        ctx.fillText(`📅 ${dateText}`, 575, 915);
+        ctx.fillText(`📍 ${venueText}`, 575, 950);
         ctx.font = "600 15px sans-serif";
         ctx.fillStyle = "#CBD5E1";
-        ctx.fillText(`✉️ ${contactEmail}`, 585, 925);
+        ctx.fillText(`✉️ ${contactEmail}`, 575, 980);
       }
 
       // -----------------------------------------------------------
@@ -964,9 +1010,9 @@ export default function PromotionBadgeCard({
     }
   };
 
-  // Social Sharing
+  // Social Sharing Handlers
   const handleShareWhatsApp = () => {
-    const text = `Excited to announce that I am attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media!\n\nJoin me & industry leaders:\n${qrTarget}`;
+    const text = `🎉 Excited to announce that I am attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media!\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin me & 2,000+ HR Leaders:\n${qrTarget}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -978,14 +1024,45 @@ export default function PromotionBadgeCard({
     );
   };
 
+  const handleShareFacebook = () => {
+    const postUrl = qrTarget;
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`,
+      "_blank"
+    );
+  };
+
+  const handleShareX = () => {
+    const text = `🎉 Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} by Executive Talks Media! 🚀`;
+    const postUrl = qrTarget;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`,
+      "_blank"
+    );
+  };
+
+  const handleShareInstagram = async () => {
+    await handleDownloadImage();
+    const caption = `Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media! 🚀\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin 2,000+ HR leaders at the summit: ${qrTarget}\n\n#ExecutiveTalks #HRRecall2k26 #Leadership #Summit #Networking #CorporateAwards`;
+    try {
+      await navigator.clipboard.writeText(caption);
+      toast.success("Poster downloaded & caption copied! Ready to share on Instagram stories or feed.", {
+        duration: 5000,
+      });
+    } catch {
+      toast.success("Poster downloaded! Ready to share on Instagram.", { duration: 4000 });
+    }
+    window.open("https://www.instagram.com/", "_blank");
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* ============================================================== */}
-      {/* 1. VISUAL SQUARE BADGE POSTER (1:1 Aspect Ratio)               */}
+      {/* 1. VISUAL PORTRAIT BADGE POSTER (1080x1350 / 4:5 Aspect Ratio) */}
       {/* ============================================================== */}
       <div
         id="promotion-badge-container"
-        className="relative w-full aspect-square max-w-[620px] mx-auto rounded-3xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300"
+        className="relative w-full aspect-[4/5] max-w-[500px] sm:max-w-[540px] mx-auto rounded-3xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300"
         style={{
           boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
         }}
@@ -997,7 +1074,7 @@ export default function PromotionBadgeCard({
           <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden">
             {/* Top-right Angular Chevron Geometry */}
             <div
-              className="absolute top-0 right-0 w-[45%] h-[40%] pointer-events-none"
+              className="absolute top-0 right-0 w-[45%] h-[38%] pointer-events-none"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor} 60%, ${secondaryColor} 60%, ${secondaryColor} 100%)`,
                 clipPath: "polygon(0 0, 100% 0, 100% 100%, 30% 65%)",
@@ -1011,13 +1088,13 @@ export default function PromotionBadgeCard({
               }}
             />
 
-            {/* Main 2-Column Content Grid */}
-            <div className="relative z-10 p-3.5 sm:p-5 grid grid-cols-12 gap-2 sm:gap-3 flex-1 min-h-0 overflow-hidden">
+            {/* Main 2-Column Content Grid (Evenly Distributed, Zero Middle Gap) */}
+            <div className="relative z-10 p-3.5 sm:p-5 grid grid-cols-12 gap-2 sm:gap-3 flex-1 min-h-0 items-center overflow-hidden">
               {/* Left Column: Details & Brand (7 Columns) */}
-              <div className="col-span-7 flex flex-col justify-between h-full pr-1 overflow-hidden">
+              <div className="col-span-7 flex flex-col justify-center h-full pr-1 space-y-2 sm:space-y-3.5 overflow-hidden">
                 <div className="space-y-1.5 sm:space-y-2">
                   {/* Logo */}
-                  <div className="bg-white/95 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-xs border border-slate-200 inline-block">
+                  <div className="bg-white/95 backdrop-blur-xs p-1 sm:p-1.5 rounded-xl shadow-xs border border-slate-200 inline-block self-start">
                     <img
                       src={template.custom_logo_url || executivetalksLogo}
                       alt="Executive Talks"
@@ -1027,7 +1104,7 @@ export default function PromotionBadgeCard({
 
                   {/* Top Tagline */}
                   <div className="space-y-0.5">
-                    <h2 className="text-[10px] sm:text-base font-black text-slate-900 leading-tight uppercase font-display tracking-tight">
+                    <h2 className="text-[11px] sm:text-base font-black text-slate-900 leading-tight uppercase font-display tracking-tight">
                       {topTagline}
                     </h2>
                   </div>
@@ -1047,31 +1124,31 @@ export default function PromotionBadgeCard({
 
                   {/* Attendee Name & Designation */}
                   <div className="space-y-0.5 pt-0.5">
-                    <h4 className="text-[11px] sm:text-sm font-black text-slate-900 uppercase font-display leading-tight truncate">
+                    <h4 className="text-xs sm:text-base font-black text-slate-900 uppercase font-display leading-tight truncate">
                       {attendeeName}
                     </h4>
                     <p
-                      className="text-[9px] sm:text-[11px] font-bold leading-tight truncate"
+                      className="text-[10px] sm:text-xs font-bold leading-tight truncate"
                       style={{ color: accentColor }}
                     >
                       {attendeeDesignation}
                     </p>
-                    <p className="text-[8px] sm:text-[10px] font-black text-slate-800 uppercase tracking-tight leading-tight truncate">
+                    <p className="text-[9px] sm:text-[11px] font-black text-slate-800 uppercase tracking-tight leading-tight truncate">
                       {attendeeCompany}
                     </p>
                   </div>
                 </div>
 
-                {/* Bottom Left: CTA Button & 4 Highlights */}
-                <div className="space-y-1.5 pt-1">
+                {/* CTA Button & Highlights (Flows naturally in middle) */}
+                <div className="space-y-2 pt-1">
                   <div
-                    className="inline-flex items-center justify-center px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-xs"
+                    className="inline-flex items-center justify-center px-3 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-xs"
                     style={{ backgroundColor: primaryColor }}
                   >
                     {ctaText}
                   </div>
 
-                  <div className="space-y-0.5 text-[8px] sm:text-[10px] font-black text-slate-800 pt-0.5">
+                  <div className="space-y-1 text-[8px] sm:text-[10px] font-black text-slate-800 pt-0.5">
                     {highlights.slice(0, 4).map((h, i) => (
                       <div key={i} className="flex items-center gap-1.5 leading-tight">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
@@ -1082,20 +1159,20 @@ export default function PromotionBadgeCard({
                 </div>
               </div>
 
-              {/* Right Column: Photo moved UP, Scanner placed in lower place */}
-              <div className="col-span-5 flex flex-col items-center justify-between h-full pt-0.5 pb-1 overflow-hidden">
-                {/* 1. Photo Moved UP */}
+              {/* Right Column: Large Photo Circle + QR Scanner Sitting Directly Below */}
+              <div className="col-span-5 flex flex-col items-center justify-center h-full space-y-2 sm:space-y-3 pt-0.5 pb-1 overflow-hidden">
+                {/* 1. Large Photo Circle */}
                 <div className="flex flex-col items-center relative">
                   {/* Badge Pill attached to top of photo */}
-                  <div className="relative -mb-2.5 z-20 bg-white border border-slate-300 shadow-md rounded-full px-2 sm:px-2.5 py-0.5 text-[7px] sm:text-[9px] font-black uppercase tracking-wide text-slate-900 text-center">
+                  <div className="relative -mb-3 z-20 bg-white border border-slate-300 shadow-md rounded-full px-2.5 sm:px-3 py-0.5 text-[7px] sm:text-[9px] font-black uppercase tracking-wide text-slate-900 text-center whitespace-nowrap">
                     {badgeText}
                   </div>
 
-                  {/* Circular Photo Box */}
+                  {/* Circular Photo Box - Large & Prominent */}
                   <div
-                    className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-3 sm:border-4 border-white shadow-xl overflow-hidden bg-slate-900 flex items-center justify-center group shrink-0"
+                    className="relative w-28 h-28 sm:w-40 sm:h-40 rounded-full border-3 sm:border-4 border-white shadow-2xl overflow-hidden bg-slate-900 flex items-center justify-center group shrink-0"
                     style={{
-                      boxShadow: "0 8px 20px -4px rgba(0,0,0,0.3)",
+                      boxShadow: "0 10px 25px -4px rgba(0,0,0,0.35)",
                     }}
                   >
                     {localPhoto ? (
@@ -1106,10 +1183,10 @@ export default function PromotionBadgeCard({
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-white space-y-0.5">
-                        <span className="text-2xl sm:text-4xl font-black font-display">
+                        <span className="text-3xl sm:text-5xl font-black font-display">
                           {attendeeName.charAt(0) || "E"}
                         </span>
-                        <span className="text-[7px] sm:text-[8px] text-slate-300 uppercase tracking-widest font-mono">
+                        <span className="text-[7px] sm:text-[9px] text-slate-300 uppercase tracking-widest font-mono">
                           Delegate
                         </span>
                       </div>
@@ -1128,23 +1205,23 @@ export default function PromotionBadgeCard({
                   </div>
                 </div>
 
-                {/* 2. QR Code Scanner Placed in Lower Place with Event URL link */}
+                {/* 2. QR Code Scanner Placed Directly Below Photo */}
                 <a
                   href={qrTarget}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={`Scan or click to open: ${qrTarget}`}
-                  className="mt-1 flex flex-col items-center p-1.5 sm:p-2 rounded-2xl bg-white/95 border border-slate-200 shadow-md hover:border-emerald-500 hover:shadow-lg transition-all group shrink-0 cursor-pointer"
+                  className="flex flex-col items-center p-1.5 sm:p-2 rounded-2xl bg-white/95 border border-slate-200 shadow-md hover:border-emerald-500 hover:shadow-lg transition-all group shrink-0 cursor-pointer"
                 >
                   <div className="bg-white p-1 rounded-xl border border-slate-100 shadow-inner">
                     {qrDataUrl ? (
                       <img
                         src={qrDataUrl}
                         alt="Event QR Scanner"
-                        className="w-14 h-14 sm:w-18 sm:h-18 object-contain"
+                        className="w-14 h-14 sm:w-20 sm:h-20 object-contain"
                       />
                     ) : (
-                      <div className="w-14 h-14 sm:w-18 sm:h-18 bg-slate-100 animate-pulse rounded-lg" />
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 bg-slate-100 animate-pulse rounded-lg" />
                     )}
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-[7px] sm:text-[9px] font-black text-slate-700 group-hover:text-emerald-700 uppercase tracking-wider">
@@ -1152,6 +1229,18 @@ export default function PromotionBadgeCard({
                     <ExternalLink className="w-2.5 h-2.5 text-emerald-600" />
                   </div>
                 </a>
+              </div>
+            </div>
+
+            {/* Middle Executive Credential Bar (Eliminates dead space in 4:5 portrait) */}
+            <div className="mx-3.5 sm:mx-5 mb-2 p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200/90 flex items-center justify-between text-[8px] sm:text-[10px] font-bold text-slate-800 shadow-xs shrink-0">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-black">
+                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="uppercase tracking-wider">Official Delegate Credential</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500 font-mono text-[7px] sm:text-[9px]">
+                <span className="bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded font-bold">5-Star Luncheon</span>
+                <span>ID: {attendee.regId || attendee.id || "DELEGATE"}</span>
               </div>
             </div>
 
@@ -1540,60 +1629,105 @@ export default function PromotionBadgeCard({
       </div>
 
       {/* ============================================================== */}
-      {/* 2. ACTION CONTROLS: DOWNLOAD & SHARE                           */}
+      {/* 2. ACTION CONTROLS: DIRECT SOCIAL SHARING & 1080x1350 DOWNLOAD */}
       {/* ============================================================== */}
       {!hideActionButtons && (
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          {allowPhotoUpload && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="py-2.5 px-4 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-            >
-              <Upload className="w-4 h-4 text-cyan-600" />
-              <span>{localPhoto ? "Replace My Photo" : "Upload My Photo"}</span>
-            </button>
-          )}
+        <div className="flex flex-col gap-3 pt-2">
+          {/* Header Row: Social Share Title & Photo Action */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+              <Share2 className="w-3.5 h-3.5 text-cyan-600" />
+              <span>Direct Social Share & Poster Actions:</span>
+            </span>
+            {allowPhotoUpload && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[11px] font-bold text-cyan-700 hover:text-cyan-800 flex items-center gap-1 cursor-pointer bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-lg border border-cyan-200 transition-all"
+              >
+                <Upload className="w-3 h-3 text-cyan-600" />
+                <span>{localPhoto ? "Replace My Photo" : "Upload My Photo"}</span>
+              </button>
+            )}
+          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleShareLinkedIn}
-              className="py-2.5 px-3.5 rounded-xl bg-[#0A66C2] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#084e96] transition-all cursor-pointer shadow-xs"
-              title="Share on LinkedIn"
-            >
-              <Linkedin className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">LinkedIn</span>
-            </button>
+          {/* Social Share Buttons: WhatsApp, Instagram, Facebook, LinkedIn, X */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {/* 1. WhatsApp */}
             <button
               type="button"
               onClick={handleShareWhatsApp}
-              className="py-2.5 px-3.5 rounded-xl bg-[#25D366] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#1faa53] transition-all cursor-pointer shadow-xs"
-              title="Share on WhatsApp"
+              className="py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Share directly to WhatsApp"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">WhatsApp</span>
+              <MessageCircle className="w-4 h-4" />
+              <span>WhatsApp</span>
             </button>
 
+            {/* 2. Instagram */}
             <button
               type="button"
-              onClick={handleDownloadImage}
-              disabled={exporting}
-              className="py-2.5 px-5 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-slate-800 transition-all cursor-pointer shadow-md disabled:opacity-50"
+              onClick={handleShareInstagram}
+              className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-95 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Download 1080x1350 Poster & Share to Instagram"
             >
-              {exporting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                  <span>Generating PNG...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 text-cyan-400" />
-                  <span>Download High-Res Badge (PNG)</span>
-                </>
-              )}
+              <Instagram className="w-4 h-4" />
+              <span>Instagram</span>
+            </button>
+
+            {/* 3. Facebook */}
+            <button
+              type="button"
+              onClick={handleShareFacebook}
+              className="py-2.5 px-3 rounded-xl bg-[#1877F2] hover:bg-[#156cdb] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Share directly to Facebook"
+            >
+              <Facebook className="w-4 h-4" />
+              <span>Facebook</span>
+            </button>
+
+            {/* 4. LinkedIn */}
+            <button
+              type="button"
+              onClick={handleShareLinkedIn}
+              className="py-2.5 px-3 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Share directly to LinkedIn"
+            >
+              <Linkedin className="w-3.5 h-3.5" />
+              <span>LinkedIn</span>
+            </button>
+
+            {/* 5. X (Twitter) */}
+            <button
+              type="button"
+              onClick={handleShareX}
+              className="py-2.5 px-3 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer col-span-2 sm:col-span-1"
+              title="Share directly to X (Twitter)"
+            >
+              <span className="font-mono text-sm leading-none font-bold">𝕏</span>
+              <span>X Post</span>
             </button>
           </div>
+
+          {/* High-Resolution 1080x1350 PNG Download Button */}
+          <button
+            type="button"
+            onClick={handleDownloadImage}
+            disabled={exporting}
+            className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-slate-800 hover:to-slate-700 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all cursor-pointer disabled:opacity-50 border border-slate-700"
+          >
+            {exporting ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                <span>Generating High-Res 1080×1350 Poster...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 text-cyan-400" />
+                <span>Download Official 1080×1350 Poster (PNG)</span>
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>
