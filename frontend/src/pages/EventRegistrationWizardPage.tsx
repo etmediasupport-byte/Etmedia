@@ -2856,7 +2856,7 @@ export default function EventRegistrationWizardPage() {
                         <div>
                           <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-600 tracking-wider">
                             <Sparkles className="w-4 h-4" />
-                            <span>Your Official Event Promotion Badge (1080×1350 Portrait)</span>
+                            <span>Your Official Event Promotion Badge</span>
                           </div>
                           <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
                             Live Badge Review, Download & Social Share
@@ -2895,9 +2895,9 @@ export default function EventRegistrationWizardPage() {
                         }
                         attendee={{
                           id: registrationId || "DRAFT-BADGE",
-                          name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
-                          designation: formData.designation || "Executive Delegate",
-                          organization: formData.companyName || "Organization",
+                          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.fullName || "PRASANNA KUMAR PANDA",
+                          designation: formData.designation || formData.jobTitle || "CEO",
+                          organization: formData.companyName || formData.organization || "ASCEND MEDIA LABS",
                           photo_url: formData.photoUrl || "",
                           event_title: eventData?.title || "HR RECALL 2K26",
                           event_slug: eventData?.slug || slug || "hr-recall-2k26",
