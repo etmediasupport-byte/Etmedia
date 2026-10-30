@@ -22249,7 +22249,7 @@ export default function AdminDashboardPage() {
           {activeTab === "promotion-bar" && (
             <RegisterPromotionBarStudio
               registrations={registrations}
-              events={events}
+              events={cmsEvents}
             />
           )}
 
