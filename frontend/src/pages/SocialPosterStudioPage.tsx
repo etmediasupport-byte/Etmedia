@@ -185,7 +185,7 @@ export default function SocialPosterStudioPage() {
     organization: organization || "COMPANY / ORGANIZATION",
     photo_url: photoUrl || "",
     event_title: eventData?.title || "HR RECALL 2K26",
-    event_slug: targetSlug,
+    event_slug: eventData?.slug || targetSlug,
     date: eventData?.date || "11th December 2026",
     venue: eventData?.venue
       ? `${eventData.venue}, ${eventData.city || ""}`

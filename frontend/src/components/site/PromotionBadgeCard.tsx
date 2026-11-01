@@ -123,22 +123,53 @@ export default function PromotionBadgeCard({
   const attendeeDesignation = attendee.designation || "Unit Head – HR(Manager)";
   const attendeeCompany = (attendee.organization || "CARE HOSPITALS").toUpperCase();
 
-  // Dynamic QR destination URL linking directly to the specific event's live registration / details page
-  const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://www.executivetalksmedia.in";
+  // Dynamic Live Domain Origin (Always ensures full https:// protocol so mobile cameras instantly launch the browser)
+  const liveOrigin = (() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      const o = window.location.origin.trim().replace(/\/+$/, "");
+      if (!o.includes("localhost") && !o.includes("127.0.0.1")) {
+        return o;
+      }
+    }
+    return "https://executivetalksmedia.in";
+  })();
 
-  const dynamicSlug =
-    (template.event_slug || "").trim() ||
+  // Dynamic Event Slug: Prioritize the specific event the attendee is registered for
+  const rawEventSlug =
     (attendee.event_slug || "").trim() ||
+    (template.event_slug || "").trim() ||
     (attendee.event_title
       ? attendee.event_title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : "") ||
-    (template.title
-      ? template.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    (template.event_heading
+      ? template.event_heading.toLowerCase().replace(/^awards\s*&\s*connect\s*/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : "") ||
     "hr-recall-2k26";
 
-  const eventPageUrl = `${origin}/events/${dynamicSlug}`;
-  const qrTarget = (template.qr_destination_url || "").trim() || eventPageUrl;
+  // Clean the slug to prevent double 'events/' or slashes
+  const cleanEventSlug = rawEventSlug
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/^events\//i, "");
+
+  // Exact Dynamic Live Event URL (e.g. "https://executivetalksmedia.in/events/hr-recall-2k26-2903")
+  const dynamicEventPageUrl = `${liveOrigin}/events/${cleanEventSlug}`;
+
+  // QR Target URL: Always guarantee a full, direct HTTPS URL linking directly to the specific event
+  const qrTarget = (() => {
+    // If attendee belongs to a specific event, prioritize linking directly to that event:
+    if (attendee.event_slug && attendee.event_slug.trim()) {
+      return dynamicEventPageUrl;
+    }
+    const tplQr = (template.qr_destination_url || "").trim();
+    if (tplQr) {
+      if (/^https?:\/\//i.test(tplQr)) {
+        return tplQr;
+      }
+      return `${liveOrigin}${tplQr.startsWith("/") ? "" : "/"}${tplQr}`;
+    }
+    return dynamicEventPageUrl;
+  })();
 
   // Generate QR Code
   useEffect(() => {
