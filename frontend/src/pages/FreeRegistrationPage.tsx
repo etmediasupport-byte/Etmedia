@@ -219,13 +219,8 @@ export default function FreeRegistrationPage() {
   const [razorpayOrderId, setRazorpayOrderId] = useState<string>("");
   const [razorpayActiveKey, setRazorpayActiveKey] = useState<string>("");
 
-  // Determine whether Step 4 is active based on Admin settings
-  const isAwardStepEnabled = Boolean(
-    awardNominationEnabled ||
-    teamAwardNominationEnabled ||
-    orgAwardNominationEnabled ||
-    attendingPosterEnabled
-  );
+  // Step 4 (Award Nominations & Official Social Media Poster) is always active
+  const isAwardStepEnabled = true;
 
   // Dynamic fee calculations for award nominations
   const individualNominationFee = (awardNominationEnabled && wantsAwardNomination === "Yes") ? (Number(awardNominationFee) || 0) : 0;
@@ -770,12 +765,10 @@ export default function FreeRegistrationPage() {
         }
       }
 
-      if (attendingPosterEnabled) {
-        if (!socialPosterChoice) {
-          setPosterChoiceError("Please select whether you would like an official social media poster (Yes or No).");
-          toast.error("Please answer the social media poster question.");
-          return;
-        }
+      if (!socialPosterChoice) {
+        setPosterChoiceError("Please select whether you would like an official social media poster (Yes or No).");
+        toast.error("Please answer the social media poster question.");
+        return;
       }
     }
 
@@ -2074,9 +2067,8 @@ export default function FreeRegistrationPage() {
                       </div>
                     )}
 
-                    {/* SECTION 4: Official Event Social Media Poster Option */}
-                    {attendingPosterEnabled && (
-                      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-cyan-50/80 border border-emerald-200/80 space-y-5 shadow-sm">
+                    {/* SECTION 4: Official Event Social Media Poster Option (Always Available) */}
+                    <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-cyan-50/80 border border-emerald-200/80 space-y-5 shadow-sm">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/60 pb-3">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
@@ -2191,7 +2183,6 @@ export default function FreeRegistrationPage() {
                           </div>
                         )}
                       </div>
-                    )}
 
                     {/* Terms & Conditions Section */}
                     <div className="pt-2">

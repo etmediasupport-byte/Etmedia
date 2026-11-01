@@ -418,19 +418,12 @@ export default function EventRegistrationWizardPage() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Determine if Step 5 has at least one active section enabled by admin
-  const isStep5Enabled = Boolean(
-    awardNominationEnabled ||
-    teamAwardNominationEnabled ||
-    orgAwardNominationEnabled ||
-    attendingPosterEnabled
-  );
+  // Step 5 (Award Nomination & Official Social Media Poster) is always enabled
+  const isStep5Enabled = true;
 
-  const totalSteps = isStep5Enabled ? 8 : 7;
+  const totalSteps = 8;
   const getDisplayStepNumber = (step: number) => {
-    if (isStep5Enabled) return step;
-    if (step <= 4) return step;
-    return step - 1;
+    return step;
   };
 
   // If user lands on Step 5 but all 4 sections are disabled by admin, automatically proceed to Step 6
@@ -1035,8 +1028,8 @@ export default function EventRegistrationWizardPage() {
       return;
     }
 
-    // 4. Validate Social Media Poster Question
-    if (!socialPosterChoice && attendingPosterEnabled) {
+    // 4. Validate Social Media Poster Question (Mandatory Yes / No choice)
+    if (!socialPosterChoice) {
       setPosterChoiceError("Please select whether you wish to receive an official social media poster (Yes or No).");
       toast.error("Please answer the social media poster question.");
       return;
@@ -2787,9 +2780,8 @@ export default function EventRegistrationWizardPage() {
                       </div>
                     )}
 
-                    {/* SECTION 4: Official Event Social Media Poster Option */}
-                    {attendingPosterEnabled && (
-                      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-cyan-50/80 border border-emerald-200/80 space-y-5 shadow-sm">
+                    {/* SECTION 4: Official Event Social Media Poster Option (Always Available) */}
+                    <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-cyan-50/80 border border-emerald-200/80 space-y-5 shadow-sm">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/60 pb-3">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
@@ -2904,7 +2896,6 @@ export default function EventRegistrationWizardPage() {
                           </div>
                         )}
                       </div>
-                    )}
 
                     {/* Step 5 Navigation Buttons */}
                     <div className="flex items-center justify-between pt-6 border-t border-slate-100">
