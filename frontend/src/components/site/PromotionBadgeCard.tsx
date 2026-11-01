@@ -827,7 +827,7 @@ export default function PromotionBadgeCard({
 
         // Top Right Logo
         if (logoImg) {
-          ctx.drawImage(logoImg, W - 310, 40, 260, 80);
+          ctx.drawImage(logoImg, W - 320, 45, 275, 85);
         } else {
           ctx.fillStyle = "#0F172A";
           ctx.font = "bold 32px sans-serif";
@@ -837,65 +837,100 @@ export default function PromotionBadgeCard({
         // Top Left: ONE BIG GATHERING / 2,000+ HR PROFESSIONALS
         ctx.textAlign = "left";
         ctx.fillStyle = primaryColor || "#200E4B";
-        ctx.font = "900 44px sans-serif";
-        ctx.fillText("ONE BIG GATHERING", 55, 100);
+        ctx.font = "900 46px sans-serif";
+        ctx.fillText("ONE BIG GATHERING", 55, 105);
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "800 36px sans-serif";
-        ctx.fillText("2,000+ HR PROFESSIONALS", 55, 150);
+        ctx.font = "800 38px sans-serif";
+        ctx.fillText("2,000+ HR PROFESSIONALS", 55, 160);
 
         // "I'm Attending" Vibrant Blue Pill Badge
         const attendingText = "I'm Attending";
         ctx.fillStyle = secondaryColor || "#0D6EFD";
         ctx.beginPath();
-        ctx.roundRect(55, 178, 340, 56, 14);
+        ctx.roundRect(55, 192, 350, 60, 16);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 28px sans-serif";
+        ctx.font = "900 30px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(attendingText, 55 + 170, 216);
+        ctx.fillText(attendingText, 55 + 175, 233);
 
-        // Event Brand Lockup: AWARDS & CONNECT / HR RECALL 2K26
+        // Event Brand Lockup: AWARDS & CONNECT / Dynamic Event Heading Box
         ctx.textAlign = "left";
         ctx.fillStyle = "#475569";
-        ctx.font = "800 17px sans-serif";
-        ctx.fillText("AWARDS & CONNECT", 55, 282);
+        ctx.font = "800 19px sans-serif";
+        ctx.fillText("AWARDS & CONNECT", 55, 305);
 
-        // Blue bordered box (Width 355: ends at 410px! No overlap with circle at 555px!)
+        // Dynamic Event Heading Box (Zero overlap for ANY event title)
+        const boxX = 55;
+        const boxY = 325;
+        const boxW = 460;
+        const boxH = 92;
+        const boxR = 14;
+
         ctx.strokeStyle = "#0084FF";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(55, 298, 355, 80);
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxW, boxH, boxR);
+        ctx.stroke();
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(57, 300, 351, 76);
+        ctx.fill();
 
-        ctx.font = "900 48px sans-serif";
-        ctx.fillStyle = "#0084FF";
-        ctx.fillText("HR", 68, 356);
-        ctx.fillStyle = "#0A1931";
-        ctx.fillText("RECALL", 148, 356);
-        ctx.fillStyle = "#0084FF";
-        ctx.font = "900 38px sans-serif";
-        ctx.fillText("2K26", 328, 356);
+        // Clean heading text: remove "AWARDS & CONNECT" prefix if duplicated in eventHeading
+        let headingClean = (eventHeading || "HR RECALL 2K26")
+          .replace(/^AWARDS\s*&\s*CONNECT\s*/i, "")
+          .trim() || eventHeading;
+        const headingWords = headingClean.split(/\s+/).filter(Boolean);
 
+        // Calculate optimal font size dynamically so words NEVER collide and NEVER cross box border
+        let fSize = 46;
+        const wordGap = 16;
+
+        const calculateTotalWidth = (size: number) => {
+          ctx.font = `900 ${size}px sans-serif`;
+          return headingWords.reduce((sum, w) => sum + ctx.measureText(w).width, 0) + (headingWords.length - 1) * wordGap;
+        };
+
+        let totalTextW = calculateTotalWidth(fSize);
+        while (totalTextW > boxW - 36 && fSize > 20) {
+          fSize -= 2;
+          totalTextW = calculateTotalWidth(fSize);
+        }
+
+        // Render words perfectly centered horizontally and vertically in box with dynamic spacing
+        let curWordX = boxX + (boxW - totalTextW) / 2;
+        const textCenterY = boxY + boxH / 2 + fSize * 0.35;
+
+        headingWords.forEach((word) => {
+          ctx.font = `900 ${fSize}px sans-serif`;
+          // If word is "HR" or year-like "2K26"/"2026", use vibrant sky blue, otherwise navy
+          if (word.toUpperCase() === "HR" || /2K\d\d|\d{4}/i.test(word)) {
+            ctx.fillStyle = "#0084FF";
+          } else {
+            ctx.fillStyle = "#0A1931";
+          }
+          ctx.fillText(word, curWordX, textCenterY);
+          curWordX += ctx.measureText(word).width + wordGap;
+        });
+
+        // Subheading Tagline
+        ctx.font = "bold 20px sans-serif";
         ctx.fillStyle = "#0F172A";
-        ctx.font = "bold 18px sans-serif";
-        ctx.fillText("Remembering 2026. ", 55, 412);
+        ctx.fillText("Remembering 2026. ", 55, 455);
         ctx.fillStyle = "#0084FF";
-        ctx.fillText("Calling 2027", 230, 412);
+        ctx.fillText("Calling 2027", 245, 455);
 
         // Center-Right Circular Avatar with Purple Ring, Red Accents & Dashed Orbit
-        // Center: cx = 770, cy = 370. Photo radius cr = 160. Outer collar radius = 195.
-        // Outer boundary is 770 - 195 - 15 = 560px. Left box ends at 410px. Clearance: 150px!
-        const cx = 770;
-        const cy = 370;
-        const cr = 160;
-        const collarR = 195;
+        const cx = 785;
+        const cy = 410;
+        const cr = 180; // Inner photo radius
+        const collarR = 220; // Outer collar radius
 
-        // Outer Purple Ring
+        // Outer Purple Ring Collar
         ctx.beginPath();
         ctx.arc(cx, cy, collarR, 0, Math.PI * 2);
-        ctx.lineWidth = 32;
+        ctx.lineWidth = 36;
         ctx.strokeStyle = primaryColor || "#28107A";
         ctx.stroke();
 
@@ -903,28 +938,27 @@ export default function PromotionBadgeCard({
         ctx.save();
         ctx.beginPath();
         ctx.arc(cx, cy, collarR, 0, Math.PI * 2);
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.strokeStyle = "rgba(255,255,255,0.95)";
-        ctx.setLineDash([12, 10]);
+        ctx.setLineDash([14, 10]);
         ctx.stroke();
         ctx.restore();
 
-        // Red triangular wedge accents placed SAFELY on outer collar:
+        // Red triangular wedge accents placed SAFELY on outer collar perimeter:
         // 1. Top-Right Accent (around 45 degrees):
         ctx.fillStyle = accentColor || "#EF4444";
         ctx.beginPath();
-        ctx.moveTo(cx + 120, cy - 145);
-        ctx.lineTo(cx + 175, cy - 180);
-        ctx.lineTo(cx + 145, cy - 115);
+        ctx.moveTo(cx + 135, cy - 165);
+        ctx.lineTo(cx + 195, cy - 205);
+        ctx.lineTo(cx + 165, cy - 135);
         ctx.closePath();
         ctx.fill();
 
-        // 2. Bottom-Left Accent (around 225 degrees / 8 o'clock on collar perimeter):
-        // Positioned at y = 485 to 525, far above the attendee name at y = 635!
+        // 2. Left Accent (around 200 degrees on left perimeter, far above name):
         ctx.beginPath();
-        ctx.moveTo(cx - 135, cy + 115);
-        ctx.lineTo(cx - 180, cy + 155);
-        ctx.lineTo(cx - 110, cy + 145);
+        ctx.moveTo(cx - 155, cy + 130);
+        ctx.lineTo(cx - 205, cy + 175);
+        ctx.lineTo(cx - 130, cy + 165);
         ctx.closePath();
         ctx.fill();
 
@@ -951,72 +985,76 @@ export default function PromotionBadgeCard({
           ctx.fillStyle = "#1E293B";
           ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
           ctx.fillStyle = "#FFFFFF";
-          ctx.font = "bold 90px sans-serif";
+          ctx.font = "bold 95px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(attendeeName.charAt(0) || "M", cx, cy + 30);
+          ctx.fillText(attendeeName.charAt(0) || "M", cx, cy + 32);
         }
         ctx.restore();
 
-        // Details below circular photo (Starting at y = 635, collar ends at 370 + 210 = 580)
+        // Details below circular photo: Formatted & Spaced to naturally meet bottom footer
         ctx.textAlign = "center";
-        // Name in Forest Green (Never overlapped by triangles)
+        // Name in Forest Green
         ctx.fillStyle = "#1B4332";
-        ctx.font = "900 40px sans-serif";
-        ctx.fillText(attendeeName, cx, 635);
+        ctx.font = "900 46px sans-serif";
+        ctx.fillText(attendeeName, cx, 700);
 
         // Designation in Dark Gray
         ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 24px sans-serif";
-        ctx.fillText(attendeeDesignation, cx, 680);
+        ctx.font = "bold 27px sans-serif";
+        ctx.fillText(attendeeDesignation, cx, 750);
 
         // Organization in Royal Blue
         ctx.fillStyle = "#2563EB";
-        ctx.font = "900 26px sans-serif";
-        ctx.fillText(attendeeCompany, cx, 722);
+        ctx.font = "900 29px sans-serif";
+        ctx.fillText(attendeeCompany, cx, 796);
 
-        // Bottom Left: REGISTER NOW button, QR Code & 4 Bullets
+        // Bottom Left: REGISTER NOW button, QR Code & 4 Bullets (Expands down to meet footer)
         ctx.fillStyle = secondaryColor || "#0D6EFD";
         ctx.beginPath();
-        ctx.roundRect(55, 480, 210, 48, 24);
+        ctx.roundRect(55, 520, 235, 52, 26);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 20px sans-serif";
+        ctx.font = "900 22px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("REGISTER NOW", 160, 511);
+        ctx.fillText("REGISTER NOW", 172, 554);
 
         // QR Code
         if (qrImg) {
-          ctx.drawImage(qrImg, 55, 550, 180, 180);
+          ctx.drawImage(qrImg, 55, 605, 205, 205);
         }
 
         // 4 Bullets beside QR
         ctx.textAlign = "left";
-        ctx.font = "italic bold 23px sans-serif";
+        ctx.font = "italic bold 25px sans-serif";
         ctx.fillStyle = "#1E1B4B";
         const bulletItems = highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"];
         bulletItems.forEach((b, idx) => {
-          ctx.fillText(`• ${b}`, 260, 595 + idx * 38);
+          ctx.fillText(`• ${b}`, 280, 655 + idx * 48);
         });
 
-        // Bottom Full-Width Footer Bar (170px height, flush to bottom: 910 + 170 = 1080)
-        const fH = 170;
+        // Bottom Full-Width Solid Purple Footer Bar (220px height, flush to bottom, zero white gap!)
+        const fH = 220;
         const fy = H - fH;
         ctx.fillStyle = footerBg || "#28107A";
         ctx.fillRect(0, fy, W, fH);
 
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "500 23px sans-serif";
+        // Queries contact line
+        ctx.fillStyle = "#E2E8F0";
+        ctx.font = "600 24px sans-serif";
         ctx.textAlign = "left";
         ctx.fillText(`For queries & registration: ${contactEmail}`, 55, fy + 58);
 
-        ctx.font = "bold 24px sans-serif";
-        ctx.fillText(`Date: ${dateText}`, 55, fy + 115);
-
-        ctx.fillStyle = "#FF4B4B";
-        ctx.fillText(`📍:`, 600, fy + 115);
+        // Date line
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(` ${venueText}`, 640, fy + 115);
+        ctx.font = "bold 25px sans-serif";
+        ctx.fillText(`Date: ${dateText}`, 55, fy + 118);
+
+        // Venue line
+        ctx.fillStyle = "#FF4B4B";
+        ctx.fillText(`📍:`, 55, fy + 172);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(` ${venueText}`, 95, fy + 172);
       }
 
       // -----------------------------------------------------------
