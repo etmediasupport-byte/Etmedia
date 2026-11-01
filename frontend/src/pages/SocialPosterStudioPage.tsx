@@ -436,7 +436,7 @@ export default function SocialPosterStudioPage() {
 
                 {/* THE BADGE CARD COMPONENT */}
                 <div className="overflow-hidden rounded-2xl bg-slate-950 p-2 sm:p-4 border border-slate-800 flex justify-center">
-                  <div className="w-full max-w-[500px]">
+                  <div className="w-full max-w-[580px]">
                     <PromotionBadgeCard
                       template={template || fallbackTemplate}
                       attendee={attendeeData}
