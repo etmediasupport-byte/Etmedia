@@ -80,6 +80,7 @@ export default function PromotionBadgeCard({
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [exporting, setExporting] = useState<boolean>(false);
   const [localPhoto, setLocalPhoto] = useState<string>(attendee.photo_url || "");
+  const [renderedPosterUri, setRenderedPosterUri] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -826,7 +827,7 @@ export default function PromotionBadgeCard({
 
         // Top Right Logo
         if (logoImg) {
-          ctx.drawImage(logoImg, W - 320, 35, 270, 85);
+          ctx.drawImage(logoImg, W - 310, 40, 260, 80);
         } else {
           ctx.fillStyle = "#0F172A";
           ctx.font = "bold 32px sans-serif";
@@ -836,89 +837,96 @@ export default function PromotionBadgeCard({
         // Top Left: ONE BIG GATHERING / 2,000+ HR PROFESSIONALS
         ctx.textAlign = "left";
         ctx.fillStyle = primaryColor || "#200E4B";
-        ctx.font = "900 48px sans-serif";
-        ctx.fillText("ONE BIG GATHERING", 50, 135);
+        ctx.font = "900 44px sans-serif";
+        ctx.fillText("ONE BIG GATHERING", 55, 100);
 
-        ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 40px sans-serif";
-        ctx.fillText("2,000+ HR PROFESSIONALS", 50, 195);
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "800 36px sans-serif";
+        ctx.fillText("2,000+ HR PROFESSIONALS", 55, 150);
 
         // "I'm Attending" Vibrant Blue Pill Badge
         const attendingText = "I'm Attending";
         ctx.fillStyle = secondaryColor || "#0D6EFD";
         ctx.beginPath();
-        ctx.roundRect(50, 230, 410, 68, 16);
+        ctx.roundRect(55, 178, 340, 56, 14);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 36px sans-serif";
+        ctx.font = "900 28px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(attendingText, 255, 277);
+        ctx.fillText(attendingText, 55 + 170, 216);
 
         // Event Brand Lockup: AWARDS & CONNECT / HR RECALL 2K26
         ctx.textAlign = "left";
-        ctx.fillStyle = "#0F172A";
-        ctx.font = "800 20px sans-serif";
-        ctx.fillText("AWARDS & CONNECT", 180, 340);
+        ctx.fillStyle = "#475569";
+        ctx.font = "800 17px sans-serif";
+        ctx.fillText("AWARDS & CONNECT", 55, 282);
 
+        // Blue bordered box (Width 355: ends at 410px! No overlap with circle at 555px!)
         ctx.strokeStyle = "#0084FF";
         ctx.lineWidth = 3;
-        ctx.strokeRect(50, 355, 420, 90);
+        ctx.strokeRect(55, 298, 355, 80);
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(52, 357, 416, 86);
+        ctx.fillRect(57, 300, 351, 76);
 
-        ctx.font = "900 58px sans-serif";
-        ctx.fillStyle = "#0084FF";
-        ctx.fillText("HR", 60, 420);
-        ctx.fillStyle = "#0A1931";
-        ctx.fillText("RECALL", 165, 420);
-        ctx.fillStyle = "#0084FF";
         ctx.font = "900 48px sans-serif";
-        ctx.fillText("2K26", 360, 448);
+        ctx.fillStyle = "#0084FF";
+        ctx.fillText("HR", 68, 356);
+        ctx.fillStyle = "#0A1931";
+        ctx.fillText("RECALL", 148, 356);
+        ctx.fillStyle = "#0084FF";
+        ctx.font = "900 38px sans-serif";
+        ctx.fillText("2K26", 328, 356);
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "bold 19px sans-serif";
-        ctx.fillText("Remembering 2026. ", 110, 485);
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText("Remembering 2026. ", 55, 412);
         ctx.fillStyle = "#0084FF";
-        ctx.fillText("Calling 2027", 300, 485);
+        ctx.fillText("Calling 2027", 230, 412);
 
         // Center-Right Circular Avatar with Purple Ring, Red Accents & Dashed Orbit
-        const cx = 745;
-        const cy = 410;
-        const cr = 205; // Inner photo radius
+        // Center: cx = 770, cy = 370. Photo radius cr = 160. Outer collar radius = 195.
+        // Outer boundary is 770 - 195 - 15 = 560px. Left box ends at 410px. Clearance: 150px!
+        const cx = 770;
+        const cy = 370;
+        const cr = 160;
+        const collarR = 195;
 
         // Outer Purple Ring
         ctx.beginPath();
-        ctx.arc(cx, cy, 236, 0, Math.PI * 2);
-        ctx.lineWidth = 44;
+        ctx.arc(cx, cy, collarR, 0, Math.PI * 2);
+        ctx.lineWidth = 32;
         ctx.strokeStyle = primaryColor || "#28107A";
         ctx.stroke();
 
-        // Coral/Red triangular wedge accents on perimeter
-        ctx.fillStyle = accentColor || "#EF4444";
-        ctx.beginPath();
-        ctx.moveTo(cx - 50, cy - 225);
-        ctx.lineTo(cx + 80, cy - 250);
-        ctx.lineTo(cx + 40, cy - 210);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(cx - 55, cy + 225);
-        ctx.lineTo(cx - 55, cy + 270);
-        ctx.lineTo(cx + 40, cy + 230);
-        ctx.closePath();
-        ctx.fill();
-
-        // White dashed circle orbit inside purple ring
+        // White dashed circle orbit inside purple collar
         ctx.save();
         ctx.beginPath();
-        ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+        ctx.arc(cx, cy, collarR, 0, Math.PI * 2);
         ctx.lineWidth = 3;
-        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
         ctx.setLineDash([12, 10]);
         ctx.stroke();
         ctx.restore();
+
+        // Red triangular wedge accents placed SAFELY on outer collar:
+        // 1. Top-Right Accent (around 45 degrees):
+        ctx.fillStyle = accentColor || "#EF4444";
+        ctx.beginPath();
+        ctx.moveTo(cx + 120, cy - 145);
+        ctx.lineTo(cx + 175, cy - 180);
+        ctx.lineTo(cx + 145, cy - 115);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Bottom-Left Accent (around 225 degrees / 8 o'clock on collar perimeter):
+        // Positioned at y = 485 to 525, far above the attendee name at y = 635!
+        ctx.beginPath();
+        ctx.moveTo(cx - 135, cy + 115);
+        ctx.lineTo(cx - 180, cy + 155);
+        ctx.lineTo(cx - 110, cy + 145);
+        ctx.closePath();
+        ctx.fill();
 
         // Inner delegate photo
         ctx.save();
@@ -926,77 +934,89 @@ export default function PromotionBadgeCard({
         ctx.arc(cx, cy, cr, 0, Math.PI * 2);
         ctx.clip();
         if (photoImg) {
-          ctx.drawImage(photoImg, cx - cr, cy - cr, cr * 2, cr * 2);
+          const asp = photoImg.width / photoImg.height;
+          let dw = cr * 2;
+          let dh = cr * 2;
+          let dx = cx - cr;
+          let dy = cy - cr;
+          if (asp > 1) {
+            dw = cr * 2 * asp;
+            dx = cx - dw / 2;
+          } else {
+            dh = (cr * 2) / asp;
+            dy = cy - dh / 2;
+          }
+          ctx.drawImage(photoImg, dx, dy, dw, dh);
         } else {
           ctx.fillStyle = "#1E293B";
           ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
           ctx.fillStyle = "#FFFFFF";
-          ctx.font = "bold 95px sans-serif";
+          ctx.font = "bold 90px sans-serif";
           ctx.textAlign = "center";
           ctx.fillText(attendeeName.charAt(0) || "M", cx, cy + 30);
         }
         ctx.restore();
 
-        // Details below circular photo
+        // Details below circular photo (Starting at y = 635, collar ends at 370 + 210 = 580)
         ctx.textAlign = "center";
-        // Name in Forest Green
+        // Name in Forest Green (Never overlapped by triangles)
         ctx.fillStyle = "#1B4332";
-        ctx.font = "900 48px sans-serif";
-        ctx.fillText(attendeeName, cx, 685);
+        ctx.font = "900 40px sans-serif";
+        ctx.fillText(attendeeName, cx, 635);
 
         // Designation in Dark Gray
         ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 26px sans-serif";
-        ctx.fillText(attendeeDesignation, cx, 735);
+        ctx.font = "bold 24px sans-serif";
+        ctx.fillText(attendeeDesignation, cx, 680);
 
         // Organization in Royal Blue
         ctx.fillStyle = "#2563EB";
-        ctx.font = "900 28px sans-serif";
-        ctx.fillText(attendeeCompany, cx, 775);
+        ctx.font = "900 26px sans-serif";
+        ctx.fillText(attendeeCompany, cx, 722);
 
         // Bottom Left: REGISTER NOW button, QR Code & 4 Bullets
         ctx.fillStyle = secondaryColor || "#0D6EFD";
         ctx.beginPath();
-        ctx.roundRect(50, 560, 220, 54, 27);
+        ctx.roundRect(55, 480, 210, 48, 24);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 23px sans-serif";
+        ctx.font = "900 20px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("REGISTER NOW", 160, 595);
+        ctx.fillText("REGISTER NOW", 160, 511);
 
         // QR Code
         if (qrImg) {
-          ctx.drawImage(qrImg, 50, 635, 190, 190);
+          ctx.drawImage(qrImg, 55, 550, 180, 180);
         }
 
         // 4 Bullets beside QR
         ctx.textAlign = "left";
-        ctx.font = "italic bold 28px sans-serif";
+        ctx.font = "italic bold 23px sans-serif";
         ctx.fillStyle = "#1E1B4B";
         const bulletItems = highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"];
         bulletItems.forEach((b, idx) => {
-          ctx.fillText(`• ${b}`, 265, 685 + idx * 38);
+          ctx.fillText(`• ${b}`, 260, 595 + idx * 38);
         });
 
-        // Bottom Full-Width Footer Bar (160px height, flush to bottom, NEVER cropped)
-        const fH = 160;
+        // Bottom Full-Width Footer Bar (170px height, flush to bottom: 910 + 170 = 1080)
+        const fH = 170;
         const fy = H - fH;
         ctx.fillStyle = footerBg || "#28107A";
         ctx.fillRect(0, fy, W, fH);
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "500 25px sans-serif";
+        ctx.font = "500 23px sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 58);
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 55, fy + 58);
 
-        ctx.font = "bold 25px sans-serif";
-        ctx.fillText(`Date: ${dateText}`, 50, fy + 115);
+        ctx.font = "bold 24px sans-serif";
+        ctx.fillText(`Date: ${dateText}`, 55, fy + 115);
 
         ctx.fillStyle = "#FF4B4B";
-        ctx.fillText(`📍:`, 620, fy + 115);
+        ctx.fillText(`📍:`, 600, fy + 115);
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(` ${venueText}`, 660, fy + 115);
+        ctx.fillText(` ${venueText}`, 640, fy + 115);
       }
 
       // -----------------------------------------------------------
@@ -1269,6 +1289,47 @@ export default function PromotionBadgeCard({
     return res;
   };
 
+  // Real-Time High-Resolution Live Canvas Preview Generator
+  // Ensures Review in Browser and Downloaded 1080x1080 PNG are 100% Mathematically Identical
+  useEffect(() => {
+    let isCurrent = true;
+    const generateLivePreview = async () => {
+      try {
+        const res = await generatePosterBlob();
+        if (res && res.dataUri && isCurrent) {
+          setRenderedPosterUri(res.dataUri);
+        }
+      } catch (err) {
+        console.warn("Live preview generator error:", err);
+      }
+    };
+    generateLivePreview();
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    themeStyle,
+    attendeeName,
+    attendeeDesignation,
+    attendeeCompany,
+    localPhoto,
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    footerBg,
+    topTagline,
+    badgeText,
+    eventHeading,
+    subHeading,
+    highlights,
+    ctaText,
+    dateText,
+    venueText,
+    contactEmail,
+    template.custom_logo_url,
+    qrDataUrl,
+  ]);
+
   // Social Sharing Handlers (Auto-downloads poster & supports native Web Share with image attachment)
   const handleShareWhatsApp = async () => {
     const poster = await handleDownloadImage();
@@ -1376,11 +1437,40 @@ export default function PromotionBadgeCard({
       {/* ============================================================== */}
       <div
         id="promotion-badge-container"
-        className="relative w-full aspect-square max-w-[480px] sm:max-w-[500px] mx-auto rounded-2xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white flex flex-col"
+        className="relative w-full aspect-square max-w-[480px] sm:max-w-[500px] mx-auto rounded-2xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white flex flex-col items-center justify-center group"
         style={{
           boxShadow: "0 20px 45px -10px rgba(0,0,0,0.22)",
         }}
       >
+        {/* 100% Exact 1080x1080 High-Resolution Canvas Review Image (Guarantees Review and Download are 100% Identical) */}
+        {renderedPosterUri ? (
+          <img
+            src={renderedPosterUri}
+            alt="Official Delegate Poster Preview"
+            className="w-full h-full object-contain block select-none pointer-events-none"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-500 p-8 space-y-3">
+            <RefreshCw className="w-8 h-8 animate-spin text-purple-600" />
+            <span className="text-xs font-bold text-slate-600">Rendering 1080×1080 Official Poster...</span>
+          </div>
+        )}
+
+        {/* Change Photo Overlay Button directly on Card */}
+        {allowPhotoUpload && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute top-3.5 right-3.5 z-30 px-3 py-1.5 rounded-xl bg-slate-900/85 hover:bg-slate-900 text-white text-[11px] font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer border border-white/20 hover:scale-105 active:scale-95"
+            title="Upload your official headshot / photo"
+          >
+            <Camera className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Change Photo</span>
+          </button>
+        )}
+
+        {/* Legacy Hidden Markup */}
+        <div className="hidden">
         {/* ========================================================= */}
         {/* LAYOUT 1: HR RECALL GEOMETRIC CHEVRON (Exact Match)       */}
         {/* ========================================================= */}
@@ -2144,6 +2234,7 @@ export default function PromotionBadgeCard({
             <div className="h-6" />
           </div>
         )}
+        </div>
 
         {/* Hidden File Input for live photo changes */}
         <input
