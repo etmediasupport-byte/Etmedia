@@ -2223,29 +2223,68 @@ export const DEFAULT_PROMOTION_TEMPLATES = [
     custom_logo_url: "",
     is_active: 0,
   },
+  {
+    id: "tmpl-hr-recall-purple",
+    title: "HR Recall Purple Orbit Badge (1st Image Model)",
+    theme_style: "hr-recall-purple",
+    badge_text: "I'M ATTENDING",
+    top_tagline: "ONE BIG GATHERING",
+    event_heading: "AWARDS & CONNECT HR RECALL 2K26",
+    sub_heading: "Remembering 2026. Calling 2027",
+    highlights: JSON.stringify(["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]),
+    cta_text: "REGISTER NOW",
+    date_text: "11th December 2026",
+    venue_text: "Gachibowli, Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#28107A",
+    secondary_color: "#2563EB",
+    accent_color: "#EF4444",
+    footer_bg: "#28107A",
+    qr_destination_url: "/events/hr-recall-2k26",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+  {
+    id: "tmpl-dark-ruby-spotlight",
+    title: "Dark Ruby Luxury Spotlight Badge (2nd Image Model)",
+    theme_style: "dark-ruby-spotlight",
+    badge_text: "EXECUTIVE ATTENDEE",
+    top_tagline: "EXECUTIVE TALKS SUMMIT",
+    event_heading: "NATIONAL LEADERSHIP CONCLAVE 2026",
+    sub_heading: "C-Suite Excellence & Strategic Innovation",
+    highlights: JSON.stringify(["C-Suite Conclave", "50+ Keynotes", "Networking", "VIP Reception"]),
+    cta_text: "REGISTER NOW",
+    date_text: "11th December 2026",
+    venue_text: "Centenary Convention Centre, Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#DC2626",
+    secondary_color: "#000000",
+    accent_color: "#EF4444",
+    footer_bg: "#0A0A0A",
+    qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
 ];
 
 export async function seedDefaultPromotionTemplates() {
   if (!pool) return;
   try {
-    const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM promotion_templates");
-    if (!rows || rows[0]?.count === 0) {
-      for (const t of DEFAULT_PROMOTION_TEMPLATES) {
-        await pool.query(
-          `INSERT INTO promotion_templates (
-            id, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
-            highlights, cta_text, date_text, venue_text, contact_email,
-            primary_color, secondary_color, accent_color, footer_bg, qr_destination_url, custom_logo_url, is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            t.id, t.title, t.theme_style, t.badge_text, t.top_tagline, t.event_heading, t.sub_heading,
-            t.highlights, t.cta_text, t.date_text, t.venue_text, t.contact_email,
-            t.primary_color, t.secondary_color, t.accent_color, t.footer_bg, t.qr_destination_url, t.custom_logo_url, t.is_active,
-          ]
-        );
-      }
-      console.log(`[MySQL] Seeded ${DEFAULT_PROMOTION_TEMPLATES.length} default promotion banner & badge templates!`);
+    for (const t of DEFAULT_PROMOTION_TEMPLATES) {
+      await pool.query(
+        `INSERT IGNORE INTO promotion_templates (
+          id, title, theme_style, badge_text, top_tagline, event_heading, sub_heading,
+          highlights, cta_text, date_text, venue_text, contact_email,
+          primary_color, secondary_color, accent_color, footer_bg, qr_destination_url, custom_logo_url, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          t.id, t.title, t.theme_style, t.badge_text, t.top_tagline, t.event_heading, t.sub_heading,
+          t.highlights, t.cta_text, t.date_text, t.venue_text, t.contact_email,
+          t.primary_color, t.secondary_color, t.accent_color, t.footer_bg, t.qr_destination_url, t.custom_logo_url, t.is_active,
+        ]
+      );
     }
+    console.log(`[MySQL] Seeded / verified ${DEFAULT_PROMOTION_TEMPLATES.length} default promotion banner & badge templates!`);
   } catch (err) {
     console.error("[MySQL] Error seeding default promotion templates:", err);
   }

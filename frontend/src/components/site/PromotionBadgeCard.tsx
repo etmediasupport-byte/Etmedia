@@ -797,6 +797,286 @@ export default function PromotionBadgeCard({
       }
 
       // -----------------------------------------------------------
+      // TEMPLATE: "hr-recall-purple" (The Exact 1st Image Model)
+      // -----------------------------------------------------------
+      else if (themeStyle === "hr-recall-purple") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, W, H);
+
+        // Top Right Logo
+        if (logoImg) {
+          ctx.drawImage(logoImg, W - 320, 35, 270, 85);
+        } else {
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 32px sans-serif";
+          ctx.fillText("Executive Talks", W - 280, 85);
+        }
+
+        // Top Left: ONE BIG GATHERING / 2,000+ HR PROFESSIONALS
+        ctx.textAlign = "left";
+        ctx.fillStyle = primaryColor || "#200E4B";
+        ctx.font = "900 48px sans-serif";
+        ctx.fillText("ONE BIG GATHERING", 50, 135);
+
+        ctx.fillStyle = "#1E293B";
+        ctx.font = "bold 40px sans-serif";
+        ctx.fillText("2,000+ HR PROFESSIONALS", 50, 195);
+
+        // "I'm Attending" Vibrant Blue Pill Badge
+        const attendingText = "I'm Attending";
+        ctx.fillStyle = secondaryColor || "#0D6EFD";
+        ctx.beginPath();
+        ctx.roundRect(50, 230, 410, 68, 16);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 36px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(attendingText, 255, 277);
+
+        // Event Brand Lockup: AWARDS & CONNECT / HR RECALL 2K26
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "800 20px sans-serif";
+        ctx.fillText("AWARDS & CONNECT", 180, 340);
+
+        ctx.strokeStyle = "#0084FF";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(50, 355, 420, 90);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(52, 357, 416, 86);
+
+        ctx.font = "900 58px sans-serif";
+        ctx.fillStyle = "#0084FF";
+        ctx.fillText("HR", 60, 420);
+        ctx.fillStyle = "#0A1931";
+        ctx.fillText("RECALL", 165, 420);
+        ctx.fillStyle = "#0084FF";
+        ctx.font = "900 48px sans-serif";
+        ctx.fillText("2K26", 360, 448);
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "bold 19px sans-serif";
+        ctx.fillText("Remembering 2026. ", 110, 485);
+        ctx.fillStyle = "#0084FF";
+        ctx.fillText("Calling 2027", 300, 485);
+
+        // Center-Right Circular Avatar with Purple Ring, Red Accents & Dashed Orbit
+        const cx = 745;
+        const cy = 410;
+        const cr = 205; // Inner photo radius
+
+        // Outer Purple Ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+        ctx.lineWidth = 44;
+        ctx.strokeStyle = primaryColor || "#28107A";
+        ctx.stroke();
+
+        // Coral/Red triangular wedge accents on perimeter
+        ctx.fillStyle = accentColor || "#EF4444";
+        ctx.beginPath();
+        ctx.moveTo(cx - 50, cy - 225);
+        ctx.lineTo(cx + 80, cy - 250);
+        ctx.lineTo(cx + 40, cy - 210);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(cx - 55, cy + 225);
+        ctx.lineTo(cx - 55, cy + 270);
+        ctx.lineTo(cx + 40, cy + 230);
+        ctx.closePath();
+        ctx.fill();
+
+        // White dashed circle orbit inside purple ring
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.setLineDash([12, 10]);
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner delegate photo
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.clip();
+        if (photoImg) {
+          ctx.drawImage(photoImg, cx - cr, cy - cr, cr * 2, cr * 2);
+        } else {
+          ctx.fillStyle = "#1E293B";
+          ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "bold 95px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(attendeeName.charAt(0) || "M", cx, cy + 30);
+        }
+        ctx.restore();
+
+        // Details below circular photo
+        ctx.textAlign = "center";
+        // Name in Forest Green
+        ctx.fillStyle = "#1B4332";
+        ctx.font = "900 44px sans-serif";
+        ctx.fillText(attendeeName, cx, 680);
+
+        // Designation in Dark Gray
+        ctx.fillStyle = "#1E293B";
+        ctx.font = "bold 24px sans-serif";
+        ctx.fillText(attendeeDesignation, cx, 725);
+
+        // Organization in Royal Blue
+        ctx.fillStyle = "#2563EB";
+        ctx.font = "900 25px sans-serif";
+        ctx.fillText(attendeeCompany, cx, 762);
+
+        // Bottom Left: REGISTER NOW button, QR Code & 4 Bullets
+        ctx.fillStyle = secondaryColor || "#0D6EFD";
+        ctx.beginPath();
+        ctx.roundRect(50, 615, 210, 52, 26);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 22px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("REGISTER NOW", 155, 649);
+
+        // QR Code
+        if (qrImg) {
+          ctx.drawImage(qrImg, 50, 685, 175, 175);
+        }
+
+        // 4 Bullets beside QR
+        ctx.textAlign = "left";
+        ctx.font = "italic bold 28px sans-serif";
+        ctx.fillStyle = "#1E1B4B";
+        const bulletItems = highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"];
+        bulletItems.forEach((b, idx) => {
+          ctx.fillText(`• ${b}`, 250, 725 + idx * 36);
+        });
+
+        // Bottom Full-Width Footer Bar
+        const fH = 125;
+        const fy = H - fH;
+        ctx.fillStyle = footerBg || "#28107A";
+        ctx.fillRect(0, fy, W, fH);
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "500 23px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 48);
+
+        ctx.font = "bold 23px sans-serif";
+        ctx.fillText(`Date: ${dateText}`, 50, fy + 95);
+
+        ctx.fillStyle = "#FF4B4B";
+        ctx.fillText(`📍:`, 630, fy + 95);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(` ${venueText}`, 670, fy + 95);
+      }
+
+      // -----------------------------------------------------------
+      // TEMPLATE: "dark-ruby-spotlight" (The Exact 2nd Image Model)
+      // -----------------------------------------------------------
+      else if (themeStyle === "dark-ruby-spotlight") {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, W, H);
+
+        // Sweeping glowing ruby red metallic spotlight on the right
+        const grad = ctx.createRadialGradient(W * 0.95, H * 0.15, 60, W * 0.95, H * 0.15, 880);
+        grad.addColorStop(0, "#C52222");
+        grad.addColorStop(0.25, "#8B1010");
+        grad.addColorStop(0.5, "#450A0A");
+        grad.addColorStop(0.75, "#180305");
+        grad.addColorStop(1, "#000000");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Top Left Logo Card
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.roundRect(40, 45, 305, 115, 20);
+        ctx.fill();
+
+        if (logoImg) {
+          ctx.drawImage(logoImg, 45, 55, 295, 95);
+        } else {
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "bold 32px sans-serif";
+          ctx.fillText("Executive Talks", 60, 110);
+        }
+
+        // Center circular delegate photo
+        const cx = W / 2;
+        const cy = 440;
+        const cr = 225; // radius
+
+        // Glowing ruby thin rim
+        ctx.save();
+        ctx.shadowColor = "#EF4444";
+        ctx.shadowBlur = 45;
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.9)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr + 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Photo clip
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.clip();
+        if (photoImg) {
+          ctx.drawImage(photoImg, cx - cr, cy - cr, cr * 2, cr * 2);
+        } else {
+          ctx.fillStyle = "#1F2937";
+          ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "bold 95px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(attendeeName.charAt(0) || "B", cx, cy + 30);
+        }
+        ctx.restore();
+
+        // Below Circle: Large Bold White Name (e.g. Benjamin Shah)
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 64px sans-serif";
+        ctx.fillText(attendeeName, cx, 765);
+
+        // Dark Ruby Pill Capsule Badge for Designation (e.g. Marketing Lead)
+        const desigText = attendeeDesignation || "Executive Leader";
+        ctx.font = "bold 32px sans-serif";
+        const textWidth = ctx.measureText(desigText).width;
+        const pillW = Math.max(textWidth + 80, 260);
+        const pillH = 70;
+        const pillX = cx - pillW / 2;
+        const pillY = 800;
+
+        ctx.fillStyle = "rgba(42, 8, 12, 0.85)";
+        ctx.strokeStyle = "rgba(185, 28, 28, 0.8)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#F87171"; // soft coral / salmon
+        ctx.fillText(desigText, cx, pillY + 46);
+
+        // Organization if present
+        if (attendeeCompany) {
+          ctx.fillStyle = "#94A3B8";
+          ctx.font = "900 24px sans-serif";
+          ctx.fillText(attendeeCompany, cx, 915);
+        }
+      }
+
+      // -----------------------------------------------------------
       // TEMPLATE 5: "cyber-tech-conclave" (Electric Cyan Tech Conclave)
       // -----------------------------------------------------------
       else {
@@ -1527,6 +1807,239 @@ export default function PromotionBadgeCard({
                 <div>✉️ {contactEmail}</div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* LAYOUT 6: HR RECALL PURPLE ORBIT (Image 1 Exact Match)    */}
+        {/* ========================================================= */}
+        {themeStyle === "hr-recall-purple" && (
+          <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden text-slate-900 select-none">
+            {/* Top Bar: Left Taglines & Right Logo */}
+            <div className="pt-3 px-4 sm:px-6 flex items-start justify-between">
+              {/* Left Headlines */}
+              <div className="space-y-0.5">
+                <h2
+                  className="text-[12px] sm:text-base font-black tracking-tight leading-tight uppercase"
+                  style={{ color: primaryColor || "#200E4B" }}
+                >
+                  ONE BIG GATHERING
+                </h2>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-800 tracking-tight">
+                  2,000+ HR PROFESSIONALS
+                </p>
+                {/* I'm Attending Blue Pill */}
+                <div className="pt-1">
+                  <span
+                    className="inline-block px-3 sm:px-4 py-1 rounded-lg text-white font-black text-[9px] sm:text-xs shadow-xs uppercase tracking-wide"
+                    style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
+                  >
+                    I'm Attending
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Logo */}
+              <div className="shrink-0">
+                <img
+                  src={template.custom_logo_url || executivetalksLogo}
+                  alt="Executive Talks"
+                  className="h-7 sm:h-9 w-auto object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Middle Section: Left Brand & QR, Right Circular Profile Avatar */}
+            <div className="px-4 sm:px-6 grid grid-cols-12 gap-2 sm:gap-4 items-center flex-1 my-auto">
+              {/* Left Column: Awards & Connect Box + Bullets & QR */}
+              <div className="col-span-6 flex flex-col justify-center space-y-2">
+                {/* Event Lockup */}
+                <div className="space-y-0.5">
+                  <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-wider text-slate-800 block">
+                    AWARDS & CONNECT
+                  </span>
+                  <div className="border border-sky-500 rounded p-1 bg-white/80 shadow-xs inline-block">
+                    <div className="text-[10px] sm:text-sm font-black leading-none font-display">
+                      <span className="text-sky-500">HR </span>
+                      <span className="text-[#0A1931]">RECALL </span>
+                      <span className="text-sky-500 text-[11px] sm:text-base">2K26</span>
+                    </div>
+                  </div>
+                  <p className="text-[6.5px] sm:text-[8px] font-bold text-slate-700">
+                    Remembering 2026. <span className="text-sky-600 font-black">Calling 2027</span>
+                  </p>
+                </div>
+
+                {/* Register Now Pill + QR Code + Bullets */}
+                <div className="space-y-1">
+                  <div
+                    className="inline-block px-2 sm:px-3 py-0.5 rounded-full text-[7.5px] sm:text-[9px] font-black uppercase text-white shadow-xs"
+                    style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
+                  >
+                    REGISTER NOW
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {qrDataUrl && (
+                      <img
+                        src={qrDataUrl}
+                        alt="QR Code"
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain border border-slate-200 rounded p-0.5 bg-white shrink-0"
+                      />
+                    )}
+                    <div className="text-[7px] sm:text-[8.5px] font-bold italic text-[#1E1B4B] space-y-0.5">
+                      {(highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]).map((h, i) => (
+                        <div key={i} className="flex items-center gap-1 leading-tight">
+                          <span className="w-1 h-1 rounded-full bg-slate-900 shrink-0" />
+                          <span className="truncate">{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Purple Ring Circular Photo & Attendee Details */}
+              <div className="col-span-6 flex flex-col items-center text-center">
+                {/* Purple Ring Avatar with Dashed Orbit & Accents */}
+                <div className="relative">
+                  {/* Outer Purple Ring */}
+                  <div
+                    className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[6px] sm:border-[8px] flex items-center justify-center shadow-lg group overflow-hidden"
+                    style={{ borderColor: primaryColor || "#28107A" }}
+                  >
+                    {/* Subtle dashed white ring overlay */}
+                    <div className="absolute inset-0 rounded-full border border-dashed border-white/80 pointer-events-none" />
+
+                    {/* Red wedge decorative indicators */}
+                    <div className="absolute -top-1 right-3 w-3 h-3 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] rotate-45 pointer-events-none" />
+                    <div className="absolute -bottom-1 left-3 w-3 h-3 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] -rotate-135 pointer-events-none" />
+
+                    {localPhoto ? (
+                      <img
+                        src={localPhoto}
+                        alt={attendeeName}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-white text-3xl font-black">
+                        {attendeeName.charAt(0) || "M"}
+                      </div>
+                    )}
+
+                    {allowPhotoUpload && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold cursor-pointer rounded-full transition-opacity"
+                      >
+                        <Camera className="w-4 h-4 text-cyan-400" />
+                        <span>Change</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Attendee Info below photo */}
+                <div className="mt-2 space-y-0.5 max-w-full">
+                  <h4 className="text-xs sm:text-base font-black text-[#1B4332] truncate uppercase leading-tight font-display">
+                    {attendeeName}
+                  </h4>
+                  <p className="text-[8.5px] sm:text-[10px] font-bold text-slate-700 truncate leading-tight">
+                    {attendeeDesignation}
+                  </p>
+                  <p className="text-[8px] sm:text-[9.5px] font-black text-[#2563EB] uppercase truncate leading-tight">
+                    {attendeeCompany}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Purple Strip */}
+            <div
+              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-4 sm:px-6 text-white text-[7.5px] sm:text-[9.5px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md"
+              style={{ backgroundColor: footerBg || "#28107A" }}
+            >
+              <p className="text-slate-200 truncate">
+                For queries & registration: <span className="text-white font-bold">{contactEmail}</span>
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-white font-bold text-[8px] sm:text-[9px]">
+                <span>Date: {dateText}</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-red-400 shrink-0 inline" /> {venueText}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* LAYOUT 7: DARK RUBY SPOTLIGHT (Image 2 Exact Match)       */}
+        {/* ========================================================= */}
+        {themeStyle === "dark-ruby-spotlight" && (
+          <div
+            className="relative w-full h-full bg-black flex flex-col justify-between overflow-hidden text-white select-none"
+            style={{
+              background: "radial-gradient(circle at 95% 15%, #C52222 0%, #8B1010 25%, #450A0A 50%, #180305 75%, #000000 100%)",
+            }}
+          >
+            {/* Top-Left Logo Card */}
+            <div className="p-4 sm:p-6 flex items-start justify-between">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-xl inline-block">
+                <img
+                  src={template.custom_logo_url || executivetalksLogo}
+                  alt="Executive Talks"
+                  className="h-6 sm:h-9 w-auto object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Center Profile Avatar with Glowing Ruby Rim */}
+            <div className="flex flex-col items-center text-center px-4 my-auto">
+              <div className="relative group">
+                <div
+                  className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-full overflow-hidden bg-slate-900 border-2 border-red-500/90 shadow-[0_0_35px_rgba(239,68,68,0.7)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                >
+                  {localPhoto ? (
+                    <img
+                      src={localPhoto}
+                      alt={attendeeName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-800 flex items-center justify-center text-white text-4xl sm:text-5xl font-black">
+                      {attendeeName.charAt(0) || "B"}
+                    </div>
+                  )}
+
+                  {allowPhotoUpload && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold cursor-pointer rounded-full transition-opacity"
+                    >
+                      <Camera className="w-5 h-5 text-red-400" />
+                      <span>Change</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bold Name */}
+              <h3 className="mt-4 text-base sm:text-2xl font-black text-white tracking-tight uppercase font-display drop-shadow-md">
+                {attendeeName}
+              </h3>
+
+              {/* Dark Ruby Pill Capsule Badge */}
+              <div className="mt-1.5 inline-block px-4 sm:px-6 py-1 rounded-full bg-[#180305]/90 border border-red-900/60 text-red-400 font-semibold text-xs sm:text-sm tracking-wide shadow-inner">
+                {attendeeDesignation}
+                {attendeeCompany && attendeeCompany !== "Organization" && attendeeCompany !== "Executive Talks" && (
+                  <span className="text-slate-400 font-normal"> • {attendeeCompany}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Subtle bottom padding */}
+            <div className="h-6" />
           </div>
         )}
 

@@ -111,7 +111,31 @@ export const TEMPLATE_LAYOUT_PRESETS: {
       primary: "#06B6D4",
       secondary: "#030712",
       accent: "#38BDF8",
-      footer: "#082F49",
+      footer: "#020617",
+    },
+  },
+  {
+    style: "hr-recall-purple",
+    name: "HR Recall Purple Orbit (1st Image Model)",
+    description: "Top One Big Gathering, blue 'I'm Attending' pill badge, right circular photo framed with royal purple ring & red wedge accents, bottom blue QR & 4 bullet highlights with solid purple footer bar.",
+    tag: "HR Recall Purple Orbit",
+    defaultColors: {
+      primary: "#28107A",
+      secondary: "#2563EB",
+      accent: "#EF4444",
+      footer: "#200E4B",
+    },
+  },
+  {
+    style: "dark-ruby-spotlight",
+    name: "Dark Ruby Luxury Spotlight (2nd Image Model)",
+    description: "Pitch black background with sweeping glowing ruby red metallic spotlight, centered circular portrait with thin glowing ruby rim, bold white typography & dark ruby pill badge.",
+    tag: "Dark Ruby Luxury",
+    defaultColors: {
+      primary: "#DC2626",
+      secondary: "#000000",
+      accent: "#EF4444",
+      footer: "#0A0A0A",
     },
   },
 ];
