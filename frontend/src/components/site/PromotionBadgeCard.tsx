@@ -181,21 +181,53 @@ export default function PromotionBadgeCard({
     reader.readAsDataURL(file);
   };
 
-  // Helper to load image for canvas
-  const loadImage = (src: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-      img.src = src;
+  // Helper to load image for canvas safely without CORS taint or rejection issues
+  const loadImage = (src: string): Promise<HTMLImageElement | null> => {
+    if (!src) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      // 1. Data URLs and Blob URLs can be loaded directly with zero CORS issues
+      if (src.startsWith("data:") || src.startsWith("blob:")) {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+        return;
+      }
+
+      // 2. Fetch as Blob for network and relative URLs to ensure untainted canvas export
+      fetch(src, { mode: "cors" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Fetch failed");
+          return res.blob();
+        })
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = blobUrl;
+        })
+        .catch(() => {
+          // Fallback to standard Image with crossOrigin anonymous
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => {
+            // Last fallback without crossOrigin
+            const fallback = new Image();
+            fallback.onload = () => resolve(fallback);
+            fallback.onerror = () => resolve(null);
+            fallback.src = src;
+          };
+          img.src = src;
+        });
     });
   };
 
   // =========================================================================
   // HIGH-RESOLUTION 1080x1080px (Universal Square Social Media) CANVAS EXPORTER
   // =========================================================================
-  const handleDownloadImage = async () => {
+  const generatePosterBlob = async (): Promise<{ blob: Blob; file: File; dataUri: string } | null> => {
     try {
       setExporting(true);
       const canvas = document.createElement("canvas");
@@ -206,27 +238,12 @@ export default function PromotionBadgeCard({
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Could not initialize 2D canvas");
 
-      // Load logo
-      let logoImg: HTMLImageElement | null = null;
-      try {
-        logoImg = await loadImage(template.custom_logo_url || executivetalksLogo);
-      } catch (e) {}
-
-      // Load QR
-      let qrImg: HTMLImageElement | null = null;
-      if (qrDataUrl) {
-        try {
-          qrImg = await loadImage(qrDataUrl);
-        } catch (e) {}
-      }
-
-      // Load photo
-      let photoImg: HTMLImageElement | null = null;
-      if (localPhoto) {
-        try {
-          photoImg = await loadImage(localPhoto);
-        } catch (e) {}
-      }
+      // Load logo, QR and user photo safely
+      const [logoImg, qrImg, photoImg] = await Promise.all([
+        loadImage(template.custom_logo_url || executivetalksLogo),
+        qrDataUrl ? loadImage(qrDataUrl) : Promise.resolve(null),
+        localPhoto ? loadImage(localPhoto) : Promise.resolve(null),
+      ]);
 
       // -----------------------------------------------------------
       // TEMPLATE 1: "hr-recall-emerald" (The Exact Image 2 Reference Layout)
@@ -405,18 +422,20 @@ export default function PromotionBadgeCard({
         ctx.textAlign = "center";
         ctx.fillText(badgeText, px + 130, py + 29);
 
-        // Bottom Footer (Fixed height & fully visible, flush to bottom)
-        const fy = H - 120;
+        // Bottom Footer (Generous 160px height, flush to bottom, NEVER cropped)
+        const fH = 160;
+        const fy = H - fH;
         ctx.fillStyle = footerBg;
-        ctx.fillRect(0, fy, W, 120);
+        ctx.fillRect(0, fy, W, fH);
 
         ctx.fillStyle = "#E2E8F0";
-        ctx.font = "600 19px sans-serif";
-        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 45);
+        ctx.font = "600 23px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 58);
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 21px sans-serif";
-        ctx.fillText(`📅 Date: ${dateText}          📍: ${venueText}`, 50, fy + 88);
+        ctx.font = "bold 25px sans-serif";
+        ctx.fillText(`📅 Date: ${dateText}          📍: ${venueText}`, 50, fy + 112);
       }
 
       // -----------------------------------------------------------
@@ -502,59 +521,61 @@ export default function PromotionBadgeCard({
         ctx.font = "900 28px sans-serif";
         ctx.fillText(attendeeCompany, W / 2, 715);
 
-        // Bottom Split Boxes
+        // Bottom Split Boxes: Fits within canvas, never overlaps footer
         // Left Box: Highlights
         ctx.fillStyle = "#F8FAFC";
         ctx.beginPath();
-        ctx.roundRect(80, 770, 500, 240, 20);
+        ctx.roundRect(60, 735, 465, 175, 18);
         ctx.fill();
         ctx.strokeStyle = "#E2E8F0";
         ctx.stroke();
 
         ctx.fillStyle = "#0F172A";
-        ctx.font = "900 22px sans-serif";
+        ctx.font = "900 20px sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText("SUMMIT HIGHLIGHTS", 110, 815);
-        let sy = 855;
-        highlights.forEach((h) => {
-          ctx.font = "bold 19px sans-serif";
+        ctx.fillText("SUMMIT HIGHLIGHTS", 85, 775);
+        let sy = 810;
+        highlights.slice(0, 3).forEach((h) => {
+          ctx.font = "bold 17px sans-serif";
           ctx.fillStyle = "#334155";
-          ctx.fillText(`✓  ${h}`, 110, sy);
-          sy += 35;
+          ctx.fillText(`✓  ${h}`, 85, sy);
+          sy += 30;
         });
 
         // Right Box: QR Code & CTA
         ctx.fillStyle = "#F8FAFC";
         ctx.beginPath();
-        ctx.roundRect(620, 770, 500, 240, 20);
+        ctx.roundRect(555, 735, 465, 175, 18);
         ctx.fill();
         ctx.strokeStyle = "#E2E8F0";
         ctx.stroke();
 
         if (qrImg) {
-          ctx.drawImage(qrImg, 650, 800, 180, 180);
+          ctx.drawImage(qrImg, 575, 750, 145, 145);
         }
 
         ctx.fillStyle = primaryColor;
         ctx.beginPath();
-        ctx.roundRect(860, 830, 230, 50, 25);
+        ctx.roundRect(735, 775, 265, 46, 23);
         ctx.fill();
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 20px sans-serif";
+        ctx.font = "900 18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(ctaText, 975, 863);
+        ctx.fillText(ctaText, 868, 805);
 
         ctx.fillStyle = "#475569";
-        ctx.font = "bold 15px sans-serif";
-        ctx.fillText("Scan to register / check in", 975, 920);
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText("Scan to register / check in", 868, 850);
 
-        // Footer Strip
+        // Footer Strip (Flush to bottom, never cropped)
+        const fH = 150;
+        const fy = H - fH;
         ctx.fillStyle = footerBg;
-        ctx.fillRect(0, H * 0.90, W, H * 0.10);
+        ctx.fillRect(0, fy, W, fH);
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 20px sans-serif";
+        ctx.font = "bold 23px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(`📅 ${dateText}   |   📍 ${venueText}   |   ✉️ ${contactEmail}`, W / 2, H * 0.955);
+        ctx.fillText(`📅 ${dateText}   |   📍 ${venueText}   |   ✉️ ${contactEmail}`, W / 2, fy + 85);
       }
 
       // -----------------------------------------------------------
@@ -920,33 +941,33 @@ export default function PromotionBadgeCard({
         ctx.textAlign = "center";
         // Name in Forest Green
         ctx.fillStyle = "#1B4332";
-        ctx.font = "900 44px sans-serif";
-        ctx.fillText(attendeeName, cx, 680);
+        ctx.font = "900 48px sans-serif";
+        ctx.fillText(attendeeName, cx, 685);
 
         // Designation in Dark Gray
         ctx.fillStyle = "#1E293B";
-        ctx.font = "bold 24px sans-serif";
-        ctx.fillText(attendeeDesignation, cx, 725);
+        ctx.font = "bold 26px sans-serif";
+        ctx.fillText(attendeeDesignation, cx, 735);
 
         // Organization in Royal Blue
         ctx.fillStyle = "#2563EB";
-        ctx.font = "900 25px sans-serif";
-        ctx.fillText(attendeeCompany, cx, 762);
+        ctx.font = "900 28px sans-serif";
+        ctx.fillText(attendeeCompany, cx, 775);
 
         // Bottom Left: REGISTER NOW button, QR Code & 4 Bullets
         ctx.fillStyle = secondaryColor || "#0D6EFD";
         ctx.beginPath();
-        ctx.roundRect(50, 615, 210, 52, 26);
+        ctx.roundRect(50, 560, 220, 54, 27);
         ctx.fill();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 22px sans-serif";
+        ctx.font = "900 23px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("REGISTER NOW", 155, 649);
+        ctx.fillText("REGISTER NOW", 160, 595);
 
         // QR Code
         if (qrImg) {
-          ctx.drawImage(qrImg, 50, 685, 175, 175);
+          ctx.drawImage(qrImg, 50, 635, 190, 190);
         }
 
         // 4 Bullets beside QR
@@ -955,27 +976,27 @@ export default function PromotionBadgeCard({
         ctx.fillStyle = "#1E1B4B";
         const bulletItems = highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"];
         bulletItems.forEach((b, idx) => {
-          ctx.fillText(`• ${b}`, 250, 725 + idx * 36);
+          ctx.fillText(`• ${b}`, 265, 685 + idx * 38);
         });
 
-        // Bottom Full-Width Footer Bar
-        const fH = 125;
+        // Bottom Full-Width Footer Bar (160px height, flush to bottom, NEVER cropped)
+        const fH = 160;
         const fy = H - fH;
         ctx.fillStyle = footerBg || "#28107A";
         ctx.fillRect(0, fy, W, fH);
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "500 23px sans-serif";
+        ctx.font = "500 25px sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 48);
+        ctx.fillText(`For queries & registration: ${contactEmail}`, 50, fy + 58);
 
-        ctx.font = "bold 23px sans-serif";
-        ctx.fillText(`Date: ${dateText}`, 50, fy + 95);
+        ctx.font = "bold 25px sans-serif";
+        ctx.fillText(`Date: ${dateText}`, 50, fy + 115);
 
         ctx.fillStyle = "#FF4B4B";
-        ctx.fillText(`📍:`, 630, fy + 95);
+        ctx.fillText(`📍:`, 620, fy + 115);
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(` ${venueText}`, 670, fy + 95);
+        ctx.fillText(` ${venueText}`, 660, fy + 115);
       }
 
       // -----------------------------------------------------------
@@ -1202,62 +1223,144 @@ export default function PromotionBadgeCard({
         ctx.fillText(`📅 ${dateText}   |   📍 ${venueText}   |   ✉️ ${contactEmail}`, W / 2, H * 0.95);
       }
 
-      // Export as PNG
-      const dataUri = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
-      const safeName = attendeeName.toLowerCase().replace(/[^a-z0-9]/g, "-") || "attendee";
-      downloadLink.download = `ETMedia-Promotion-Badge-${safeName}.png`;
-      downloadLink.href = dataUri;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-
-      toast.success("High-Resolution Promotion Badge downloaded successfully!");
+      // Create Blob & File with high reliability
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const safeName = attendeeName.toLowerCase().replace(/[^a-z0-9]/g, "-") || "attendee";
+          const fileName = `ETMedia-Promotion-Badge-${safeName}.png`;
+          const file = new File([blob], fileName, { type: "image/png" });
+          const dataUri = canvas.toDataURL("image/png");
+          resolve({ blob, file, dataUri });
+        }, "image/png");
+      });
     } catch (err: any) {
       console.error("Export error:", err);
       toast.error("Failed to generate download image: " + err.message);
+      return null;
     } finally {
       setExporting(false);
     }
   };
 
-  // Social Sharing Handlers
-  const handleShareWhatsApp = () => {
+  // Universal Download Handler with URL.createObjectURL for 100% mobile & desktop reliability
+  const handleDownloadImage = async () => {
+    const res = await generatePosterBlob();
+    if (!res) return null;
+
+    const objectUrl = URL.createObjectURL(res.blob);
+    const downloadLink = document.createElement("a");
+    downloadLink.download = res.file.name;
+    downloadLink.href = objectUrl;
+    downloadLink.target = "_blank";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(objectUrl);
+      } catch (e) {}
+    }, 2000);
+
+    toast.success("Official Social Media Poster (1080×1080 PNG) downloaded successfully!");
+    return res;
+  };
+
+  // Social Sharing Handlers (Auto-downloads poster & supports native Web Share with image attachment)
+  const handleShareWhatsApp = async () => {
+    const poster = await handleDownloadImage();
     const text = `🎉 Excited to announce that I am attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media!\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin me & 2,000+ HR Leaders:\n${qrTarget}`;
+
+    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
+      try {
+        await navigator.share({
+          title: "Official Delegate Poster",
+          text: text,
+          files: [poster.file],
+        });
+        return;
+      } catch (e) {}
+    }
+    toast.success("Poster downloaded! Attach the downloaded poster to your WhatsApp status or chat.", { duration: 5000 });
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const handleShareLinkedIn = () => {
-    const postUrl = qrTarget;
-    window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`,
-      "_blank"
-    );
+  const handleShareLinkedIn = async () => {
+    const poster = await handleDownloadImage();
+    const caption = `Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media! 🚀\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin 2,000+ HR leaders at the summit: ${qrTarget}\n\n#ExecutiveTalks #HRRecall2k26 #Leadership #Summit #Networking #CorporateAwards`;
+
+    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
+      try {
+        await navigator.share({
+          title: "Official Delegate Poster",
+          text: caption,
+          files: [poster.file],
+        });
+        return;
+      } catch (e) {}
+    }
+    try {
+      await navigator.clipboard.writeText(caption);
+      toast.success("Poster downloaded & caption copied! Attach the downloaded poster to your LinkedIn post.", { duration: 5000 });
+    } catch {
+      toast.success("Poster downloaded! Ready to share on LinkedIn.", { duration: 4000 });
+    }
+    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(caption)}`, "_blank");
   };
 
-  const handleShareFacebook = () => {
-    const postUrl = qrTarget;
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`,
-      "_blank"
-    );
+  const handleShareFacebook = async () => {
+    const poster = await handleDownloadImage();
+    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
+      try {
+        await navigator.share({
+          title: "Official Delegate Poster",
+          text: `Attending ${attendee.event_title || template.event_heading} - Executive Talks Media! ${qrTarget}`,
+          files: [poster.file],
+        });
+        return;
+      } catch (e) {}
+    }
+    toast.success("Poster downloaded! Attach the poster to your Facebook post or story.", { duration: 5000 });
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(qrTarget)}`, "_blank");
   };
 
-  const handleShareX = () => {
-    const text = `🎉 Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} by Executive Talks Media! 🚀`;
-    const postUrl = qrTarget;
-    window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`,
-      "_blank"
-    );
+  const handleShareX = async () => {
+    const poster = await handleDownloadImage();
+    const text = `🎉 Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} by Executive Talks Media! 🚀 ${qrTarget}`;
+    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
+      try {
+        await navigator.share({
+          title: "Official Delegate Poster",
+          text: text,
+          files: [poster.file],
+        });
+        return;
+      } catch (e) {}
+    }
+    toast.success("Poster downloaded! Attach the downloaded poster to your X post.", { duration: 5000 });
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const handleShareInstagram = async () => {
-    await handleDownloadImage();
+    const poster = await handleDownloadImage();
     const caption = `Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media! 🚀\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin 2,000+ HR leaders at the summit: ${qrTarget}\n\n#ExecutiveTalks #HRRecall2k26 #Leadership #Summit #Networking #CorporateAwards`;
+
+    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
+      try {
+        await navigator.share({
+          title: "Official Delegate Poster",
+          text: caption,
+          files: [poster.file],
+        });
+        return;
+      } catch (e) {}
+    }
     try {
       await navigator.clipboard.writeText(caption);
-      toast.success("Poster downloaded & caption copied! Ready to share on Instagram stories or feed.", {
+      toast.success("Poster downloaded & caption copied! Upload the downloaded poster to your Instagram post or story.", {
         duration: 5000,
       });
     } catch {
@@ -1273,7 +1376,7 @@ export default function PromotionBadgeCard({
       {/* ============================================================== */}
       <div
         id="promotion-badge-container"
-        className="relative w-full aspect-square max-w-[540px] sm:max-w-[580px] mx-auto rounded-3xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white"
+        className="relative w-full aspect-square max-w-[540px] sm:max-w-[580px] mx-auto rounded-2xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white flex flex-col"
         style={{
           boxShadow: "0 20px 45px -10px rgba(0,0,0,0.22)",
         }}
@@ -1400,7 +1503,7 @@ export default function PromotionBadgeCard({
 
                 {/* HUGE Circular Photo */}
                 <div
-                  className="relative w-38 h-38 sm:w-54 sm:h-54 md:w-58 md:h-58 rounded-full border-4 sm:border-6 border-[#0F172A] shadow-2xl overflow-hidden bg-slate-900 flex items-center justify-center group shrink-0"
+                  className="relative w-28 h-28 sm:w-40 sm:h-40 md:w-46 md:h-46 rounded-full border-4 sm:border-5 border-[#0F172A] shadow-2xl overflow-hidden bg-slate-900 flex items-center justify-center group shrink-0"
                   style={{
                     boxShadow: "0 15px 35px -5px rgba(0,0,0,0.35)",
                   }}
@@ -1438,7 +1541,7 @@ export default function PromotionBadgeCard({
 
             {/* Bottom Green Footer Strip - Flush to Bottom, 100% Fully Visible */}
             <div
-              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-3.5 sm:px-5 text-white text-[8px] sm:text-[10px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md"
+              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-3.5 sm:px-5 text-white text-[8px] sm:text-[10px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md mt-auto"
               style={{ backgroundColor: footerBg }}
             >
               <p className="text-slate-200 truncate">
@@ -1464,31 +1567,31 @@ export default function PromotionBadgeCard({
           <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden select-none">
             {/* Top Arc Header */}
             <div
-              className="py-3 px-5 text-white flex flex-col items-center text-center space-y-1.5"
+              className="py-2.5 sm:py-3 px-4 sm:px-5 text-white flex flex-col items-center text-center space-y-1 shrink-0"
               style={{ backgroundColor: secondaryColor }}
             >
-              <div className="bg-white p-1.5 rounded-xl shadow-md inline-block">
-                <img src={template.custom_logo_url || executivetalksLogo} alt="Logo" className="h-9 sm:h-12 w-auto object-contain" />
+              <div className="bg-white p-1 rounded-xl shadow-md inline-block">
+                <img src={template.custom_logo_url || executivetalksLogo} alt="Logo" className="h-8 sm:h-11 w-auto object-contain" />
               </div>
-              <h2 className="text-xs sm:text-base font-black uppercase tracking-wide">
+              <h2 className="text-[11px] sm:text-sm font-black uppercase tracking-wide">
                 {topTagline}
               </h2>
-              <p className="text-[10px] sm:text-xs font-extrabold" style={{ color: primaryColor }}>
+              <p className="text-[9.5px] sm:text-xs font-extrabold" style={{ color: primaryColor }}>
                 {eventHeading}
               </p>
             </div>
-            <div className="h-1.5 w-full" style={{ backgroundColor: primaryColor }} />
+            <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: primaryColor }} />
 
             {/* Centered Photo & Details */}
-            <div className="p-3 sm:p-4 flex flex-col items-center text-center space-y-2 flex-1 my-auto">
+            <div className="p-2 sm:p-3 flex flex-col items-center text-center space-y-1.5 flex-1 min-h-0 overflow-hidden my-auto">
               <div
-                className="relative w-36 h-36 sm:w-50 sm:h-50 rounded-full border-4 sm:border-6 border-white shadow-2xl overflow-hidden bg-slate-900 group"
-                style={{ outline: `4px solid ${primaryColor}` }}
+                className="relative w-26 h-26 sm:w-34 sm:h-34 md:w-38 md:h-38 rounded-full border-3 sm:border-4 border-white shadow-xl overflow-hidden bg-slate-900 group shrink-0"
+                style={{ outline: `3px solid ${primaryColor}` }}
               >
                 {localPhoto ? (
                   <img src={localPhoto} alt={attendeeName} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-white text-4xl sm:text-6xl font-black">
+                  <div className="flex items-center justify-center h-full text-white text-3xl sm:text-5xl font-black">
                     {attendeeName.charAt(0) || "E"}
                   </div>
                 )}
@@ -1496,53 +1599,53 @@ export default function PromotionBadgeCard({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold cursor-pointer"
+                    className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold cursor-pointer"
                   >
-                    <Camera className="w-5 h-5 text-cyan-400 mb-0.5" />
-                    <span>Change Photo</span>
+                    <Camera className="w-4 h-4 text-cyan-400 mb-0.5" />
+                    <span>Change</span>
                   </button>
                 )}
               </div>
 
               {/* Centered Pill */}
               <div
-                className="px-4 py-1 rounded-full text-[9px] sm:text-[11px] font-black uppercase text-white shadow-xs"
+                className="px-3.5 py-0.5 rounded-full text-[8.5px] sm:text-[10px] font-black uppercase text-white shadow-xs shrink-0"
                 style={{ backgroundColor: secondaryColor }}
               >
                 {badgeText}
               </div>
 
-              <h4 className="text-base sm:text-2xl font-black text-slate-900 uppercase font-display leading-tight">
+              <h4 className="text-sm sm:text-xl font-black text-slate-900 uppercase font-display leading-tight truncate max-w-full">
                 {attendeeName}
               </h4>
-              <p className="text-xs sm:text-sm font-bold -mt-1" style={{ color: accentColor }}>
+              <p className="text-[10px] sm:text-xs font-bold -mt-0.5 truncate max-w-full" style={{ color: accentColor }}>
                 {attendeeDesignation}
               </p>
-              <p className="text-[10px] sm:text-xs font-black text-slate-600 uppercase">
+              <p className="text-[9px] sm:text-[11px] font-black text-slate-600 uppercase truncate max-w-full">
                 {attendeeCompany}
               </p>
 
               {/* Split Highlights & QR Box */}
-              <div className="grid grid-cols-2 gap-2.5 w-full pt-1">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-left text-[8.5px] sm:text-[10px]">
-                  <span className="font-black text-slate-900 block mb-1">HIGHLIGHTS</span>
+              <div className="grid grid-cols-2 gap-2 w-full pt-0.5">
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 text-left text-[8px] sm:text-[9.5px]">
+                  <span className="font-black text-slate-900 block mb-0.5">HIGHLIGHTS</span>
                   {highlights.slice(0, 3).map((h, i) => (
-                    <div key={i} className="text-slate-700 font-bold leading-tight">✓ {h}</div>
+                    <div key={i} className="text-slate-700 font-bold leading-tight truncate">✓ {h}</div>
                   ))}
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center gap-2.5">
-                  {qrDataUrl && <img src={qrDataUrl} alt="QR" className="w-12 h-12 sm:w-16 sm:h-16 object-contain shrink-0" />}
-                  <div className="text-left">
-                    <span className="text-[10px] font-black text-emerald-700 block leading-tight">{ctaText}</span>
-                    <span className="text-[8.5px] text-slate-500 block">Scan to register</span>
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex items-center gap-2">
+                  {qrDataUrl && <img src={qrDataUrl} alt="QR" className="w-10 h-10 sm:w-13 sm:h-13 object-contain shrink-0" />}
+                  <div className="text-left min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-black text-emerald-700 block leading-tight truncate">{ctaText}</span>
+                    <span className="text-[7.5px] sm:text-[8px] text-slate-500 block truncate">Scan to check in</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="py-2.5 px-4 text-white text-[9px] sm:text-[11px] text-center font-bold" style={{ backgroundColor: footerBg }}>
+            <div className="shrink-0 w-full py-2 sm:py-2.5 px-4 text-white text-[8px] sm:text-[10px] text-center font-bold mt-auto" style={{ backgroundColor: footerBg }}>
               📅 {dateText}  •  📍 {venueText}  •  ✉️ {contactEmail}
             </div>
           </div>
@@ -1622,7 +1725,7 @@ export default function PromotionBadgeCard({
               </div>
 
               {/* Footer strip in card */}
-              <div className="p-2 rounded-xl text-white text-[8px]" style={{ backgroundColor: footerBg }}>
+              <div className="p-2 rounded-xl text-white text-[8px] shrink-0 mt-auto" style={{ backgroundColor: footerBg }}>
                 <div className="font-bold truncate">📅 {dateText}</div>
                 <div className="font-bold truncate">📍 {venueText}</div>
               </div>
@@ -1649,10 +1752,10 @@ export default function PromotionBadgeCard({
             </div>
 
             {/* Split Photo & Credentials */}
-            <div className="grid grid-cols-12 gap-3 items-center py-2">
+            <div className="grid grid-cols-12 gap-3 items-center py-1 flex-1 min-h-0 overflow-hidden">
               <div className="col-span-5 flex flex-col items-center">
                 <div
-                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden relative bg-slate-900 border-2 group shadow-lg"
+                  className="w-22 h-22 sm:w-28 sm:h-28 rounded-xl overflow-hidden relative bg-slate-900 border-2 group shadow-lg shrink-0"
                   style={{ borderColor: primaryColor }}
                 >
                   {localPhoto ? (
@@ -1675,7 +1778,7 @@ export default function PromotionBadgeCard({
                 </div>
 
                 <div
-                  className="mt-1.5 px-3 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase text-slate-950"
+                  className="mt-1.5 px-3 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase text-slate-950 shrink-0"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {badgeText}
@@ -1683,21 +1786,21 @@ export default function PromotionBadgeCard({
               </div>
 
               <div className="col-span-7 space-y-1">
-                <h4 className="text-xs sm:text-base font-black text-white uppercase">
+                <h4 className="text-xs sm:text-base font-black text-white uppercase truncate">
                   {attendeeName}
                 </h4>
-                <p className="text-[9px] sm:text-xs font-bold" style={{ color: accentColor }}>
+                <p className="text-[9px] sm:text-xs font-bold truncate" style={{ color: accentColor }}>
                   {attendeeDesignation}
                 </p>
-                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase">
+                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase truncate">
                   {attendeeCompany}
                 </p>
 
-                <div className="pt-2 text-[8px] sm:text-[9px] text-slate-300 space-y-0.5">
+                <div className="pt-1.5 text-[8px] sm:text-[9px] text-slate-300 space-y-0.5">
                   {highlights.slice(0, 3).map((h, i) => (
                     <div key={i} className="flex items-center gap-1">
                       <span style={{ color: primaryColor }}>✦</span>
-                      <span>{h}</span>
+                      <span className="truncate">{h}</span>
                     </div>
                   ))}
                 </div>
@@ -1705,7 +1808,7 @@ export default function PromotionBadgeCard({
             </div>
 
             {/* Bottom QR and Gold Footer */}
-            <div className="flex items-center justify-between border-t pt-2" style={{ borderColor: `${primaryColor}40` }}>
+            <div className="flex items-center justify-between border-t pt-2 shrink-0 mt-auto" style={{ borderColor: `${primaryColor}40` }}>
               <div className="flex items-center gap-2">
                 {qrDataUrl && <img src={qrDataUrl} alt="QR" className="w-10 h-10 bg-white p-0.5 rounded" />}
                 <div className="text-[8px]">
@@ -1743,7 +1846,7 @@ export default function PromotionBadgeCard({
               </h3>
             </div>
 
-            <div className="grid grid-cols-12 gap-3 items-center py-2">
+            <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center py-1 flex-1 min-h-0 overflow-hidden">
               <div className="col-span-7 space-y-1">
                 <h4 className="text-xs sm:text-sm font-black text-white uppercase">
                   {attendeeName}
@@ -1766,7 +1869,7 @@ export default function PromotionBadgeCard({
 
               <div className="col-span-5 flex flex-col items-center">
                 <div
-                  className="w-22 h-22 sm:w-28 sm:h-28 rounded-full overflow-hidden relative bg-slate-900 border-2 group shadow-xl"
+                  className="w-22 h-22 sm:w-28 sm:h-28 rounded-full overflow-hidden relative bg-slate-900 border-2 group shadow-xl shrink-0"
                   style={{ borderColor: primaryColor }}
                 >
                   {localPhoto ? (
@@ -1795,7 +1898,7 @@ export default function PromotionBadgeCard({
             </div>
 
             {/* Bottom Cyber Bar */}
-            <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-[8px] font-mono">
+            <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-[8px] font-mono shrink-0 mt-auto">
               <div className="flex items-center gap-2">
                 {qrDataUrl && <img src={qrDataUrl} alt="QR" className="w-8 h-8 bg-white p-0.5 rounded" />}
                 <div>
@@ -1817,22 +1920,22 @@ export default function PromotionBadgeCard({
         {themeStyle === "hr-recall-purple" && (
           <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden text-slate-900 select-none">
             {/* Top Bar: Left Taglines & Right Prominent Big Logo */}
-            <div className="pt-3.5 sm:pt-4 px-4 sm:px-6 flex items-start justify-between z-10">
+            <div className="pt-3 sm:pt-3.5 px-4 sm:px-6 flex items-start justify-between z-10 shrink-0">
               {/* Left Headlines */}
               <div className="space-y-0.5">
                 <h2
-                  className="text-base sm:text-xl md:text-2xl font-black tracking-tight leading-none uppercase font-display"
+                  className="text-sm sm:text-xl md:text-2xl font-black tracking-tight leading-none uppercase font-display"
                   style={{ color: primaryColor || "#200E4B" }}
                 >
                   ONE BIG GATHERING
                 </h2>
-                <p className="text-xs sm:text-base md:text-lg font-extrabold text-slate-900 tracking-tight leading-tight mt-0.5">
+                <p className="text-[11px] sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-tight mt-0.5">
                   2,000+ HR PROFESSIONALS
                 </p>
                 {/* I'm Attending Blue Pill */}
-                <div className="pt-1.5">
+                <div className="pt-1">
                   <span
-                    className="inline-block px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl text-white font-black text-xs sm:text-sm shadow-sm uppercase tracking-wide leading-none"
+                    className="inline-block px-3.5 sm:px-5 py-1 sm:py-1.5 rounded-lg text-white font-black text-[10px] sm:text-xs shadow-sm uppercase tracking-wide leading-none"
                     style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
                   >
                     I'm Attending
@@ -1845,52 +1948,52 @@ export default function PromotionBadgeCard({
                 <img
                   src={template.custom_logo_url || executivetalksLogo}
                   alt="Executive Talks"
-                  className="h-10 sm:h-14 md:h-16 w-auto object-contain"
+                  className="h-9 sm:h-12 md:h-14 w-auto object-contain"
                 />
               </div>
             </div>
 
             {/* Middle Section: Left Brand & QR, Right Circular Profile Avatar */}
-            <div className="px-4 sm:px-6 grid grid-cols-12 gap-2 sm:gap-4 items-center flex-1 my-auto z-10">
+            <div className="px-4 sm:px-6 grid grid-cols-12 gap-2 sm:gap-3 items-center flex-1 min-h-0 overflow-hidden py-1 z-10 my-auto">
               {/* Left Column: Awards & Connect Box + Bullets & QR */}
-              <div className="col-span-6 flex flex-col justify-between space-y-2.5 pr-1 py-1">
+              <div className="col-span-6 flex flex-col justify-between space-y-2 pr-1 py-0.5">
                 {/* Event Lockup */}
-                <div className="space-y-1">
-                  <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-slate-800 block">
+                <div className="space-y-0.5">
+                  <span className="text-[7.5px] sm:text-[9px] font-black uppercase tracking-wider text-slate-800 block">
                     AWARDS & CONNECT
                   </span>
-                  <div className="border-2 border-sky-500 rounded-lg p-1.5 sm:p-2 bg-white shadow-xs inline-block">
-                    <div className="text-base sm:text-2xl font-black leading-none font-display flex items-baseline gap-1">
-                      <span className="text-sky-500">HR </span>
-                      <span className="text-[#0A1931]">RECALL </span>
-                      <span className="text-sky-500 text-sm sm:text-xl">2K26</span>
+                  <div className="border-2 border-sky-500 rounded-lg p-1 sm:p-1.5 bg-white shadow-xs inline-block">
+                    <div className="text-sm sm:text-xl font-black leading-none font-display flex items-baseline gap-1">
+                      <span className="text-sky-500 font-black">HR </span>
+                      <span className="text-[#0A1931] font-black">RECALL </span>
+                      <span className="text-sky-500 text-xs sm:text-lg font-black">2K26</span>
                     </div>
                   </div>
-                  <p className="text-[8px] sm:text-[10.5px] font-bold text-slate-700">
+                  <p className="text-[7.5px] sm:text-[9.5px] font-bold text-slate-700">
                     Remembering 2026. <span className="text-sky-600 font-black">Calling 2027</span>
                   </p>
                 </div>
 
                 {/* Register Now Pill + QR Code + Bullets */}
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1 pt-0.5">
                   <div
-                    className="inline-block px-3.5 sm:px-5 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10.5px] font-black uppercase text-white shadow-xs"
+                    className="inline-block px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[9.5px] font-black uppercase text-white shadow-xs"
                     style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
                   >
                     REGISTER NOW
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-2.5">
                     {qrDataUrl && (
                       <img
                         src={qrDataUrl}
                         alt="QR Code"
-                        className="w-16 h-16 sm:w-22 sm:h-22 object-contain border border-slate-300 rounded-lg p-1 bg-white shrink-0 shadow-xs"
+                        className="w-13 h-13 sm:w-18 sm:h-18 object-contain border border-slate-300 rounded-lg p-0.5 bg-white shrink-0 shadow-xs"
                       />
                     )}
-                    <div className="text-[8px] sm:text-[10.5px] font-bold italic text-[#1E1B4B] space-y-0.5 leading-snug">
+                    <div className="text-[7.5px] sm:text-[9.5px] font-bold italic text-[#1E1B4B] space-y-0.5 leading-tight">
                       {(highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]).map((h, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-900 shrink-0" />
+                        <div key={i} className="flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-slate-900 shrink-0" />
                           <span className="truncate">{h}</span>
                         </div>
                       ))}
@@ -1905,15 +2008,15 @@ export default function PromotionBadgeCard({
                 <div className="relative flex items-center justify-center">
                   {/* Outer Purple Ring */}
                   <div
-                    className="relative w-38 h-38 sm:w-54 sm:h-54 md:w-58 md:h-58 rounded-full border-[10px] sm:border-[14px] flex items-center justify-center shadow-2xl group overflow-hidden"
+                    className="relative w-24 h-24 sm:w-34 sm:h-34 md:w-38 md:h-38 rounded-full border-[6px] sm:border-[9px] flex items-center justify-center shadow-xl group overflow-hidden shrink-0"
                     style={{ borderColor: primaryColor || "#28107A" }}
                   >
                     {/* Subtle dashed white ring overlay */}
-                    <div className="absolute inset-1 rounded-full border-2 border-dashed border-white/95 pointer-events-none z-10" />
+                    <div className="absolute inset-1 rounded-full border border-dashed border-white/95 pointer-events-none z-10" />
 
                     {/* Red wedge decorative indicators */}
-                    <div className="absolute top-1 right-4 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] rotate-45 pointer-events-none z-10" />
-                    <div className="absolute bottom-1 left-4 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] -rotate-135 pointer-events-none z-10" />
+                    <div className="absolute top-1 right-3.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] rotate-45 pointer-events-none z-10" />
+                    <div className="absolute bottom-1 left-3.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] -rotate-135 pointer-events-none z-10" />
 
                     {localPhoto ? (
                       <img
@@ -1922,7 +2025,7 @@ export default function PromotionBadgeCard({
                         className="w-full h-full object-cover rounded-full"
                       />
                     ) : (
-                      <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-white text-4xl sm:text-6xl font-black">
+                      <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-white text-3xl sm:text-5xl font-black">
                         {attendeeName.charAt(0) || "M"}
                       </div>
                     )}
@@ -1931,9 +2034,9 @@ export default function PromotionBadgeCard({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold cursor-pointer rounded-full transition-opacity z-20"
+                        className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9.5px] font-bold cursor-pointer rounded-full transition-opacity z-20"
                       >
-                        <Camera className="w-5 h-5 text-cyan-400 mb-0.5" />
+                        <Camera className="w-4 h-4 text-cyan-400 mb-0.5" />
                         <span>Change Photo</span>
                       </button>
                     )}
@@ -1941,32 +2044,32 @@ export default function PromotionBadgeCard({
                 </div>
 
                 {/* Attendee Info below photo */}
-                <div className="mt-2 space-y-0.5 max-w-full px-1">
-                  <h4 className="text-sm sm:text-xl md:text-2xl font-black text-[#1B4332] truncate uppercase leading-tight font-display tracking-tight">
+                <div className="mt-1.5 space-y-0.5 max-w-full px-1">
+                  <h4 className="text-xs sm:text-lg md:text-xl font-black text-[#1B4332] truncate uppercase leading-tight font-display tracking-tight">
                     {attendeeName}
                   </h4>
-                  <p className="text-[9.5px] sm:text-xs md:text-sm font-bold text-slate-800 truncate leading-tight">
+                  <p className="text-[9px] sm:text-xs font-bold text-slate-800 truncate leading-tight">
                     {attendeeDesignation}
                   </p>
-                  <p className="text-[9px] sm:text-xs md:text-sm font-black text-[#2563EB] uppercase truncate leading-tight">
+                  <p className="text-[8.5px] sm:text-xs font-black text-[#2563EB] uppercase truncate leading-tight">
                     {attendeeCompany}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Purple Strip */}
+            {/* Bottom Purple Strip - 100% Flush & Fully Visible (Never Cropped) */}
             <div
-              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-4 sm:px-6 text-white text-[8px] sm:text-[10px] md:text-[11px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md"
+              className="shrink-0 w-full z-20 py-2 sm:py-2.5 px-4 sm:px-6 text-white text-[7.5px] sm:text-[9.5px] md:text-[10px] font-semibold flex flex-col justify-center space-y-0.5 shadow-md mt-auto"
               style={{ backgroundColor: footerBg || "#28107A" }}
             >
               <p className="text-slate-200 truncate">
                 For queries & registration: <span className="text-white font-bold">{contactEmail}</span>
               </p>
-              <div className="flex flex-wrap items-center justify-between gap-2 text-white font-bold text-[8.5px] sm:text-[10.5px]">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-white font-bold text-[8px] sm:text-[9.5px]">
                 <span>Date: {dateText}</span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0 inline" /> {venueText}
+                  <MapPin className="w-3 h-3 text-red-400 shrink-0 inline" /> {venueText}
                 </span>
               </div>
             </div>
@@ -1995,10 +2098,10 @@ export default function PromotionBadgeCard({
             </div>
 
             {/* Center Profile Avatar with Glowing Ruby Rim */}
-            <div className="flex flex-col items-center text-center px-4 my-auto">
-              <div className="relative group">
+            <div className="flex flex-col items-center text-center px-4 my-auto flex-1 min-h-0 overflow-hidden">
+              <div className="relative group shrink-0">
                 <div
-                  className="relative w-40 h-40 sm:w-56 sm:h-56 rounded-full overflow-hidden bg-slate-900 border-3 border-red-500/90 shadow-[0_0_45px_rgba(239,68,68,0.8)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                  className="relative w-32 h-32 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-full overflow-hidden bg-slate-900 border-3 border-red-500/90 shadow-[0_0_45px_rgba(239,68,68,0.8)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0"
                 >
                   {localPhoto ? (
                     <img

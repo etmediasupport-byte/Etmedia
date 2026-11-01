@@ -1999,6 +1999,8 @@ app.get("/api/media/:id", async (req, res) => {
 
 // Robust Uploads Handler with Database Lookup
 const serveUploadsHandler = async (req: any, res: any, next: any) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   const filename = req.params.filename || req.params[0];
   if (!filename) return next();
 
