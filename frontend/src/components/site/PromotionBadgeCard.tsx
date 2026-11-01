@@ -1368,102 +1368,32 @@ export default function PromotionBadgeCard({
     qrDataUrl,
   ]);
 
-  // Social Sharing Handlers (Auto-downloads poster & supports native Web Share with image attachment)
-  const handleShareWhatsApp = async () => {
-    const poster = await handleDownloadImage();
+  // Social Sharing Handlers (Directly opens social media apps/sites without downloading)
+  const handleShareWhatsApp = () => {
     const text = `🎉 Excited to announce that I am attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media!\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin me & 2,000+ HR Leaders:\n${qrTarget}`;
-
-    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
-      try {
-        await navigator.share({
-          title: "Official Delegate Poster",
-          text: text,
-          files: [poster.file],
-        });
-        return;
-      } catch (e) {}
-    }
-    toast.success("Poster downloaded! Attach the downloaded poster to your WhatsApp status or chat.", { duration: 5000 });
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const handleShareLinkedIn = async () => {
-    const poster = await handleDownloadImage();
-    const caption = `Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media! 🚀\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin 2,000+ HR leaders at the summit: ${qrTarget}\n\n#ExecutiveTalks #HRRecall2k26 #Leadership #Summit #Networking #CorporateAwards`;
-
-    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
-      try {
-        await navigator.share({
-          title: "Official Delegate Poster",
-          text: caption,
-          files: [poster.file],
-        });
-        return;
-      } catch (e) {}
-    }
-    try {
-      await navigator.clipboard.writeText(caption);
-      toast.success("Poster downloaded & caption copied! Attach the downloaded poster to your LinkedIn post.", { duration: 5000 });
-    } catch {
-      toast.success("Poster downloaded! Ready to share on LinkedIn.", { duration: 4000 });
-    }
-    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(caption)}`, "_blank");
+  const handleShareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(qrTarget)}`, "_blank");
   };
 
-  const handleShareFacebook = async () => {
-    const poster = await handleDownloadImage();
-    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
-      try {
-        await navigator.share({
-          title: "Official Delegate Poster",
-          text: `Attending ${attendee.event_title || template.event_heading} - Executive Talks Media! ${qrTarget}`,
-          files: [poster.file],
-        });
-        return;
-      } catch (e) {}
-    }
-    toast.success("Poster downloaded! Attach the poster to your Facebook post or story.", { duration: 5000 });
+  const handleShareFacebook = () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(qrTarget)}`, "_blank");
   };
 
-  const handleShareX = async () => {
-    const poster = await handleDownloadImage();
-    const text = `🎉 Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} by Executive Talks Media! 🚀 ${qrTarget}`;
-    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
-      try {
-        await navigator.share({
-          title: "Official Delegate Poster",
-          text: text,
-          files: [poster.file],
-        });
-        return;
-      } catch (e) {}
-    }
-    toast.success("Poster downloaded! Attach the downloaded poster to your X post.", { duration: 5000 });
+  const handleShareX = () => {
+    const text = `🎉 Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} by Executive Talks Media! 🚀\n\nJoin me: ${qrTarget}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const handleShareInstagram = async () => {
-    const poster = await handleDownloadImage();
     const caption = `Excited to announce that I'm attending ${attendee.event_title || template.event_heading || "HR RECALL 2K26"} hosted by Executive Talks Media! 🚀\n\n📅 Date: ${dateText}\n📍 Venue: ${venueText}\n\nJoin 2,000+ HR leaders at the summit: ${qrTarget}\n\n#ExecutiveTalks #HRRecall2k26 #Leadership #Summit #Networking #CorporateAwards`;
-
-    if (poster && navigator.canShare && navigator.canShare({ files: [poster.file] })) {
-      try {
-        await navigator.share({
-          title: "Official Delegate Poster",
-          text: caption,
-          files: [poster.file],
-        });
-        return;
-      } catch (e) {}
-    }
     try {
       await navigator.clipboard.writeText(caption);
-      toast.success("Poster downloaded & caption copied! Upload the downloaded poster to your Instagram post or story.", {
-        duration: 5000,
-      });
+      toast.success("Opening Instagram! Event caption copied to clipboard.", { duration: 3500 });
     } catch {
-      toast.success("Poster downloaded! Ready to share on Instagram.", { duration: 4000 });
+      toast.success("Opening Instagram!", { duration: 2500 });
     }
     window.open("https://www.instagram.com/", "_blank");
   };
@@ -2325,7 +2255,7 @@ export default function PromotionBadgeCard({
               type="button"
               onClick={handleShareInstagram}
               className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-95 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-              title="Download 1080x1350 Poster & Share to Instagram"
+              title="Share to Instagram"
             >
               <Instagram className="w-4 h-4" />
               <span>Instagram</span>
