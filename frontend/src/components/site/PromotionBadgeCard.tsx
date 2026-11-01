@@ -1376,7 +1376,7 @@ export default function PromotionBadgeCard({
       {/* ============================================================== */}
       <div
         id="promotion-badge-container"
-        className="relative w-full aspect-square max-w-[540px] sm:max-w-[580px] mx-auto rounded-2xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white flex flex-col"
+        className="relative w-full aspect-square max-w-[480px] sm:max-w-[500px] mx-auto rounded-2xl shadow-2xl overflow-hidden font-sans select-none border border-slate-300 bg-white flex flex-col"
         style={{
           boxShadow: "0 20px 45px -10px rgba(0,0,0,0.22)",
         }}
@@ -1919,65 +1919,52 @@ export default function PromotionBadgeCard({
         {/* ========================================================= */}
         {themeStyle === "hr-recall-purple" && (
           <div className="relative w-full h-full bg-white flex flex-col justify-between overflow-hidden text-slate-900 select-none">
-            {/* Top Bar: Left Taglines & Right Prominent Big Logo */}
-            <div className="pt-3 sm:pt-3.5 px-4 sm:px-6 flex items-start justify-between z-10 shrink-0">
-              {/* Left Headlines */}
-              <div className="space-y-0.5">
-                <h2
-                  className="text-sm sm:text-xl md:text-2xl font-black tracking-tight leading-none uppercase font-display"
-                  style={{ color: primaryColor || "#200E4B" }}
-                >
-                  ONE BIG GATHERING
-                </h2>
-                <p className="text-[11px] sm:text-sm md:text-base font-extrabold text-slate-900 tracking-tight leading-tight mt-0.5">
-                  2,000+ HR PROFESSIONALS
-                </p>
-                {/* I'm Attending Blue Pill */}
-                <div className="pt-1">
-                  <span
-                    className="inline-block px-3.5 sm:px-5 py-1 sm:py-1.5 rounded-lg text-white font-black text-[10px] sm:text-xs shadow-sm uppercase tracking-wide leading-none"
-                    style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
+            {/* Unified 2-Column Edge-to-Edge Grid (Zero Gap, Snug, Perfectly Distributed) */}
+            <div className="px-3.5 sm:px-5 pt-3 sm:pt-4 pb-2 grid grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-hidden">
+              {/* Left Column: Headlines, Pill Badge, Awards & Connect Box, Register Now, QR & Bullets */}
+              <div className="col-span-7 flex flex-col justify-between h-full pr-1 space-y-1.5 overflow-hidden">
+                {/* 1. Top Headlines */}
+                <div className="space-y-0.5">
+                  <h2
+                    className="text-xs sm:text-base md:text-lg font-black tracking-tight leading-none uppercase font-display"
+                    style={{ color: primaryColor || "#200E4B" }}
                   >
-                    I'm Attending
-                  </span>
+                    ONE BIG GATHERING
+                  </h2>
+                  <p className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-900 tracking-tight leading-tight mt-0.5">
+                    2,000+ HR PROFESSIONALS
+                  </p>
+                  <div className="pt-0.5">
+                    <span
+                      className="inline-block px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-white font-black text-[8.5px] sm:text-[10px] shadow-xs uppercase tracking-wide leading-none"
+                      style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
+                    >
+                      I'm Attending
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Right Big Company Logo */}
-              <div className="shrink-0 pl-2">
-                <img
-                  src={template.custom_logo_url || executivetalksLogo}
-                  alt="Executive Talks"
-                  className="h-9 sm:h-12 md:h-14 w-auto object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Middle Section: Left Brand & QR, Right Circular Profile Avatar */}
-            <div className="px-4 sm:px-6 grid grid-cols-12 gap-2 sm:gap-3 items-center flex-1 min-h-0 overflow-hidden py-1 z-10 my-auto">
-              {/* Left Column: Awards & Connect Box + Bullets & QR */}
-              <div className="col-span-6 flex flex-col justify-between space-y-2 pr-1 py-0.5">
-                {/* Event Lockup */}
+                {/* 2. Awards & Connect Box */}
                 <div className="space-y-0.5">
                   <span className="text-[7.5px] sm:text-[9px] font-black uppercase tracking-wider text-slate-800 block">
                     AWARDS & CONNECT
                   </span>
                   <div className="border-2 border-sky-500 rounded-lg p-1 sm:p-1.5 bg-white shadow-xs inline-block">
-                    <div className="text-sm sm:text-xl font-black leading-none font-display flex items-baseline gap-1">
+                    <div className="text-xs sm:text-base md:text-lg font-black leading-none font-display flex items-baseline gap-1">
                       <span className="text-sky-500 font-black">HR </span>
                       <span className="text-[#0A1931] font-black">RECALL </span>
-                      <span className="text-sky-500 text-xs sm:text-lg font-black">2K26</span>
+                      <span className="text-sky-500 text-[10px] sm:text-sm font-black">2K26</span>
                     </div>
                   </div>
-                  <p className="text-[7.5px] sm:text-[9.5px] font-bold text-slate-700">
+                  <p className="text-[7px] sm:text-[8.5px] md:text-[9.5px] font-bold text-slate-700">
                     Remembering 2026. <span className="text-sky-600 font-black">Calling 2027</span>
                   </p>
                 </div>
 
-                {/* Register Now Pill + QR Code + Bullets */}
+                {/* 3. Register Now + QR Code + Bullets */}
                 <div className="space-y-1 pt-0.5">
                   <div
-                    className="inline-block px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[9.5px] font-black uppercase text-white shadow-xs"
+                    className="inline-block px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-[7.5px] sm:text-[9px] font-black uppercase text-white shadow-xs"
                     style={{ backgroundColor: secondaryColor || "#0D6EFD" }}
                   >
                     REGISTER NOW
@@ -1987,10 +1974,10 @@ export default function PromotionBadgeCard({
                       <img
                         src={qrDataUrl}
                         alt="QR Code"
-                        className="w-13 h-13 sm:w-18 sm:h-18 object-contain border border-slate-300 rounded-lg p-0.5 bg-white shrink-0 shadow-xs"
+                        className="w-12 h-12 sm:w-16 sm:h-16 md:w-18 md:h-18 object-contain border border-slate-300 rounded-lg p-0.5 bg-white shrink-0 shadow-xs"
                       />
                     )}
-                    <div className="text-[7.5px] sm:text-[9.5px] font-bold italic text-[#1E1B4B] space-y-0.5 leading-tight">
+                    <div className="text-[7px] sm:text-[8.5px] md:text-[9.5px] font-bold italic text-[#1E1B4B] space-y-0.5 leading-tight">
                       {(highlights.length > 0 ? highlights.slice(0, 4) : ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]).map((h, i) => (
                         <div key={i} className="flex items-center gap-1">
                           <span className="w-1 h-1 rounded-full bg-slate-900 shrink-0" />
@@ -2002,56 +1989,67 @@ export default function PromotionBadgeCard({
                 </div>
               </div>
 
-              {/* Right Column: Purple Ring Circular Photo & Attendee Details */}
-              <div className="col-span-6 flex flex-col items-center text-center pl-1">
-                {/* Purple Ring Avatar with Dashed Orbit & Accents */}
-                <div className="relative flex items-center justify-center">
-                  {/* Outer Purple Ring */}
+              {/* Right Column: Company Logo at Top Right, Orbit Avatar in Center, Attendee Details below */}
+              <div className="col-span-5 flex flex-col justify-between items-center text-center h-full pl-0.5">
+                {/* Company Logo at Top Right */}
+                <div className="w-full flex justify-end">
+                  <img
+                    src={template.custom_logo_url || executivetalksLogo}
+                    alt="Executive Talks"
+                    className="h-8 sm:h-11 md:h-13 w-auto object-contain"
+                  />
+                </div>
+
+                {/* Purple Collar Orbit Avatar (Collar with Orbit & Red Wedges ALWAYS Visible Around Photo) */}
+                <div className="relative my-auto flex items-center justify-center">
                   <div
-                    className="relative w-24 h-24 sm:w-34 sm:h-34 md:w-38 md:h-38 rounded-full border-[6px] sm:border-[9px] flex items-center justify-center shadow-xl group overflow-hidden shrink-0"
-                    style={{ borderColor: primaryColor || "#28107A" }}
+                    className="relative p-2 sm:p-2.5 md:p-3 rounded-full shadow-2xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: primaryColor || "#28107A" }}
                   >
-                    {/* Subtle dashed white ring overlay */}
-                    <div className="absolute inset-1 rounded-full border border-dashed border-white/95 pointer-events-none z-10" />
+                    {/* Dashed white orbit ring overlay */}
+                    <div className="absolute inset-1 sm:inset-1.5 rounded-full border border-dashed border-white/95 pointer-events-none z-10" />
 
-                    {/* Red wedge decorative indicators */}
-                    <div className="absolute top-1 right-3.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] rotate-45 pointer-events-none z-10" />
-                    <div className="absolute bottom-1 left-3.5 w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] -rotate-135 pointer-events-none z-10" />
+                    {/* Red wedge decorative indicators on the collar */}
+                    <div className="absolute -top-0.5 right-2 w-3 h-3 sm:w-4 sm:h-4 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] rotate-45 pointer-events-none z-10" />
+                    <div className="absolute -bottom-0.5 left-2 w-3 h-3 sm:w-4 sm:h-4 bg-red-500 [clip-path:polygon(50%_0%,0%_100%,100%_100%)] -rotate-135 pointer-events-none z-10" />
 
-                    {localPhoto ? (
-                      <img
-                        src={localPhoto}
-                        alt={attendeeName}
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-white text-3xl sm:text-5xl font-black">
-                        {attendeeName.charAt(0) || "M"}
-                      </div>
-                    )}
+                    {/* Inner Photo Container */}
+                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-34 md:h-34 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center group shrink-0">
+                      {localPhoto ? (
+                        <img
+                          src={localPhoto}
+                          alt={attendeeName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white text-2xl sm:text-4xl font-black">
+                          {attendeeName.charAt(0) || "M"}
+                        </div>
+                      )}
 
-                    {allowPhotoUpload && (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9.5px] font-bold cursor-pointer rounded-full transition-opacity z-20"
-                      >
-                        <Camera className="w-4 h-4 text-cyan-400 mb-0.5" />
-                        <span>Change Photo</span>
-                      </button>
-                    )}
+                      {allowPhotoUpload && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[8px] sm:text-[9.5px] font-bold cursor-pointer transition-opacity z-20"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-cyan-400 mb-0.5" />
+                          <span>Change</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Attendee Info below photo */}
-                <div className="mt-1.5 space-y-0.5 max-w-full px-1">
-                  <h4 className="text-xs sm:text-lg md:text-xl font-black text-[#1B4332] truncate uppercase leading-tight font-display tracking-tight">
+                <div className="w-full space-y-0.5 px-0.5 text-center">
+                  <h4 className="text-xs sm:text-base md:text-lg font-black text-[#1B4332] truncate uppercase leading-tight font-display tracking-tight">
                     {attendeeName}
                   </h4>
-                  <p className="text-[9px] sm:text-xs font-bold text-slate-800 truncate leading-tight">
+                  <p className="text-[8.5px] sm:text-[10px] md:text-xs font-bold text-slate-800 truncate leading-tight">
                     {attendeeDesignation}
                   </p>
-                  <p className="text-[8.5px] sm:text-xs font-black text-[#2563EB] uppercase truncate leading-tight">
+                  <p className="text-[8px] sm:text-[9.5px] md:text-xs font-black text-[#2563EB] uppercase truncate leading-tight">
                     {attendeeCompany}
                   </p>
                 </div>

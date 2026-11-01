@@ -10215,24 +10215,32 @@ app.get("/api/promotion-templates/active", async (req, res) => {
 
     let activeItem: any = null;
 
-    if (eventId && eventId !== "all") {
+    const targetEvent = eventId && eventId !== "all" ? eventId : null;
+    const targetSlug = slug && slug !== "all" ? slug : null;
+
+    // 1. Try to find active template specifically matched to eventId or slug
+    if (targetEvent || targetSlug) {
       const [eventRows]: any = await pool.query(
-        "SELECT * FROM promotion_templates WHERE is_active = 1 AND (event_id = ? OR event_slug = ?) LIMIT 1",
-        [eventId, slug || eventId]
+        "SELECT * FROM promotion_templates WHERE is_active = 1 AND (event_id = ? OR event_slug = ? OR event_id = ? OR event_slug = ?) LIMIT 1",
+        [targetEvent || "", targetSlug || "", targetSlug || "", targetEvent || ""]
       );
       if (eventRows && eventRows.length > 0) {
         activeItem = eventRows[0];
       }
     }
 
+    // 2. Fallback to active template assigned globally (event_id = 'all') or any active template
     if (!activeItem) {
-      const [rows]: any = await pool.query("SELECT * FROM promotion_templates WHERE is_active = 1 LIMIT 1");
+      const [rows]: any = await pool.query(
+        "SELECT * FROM promotion_templates WHERE is_active = 1 ORDER BY (event_id = 'all' OR event_slug = 'all') DESC, created_at DESC LIMIT 1"
+      );
       activeItem = rows && rows.length > 0 ? rows[0] : null;
     }
 
+    // 3. Fallback to first available template or default purple orbit template
     if (!activeItem) {
       const [anyRows]: any = await pool.query("SELECT * FROM promotion_templates ORDER BY created_at ASC LIMIT 1");
-      activeItem = anyRows && anyRows.length > 0 ? anyRows[0] : DEFAULT_PROMOTION_TEMPLATES[0];
+      activeItem = anyRows && anyRows.length > 0 ? anyRows[0] : (DEFAULT_PROMOTION_TEMPLATES.find(t => t.theme_style === "hr-recall-purple") || DEFAULT_PROMOTION_TEMPLATES[0]);
     }
 
     let parsedHighlights = [];

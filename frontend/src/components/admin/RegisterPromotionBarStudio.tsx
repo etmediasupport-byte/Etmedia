@@ -885,7 +885,7 @@ export default function RegisterPromotionBarStudio({
                 Visual Layout Architecture (Choose Structure)
               </label>
               <select
-                value={editorForm.theme_style || "hr-recall-emerald"}
+                value={editorForm.theme_style || "hr-recall-purple"}
                 onChange={(e) => {
                   const styleVal = e.target.value;
                   const matchedPreset = TEMPLATE_LAYOUT_PRESETS.find((p) => p.style === styleVal);
@@ -897,11 +897,11 @@ export default function RegisterPromotionBarStudio({
                 }}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold cursor-pointer"
               >
-                <option value="hr-recall-emerald">Layout 1: HR Recall Chevron (Exact 2nd Image Layout)</option>
-                <option value="spotlight-center">Layout 2: Grand Spotlight Center Hero (Centered VIP Halo)</option>
-                <option value="editorial-split">Layout 3: C-Suite Editorial Magazine Split (Forbes Column)</option>
-                <option value="prestige-gold-framed">Layout 4: Prestige Double Gold Framed (Luxury Obsidian)</option>
-                <option value="cyber-tech-conclave">Layout 5: Cyber Tech Conclave (Electric Cyan Modern)</option>
+                {TEMPLATE_LAYOUT_PRESETS.map((preset, idx) => (
+                  <option key={preset.style} value={preset.style}>
+                    Layout {idx + 1}: {preset.name}
+                  </option>
+                ))}
               </select>
             </div>
 

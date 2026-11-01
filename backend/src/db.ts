@@ -2137,7 +2137,7 @@ export const DEFAULT_PROMOTION_TEMPLATES = [
     footer_bg: "#064E3B",
     qr_destination_url: "/events/hr-recall-2k26",
     custom_logo_url: "",
-    is_active: 1,
+    is_active: 0,
   },
   {
     id: "tmpl-gold-vip-conclave",
@@ -2242,7 +2242,7 @@ export const DEFAULT_PROMOTION_TEMPLATES = [
     footer_bg: "#28107A",
     qr_destination_url: "/events/hr-recall-2k26",
     custom_logo_url: "",
-    is_active: 0,
+    is_active: 1,
   },
   {
     id: "tmpl-dark-ruby-spotlight",

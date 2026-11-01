@@ -97,10 +97,12 @@ export default function SocialPosterStudioPage() {
           }
         }
 
-        // 2. Fetch Active Promotion Template
-        const resTpl = await fetch(
-          `/api/promotion-templates/active?slug=${encodeURIComponent(targetSlug)}`
-        );
+        // 2. Fetch Active Promotion Template (pass slug and eventId)
+        let tplUrl = `/api/promotion-templates/active?slug=${encodeURIComponent(targetSlug)}`;
+        if (jsonEvent?.id) {
+          tplUrl += `&eventId=${encodeURIComponent(jsonEvent.id)}`;
+        }
+        const resTpl = await fetch(tplUrl);
         if (resTpl.ok) {
           const jsonTpl = await resTpl.json();
           if (jsonTpl?.success && jsonTpl?.template && isMounted) {
@@ -152,17 +154,17 @@ export default function SocialPosterStudioPage() {
 
   const fallbackTemplate: PromotionTemplate = {
     id: "default-fallback",
-    title: eventData?.title || "Official Event Promotion Badge",
-    theme_style: "hr-recall-emerald",
-    badge_text: "I'M ONE OF THE 2,000+",
-    top_tagline: "2,000+ HR PROFESSIONALS ONE BIG GATHERING",
+    title: eventData?.title || "HR Recall Purple Orbit Badge",
+    theme_style: "hr-recall-purple",
+    badge_text: "I'M ATTENDING",
+    top_tagline: "ONE BIG GATHERING",
     event_heading: eventData?.title || "AWARDS & CONNECT HR RECALL 2K26",
     sub_heading: eventData?.category || "Remembering 2026. Calling 2027",
     highlights: [
       "2000+ HR Pros",
       "50+ Speakers",
-      "Awards Felicitation",
-      "5-Star Networking Luncheon",
+      "Awards",
+      "Networking",
     ],
     cta_text: "REGISTER NOW",
     date_text: eventData?.date || "11th December 2026",
@@ -170,10 +172,10 @@ export default function SocialPosterStudioPage() {
       ? `${eventData.venue}, ${eventData.city || ""}`
       : eventData?.city || "Gachibowli, Hyderabad",
     contact_email: "registration@executivetalksmedia.in",
-    primary_color: "#00A86B",
-    secondary_color: "#0F172A",
+    primary_color: "#28107A",
+    secondary_color: "#2563EB",
     accent_color: "#EF4444",
-    footer_bg: "#064E3B",
+    footer_bg: "#28107A",
   };
 
   const attendeeData: AttendeeBadgeData = {
