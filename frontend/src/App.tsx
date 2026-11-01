@@ -28,6 +28,7 @@ import PartnerApplicationWizardPage from "@/pages/PartnerApplicationWizardPage";
 import CareerApplicationWizardPage from "@/pages/CareerApplicationWizardPage";
 import MembershipApplicationWizardPage from "@/pages/MembershipApplicationWizardPage";
 import ContactFormWizardPage from "@/pages/ContactFormWizardPage";
+import SocialPosterStudioPage from "@/pages/SocialPosterStudioPage";
 import { Toaster } from "@/components/ui/sonner";
 
 interface ErrorBoundaryProps {
@@ -237,6 +238,8 @@ export default function App() {
               <Route path="events/free-registration-pending" element={<FreeRegistrationPendingPage />} />
               <Route path="events/:slug/registration-success" element={<RegistrationSuccessPage />} />
               <Route path="events/registration-success" element={<RegistrationSuccessPage />} />
+              <Route path="events/:slug/social-poster" element={<SocialPosterStudioPage />} />
+              <Route path="events/social-poster" element={<SocialPosterStudioPage />} />
               <Route path="partner" element={<PartnerWithUsPage />} />
               <Route path="partner/apply" element={<PartnerApplicationWizardPage />} />
               <Route path="partners/apply" element={<PartnerApplicationWizardPage />} />

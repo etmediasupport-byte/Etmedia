@@ -161,11 +161,58 @@ export default function FreeRegistrationPage() {
   const [orgAwardNominationEnabled, setOrgAwardNominationEnabled] = useState<boolean>(true);
   const [orgAwardCategoryError, setOrgAwardCategoryError] = useState<string>("");
 
-  // "I'm Attending" Poster
+  // "I'm Attending" / Social Media Poster
   const [attendingPosterChoice, setAttendingPosterChoice] = useState<string>("");
+  const [socialPosterChoice, setSocialPosterChoice] = useState<string>(""); // "" | "Yes" | "No"
   const [attendingPosterEnabled, setAttendingPosterEnabled] = useState<boolean>(true);
   const [attendingPosterWhatsapp, setAttendingPosterWhatsapp] = useState<string>("+91 94930 87788");
   const [posterChoiceError, setPosterChoiceError] = useState<string>("");
+
+  const openPosterStudioNewTab = () => {
+    const posterData = {
+      name: `${formData.firstName} ${formData.lastName}`.trim() || formData.fullName || "PRASANNA KUMAR PANDA",
+      designation: formData.designation || formData.jobTitle || "Executive Delegate",
+      organization: formData.companyName || formData.organization || "Ascend Media Labs",
+      photoUrl: formData.photoUrl || "",
+      slug: eventData?.slug || cleanTargetSlug || slug || "hr-recall-2k26",
+      eventTitle: eventData?.title || "HR RECALL 2K26",
+      regId: draftRegId || "FREE-DELEGATE",
+    };
+    try {
+      localStorage.setItem("socialPosterData", JSON.stringify(posterData));
+    } catch (e) {
+      console.warn("Storage set failed", e);
+    }
+    const studioUrl = `/events/${encodeURIComponent(posterData.slug)}/social-poster?name=${encodeURIComponent(posterData.name)}&designation=${encodeURIComponent(posterData.designation)}&organization=${encodeURIComponent(posterData.organization)}&slug=${encodeURIComponent(posterData.slug)}&regId=${encodeURIComponent(posterData.regId)}`;
+    window.open(studioUrl, "_blank");
+  };
+
+  const handleSelectSocialPosterOption = (choice: "Yes" | "No") => {
+    setSocialPosterChoice(choice);
+    setAttendingPosterChoice(choice === "Yes" ? "Yes" : "No, Thank you");
+    setPosterChoiceError("");
+    if (choice === "Yes") {
+      openPosterStudioNewTab();
+      toast.success("Opening Official Poster Studio in a new tab...");
+    } else {
+      toast.info("No poster selected. Proceeding to submit application.");
+    }
+  };
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "socialPosterData" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.photoUrl !== undefined) {
+            setFormData((prev) => ({ ...prev, photoUrl: parsed.photoUrl }));
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // Payment states for Paid Award Nominations in Free Flow
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
@@ -724,9 +771,9 @@ export default function FreeRegistrationPage() {
       }
 
       if (attendingPosterEnabled) {
-        if (!attendingPosterChoice) {
-          setPosterChoiceError("Please select whether you would like an 'I’m Attending' poster.");
-          toast.error("Please select an option for the 'I’m Attending' poster.");
+        if (!socialPosterChoice) {
+          setPosterChoiceError("Please select whether you would like an official social media poster (Yes or No).");
+          toast.error("Please answer the social media poster question.");
           return;
         }
       }
@@ -1331,62 +1378,6 @@ export default function FreeRegistrationPage() {
                             ⚠️ {fieldErrors.contactNumber}
                           </p>
                         )}
-                      </div>
-
-                      {/* Delegate Profile Image / Headshot (For Official Badge & VIP Pass) */}
-                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/40 p-4 transition-all hover:bg-emerald-50/70">
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                          <div className="relative group shrink-0">
-                            {formData.photoUrl ? (
-                              <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md">
-                                <img
-                                  src={formData.photoUrl}
-                                  alt="Delegate Profile"
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setFormData((prev) => ({ ...prev, photoUrl: "" }))}
-                                  className="absolute top-1 right-1 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow transition-all cursor-pointer"
-                                  title="Remove photo"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 shadow-inner">
-                                <Camera className="w-6 h-6 mb-1 text-emerald-600" />
-                                <span className="text-[9px] font-black uppercase tracking-wider">Photo</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex-1 text-center sm:text-left space-y-1">
-                            <div className="flex items-center justify-center sm:justify-start gap-2">
-                              <span className="text-xs font-black uppercase text-slate-900 tracking-wider">
-                                Delegate Profile Photo (For Official Badge & Pass)
-                              </span>
-                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                                Optional / Recommended
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                              Upload your professional headshot. It will be automatically fixed onto your promotional badge card, "I'm Attending" social graphics, and complimentary VIP event pass.
-                            </p>
-                            <div className="pt-1">
-                              <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 cursor-pointer transition-all hover:scale-[1.02]">
-                                <Upload className="w-3.5 h-3.5" />
-                                <span>{formData.photoUrl ? "Change Photo" : "Upload Headshot (Max 5MB)"}</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={handleProfilePhotoUpload}
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -2083,119 +2074,124 @@ export default function FreeRegistrationPage() {
                       </div>
                     )}
 
-                    {/* SECTION 4: "I'm Attending" Poster (Tab 7 in Admin) */}
+                    {/* SECTION 4: Official Event Social Media Poster Option */}
                     {attendingPosterEnabled && (
-                      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50/70 border border-emerald-200 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                            Would you like an “I’m Attending {eventData?.title || "HR RECALL 2K26"}” poster featuring your photo and name? <span className="text-rose-500">*</span>
-                          </label>
-                          <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
-                            Complimentary Feature
+                      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-cyan-50/80 border border-emerald-200/80 space-y-5 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/60 pb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider block">
+                                Complimentary Feature
+                              </span>
+                              <h3 className="text-sm sm:text-base font-black text-slate-900">
+                                Official Event Social Media Poster
+                              </h3>
+                            </div>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 self-start sm:self-auto">
+                            1080×1080 Square High-Res
                           </span>
                         </div>
-                        <select
-                          value={attendingPosterChoice}
-                          onChange={(e) => {
-                            setAttendingPosterChoice(e.target.value);
-                            setPosterChoiceError("");
-                          }}
-                          className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-4 shadow-sm cursor-pointer ${
-                            posterChoiceError && !attendingPosterChoice
-                              ? "border-rose-500 focus:ring-rose-500/10"
-                              : "border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/10"
-                          }`}
-                        >
-                          <option value="">Choose</option>
-                          <option value={`If yes, Please send your photo to ${attendingPosterWhatsapp} via WhatsApp.`}>
-                            If yes, Please send your photo to {attendingPosterWhatsapp} via WhatsApp.
-                          </option>
-                          <option value="No, Thank you">No, Thank you</option>
-                        </select>
-                        {posterChoiceError && !attendingPosterChoice && (
+
+                        <div className="space-y-1.5">
+                          <label className="block text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                            Would you like an official social media poster featuring your photo, name and designation to share on social media? <span className="text-rose-500">*</span>
+                          </label>
+                          <p className="text-xs text-slate-600">
+                            Select <strong>Yes</strong> to open our Poster Studio in a new tab where you can customize your title, upload your headshot, and share directly to WhatsApp, LinkedIn & Instagram.
+                          </p>
+                        </div>
+
+                        {/* Yes / No Choices */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectSocialPosterOption("Yes")}
+                            className={`p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer ${
+                              socialPosterChoice === "Yes"
+                                ? "border-emerald-500 bg-white shadow-md shadow-emerald-500/10 ring-4 ring-emerald-500/10"
+                                : "border-slate-200 hover:border-emerald-300 bg-white/70 hover:bg-white"
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center shrink-0 ${
+                              socialPosterChoice === "Yes" ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300"
+                            }`}>
+                              {socialPosterChoice === "Yes" && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <div>
+                              <span className="text-sm font-black text-slate-900 block">
+                                Yes, I want an Official Poster
+                              </span>
+                              <span className="text-xs text-slate-500 mt-0.5 block">
+                                Opens poster studio in a new tab with live preview & photo upload.
+                              </span>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSelectSocialPosterOption("No")}
+                            className={`p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer ${
+                              socialPosterChoice === "No"
+                                ? "border-slate-700 bg-white shadow-md ring-4 ring-slate-400/10"
+                                : "border-slate-200 hover:border-slate-400 bg-white/70 hover:bg-white"
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center shrink-0 ${
+                              socialPosterChoice === "No" ? "border-slate-700 bg-slate-700 text-white" : "border-slate-300"
+                            }`}>
+                              {socialPosterChoice === "No" && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <div>
+                              <span className="text-sm font-black text-slate-900 block">
+                                No, Thank you
+                              </span>
+                              <span className="text-xs text-slate-500 mt-0.5 block">
+                                Proceed directly without a poster to complete registration.
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+
+                        {posterChoiceError && !socialPosterChoice && (
                           <p className="text-xs font-bold text-rose-500 mt-1">
                             ⚠️ {posterChoiceError}
                           </p>
                         )}
 
-                        {attendingPosterChoice.includes("WhatsApp") && (
-                          <div className="rounded-xl bg-emerald-100/80 border border-emerald-300 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900">
-                            <div className="space-y-0.5">
-                              <span className="font-black block">📱 Send your high-res headshot to Executive Talks:</span>
-                              <span className="text-emerald-800">WhatsApp: <strong>{attendingPosterWhatsapp}</strong></span>
+                        {/* When Yes is selected: Status info and quick re-open button */}
+                        {socialPosterChoice === "Yes" && (
+                          <div className="rounded-2xl bg-white border border-emerald-300 p-4 sm:p-5 space-y-3 shadow-sm animate-in fade-in">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                                  <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <span className="text-xs font-black text-emerald-900 block">
+                                    Official Poster Studio opened in a new tab!
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 block">
+                                    You can edit details and upload your photo in that tab, then submit your application below.
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={openPosterStudioNewTab}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 shrink-0 transition-all cursor-pointer hover:scale-[1.02]"
+                              >
+                                <span>Re-open Poster Tab</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            <a
-                              href={`https://wa.me/${attendingPosterWhatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello Executive Talks Team, I am registering for ${eventData?.title || "the summit"}. Here is my photo for the "I'm Attending" poster.`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 shrink-0 transition-all"
-                            >
-                              <span>Open WhatsApp</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
                           </div>
                         )}
                       </div>
                     )}
-
-                    {/* Official Event Promotion Badge Card (Admin Template + User Profile) */}
-                    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 space-y-4 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                        <div>
-                          <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-600 tracking-wider">
-                            <Sparkles className="w-4 h-4" />
-                            <span>Your Official Event Promotion Badge</span>
-                          </div>
-                          <h3 className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
-                            Live Badge Preview & Social Share
-                          </h3>
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-500">
-                          Template: <span className="font-extrabold text-slate-800">{eventPromotionTemplate?.title || "Event Standard"}</span>
-                        </span>
-                      </div>
-
-                      <PromotionBadgeCard
-                        template={
-                          eventPromotionTemplate || {
-                            id: "default-fallback",
-                            title: eventData?.title || "Official Event Badge",
-                            theme_style: "hr-recall-emerald",
-                            badge_text: "I AM ATTENDING",
-                            top_tagline: "EXECUTIVE TALKS SUMMIT",
-                            event_heading: eventData?.title || "NATIONAL LEADERSHIP CONCLAVE",
-                            sub_heading: eventData?.category || "SHAPING FUTURE LEADERSHIP & ENTERPRISE EXCELLENCE",
-                            highlights: [
-                              "Keynote Addresses & C-Suite Masterclasses",
-                              "High-Impact Networking with 500+ Industry Leaders",
-                              "Elite Award Felicitation Ceremony",
-                              "Exclusive Delegate Kit & Summit Access Pass"
-                            ],
-                            cta_text: "JOIN ME AT THE SUMMIT • REGISTER NOW",
-                            date_text: eventData?.date || "Summit Date",
-                            venue_text: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : (eventData?.city || "Venue TBA"),
-                            contact_email: "support@executivetalks.in",
-                            primary_color: "#059669",
-                            secondary_color: "#047857",
-                            accent_color: "#10b981",
-                            footer_bg: "#022c22"
-                          }
-                        }
-                        attendee={{
-                          id: draftRegId || "FREE-DELEGATE",
-                          name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
-                          designation: formData.designation || "Executive Delegate",
-                          organization: formData.companyName || "Organization",
-                          photo_url: formData.photoUrl || "",
-                          event_title: eventData?.title,
-                          event_slug: eventData?.slug || slug || "hr-recall-2k26",
-                          date: eventData?.date,
-                          venue: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData?.city,
-                        }}
-                        onPhotoChange={(newPhoto) => setFormData((prev) => ({ ...prev, photoUrl: newPhoto }))}
-                        allowPhotoUpload={true}
-                      />
-                    </div>
 
                     {/* Terms & Conditions Section */}
                     <div className="pt-2">
