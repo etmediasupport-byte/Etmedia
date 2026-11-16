@@ -89,18 +89,20 @@ export default function SocialPosterStudioPage() {
       try {
         setLoading(true);
         // 1. Fetch Event details
+        let resolvedEv: any = null;
         const resEvent = await fetch(`/api/events/${encodeURIComponent(targetSlug)}`);
         if (resEvent.ok) {
           const jsonEvent = await resEvent.json();
-          if (jsonEvent && isMounted) {
-            setEventData(jsonEvent);
+          resolvedEv = jsonEvent?.event || (jsonEvent?.id ? jsonEvent : null);
+          if (resolvedEv && isMounted) {
+            setEventData(resolvedEv);
           }
         }
 
         // 2. Fetch Active Promotion Template (pass slug and eventId)
         let tplUrl = `/api/promotion-templates/active?slug=${encodeURIComponent(targetSlug)}`;
-        if (jsonEvent?.id) {
-          tplUrl += `&eventId=${encodeURIComponent(jsonEvent.id)}`;
+        if (resolvedEv?.id) {
+          tplUrl += `&eventId=${encodeURIComponent(resolvedEv.id)}`;
         }
         const resTpl = await fetch(tplUrl);
         if (resTpl.ok) {
@@ -152,6 +154,19 @@ export default function SocialPosterStudioPage() {
     toast.info("Photo removed from poster.");
   };
 
+  let locs: any[] = [];
+  try {
+    locs = typeof eventData?.locations === "string" ? JSON.parse(eventData.locations) : (eventData?.locations || []);
+  } catch (_) {}
+  const primaryLoc = Array.isArray(locs) && locs[0] ? locs[0] : null;
+
+  const eventDate = eventData?.date || primaryLoc?.date || "";
+  const eventVenue = eventData?.venue || primaryLoc?.venue || "";
+  const eventCity = eventData?.city || primaryLoc?.city || "";
+  const effectiveVenueStr = eventVenue && eventCity && !eventVenue.toLowerCase().includes(eventCity.toLowerCase())
+    ? `${eventVenue}, ${eventCity}`
+    : (eventVenue || eventCity || "");
+
   const fallbackTemplate: PromotionTemplate = {
     id: "default-fallback",
     title: eventData?.title || "HR Recall Purple Orbit Badge",
@@ -167,10 +182,8 @@ export default function SocialPosterStudioPage() {
       "Networking",
     ],
     cta_text: "REGISTER NOW",
-    date_text: eventData?.date || "11th December 2026",
-    venue_text: eventData?.venue
-      ? `${eventData.venue}, ${eventData.city || ""}`
-      : eventData?.city || "Gachibowli, Hyderabad",
+    date_text: eventDate || "11th December 2026",
+    venue_text: effectiveVenueStr || "Hyderabad",
     contact_email: "registration@executivetalksmedia.in",
     primary_color: "#28107A",
     secondary_color: "#2563EB",
@@ -186,10 +199,10 @@ export default function SocialPosterStudioPage() {
     photo_url: photoUrl || "",
     event_title: eventData?.title || "HR RECALL 2K26",
     event_slug: eventData?.slug || targetSlug,
-    date: eventData?.date || "11th December 2026",
-    venue: eventData?.venue
-      ? `${eventData.venue}, ${eventData.city || ""}`
-      : eventData?.city || "Gachibowli, Hyderabad",
+    event_id: eventData?.id,
+    date: eventDate,
+    venue: effectiveVenueStr,
+    city: eventCity,
     regId: regId,
   };
 

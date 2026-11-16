@@ -2306,46 +2306,64 @@ export default function FreeRegistrationPage() {
                       </span>
                     </div>
 
-                    <PromotionBadgeCard
-                      template={
-                        eventPromotionTemplate || {
-                          id: "default-fallback",
-                          title: eventData?.title || "Official Event Badge",
-                          theme_style: "hr-recall-emerald",
-                          badge_text: "I AM ATTENDING",
-                          top_tagline: "EXECUTIVE TALKS SUMMIT",
-                          event_heading: eventData?.title || "NATIONAL LEADERSHIP CONCLAVE",
-                          sub_heading: eventData?.category || "SHAPING FUTURE LEADERSHIP & ENTERPRISE EXCELLENCE",
-                          highlights: [
-                            "Keynote Addresses & C-Suite Masterclasses",
-                            "High-Impact Networking with 500+ Industry Leaders",
-                            "Elite Award Felicitation Ceremony",
-                            "Exclusive Delegate Kit & Summit Access Pass"
-                          ],
-                          cta_text: "JOIN ME AT THE SUMMIT • REGISTER NOW",
-                          date_text: eventData?.date || "Summit Date",
-                          venue_text: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : (eventData?.city || "Venue TBA"),
-                          contact_email: "support@executivetalks.in",
-                          primary_color: "#059669",
-                          secondary_color: "#047857",
-                          accent_color: "#10b981",
-                          footer_bg: "#022c22"
-                        }
-                      }
-                      attendee={{
-                        id: draftRegId || "FREE-DELEGATE",
-                        name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
-                        designation: formData.designation || "Executive Delegate",
-                        organization: formData.companyName || "Organization",
-                        photo_url: formData.photoUrl || "",
-                        event_title: eventData?.title,
-                        event_slug: eventData?.slug || slug || "hr-recall-2k26",
-                        date: eventData?.date,
-                        venue: eventData?.venue ? `${eventData.venue}, ${eventData.city || ""}` : eventData?.city,
-                      }}
-                      onPhotoChange={(newPhoto) => setFormData((prev) => ({ ...prev, photoUrl: newPhoto }))}
-                      allowPhotoUpload={true}
-                    />
+                    {(() => {
+                      let freeLocs: any[] = [];
+                      try {
+                        freeLocs = typeof eventData?.locations === "string" ? JSON.parse(eventData.locations) : (eventData?.locations || []);
+                      } catch (_) {}
+                      const primaryFreeLoc = Array.isArray(freeLocs) && freeLocs[0] ? freeLocs[0] : null;
+                      const freeEventDate = eventData?.date || primaryFreeLoc?.date || "";
+                      const freeEventVenue = eventData?.venue || primaryFreeLoc?.venue || "";
+                      const freeEventCity = eventData?.city || primaryFreeLoc?.city || "";
+                      const freeVenueDisplay = freeEventVenue && freeEventCity && !freeEventVenue.toLowerCase().includes(freeEventCity.toLowerCase())
+                        ? `${freeEventVenue}, ${freeEventCity}`
+                        : (freeEventVenue || freeEventCity || "");
+
+                      return (
+                        <PromotionBadgeCard
+                          template={
+                            eventPromotionTemplate || {
+                              id: "default-fallback",
+                              title: eventData?.title || "Official Event Badge",
+                              theme_style: "hr-recall-emerald",
+                              badge_text: "I AM ATTENDING",
+                              top_tagline: "EXECUTIVE TALKS SUMMIT",
+                              event_heading: eventData?.title || "NATIONAL LEADERSHIP CONCLAVE",
+                              sub_heading: eventData?.category || "SHAPING FUTURE LEADERSHIP & ENTERPRISE EXCELLENCE",
+                              highlights: [
+                                "Keynote Addresses & C-Suite Masterclasses",
+                                "High-Impact Networking with 500+ Industry Leaders",
+                                "Elite Award Felicitation Ceremony",
+                                "Exclusive Delegate Kit & Summit Access Pass"
+                              ],
+                              cta_text: "JOIN ME AT THE SUMMIT • REGISTER NOW",
+                              date_text: freeEventDate || "Summit Date",
+                              venue_text: freeVenueDisplay || "Venue TBA",
+                              contact_email: "support@executivetalks.in",
+                              primary_color: "#059669",
+                              secondary_color: "#047857",
+                              accent_color: "#10b981",
+                              footer_bg: "#022c22"
+                            }
+                          }
+                          attendee={{
+                            id: draftRegId || "FREE-DELEGATE",
+                            name: `${formData.firstName} ${formData.lastName}`.trim() || "Delegate Name",
+                            designation: formData.designation || "Executive Delegate",
+                            organization: formData.companyName || "Organization",
+                            photo_url: formData.photoUrl || "",
+                            event_title: eventData?.title,
+                            event_slug: eventData?.slug || slug || "hr-recall-2k26",
+                            event_id: eventData?.id,
+                            date: freeEventDate,
+                            venue: freeVenueDisplay,
+                            city: freeEventCity,
+                          }}
+                          onPhotoChange={(newPhoto) => setFormData((prev) => ({ ...prev, photoUrl: newPhoto }))}
+                          allowPhotoUpload={true}
+                        />
+                      );
+                    })()}
                   </div>
 
                   {/* ITEMIZED FINANCIAL ORDER BREAKDOWN */}

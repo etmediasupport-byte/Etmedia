@@ -138,6 +138,18 @@ export const TEMPLATE_LAYOUT_PRESETS: {
       footer: "#0A0A0A",
     },
   },
+  {
+    style: "vip-lanyard-pass",
+    name: "VIP Lanyard Badge Pass (3rd Image Model)",
+    description: "Conference lanyard pass with gold clip clasp, top electric violet wave header, date & venue pill, delegate photo with purple frame, hashtag, QR code & social icons.",
+    tag: "VIP Lanyard Pass",
+    defaultColors: {
+      primary: "#7E22CE",
+      secondary: "#2E1065",
+      accent: "#2563EB",
+      footer: "#2E1065",
+    },
+  },
 ];
 
 export default function RegisterPromotionBarStudio({
@@ -322,7 +334,7 @@ export default function RegisterPromotionBarStudio({
       sub_heading: ev.description ? ev.description.slice(0, 50) : "Remembering 2026. Calling 2027",
       top_tagline: generatedTagline,
       badge_text: generatedBadgePill,
-      date_text: `Date: ${dateStr}`,
+      date_text: dateStr,
       venue_text: venue,
       qr_destination_url: `/events/${slugStr}`,
       contact_email: "registration@executivetalksmedia.in",
@@ -350,7 +362,7 @@ export default function RegisterPromotionBarStudio({
       sub_heading: "Inspiring Leadership. Transforming Tomorrow",
       highlights: ["2000+ Delegates", "50+ Speakers", "Awards & Honours", "Executive Networking"],
       cta_text: "REGISTER NOW",
-      date_text: ev?.date ? `Date: ${ev.date}` : "Date: 11th December 2026",
+      date_text: ev?.date ? ev.date : "11th December 2026",
       venue_text: ev?.venue ? `${ev.venue}, ${ev.city || "Hyderabad"}` : (ev?.city || "Hyderabad"),
       contact_email: "registration@executivetalksmedia.in",
       primary_color: "#00A86B",
@@ -470,19 +482,33 @@ export default function RegisterPromotionBarStudio({
     }
     const found = registrations.find((r) => r.id === selectedAttendeeMode);
     if (found) {
+      const matchedEv = events.find((e) => e.id === found.event_id || e.slug === found.event_id);
+      let foundLocs: any[] = [];
+      try {
+        foundLocs = typeof matchedEv?.locations === "string" ? JSON.parse(matchedEv.locations) : (matchedEv?.locations || []);
+      } catch (_) {}
+      const pLoc = Array.isArray(foundLocs) && foundLocs[0] ? foundLocs[0] : null;
+
+      const realDate = matchedEv?.date || pLoc?.date || found.event_date || editorForm.date_text || "11th December 2026";
+      const realVenue = matchedEv?.venue || pLoc?.venue || found.city || editorForm.venue_text || "Hyderabad";
+      const realCity = matchedEv?.city || pLoc?.city || found.city || "";
+
       return {
         id: found.id,
         name: found.name || (found.first_name ? `${found.first_name} ${found.last_name || ""}`.trim() : "Executive Delegate"),
         designation: found.designation || "Executive Delegate",
         organization: found.organization || found.company_name || "Enterprise Leader",
         photo_url: found.photo_url || "",
-        event_title: found.event_title || editorForm.event_heading || "HR RECALL 2K26",
-        date: found.event_date || editorForm.date_text || "11th December 2026",
-        venue: found.city || editorForm.venue_text || "Hyderabad",
+        event_title: found.event_title || matchedEv?.title || editorForm.event_heading || "HR RECALL 2K26",
+        event_slug: matchedEv?.slug || found.event_slug,
+        event_id: found.event_id,
+        date: realDate,
+        venue: realVenue,
+        city: realCity,
       };
     }
     return customAttendee;
-  }, [selectedAttendeeMode, registrations, customAttendee, editorForm]);
+  }, [selectedAttendeeMode, registrations, customAttendee, editorForm, events]);
 
   const activeTemplate = templates.find((t) => t.is_active);
 

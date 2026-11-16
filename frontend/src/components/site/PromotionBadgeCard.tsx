@@ -55,8 +55,10 @@ export interface AttendeeBadgeData {
   photo_url?: string;
   event_title?: string;
   event_slug?: string;
+  event_id?: string;
   date?: string;
   venue?: string;
+  city?: string;
   regId?: string;
 }
 
@@ -81,6 +83,7 @@ export default function PromotionBadgeCard({
   const [exporting, setExporting] = useState<boolean>(false);
   const [localPhoto, setLocalPhoto] = useState<string>(attendee.photo_url || "");
   const [renderedPosterUri, setRenderedPosterUri] = useState<string>("");
+  const [liveEventDetails, setLiveEventDetails] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,6 +91,51 @@ export default function PromotionBadgeCard({
       setLocalPhoto(attendee.photo_url);
     }
   }, [attendee.photo_url]);
+
+  // Dynamic Event Slug: Prioritize the specific event the attendee is registered for
+  const rawEventSlug =
+    (attendee.event_slug || "").trim() ||
+    (template.event_slug || "").trim() ||
+    (attendee.event_title
+      ? attendee.event_title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : "") ||
+    (template.event_heading
+      ? template.event_heading.toLowerCase().replace(/^awards\s*&\s*connect\s*/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      : "") ||
+    "hr-recall-2k26";
+
+  // Clean the slug to prevent double 'events/' or slashes
+  const cleanEventSlug = rawEventSlug
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/^events\//i, "");
+
+  // Auto-fetch the actual event date & venue from API if not fully provided or when defaults are present
+  useEffect(() => {
+    let isCurrent = true;
+    const targetSlugOrId =
+      (attendee.event_slug || "").trim() ||
+      (template.event_slug && template.event_slug !== "all" ? template.event_slug : "") ||
+      (attendee.event_id && attendee.event_id !== "all" ? attendee.event_id : "") ||
+      (template.event_id && template.event_id !== "all" ? template.event_id : "") ||
+      (cleanEventSlug && cleanEventSlug !== "all" ? cleanEventSlug : "");
+
+    if (targetSlugOrId) {
+      fetch(`/api/events/${encodeURIComponent(targetSlugOrId)}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (!isCurrent) return;
+          const ev = json?.event || (json?.id ? json : null);
+          if (ev) {
+            setLiveEventDetails(ev);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isCurrent = false;
+    };
+  }, [attendee.event_slug, template.event_slug, attendee.event_id, template.event_id, cleanEventSlug]);
 
   // Parse highlights
   const highlights: string[] = Array.isArray(template.highlights)
@@ -103,6 +151,48 @@ export default function PromotionBadgeCard({
         "Networking",
       ];
 
+  // Helper to format ISO/YYYY-MM-DD or raw date strings into clean "DD MMMM YYYY"
+  const formatBadgeDate = (rawDate?: string): string => {
+    if (!rawDate || typeof rawDate !== "string") return "";
+    let clean = rawDate.replace(/^📅\s*/i, "").replace(/^Date:\s*/i, "").trim();
+    if (!clean) return "";
+
+    // Check if YYYY-MM-DD or YYYY/MM/DD
+    const ymdMatch = clean.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if (ymdMatch) {
+      const year = parseInt(ymdMatch[1]!, 10);
+      const month = parseInt(ymdMatch[2]!, 10) - 1;
+      const day = parseInt(ymdMatch[3]!, 10);
+      const d = new Date(year, month, day);
+      if (!isNaN(d.getTime())) {
+        const monthNames = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ];
+        return `${day} ${monthNames[month]} ${year}`;
+      }
+    }
+    return clean;
+  };
+
+  // Helper to format venue cleanly without duplicate icons or city duplication
+  const formatBadgeVenue = (rawVenue?: string, rawCity?: string): string => {
+    let clean = (rawVenue || "").replace(/^📍\s*:?\s*/i, "").replace(/^Venue:\s*/i, "").trim();
+    const cleanCity = (rawCity || "").replace(/^📍\s*:?\s*/i, "").trim();
+    if (clean && cleanCity && !clean.toLowerCase().includes(cleanCity.toLowerCase())) {
+      clean = `${clean}, ${cleanCity}`;
+    } else if (!clean && cleanCity) {
+      clean = cleanCity;
+    }
+    return clean || "Hyderabad";
+  };
+
+  let liveLocs: any[] = [];
+  try {
+    liveLocs = typeof liveEventDetails?.locations === "string" ? JSON.parse(liveEventDetails.locations) : (liveEventDetails?.locations || []);
+  } catch (_) {}
+  const primaryLiveLoc = Array.isArray(liveLocs) && liveLocs[0] ? liveLocs[0] : null;
+
   // Dynamic values
   const themeStyle = template.theme_style || "hr-recall-emerald";
   const topTagline = template.top_tagline || "2,000+ HR PROFESSIONALS ONE BIG GATHERING";
@@ -110,8 +200,29 @@ export default function PromotionBadgeCard({
   const eventHeading = template.event_heading || "AWARDS & CONNECT HR RECALL 2K26";
   const subHeading = template.sub_heading || "Remembering 2026. Calling 2027";
   const ctaText = template.cta_text || "REGISTER NOW";
-  const dateText = attendee.date || template.date_text || "11th December 2026";
-  const venueText = attendee.venue || template.venue_text || "Gachibowli, Hyderabad";
+
+  // Prioritize attendee's specific event date/venue, then fetched live event details, then template, then defaults
+  const rawCandidateDate =
+    (attendee.date && attendee.date !== "11th December 2026" && attendee.date !== "24 October 2026" ? attendee.date : "") ||
+    liveEventDetails?.date ||
+    primaryLiveLoc?.date ||
+    template.date_text ||
+    attendee.date ||
+    "11th December 2026";
+
+  const dateText = formatBadgeDate(rawCandidateDate);
+
+  const rawCandidateVenue =
+    (attendee.venue && attendee.venue !== "Gachibowli, Hyderabad" && attendee.venue !== "Manjeera Trinity Convention, KPHB" ? attendee.venue : "") ||
+    liveEventDetails?.venue ||
+    primaryLiveLoc?.venue ||
+    template.venue_text ||
+    attendee.venue ||
+    "";
+
+  const rawCandidateCity = attendee.city || liveEventDetails?.city || primaryLiveLoc?.city || "";
+  const venueText = formatBadgeVenue(rawCandidateVenue, rawCandidateCity);
+
   const contactEmail = template.contact_email || "registration@executivetalksmedia.in";
 
   const primaryColor = template.primary_color || "#00A86B";
@@ -133,24 +244,6 @@ export default function PromotionBadgeCard({
     }
     return "https://executivetalksmedia.in";
   })();
-
-  // Dynamic Event Slug: Prioritize the specific event the attendee is registered for
-  const rawEventSlug =
-    (attendee.event_slug || "").trim() ||
-    (template.event_slug || "").trim() ||
-    (attendee.event_title
-      ? attendee.event_title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
-      : "") ||
-    (template.event_heading
-      ? template.event_heading.toLowerCase().replace(/^awards\s*&\s*connect\s*/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
-      : "") ||
-    "hr-recall-2k26";
-
-  // Clean the slug to prevent double 'events/' or slashes
-  const cleanEventSlug = rawEventSlug
-    .replace(/^https?:\/\/[^/]+/i, "")
-    .replace(/^\/+|\/+$/g, "")
-    .replace(/^events\//i, "");
 
   // Exact Dynamic Live Event URL (e.g. "https://executivetalksmedia.in/events/hr-recall-2k26-2903")
   const dynamicEventPageUrl = `${liveOrigin}/events/${cleanEventSlug}`;
@@ -1184,6 +1277,575 @@ export default function PromotionBadgeCard({
           ctx.font = "900 24px sans-serif";
           ctx.fillText(attendeeCompany, cx, 915);
         }
+      }
+
+      // -----------------------------------------------------------
+      // TEMPLATE: "vip-lanyard-pass" (The Exact VIP Lanyard Badge Pass Model)
+      // -----------------------------------------------------------
+      else if (themeStyle === "vip-lanyard-pass") {
+        // 1. Overall Canvas Background: Deep dark atmospheric conference hall
+        ctx.fillStyle = "#0C071E";
+        ctx.fillRect(0, 0, W, H);
+
+        // Ambient radial lighting gradient
+        const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.35, 120, W * 0.5, H * 0.45, 800);
+        bgGrad.addColorStop(0, "#220F44");
+        bgGrad.addColorStop(0.5, "#140929");
+        bgGrad.addColorStop(1, "#0B0418");
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Soft atmospheric purple/blue bokeh glows in the background
+        const drawBokeh = (bx: number, by: number, br: number, color: string) => {
+          ctx.save();
+          const g = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+          g.addColorStop(0, color);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        };
+        drawBokeh(160, 200, 150, "rgba(147, 51, 234, 0.18)");
+        drawBokeh(920, 280, 180, "rgba(99, 102, 241, 0.15)");
+        drawBokeh(860, 150, 120, "rgba(192, 132, 252, 0.15)");
+        drawBokeh(120, 800, 140, "rgba(126, 34, 206, 0.12)");
+        drawBokeh(960, 780, 160, "rgba(59, 130, 246, 0.12)");
+
+        // 2. Top-Left Background Ambient Typography (as in uploaded image)
+        ctx.save();
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 24px sans-serif";
+        ctx.fillText("FIRST TIME", 55, 65);
+        ctx.font = "900 29px sans-serif";
+        ctx.fillText("IN HYDERABAD!", 55, 96);
+        ctx.fillStyle = "#E2E8F0";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText("INDIA'S LARGEST", 55, 123);
+        ctx.font = "900 23px sans-serif";
+        ctx.fillText("HR GATHERING", 55, 149);
+
+        // Neon violet curved stroke underline
+        ctx.strokeStyle = "#C084FC";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(55, 165);
+        ctx.bezierCurveTo(95, 172, 155, 166, 185, 158);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Card Position & Coordinates
+        const cardW = 730;
+        const cardH = 785;
+        const cardX = (W - cardW) / 2 + 15;
+        const cardY = 95;
+        const cx = cardX + cardW / 2;
+
+        // 4. Lanyard Straps Hanging Down Beneath Card
+        ctx.save();
+        const strapColor = "#F8FAFC";
+        // Left Strap
+        ctx.fillStyle = strapColor;
+        ctx.beginPath();
+        ctx.moveTo(cardX + 170, cardY + cardH - 10);
+        ctx.lineTo(cardX + 225, cardY + cardH - 10);
+        ctx.lineTo(cardX + 175, H);
+        ctx.lineTo(cardX + 120, H);
+        ctx.closePath();
+        ctx.fill();
+
+        // Right Strap
+        ctx.beginPath();
+        ctx.moveTo(cardX + 510, cardY + cardH - 10);
+        ctx.lineTo(cardX + 565, cardY + cardH - 10);
+        ctx.lineTo(cardX + 615, H);
+        ctx.lineTo(cardX + 560, H);
+        ctx.closePath();
+        ctx.fill();
+
+        // Subtle shadow on straps
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Printed branding on strap
+        ctx.fillStyle = "#4C1D95";
+        ctx.font = "bold 15px sans-serif";
+        ctx.save();
+        ctx.translate(cardX + 175, cardY + cardH + 45);
+        ctx.rotate(0.26);
+        ctx.fillText("Executive Talks", 0, 0);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(cardX + 535, cardY + cardH + 45);
+        ctx.rotate(-0.26);
+        ctx.fillText("Executive Talks", 0, 0);
+        ctx.restore();
+        ctx.restore();
+
+        // 5. Golden Metallic Lanyard Clip Clasp (At Top Center)
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 6;
+
+        const goldGrad = ctx.createLinearGradient(cx - 30, cardY - 60, cx + 30, cardY + 25);
+        goldGrad.addColorStop(0, "#FEF08A");
+        goldGrad.addColorStop(0.3, "#F59E0B");
+        goldGrad.addColorStop(0.7, "#D97706");
+        goldGrad.addColorStop(1, "#78350F");
+
+        // Top Gold Loop
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = goldGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cardY - 25, 26, Math.PI, Math.PI * 2);
+        ctx.stroke();
+
+        // Gold clasp body
+        ctx.fillStyle = goldGrad;
+        ctx.beginPath();
+        ctx.roundRect(cx - 18, cardY - 26, 36, 42, 6);
+        ctx.fill();
+
+        // Gold swivel hook through the badge hole
+        ctx.lineWidth = 7;
+        ctx.strokeStyle = goldGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cardY + 16, 17, 0, Math.PI);
+        ctx.stroke();
+        ctx.restore();
+
+        // 6. The Main VIP Lanyard Badge Card
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.65)";
+        ctx.shadowBlur = 40;
+        ctx.shadowOffsetY = 18;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardW, cardH, 30);
+        ctx.fill();
+        ctx.restore();
+
+        // Clip all card contents inside the rounded rectangle card
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardW, cardH, 30);
+        ctx.clip();
+
+        // White base fill
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(cardX, cardY, cardW, cardH);
+
+        // --- TOP VIOLET / PURPLE WAVE ZONE ---
+        const topGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + 380);
+        topGrad.addColorStop(0, "#240046");
+        topGrad.addColorStop(0.35, "#3C096C");
+        topGrad.addColorStop(0.75, "#5A189A");
+        topGrad.addColorStop(1, "#7B2CBF");
+        ctx.fillStyle = topGrad;
+        ctx.fillRect(cardX, cardY, cardW, 380);
+
+        // Flowing wave ribbons across top section
+        ctx.save();
+        const waveGrad1 = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + 280);
+        waveGrad1.addColorStop(0, "rgba(147, 51, 234, 0.0)");
+        waveGrad1.addColorStop(0.5, "rgba(168, 85, 247, 0.35)");
+        waveGrad1.addColorStop(1, "rgba(59, 130, 246, 0.45)");
+        ctx.fillStyle = waveGrad1;
+        ctx.beginPath();
+        ctx.moveTo(cardX, cardY + 140);
+        ctx.bezierCurveTo(cardX + 220, cardY + 60, cardX + 460, cardY + 260, cardX + cardW, cardY + 110);
+        ctx.lineTo(cardX + cardW, cardY + 290);
+        ctx.bezierCurveTo(cardX + 440, cardY + 360, cardX + 200, cardY + 200, cardX, cardY + 260);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Hole slot in the acrylic/plastic badge for the lanyard clasp
+        ctx.save();
+        ctx.fillStyle = "#0C071E";
+        ctx.beginPath();
+        ctx.roundRect(cx - 36, cardY + 12, 72, 16, 8);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+
+        // Top-Left Pill: Executive Talks Logo Container
+        const logoBoxX = cardX + 28;
+        const logoBoxY = cardY + 35;
+        ctx.save();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.roundRect(logoBoxX, logoBoxY, 185, 50, 12);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.6)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (logoImg) {
+          ctx.drawImage(logoImg, logoBoxX + 8, logoBoxY + 6, 170, 38);
+        } else {
+          ctx.fillStyle = "#0F172A";
+          ctx.font = "900 17px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Executive Talks", logoBoxX + 92, logoBoxY + 32);
+        }
+        ctx.restore();
+
+        // Top-Right Pill: Date & Venue Container
+        const metaBoxW = 215;
+        const metaBoxH = 50;
+        const metaBoxX = cardX + cardW - metaBoxW - 28;
+        const metaBoxY = cardY + 35;
+        ctx.save();
+        ctx.fillStyle = "rgba(28, 10, 60, 0.72)";
+        ctx.beginPath();
+        ctx.roundRect(metaBoxX, metaBoxY, metaBoxW, metaBoxH, 12);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 13.5px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`📅  ${dateText}`, metaBoxX + 16, metaBoxY + 22);
+        ctx.fillText(`📍  ${venueText}`, metaBoxX + 16, metaBoxY + 41);
+        ctx.restore();
+
+        // Main Headline: "I am attending"
+        ctx.save();
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 44px sans-serif";
+        ctx.fillText("I am", cardX + 48, cardY + 128);
+        ctx.fillText("attending", cardX + 48, cardY + 172);
+
+        // Purple glowing curve below "attending"
+        ctx.strokeStyle = "#C084FC";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cardX + 48, cardY + 186);
+        ctx.bezierCurveTo(cardX + 110, cardY + 192, cardX + 180, cardY + 186, cardX + 240, cardY + 182);
+        ctx.stroke();
+        ctx.restore();
+
+        // Central Event White Container Box ("AWARDS & CONNECT HR RECALL 2K26")
+        const eventCardW = cardW - 70;
+        const eventCardH = 138;
+        const eventCardX = cardX + 35;
+        const eventCardY = cardY + 200;
+        const ecX = eventCardX + eventCardW / 2;
+
+        ctx.save();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.22)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
+        ctx.beginPath();
+        ctx.roundRect(eventCardX, eventCardY, eventCardW, eventCardH, 20);
+        ctx.fill();
+        ctx.strokeStyle = "#E2E8F0";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+
+        // Inside Event White Box
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "bold 15px sans-serif";
+        ctx.fillText("AWARDS & CONNECT", ecX, eventCardY + 27);
+
+        // Graphic frame for HR RECALL 2K26
+        const frameW = 380;
+        const frameH = 50;
+        const frameX = ecX - frameW / 2;
+        const frameY = eventCardY + 36;
+
+        ctx.strokeStyle = "#1D4ED8";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(frameX, frameY, frameW, frameH, 10);
+        ctx.stroke();
+
+        ctx.font = "900 36px sans-serif";
+        ctx.textAlign = "center";
+        const fullHeading = (eventHeading || "HR RECALL 2K26").replace(/^AWARDS\s*&\s*CONNECT\s*/i, "");
+        if (fullHeading.toUpperCase().includes("HR") && fullHeading.toUpperCase().includes("RECALL")) {
+          ctx.fillStyle = "#2563EB";
+          ctx.fillText("HR ", ecX - 110, frameY + 37);
+          ctx.fillStyle = "#0F172A";
+          ctx.fillText("RECALL", ecX + 5, frameY + 37);
+          ctx.fillStyle = "#0284C7";
+          ctx.fillText(" 2K26", ecX + 120, frameY + 37);
+        } else {
+          ctx.fillStyle = "#0F172A";
+          ctx.fillText(fullHeading, ecX, frameY + 37);
+        }
+
+        ctx.font = "bold 15.5px sans-serif";
+        ctx.fillStyle = "#0F172A";
+        ctx.fillText(subHeading || "Remembering 2026. Calling 2027", ecX, eventCardY + 118);
+        ctx.restore();
+
+        // Dynamic Wave Boundary separating Purple top and White bottom
+        ctx.save();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(cardX, cardY + 355);
+        ctx.bezierCurveTo(cardX + 220, cardY + 410, cardX + 460, cardY + 320, cardX + cardW, cardY + 375);
+        ctx.lineTo(cardX + cardW, cardY + cardH);
+        ctx.lineTo(cardX, cardY + cardH);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(147, 51, 234, 0.4)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cardX, cardY + 355);
+        ctx.bezierCurveTo(cardX + 220, cardY + 410, cardX + 460, cardY + 320, cardX + cardW, cardY + 375);
+        ctx.stroke();
+        ctx.restore();
+
+        // --- BOTTOM WHITE ZONE: PHOTO & DELEGATE PROFILE ---
+        const photoX = cardX + 40;
+        const photoY = cardY + 395;
+        const photoW = 215;
+        const photoH = 250;
+
+        // Photo Border & Drop Shadow
+        ctx.save();
+        ctx.shadowColor = "rgba(126, 34, 206, 0.3)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
+        ctx.strokeStyle = "#7E22CE";
+        ctx.lineWidth = 5.5;
+        ctx.beginPath();
+        ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+        ctx.stroke();
+        ctx.restore();
+
+        // Photo Image Clipping
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+        ctx.clip();
+        if (photoImg) {
+          const asp = photoImg.width / photoImg.height;
+          let dw = photoW;
+          let dh = photoH;
+          let dx = photoX;
+          let dy = photoY;
+          if (asp > photoW / photoH) {
+            dw = photoH * asp;
+            dx = photoX - (dw - photoW) / 2;
+          } else {
+            dh = photoW / asp;
+            dy = photoY - (dh - photoH) / 2;
+          }
+          ctx.drawImage(photoImg, dx, dy, dw, dh);
+        } else {
+          const avatarGrad = ctx.createLinearGradient(photoX, photoY, photoX + photoW, photoY + photoH);
+          avatarGrad.addColorStop(0, "#3B0764");
+          avatarGrad.addColorStop(1, "#1E1B4B");
+          ctx.fillStyle = avatarGrad;
+          ctx.fillRect(photoX, photoY, photoW, photoH);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "bold 90px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(attendeeName.charAt(0) || "A", photoX + photoW / 2, photoY + photoH / 2 + 32);
+        }
+        ctx.restore();
+
+        // Delegate Profile Text (Right of Photo)
+        const infoX = photoX + photoW + 35;
+        const infoY = photoY + 50;
+
+        ctx.save();
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "900 36px sans-serif";
+        const nameParts = attendeeName.split(" ");
+        if (nameParts.length > 1) {
+          const firstPart = nameParts.slice(0, -1).join(" ");
+          const lastPart = nameParts[nameParts.length - 1];
+          ctx.fillText(firstPart, infoX, infoY);
+          const firstW = ctx.measureText(firstPart + " ").width;
+          ctx.fillStyle = "#2563EB";
+          ctx.fillText(lastPart, infoX + firstW, infoY);
+        } else {
+          ctx.fillText(attendeeName, infoX, infoY);
+        }
+
+        ctx.fillStyle = "#7E22CE";
+        ctx.font = "bold 23px sans-serif";
+        ctx.fillText(attendeeDesignation, infoX, infoY + 48);
+
+        ctx.fillStyle = "#0F172A";
+        ctx.font = "900 26px sans-serif";
+        ctx.fillText(attendeeCompany, infoX, infoY + 86);
+        ctx.restore();
+
+        // Hashtag at bottom of white card
+        ctx.save();
+        ctx.fillStyle = "#2E1065";
+        ctx.font = "900 27px sans-serif";
+        ctx.textAlign = "left";
+        const dynamicHashtag = `#ETMBI${cleanEventSlug.toUpperCase().replace(/[^A-Z0-9]/g, "")}`;
+        ctx.fillText(dynamicHashtag, photoX, cardY + cardH - 62);
+        ctx.restore();
+
+        // Bottom Edge Wave Ribbon on the card
+        ctx.save();
+        const bottomWaveGrad = ctx.createLinearGradient(cardX, cardY + cardH - 45, cardX + cardW, cardY + cardH);
+        bottomWaveGrad.addColorStop(0, "#3B0764");
+        bottomWaveGrad.addColorStop(0.5, "#6B21A8");
+        bottomWaveGrad.addColorStop(1, "#9333EA");
+        ctx.fillStyle = bottomWaveGrad;
+        ctx.beginPath();
+        ctx.moveTo(cardX, cardY + cardH - 12);
+        ctx.bezierCurveTo(cardX + 220, cardY + cardH - 38, cardX + 480, cardY + cardH + 10, cardX + cardW, cardY + cardH - 16);
+        ctx.lineTo(cardX + cardW, cardY + cardH);
+        ctx.lineTo(cardX, cardY + cardH);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.restore(); // Release card clipping
+
+        // --- 7. BOTTOM ACTION & SOCIAL FOOTER BAR (Below Badge Card) ---
+        ctx.save();
+        const regBtnW = 180;
+        const regBtnH = 44;
+        const regBtnX = 40;
+        const regBtnY = 910;
+
+        ctx.fillStyle = "#2E1065";
+        ctx.beginPath();
+        ctx.roundRect(regBtnX, regBtnY, regBtnW, regBtnH, 10);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 17.5px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("REGISTER NOW", regBtnX + regBtnW / 2, regBtnY + 28);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 19px sans-serif";
+        ctx.fillText("For queries & registration:", regBtnX, 990);
+        ctx.fillStyle = "#C084FC";
+        ctx.font = "900 21px sans-serif";
+        ctx.fillText(contactEmail, regBtnX, 1022);
+        ctx.restore();
+
+        // Center: Scannable High-Res QR Code
+        ctx.save();
+        const qrBoxW = 145;
+        const qrBoxH = 145;
+        const qrBoxX = W / 2 - qrBoxW / 2;
+        const qrBoxY = 905;
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 4;
+        ctx.beginPath();
+        ctx.roundRect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, 12);
+        ctx.fill();
+        ctx.strokeStyle = "#C084FC";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        if (qrImg) {
+          ctx.drawImage(qrImg, qrBoxX + 6, qrBoxY + 6, qrBoxW - 12, qrBoxH - 12);
+        }
+        ctx.restore();
+
+        // Right: FOLLOW US ON Button + Official Social Media Icons
+        ctx.save();
+        const folBtnW = 195;
+        const folBtnH = 44;
+        const folBtnX = W - folBtnW - 40;
+        const folBtnY = 910;
+
+        ctx.fillStyle = "#2E1065";
+        ctx.beginPath();
+        ctx.roundRect(folBtnX, folBtnY, folBtnW, folBtnH, 10);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 17.5px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("FOLLOW US ON", folBtnX + folBtnW / 2, folBtnY + 28);
+
+        // Social Media Icons Row: LinkedIn, Instagram, Facebook, X (Twitter)
+        const iconY = 980;
+        const iconSize = 38;
+        const iconGap = 14;
+        const totalSocialW = 4 * iconSize + 3 * iconGap;
+        let iconStartX = folBtnX + folBtnW / 2 - totalSocialW / 2;
+
+        // 1. LinkedIn (Blue Square)
+        ctx.fillStyle = "#0A66C2";
+        ctx.beginPath();
+        ctx.roundRect(iconStartX, iconY, iconSize, iconSize, 8);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 23px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("in", iconStartX + iconSize / 2, iconY + 28);
+
+        // 2. Instagram (Gradient Pink Square)
+        iconStartX += iconSize + iconGap;
+        const igGrad = ctx.createLinearGradient(iconStartX, iconY + iconSize, iconStartX + iconSize, iconY);
+        igGrad.addColorStop(0, "#F58529");
+        igGrad.addColorStop(0.5, "#DD2A7B");
+        igGrad.addColorStop(1, "#8134AF");
+        ctx.fillStyle = igGrad;
+        ctx.beginPath();
+        ctx.roundRect(iconStartX, iconY, iconSize, iconSize, 10);
+        ctx.fill();
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(iconStartX + iconSize / 2, iconY + iconSize / 2, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.arc(iconStartX + iconSize - 9, iconY + 9, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Facebook (Blue Circle)
+        iconStartX += iconSize + iconGap;
+        ctx.fillStyle = "#1877F2";
+        ctx.beginPath();
+        ctx.arc(iconStartX + iconSize / 2, iconY + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 25px sans-serif";
+        ctx.fillText("f", iconStartX + iconSize / 2 + 1, iconY + 28);
+
+        // 4. X (Twitter) (Black Square with white 'X')
+        iconStartX += iconSize + iconGap;
+        ctx.fillStyle = "#000000";
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(iconStartX, iconY, iconSize, iconSize, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 20px sans-serif";
+        ctx.fillText("𝕏", iconStartX + iconSize / 2, iconY + 27);
+
+        ctx.restore();
       }
 
       // -----------------------------------------------------------
@@ -2231,6 +2893,95 @@ export default function PromotionBadgeCard({
 
             {/* Subtle bottom padding */}
             <div className="h-6" />
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* LAYOUT 8: VIP LANYARD PASS (3rd Image Model)              */}
+        {/* ========================================================= */}
+        {themeStyle === "vip-lanyard-pass" && (
+          <div className="relative w-full h-full bg-[#0C071E] flex flex-col justify-between overflow-hidden text-white select-none p-3 sm:p-5">
+            {/* Top Lanyard Clip graphic */}
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-3 rounded-full bg-[#D97706] border-2 border-[#FEF08A] shadow-md" />
+            </div>
+
+            {/* Floating Badge Card Container */}
+            <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col flex-1 my-1 border border-purple-500/30 text-slate-900">
+              {/* Top Violet Wave Banner */}
+              <div className="bg-gradient-to-r from-purple-950 via-purple-900 to-purple-700 p-3 sm:p-4 text-white relative">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="bg-white rounded-lg px-2.5 py-1">
+                    <img src={executivetalksLogo} alt="Logo" className="h-4 sm:h-6 w-auto object-contain" />
+                  </div>
+                  <div className="bg-purple-950/80 border border-purple-400/40 rounded-lg px-2 py-0.5 text-[9px] sm:text-[11px] font-bold">
+                    <div>📅 {dateText}</div>
+                    <div>📍 {venueText}</div>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-left">
+                  <h4 className="text-sm sm:text-lg font-black tracking-tight text-white leading-tight">
+                    I am attending
+                  </h4>
+                  <div className="h-1 w-12 bg-purple-400 rounded-full mt-0.5" />
+                </div>
+
+                {/* White Event Box */}
+                <div className="mt-2 bg-white rounded-xl p-2 text-center shadow-md border border-slate-200">
+                  <span className="text-[9px] font-black uppercase text-slate-800 tracking-wider block">
+                    AWARDS & CONNECT
+                  </span>
+                  <div className="inline-block border-2 border-blue-600 rounded-md px-3 py-0.5 mt-0.5 text-xs sm:text-base font-black">
+                    <span className="text-blue-600">HR </span>
+                    <span className="text-slate-900">RECALL </span>
+                    <span className="text-sky-600">2K26</span>
+                  </div>
+                  <span className="text-[8px] sm:text-[10px] text-slate-700 font-bold block mt-0.5">
+                    Remembering 2026. Calling 2027
+                  </span>
+                </div>
+              </div>
+
+              {/* Bottom White Profile Area */}
+              <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl border-3 border-purple-600 overflow-hidden shrink-0 shadow-md bg-purple-900">
+                    {localPhoto ? (
+                      <img src={localPhoto} alt={attendeeName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
+                        {attendeeName.charAt(0) || "A"}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left space-y-0.5 min-w-0">
+                    <h3 className="text-xs sm:text-base font-black text-slate-900 truncate">
+                      {attendeeName}
+                    </h3>
+                    <p className="text-[10px] sm:text-xs font-bold text-purple-700 truncate">
+                      {attendeeDesignation}
+                    </p>
+                    <p className="text-[10px] sm:text-xs font-black text-slate-900 truncate">
+                      {attendeeCompany}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-left pt-2">
+                  <span className="text-[10px] sm:text-xs font-black text-purple-950">
+                    #ETMBI{cleanEventSlug.toUpperCase().replace(/[^A-Z0-9]/g, "")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom mini actions strip */}
+            <div className="flex items-center justify-between text-[8px] sm:text-[10px] text-white pt-1">
+              <span className="bg-purple-950 px-2 py-0.5 rounded font-bold">REGISTER NOW</span>
+              <span className="text-purple-300 font-bold">{contactEmail}</span>
+              <span className="bg-purple-950 px-2 py-0.5 rounded font-bold">FOLLOW US</span>
+            </div>
           </div>
         )}
         </div>

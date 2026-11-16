@@ -18,6 +18,7 @@ import {
   Lock,
   Clock,
   ShieldAlert,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
@@ -52,6 +53,8 @@ interface PassData {
   checkin_status?: string;
   checked_in_at?: string;
   checked_in_by?: string;
+  print_count?: number;
+  printed_at?: string;
   created_at?: string;
 }
 
@@ -64,6 +67,7 @@ export default function VerifyPassPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [adminCheckingIn, setAdminCheckingIn] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [hasPrinted, setHasPrinted] = useState<boolean>(false);
 
   // Check admin authorization token
   const adminToken = typeof window !== "undefined" ? localStorage.getItem("etmedia_admin_token") : null;
@@ -100,6 +104,9 @@ export default function VerifyPassPage() {
         if (data.success && data.verified && data.data) {
           setVerified(true);
           setPassData(data.data);
+          if (Number(data.data.print_count || 0) > 0) {
+            setHasPrinted(true);
+          }
         } else {
           setVerified(false);
           setErrorMsg(data.message || "Registration pass not found or unverified.");
@@ -282,12 +289,28 @@ export default function VerifyPassPage() {
                 type="button"
                 onClick={() => {
                   toast.dismiss();
+                  setHasPrinted(true);
+                  if (passData?.id) {
+                    fetch("/api/admin/checkin/record-print", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ regId: passData.id }),
+                    }).catch(() => {});
+                  }
                   setTimeout(() => window.print(), 100);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-xs font-black text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md uppercase tracking-wider"
+                className={`inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-black text-white transition-all cursor-pointer shadow-md uppercase tracking-wider ${
+                  hasPrinted
+                    ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500"
+                    : "bg-slate-900 hover:bg-slate-800"
+                }`}
               >
-                <Printer className="h-4 w-4 text-cyan-400" />
-                <span>Print / Save Pass</span>
+                {hasPrinted ? (
+                  <RotateCcw className="h-4 w-4 text-white" />
+                ) : (
+                  <Printer className="h-4 w-4 text-cyan-400" />
+                )}
+                <span>{hasPrinted ? "Reprint Pass" : "Print / Save Pass"}</span>
               </button>
             )}
           </div>

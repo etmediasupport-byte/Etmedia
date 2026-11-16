@@ -158,7 +158,11 @@ export async function initDatabase() {
     try { await pool.query("ALTER TABLE registrations ADD COLUMN attending_poster VARCHAR(255) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
     try { await pool.query("ALTER TABLE registrations ADD COLUMN show_invoice TINYINT(1) DEFAULT 1;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN print_count INT DEFAULT 0;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE registrations ADD COLUMN printed_at DATETIME NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN show_invoice TINYINT(1) DEFAULT 1;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN print_count INT DEFAULT 0;"); } catch (e) {}
+    try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN printed_at DATETIME NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_nomination VARCHAR(10) DEFAULT 'No';"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_category VARCHAR(255) NULL;"); } catch (e) {}
     try { await pool.query("ALTER TABLE delegate_registrations ADD COLUMN team_award_fee DECIMAL(10,2) DEFAULT 0.00;"); } catch (e) {}
@@ -2262,6 +2266,27 @@ export const DEFAULT_PROMOTION_TEMPLATES = [
     accent_color: "#EF4444",
     footer_bg: "#0A0A0A",
     qr_destination_url: "/events",
+    custom_logo_url: "",
+    is_active: 0,
+  },
+  {
+    id: "tmpl-vip-lanyard-pass",
+    title: "HR Recall VIP Lanyard Badge Pass (3rd Image Model)",
+    theme_style: "vip-lanyard-pass",
+    badge_text: "I AM ATTENDING",
+    top_tagline: "FIRST TIME IN HYDERABAD! INDIA'S LARGEST HR GATHERING",
+    event_heading: "AWARDS & CONNECT HR RECALL 2K26",
+    sub_heading: "Remembering 2026. Calling 2027",
+    highlights: JSON.stringify(["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"]),
+    cta_text: "REGISTER NOW",
+    date_text: "11th December 2026",
+    venue_text: "Hyderabad",
+    contact_email: "registration@executivetalksmedia.in",
+    primary_color: "#7E22CE",
+    secondary_color: "#2E1065",
+    accent_color: "#2563EB",
+    footer_bg: "#2E1065",
+    qr_destination_url: "/events/hr-recall-2k26",
     custom_logo_url: "",
     is_active: 0,
   },

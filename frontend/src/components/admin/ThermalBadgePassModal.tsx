@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
-import { Printer, X, CheckCircle2, Copy, Sparkles, RefreshCw, Image as ImageIcon, FileText } from "lucide-react";
+import { Printer, X, CheckCircle2, Copy, Sparkles, RefreshCw, Image as ImageIcon, FileText, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ThermalBadgeAttendee {
@@ -18,6 +18,9 @@ export interface ThermalBadgeAttendee {
   checked_in_at?: string;
   checkedInAt?: string;
   phone?: string;
+  print_count?: number;
+  printed_at?: string;
+  is_reprint?: boolean;
   [key: string]: any;
 }
 
@@ -292,6 +295,7 @@ interface ThermalBadgePassModalProps {
   attendee: ThermalBadgeAttendee | null;
   defaultEventTitle?: string;
   autoPrintEnabled?: boolean;
+  onPrintRecorded?: (newPrintCount: number) => void;
 }
 
 export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
@@ -300,11 +304,13 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   attendee,
   defaultEventTitle = "Executive Talks Media Summit 2026",
   autoPrintEnabled = false,
+  onPrintRecorded,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
+  const [printCount, setPrintCount] = useState<number>(0);
   const [autoPrint, setAutoPrint] = useState<boolean>(() => {
     try {
       return localStorage.getItem("etmedia_gate_autoprint") === "true";
@@ -314,6 +320,14 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   });
 
   const slipRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (attendee) {
+      setPrintCount(Number(attendee.print_count || 0));
+    }
+  }, [attendee?.id, attendee?.print_count, isOpen]);
+
+  const isReprint = printCount > 0;
 
   const delegateName = attendee?.name || "Summit Attendee";
   const delegateOrg =
@@ -352,6 +366,37 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const handlePrint = () => {
     if (!slipRef.current) return;
     setIsPrinting(true);
+
+    // Call backend to record the print
+    if (attendee?.id) {
+      const token = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("adminToken");
+      fetch("/api/admin/checkin/record-print", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ regId: attendee.id }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && typeof data.print_count === "number") {
+            setPrintCount(data.print_count);
+            if (onPrintRecorded) onPrintRecorded(data.print_count);
+            if (data.is_reprint) {
+              toast.info(`Badge Slip Reprinted (Print #${data.print_count})`);
+            } else {
+              toast.success("Gate Badge Slip Printed & Recorded!");
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("[ThermalBadge] Error recording print:", err);
+        });
+    }
+
+    // Instantly increment local count so the UI updates to 'Reprint' without waiting for network
+    setPrintCount((prev) => (prev > 0 ? prev + 1 : 1));
 
     // Use outerHTML so the .thermal-pass-card wrapper and its border are 100% PRESERVED
     const printContent = slipRef.current.outerHTML;
@@ -520,20 +565,33 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-5 w-5" />
+            <div className={`h-10 w-10 rounded-2xl border flex items-center justify-center ${
+              isReprint
+                ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                : "bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+            }`}>
+              {isReprint ? <RotateCcw className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-display">
-                  Gate Admission Badge Slip
+                  {isReprint ? "Gate Badge Slip (Reprint)" : "Gate Admission Badge Slip"}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                  Verified
-                </span>
+                {isReprint ? (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300/40 flex items-center gap-1">
+                    <RotateCcw className="h-2.5 w-2.5" />
+                    Reprint {printCount > 1 ? `#${printCount}` : ""}
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                    Verified
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                High-Contrast Monochrome Pass • Thermal & Standard Printer Ready
+                {isReprint
+                  ? `Pass previously printed ${printCount > 1 ? `${printCount} time(s)` : "once"} • Click Reprint Slip to issue another copy`
+                  : "High-Contrast Monochrome Pass • Thermal & Standard Printer Ready"}
               </p>
             </div>
           </div>
@@ -567,7 +625,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                   {eventTitle}
                 </div>
                 <div className="inline-block mt-1.5 px-2.5 py-0.5 rounded-[4px] border border-black text-[9px] font-black uppercase tracking-wider bg-slate-50">
-                  ★ Official Gate Admission Pass ★
+                  {isReprint ? `★ REPRINT PASS ${printCount > 1 ? `(#${printCount}) ` : ""}★` : "★ Official Gate Admission Pass ★"}
                 </div>
               </div>
 
@@ -723,19 +781,25 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
               <span>PDF</span>
             </button>
 
-            {/* Print Badge Slip */}
+            {/* Print or Reprint Badge Slip */}
             <button
               type="button"
               onClick={handlePrint}
               disabled={isPrinting || !qrDataUrl}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-slate-900 to-black hover:from-slate-800 hover:to-slate-900 dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
+                isReprint
+                  ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 shadow-amber-500/20"
+                  : "bg-gradient-to-r from-slate-900 to-black hover:from-slate-800 hover:to-slate-900 dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-500 dark:hover:to-teal-500"
+              }`}
             >
               {isPrinting ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : isReprint ? (
+                <RotateCcw className="h-4 w-4" />
               ) : (
                 <Printer className="h-4 w-4" />
               )}
-              <span>Print Slip</span>
+              <span>{isReprint ? `Reprint Slip${printCount > 1 ? ` (#${printCount})` : ""}` : "Print Slip"}</span>
             </button>
           </div>
         </div>

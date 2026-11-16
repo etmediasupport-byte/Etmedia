@@ -277,6 +277,19 @@ export default function RegistrationSuccessPage() {
     ) ||
     fallbackEvent;
 
+  let effLocs: any[] = [];
+  try {
+    effLocs = typeof effectiveEvent?.locations === "string" ? JSON.parse(effectiveEvent.locations) : (effectiveEvent?.locations || []);
+  } catch (_) {}
+  const primaryEffLoc = Array.isArray(effLocs) && effLocs[0] ? effLocs[0] : null;
+
+  const effEventDate = effectiveEvent?.date || primaryEffLoc?.date || "";
+  const effEventVenue = effectiveEvent?.venue || primaryEffLoc?.venue || "";
+  const effEventCity = effectiveEvent?.city || primaryEffLoc?.city || "";
+  const effVenueDisplay = effEventVenue && effEventCity && !effEventVenue.toLowerCase().includes(effEventCity.toLowerCase())
+    ? `${effEventVenue}, ${effEventCity}`
+    : (effEventVenue || effEventCity || "");
+
   // Pricing & Amount Calculation
   const rawPayAmount = Number(regDetails?.payment_amount) || 0;
   const rawPassPrice = Number(regDetails?.pass_price) || 0;
@@ -1068,8 +1081,8 @@ export default function RegistrationSuccessPage() {
                     sub_heading: "Remembering 2026. Calling 2027",
                     highlights: ["2000+ HR Pros", "50+ Speakers", "Awards", "Networking"],
                     cta_text: "REGISTER NOW",
-                    date_text: effectiveEvent.date || "11th December 2026",
-                    venue_text: effectiveEvent.venue || effectiveEvent.city || "Gachibowli, Hyderabad",
+                    date_text: effEventDate || "11th December 2026",
+                    venue_text: effVenueDisplay || "Hyderabad",
                     contact_email: "registration@executivetalksmedia.in",
                     primary_color: "#00A86B",
                     secondary_color: "#0F172A",
@@ -1088,8 +1101,10 @@ export default function RegistrationSuccessPage() {
                   photo_url: attendeePhoto || regDetails?.photo_url || "",
                   event_title: regDetails?.event_title || effectiveEvent.title,
                   event_slug: regDetails?.event_slug || effectiveEvent.slug || slug || "hr-recall-2k26",
-                  date: effectiveEvent.date || "11th December 2026",
-                  venue: effectiveEvent.venue || effectiveEvent.city || "Gachibowli, Hyderabad",
+                  event_id: regDetails?.event_id || effectiveEvent?.id,
+                  date: effEventDate,
+                  venue: effVenueDisplay,
+                  city: effEventCity,
                   regId: regDetails?.id || regId,
                 }}
                 onPhotoChange={handleSaveAttendeePhoto}

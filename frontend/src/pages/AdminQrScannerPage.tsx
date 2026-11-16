@@ -929,30 +929,41 @@ export default function AdminQrScannerPage() {
                       </button>
                     </div>
 
-                    {/* Print Badge Slip */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const del = scanResult?.delegate as any;
-                        if (!del) return;
-                        const currentEvent = eventsList.find((e) => e.id === selectedEventId);
-                        setThermalBadgeAttendee({
-                          ...del,
-                          id: del.id || "",
-                          name: del.name || del.full_name || "Delegate",
-                          email: del.email || del.official_email || "",
-                          organization: del.organization || del.company_name || "",
-                          company_name: del.organization || del.company_name || "",
-                          event_title: del.event_title || del.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
-                          checked_in_at: scanResult?.checkedInAt || del.checked_in_at || new Date().toISOString(),
-                        });
-                        setShowThermalBadgeModal(true);
-                      }}
-                      className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
-                    >
-                      <Printer className="h-4 w-4" />
-                      <span>Print Badge Slip (TVS Thermal)</span>
-                    </button>
+                    {/* Print / Reprint Badge Slip */}
+                    {(() => {
+                      const del = scanResult?.delegate as any;
+                      const isReprint = Number(del?.print_count || 0) > 0 || scanResult?.status === "warning";
+                      const printCount = Number(del?.print_count || 0);
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!del) return;
+                            const currentEvent = eventsList.find((e) => e.id === selectedEventId);
+                            setThermalBadgeAttendee({
+                              ...del,
+                              id: del.id || "",
+                              name: del.name || del.full_name || "Delegate",
+                              email: del.email || del.official_email || "",
+                              organization: del.organization || del.company_name || "",
+                              company_name: del.organization || del.company_name || "",
+                              event_title: del.event_title || del.eventTitle || currentEvent?.title || "Executive Talks Media Summit 2026",
+                              checked_in_at: scanResult?.checkedInAt || del.checked_in_at || new Date().toISOString(),
+                              print_count: printCount,
+                            });
+                            setShowThermalBadgeModal(true);
+                          }}
+                          className={`w-full mt-2 py-3 px-4 rounded-xl text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer ${
+                            isReprint
+                              ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 shadow-amber-500/20"
+                              : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
+                          }`}
+                        >
+                          {isReprint ? <RotateCcw className="h-4 w-4" /> : <Printer className="h-4 w-4" />}
+                          <span>{isReprint ? `Reprint Badge Slip (TVS Thermal)${printCount > 1 ? ` (#${printCount})` : ""}` : "Print Badge Slip (TVS Thermal)"}</span>
+                        </button>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -1027,13 +1038,22 @@ export default function AdminQrScannerPage() {
                                   email: del.email || "",
                                   event_title: del.event_title || currentEvent?.title || "Executive Talks Media Summit 2026",
                                   checked_in_at: del.checked_in_at || new Date().toISOString(),
+                                  print_count: Number(del.print_count || 0),
                                 });
                                 setShowThermalBadgeModal(true);
                               }}
-                              className="p-1.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-500 transition-colors cursor-pointer"
-                              title="Print TVS Thermal Badge"
+                              className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                Number(del.print_count || 0) > 0
+                                  ? "border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                                  : "border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-500"
+                              }`}
+                              title={Number(del.print_count || 0) > 0 ? `Reprint Badge Slip (Printed ${del.print_count}x)` : "Print TVS Thermal Badge"}
                             >
-                              <Printer className="h-3.5 w-3.5" />
+                              {Number(del.print_count || 0) > 0 ? (
+                                <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                              ) : (
+                                <Printer className="h-3.5 w-3.5" />
+                              )}
                             </button>
                           </div>
                         ) : (
@@ -1107,13 +1127,22 @@ export default function AdminQrScannerPage() {
                               email: item.email || "",
                               event_title: item.event_title || currentEvent?.title || "Executive Talks Media Summit 2026",
                               checked_in_at: item.checked_in_at || new Date().toISOString(),
+                              print_count: Number(item.print_count || 0),
                             });
                             setShowThermalBadgeModal(true);
                           }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                          title="Print TVS Thermal Badge"
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            Number(item.print_count || 0) > 0
+                              ? "text-amber-400 hover:bg-amber-500/20"
+                              : "text-slate-400 hover:text-white hover:bg-slate-800"
+                          }`}
+                          title={Number(item.print_count || 0) > 0 ? `Reprint Thermal Badge (Printed ${item.print_count}x)` : "Print TVS Thermal Badge"}
                         >
-                          <Printer className="h-3.5 w-3.5" />
+                          {Number(item.print_count || 0) > 0 ? (
+                            <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                          ) : (
+                            <Printer className="h-3.5 w-3.5" />
+                          )}
                         </button>
 
                         <button
@@ -1140,6 +1169,22 @@ export default function AdminQrScannerPage() {
         onClose={() => setShowThermalBadgeModal(false)}
         attendee={thermalBadgeAttendee}
         defaultEventTitle={eventsList.find((e) => e.id === selectedEventId)?.title || "Executive Talks Media Summit 2026"}
+        onPrintRecorded={(newPrintCount) => {
+          if (thermalBadgeAttendee) {
+            setThermalBadgeAttendee((prev) => prev ? { ...prev, print_count: newPrintCount, is_reprint: true } : null);
+          }
+          if (scanResult?.delegate) {
+            setScanResult((prev) => prev ? {
+              ...prev,
+              delegate: {
+                ...(prev.delegate as any),
+                print_count: newPrintCount,
+                is_reprint: true,
+              }
+            } : null);
+          }
+          fetchStats();
+        }}
       />
     </div>
   );

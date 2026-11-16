@@ -2512,6 +2512,8 @@ app.get("/api/verify-pass/:regId", async (req, res) => {
             event_title: `Corporate Delegate Platform (${d.company_name})`,
             payment_status: "Free",
             payment_amount: 0,
+            print_count: d.print_count || 0,
+            printed_at: d.printed_at,
             created_at: d.created_at,
           },
         });
@@ -4432,6 +4434,7 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
     const reg = rows[0];
     const delegateName = reg.name || reg.full_name || "Delegate";
     const checkinStatus = reg.checkin_status || "Absent";
+    const printCount = Number(reg.print_count || 0);
 
     // Prevent duplicate check-in
     if (checkinStatus.toLowerCase() === "present" || reg.checked_in_at) {
@@ -4439,7 +4442,13 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
         success: false,
         alreadyCheckedIn: true,
         message: `⚠️ Attendee "${delegateName}" is ALREADY checked-in!`,
-        delegate: reg,
+        delegate: {
+          ...reg,
+          print_count: printCount,
+          is_reprint: printCount > 0,
+        },
+        print_count: printCount,
+        is_reprint: printCount > 0,
         checkedInAt: reg.checked_in_at,
         checkedInBy: reg.checked_in_by || "Reception Desk",
       });
@@ -4481,13 +4490,95 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
     return res.json({
       success: true,
       message: `✅ Admission Approved: Welcome ${delegateName}!`,
-      delegate: reg,
+      delegate: {
+        ...reg,
+        print_count: printCount,
+        is_reprint: printCount > 0,
+      },
+      print_count: printCount,
+      is_reprint: printCount > 0,
       checkedInAt: reg.checked_in_at,
       checkedInBy,
     });
   } catch (err: any) {
     console.error("[API] Check-in Scan Error:", err);
     return res.status(500).json({ success: false, message: err.message || "Failed to process gate check-in." });
+  }
+});
+
+// 1b. Record Badge Slip Print / Increment Reprint Count
+app.post("/api/admin/checkin/record-print", async (req, res) => {
+  const { regId, passId } = req.body;
+  const targetId = String(regId || passId || "").trim();
+  if (!targetId) {
+    return res.status(400).json({ success: false, message: "Registration or Pass ID is required." });
+  }
+
+  try {
+    if (!pool) {
+      return res.status(500).json({ success: false, message: "Database connection unavailable." });
+    }
+
+    // Try updating registrations first
+    const [regResult]: any = await pool.query(
+      "UPDATE registrations SET print_count = COALESCE(print_count, 0) + 1, printed_at = NOW() WHERE id = ? OR razorpay_order_id = ? OR payment_id = ?",
+      [targetId, targetId, targetId]
+    );
+
+    let updatedCount = 1;
+    let delegateName = "Attendee";
+
+    if (regResult.affectedRows > 0) {
+      const [rows]: any = await pool.query(
+        "SELECT id, name, print_count, printed_at FROM registrations WHERE id = ? OR razorpay_order_id = ? OR payment_id = ? LIMIT 1",
+        [targetId, targetId, targetId]
+      );
+      if (rows && rows.length > 0) {
+        updatedCount = Number(rows[0].print_count || 1);
+        delegateName = rows[0].name || "Attendee";
+      }
+    } else {
+      // Try delegate_registrations
+      const [delResult]: any = await pool.query(
+        "UPDATE delegate_registrations SET print_count = COALESCE(print_count, 0) + 1, printed_at = NOW() WHERE id = ?",
+        [targetId]
+      );
+      if (delResult.affectedRows > 0) {
+        const [delRows]: any = await pool.query(
+          "SELECT id, full_name, print_count, printed_at FROM delegate_registrations WHERE id = ? LIMIT 1",
+          [targetId]
+        );
+        if (delRows && delRows.length > 0) {
+          updatedCount = Number(delRows[0].print_count || 1);
+          delegateName = delRows[0].full_name || "Delegate";
+        }
+      }
+    }
+
+    const isReprint = updatedCount > 1;
+
+    // Broadcast print activity
+    if (io) {
+      io.emit("admin_activity", {
+        type: isReprint ? "badge_reprinted" : "badge_printed",
+        regId: targetId,
+        name: delegateName,
+        printCount: updatedCount,
+        isReprint,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.json({
+      success: true,
+      regId: targetId,
+      print_count: updatedCount,
+      is_reprint: isReprint,
+      printed_at: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error("[API] Record Print Error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to record badge print." });
   }
 });
 
@@ -4554,7 +4645,7 @@ app.get("/api/admin/checkin/stats", authenticateAdmin, async (req, res) => {
     const absent = Math.max(0, total - checkedIn);
 
     const [recentRows]: any = await pool.query(
-      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by FROM registrations WHERE LOWER(checkin_status) = 'present' ORDER BY checked_in_at DESC LIMIT 20`
+      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by, print_count, printed_at FROM registrations WHERE LOWER(checkin_status) = 'present' ORDER BY checked_in_at DESC LIMIT 20`
     );
 
     return res.json({
@@ -4585,7 +4676,7 @@ app.get("/api/admin/checkin/search", authenticateAdmin, async (req, res) => {
 
     const likeQuery = `%${query}%`;
     const [rows]: any = await pool.query(
-      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by, payment_status FROM registrations WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR id LIKE ? OR organization LIKE ? ORDER BY created_at DESC LIMIT 15`,
+      `SELECT id, name, email, phone, organization, designation, event_title, pass_name, registration_category, checkin_status, checked_in_at, checked_in_by, payment_status, print_count, printed_at FROM registrations WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? OR id LIKE ? OR organization LIKE ? ORDER BY created_at DESC LIMIT 15`,
       [likeQuery, likeQuery, likeQuery, likeQuery, likeQuery]
     );
 
@@ -10243,6 +10334,37 @@ app.get("/api/promotion-templates/active", async (req, res) => {
       activeItem = anyRows && anyRows.length > 0 ? anyRows[0] : (DEFAULT_PROMOTION_TEMPLATES.find(t => t.theme_style === "hr-recall-purple") || DEFAULT_PROMOTION_TEMPLATES[0]);
     }
 
+    // Query actual event details to inject live date and venue configured by Admin
+    let liveEventDate = "";
+    let liveEventVenue = "";
+    let liveEventCity = "";
+    const evQueryId = targetEvent || targetSlug || (activeItem?.event_id !== "all" ? activeItem?.event_id : "") || (activeItem?.event_slug !== "all" ? activeItem?.event_slug : "");
+    if (evQueryId && evQueryId !== "all") {
+      try {
+        const [evRows]: any = await pool.query(
+          "SELECT id, slug, title, date, venue, city, locations FROM events WHERE id = ? OR slug = ? OR id = ? OR slug = ? LIMIT 1",
+          [evQueryId, evQueryId, evQueryId, evQueryId]
+        );
+        if (evRows && evRows.length > 0) {
+          const ev = evRows[0];
+          let locs: any[] = [];
+          try {
+            locs = typeof ev.locations === "string" ? JSON.parse(ev.locations) : (ev.locations || []);
+          } catch (_) {}
+          const pLoc = Array.isArray(locs) && locs[0] ? locs[0] : null;
+          liveEventDate = ev.date || pLoc?.date || "";
+          liveEventVenue = ev.venue || pLoc?.venue || "";
+          liveEventCity = ev.city || pLoc?.city || "";
+        }
+      } catch (evErr) {
+        console.warn("[/api/promotion-templates/active] Event lookup warn:", evErr);
+      }
+    }
+
+    const effectiveVenueStr = liveEventVenue && liveEventCity && !liveEventVenue.toLowerCase().includes(liveEventCity.toLowerCase())
+      ? `${liveEventVenue}, ${liveEventCity}`
+      : (liveEventVenue || liveEventCity || "");
+
     let parsedHighlights = [];
     try {
       parsedHighlights = typeof activeItem.highlights === "string" ? JSON.parse(activeItem.highlights) : activeItem.highlights;
@@ -10253,8 +10375,13 @@ app.get("/api/promotion-templates/active", async (req, res) => {
       success: true,
       template: {
         ...activeItem,
-        event_id: activeItem.event_id || "all",
-        event_slug: activeItem.event_slug || "all",
+        event_id: activeItem.event_id || targetEvent || "all",
+        event_slug: activeItem.event_slug || targetSlug || "all",
+        date_text: liveEventDate || activeItem.date_text || "11th December 2026",
+        venue_text: effectiveVenueStr || activeItem.venue_text || "Hyderabad",
+        event_date: liveEventDate,
+        event_venue: effectiveVenueStr,
+        event_city: liveEventCity,
         highlights: parsedHighlights || [],
         is_active: true,
       },
