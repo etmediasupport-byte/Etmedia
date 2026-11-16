@@ -1674,7 +1674,7 @@ export default function PromotionBadgeCard({
         const nameParts = attendeeName.split(" ");
         if (nameParts.length > 1) {
           const firstPart = nameParts.slice(0, -1).join(" ");
-          const lastPart = nameParts[nameParts.length - 1];
+          const lastPart = nameParts[nameParts.length - 1] || "";
           ctx.fillText(firstPart, infoX, infoY);
           const firstW = ctx.measureText(firstPart + " ").width;
           ctx.fillStyle = "#2563EB";
