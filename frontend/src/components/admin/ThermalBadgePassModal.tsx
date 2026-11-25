@@ -26,144 +26,72 @@ export interface ThermalBadgeAttendee {
 
 /**
  * Downloads a high-resolution PNG image containing:
- * - High contrast outer & inner badge border
- * - Executive Talks Media & Event Title Header
- * - Explicit "NAME OF THE PERSON" label & large bold name
- * - Explicit "NAME OF THE COMPANY" label & bold organization
- * - Centered framed QR Code
- * - Admission Verified footer
+ * - 3" Width × 2" Height (900 × 600 @ 300 DPI)
+ * - Clean outer border
+ * - Attendee Name
+ * - Company Name
+ * - Centered Scannable QR Code
  */
 export const downloadBadgeImage = async (
   name: string,
   company: string,
   qrDataUrl: string,
-  eventTitle?: string
+  _eventTitle?: string
 ): Promise<void> => {
   return new Promise((resolve) => {
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = 640;
-      canvas.height = 840;
+      // 3 inches x 2 inches @ 300 DPI = 900 x 600
+      canvas.width = 900;
+      canvas.height = 600;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         toast.error("Canvas context not available");
         return resolve();
       }
 
-      // 1. Clean Crisp White Background
+      // 1. Crisp White Background
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 2. High Contrast Outer Border
+      // 2. Outer Border (2px scaled at 300dpi is ~6px)
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 6;
-      ctx.strokeRect(20, 20, 600, 800);
+      ctx.strokeRect(18, 18, 864, 564);
 
-      // Inner Accent Border
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(28, 28, 584, 784);
-
-      // 3. Header: Brand & Event
+      // 3. Attendee Name (Bold, Prominent, Centered)
       ctx.fillStyle = "#000000";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = "900 22px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillText("EXECUTIVE TALKS MEDIA", 320, 62, 540);
-
-      const upperEvent = (eventTitle || "LEADERSHIP SUMMIT 2026").toUpperCase();
-      ctx.font = "700 14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillStyle = "#333333";
-      ctx.fillText(upperEvent, 320, 92, 540);
-
-      // Badge Pill
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(180, 114, 280, 26);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "900 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillText("★ OFFICIAL GATE ADMISSION PASS ★", 320, 127);
-
-      // Divider Line
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(40, 155);
-      ctx.lineTo(600, 155);
-      ctx.stroke();
-
-      // 4. PERSON NAME (With Explicit Label)
-      ctx.fillStyle = "#555555";
-      ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillText("NAME OF THE PERSON", 320, 185, 520);
-
-      ctx.fillStyle = "#000000";
-      ctx.font = "900 32px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      ctx.font = "900 46px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
       const upperName = (name || "DELEGATE").toUpperCase();
-      ctx.fillText(upperName, 320, 225, 520);
+      ctx.fillText(upperName, 450, 85, 820);
 
-      // Dashed Divider
-      ctx.strokeStyle = "#888888";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(80, 260);
-      ctx.lineTo(560, 260);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // 5. COMPANY NAME (With Explicit Label)
-      ctx.fillStyle = "#555555";
-      ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      ctx.fillText("NAME OF THE COMPANY", 320, 290, 520);
-
-      ctx.fillStyle = "#000000";
-      ctx.font = "800 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      // 4. Company Name (Bold, Centered)
+      ctx.fillStyle = "#1E293B";
+      ctx.font = "800 30px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
       const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
-      ctx.fillText(upperCompany, 320, 330, 520);
+      ctx.fillText(upperCompany, 450, 145, 820);
 
-      // Solid Divider
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(40, 365);
-      ctx.lineTo(600, 365);
-      ctx.stroke();
-
-      // 6. QR Code (Framed & Centered)
+      // 5. Scannable QR Code (Centered)
       if (qrDataUrl) {
         const qrImg = new Image();
         qrImg.crossOrigin = "anonymous";
         qrImg.onload = () => {
-          // QR box frame
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(170, 395, 300, 300);
-
-          ctx.drawImage(qrImg, 185, 410, 270, 270);
-
-          ctx.fillStyle = "#000000";
-          ctx.font = "900 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-          ctx.fillText("SCAN TO VERIFY PASS", 320, 715);
-
-          // Divider
-          ctx.strokeStyle = "#000000";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(40, 740);
-          ctx.lineTo(600, 740);
-          ctx.stroke();
-
-          // Footer
-          ctx.font = "900 14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-          ctx.fillText("✓ ADMISSION VERIFIED • ALL-ACCESS", 320, 770);
+          // QR Code size 370x370 centered
+          const qrSize = 370;
+          const qrX = (900 - qrSize) / 2;
+          const qrY = 195;
+          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
           const a = document.createElement("a");
           const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-          a.download = `Gate_Badge_${safeName || "Pass"}.png`;
+          a.download = `Badge_3x2_${safeName || "Pass"}.png`;
           a.href = canvas.toDataURL("image/png");
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          toast.success("Badge Image (PNG) downloaded successfully!");
+          toast.success("3\" × 2\" Badge Image (PNG) downloaded successfully!");
           resolve();
         };
         qrImg.onerror = () => {
@@ -184,105 +112,59 @@ export const downloadBadgeImage = async (
 };
 
 /**
- * Downloads a clean PDF formatted for 80mm thermal paper or badge card printing
+ * Downloads a clean PDF formatted for 3" x 2" (76.2mm x 50.8mm) thermal badge sticker printing
  */
 export const downloadBadgePdf = async (
   name: string,
   company: string,
   qrDataUrl: string,
-  eventTitle?: string
+  _eventTitle?: string
 ): Promise<void> => {
   try {
+    // 3 inches x 2 inches in mm: 76.2mm x 50.8mm
     const doc = new jsPDF({
-      orientation: "portrait",
+      orientation: "landscape",
       unit: "mm",
-      format: [80, 125], // 80mm thermal paper standard slip size
+      format: [50.8, 76.2],
     });
+
+    const W = 76.2;
+    const H = 50.8;
 
     // White background
     doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, 80, 125, "F");
+    doc.rect(0, 0, W, H, "F");
 
-    // Outer & Inner Borders
+    // Outer Border
     doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.8);
-    doc.rect(3, 3, 74, 119);
-    doc.setLineWidth(0.2);
-    doc.rect(4.2, 4.2, 71.6, 116.6);
+    doc.setLineWidth(0.6);
+    doc.rect(2, 2, W - 4, H - 4);
 
-    // Header: Brand & Event
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.5);
-    doc.text("EXECUTIVE TALKS MEDIA", 40, 11, { align: "center", maxWidth: 68 });
-
-    const upperEvent = (eventTitle || "LEADERSHIP SUMMIT 2026").toUpperCase();
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.text(upperEvent, 40, 16, { align: "center", maxWidth: 68 });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.text("★ GATE ADMISSION PASS ★", 40, 21, { align: "center" });
-
-    // Separator line
-    doc.setLineWidth(0.4);
-    doc.line(6, 24, 74, 24);
-
-    // 1. PERSON NAME (With Explicit Label)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
-    doc.text("NAME OF THE PERSON", 40, 29, { align: "center" });
-
+    // Attendee Name
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     const upperName = (name || "DELEGATE").toUpperCase();
-    doc.text(upperName, 40, 36, { align: "center", maxWidth: 68 });
+    doc.text(upperName, W / 2, 8.5, { align: "center", maxWidth: W - 8 });
 
-    // Separator dashed
-    doc.setLineWidth(0.2);
-    doc.line(10, 41, 70, 41);
-
-    // 2. COMPANY NAME (With Explicit Label)
+    // Company Name
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
-    doc.text("NAME OF THE COMPANY", 40, 46, { align: "center" });
-
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
     const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
-    doc.text(upperCompany, 40, 52, { align: "center", maxWidth: 68 });
+    doc.text(upperCompany, W / 2, 14, { align: "center", maxWidth: W - 8 });
 
-    // Separator line
-    doc.setLineWidth(0.4);
-    doc.line(6, 57, 74, 57);
-
-    // 3. QR Code with Box
+    // Scannable QR Code
     if (qrDataUrl) {
-      doc.setLineWidth(0.3);
-      doc.rect(17, 61, 46, 46);
-      doc.addImage(qrDataUrl, "PNG", 18.5, 62.5, 43, 43);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(6.5);
-      doc.text("SCAN TO VERIFY PASS", 40, 111, { align: "center" });
+      const qrSize = 31;
+      const qrX = (W - qrSize) / 2;
+      const qrY = 16.5;
+      doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
     }
 
-    // Separator line
-    doc.setLineWidth(0.3);
-    doc.line(6, 114, 74, 114);
-
-    // Footer
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.text("✓ ADMISSION VERIFIED • ALL-ACCESS", 40, 119, { align: "center" });
-
     const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-    doc.save(`Gate_Badge_${safeName || "Pass"}.pdf`);
-    toast.success("Badge PDF downloaded successfully!");
+    doc.save(`Badge_3x2_${safeName || "Pass"}.pdf`);
+    toast.success("3\" × 2\" Badge PDF downloaded successfully!");
   } catch (err) {
     console.error("Download PDF error:", err);
     toast.error("Failed to generate PDF.");
@@ -416,11 +298,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Gate Badge Pass - ${delegateName}</title>
+            <title>Gate Badge - ${delegateName}</title>
             <style>
               @page {
-                size: auto;
-                margin: 4mm;
+                size: 3in 2in;
+                margin: 0;
               }
               * {
                 box-sizing: border-box;
@@ -433,50 +315,60 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 print-color-adjust: exact;
               }
               html, body {
-                width: 100%;
+                width: 3in;
+                height: 2in;
+                margin: 0;
+                padding: 0;
                 background: #ffffff !important;
                 display: flex;
                 justify-content: center;
-                align-items: flex-start;
-                padding: 4mm 0;
+                align-items: center;
+                overflow: hidden;
               }
               .thermal-pass-card {
-                width: 78mm !important;
-                max-width: 95vw !important;
-                border: 3px solid #000000 !important;
-                border-radius: 8px !important;
-                padding: 5mm 4mm !important;
+                width: 3in !important;
+                height: 2in !important;
+                max-width: 3in !important;
+                max-height: 2in !important;
+                box-sizing: border-box !important;
+                border: 2px solid #000000 !important;
+                border-radius: 4px !important;
+                padding: 2mm 3mm !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                align-items: center !important;
                 text-align: center !important;
                 background: #ffffff !important;
                 page-break-inside: avoid !important;
-                margin: 0 auto !important;
+                page-break-after: avoid !important;
+                overflow: hidden !important;
               }
               .delegate-name {
-                font-size: 20px !important;
+                font-size: 15pt !important;
                 font-weight: 900 !important;
                 text-transform: uppercase !important;
                 line-height: 1.15 !important;
-                margin: 1.5mm 0 !important;
+                margin: 0 !important;
                 word-break: break-word !important;
               }
               .company-name {
-                font-size: 14.5px !important;
-                font-weight: 800 !important;
+                font-size: 10.5pt !important;
+                font-weight: 700 !important;
                 text-transform: uppercase !important;
-                line-height: 1.2 !important;
-                margin: 1.5mm 0 !important;
+                line-height: 1.15 !important;
+                margin-top: 1mm !important;
                 word-break: break-word !important;
               }
               .qr-container {
-                margin: 2mm auto 1mm auto !important;
+                margin: auto 0 0.5mm 0 !important;
                 display: flex !important;
-                flex-direction: column !important;
                 justify-content: center !important;
                 align-items: center !important;
               }
               .qr-img {
-                width: 44mm !important;
-                height: 44mm !important;
+                width: 28mm !important;
+                height: 28mm !important;
                 display: block !important;
                 margin: 0 auto !important;
                 image-rendering: pixelated !important;
@@ -575,7 +467,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-display">
-                  {isReprint ? "Gate Badge Slip (Reprint)" : "Gate Admission Badge Slip"}
+                  {isReprint ? "Gate Badge (Reprint)" : "Gate Admission Badge (3\" × 2\")"}
                 </h3>
                 {isReprint ? (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300/40 flex items-center gap-1">
@@ -584,14 +476,14 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                    Verified
+                    3" × 2" Thermal
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 {isReprint
-                  ? `Pass previously printed ${printCount > 1 ? `${printCount} time(s)` : "once"} • Click Reprint Slip to issue another copy`
-                  : "High-Contrast Monochrome Pass • Thermal & Standard Printer Ready"}
+                  ? `Badge previously printed ${printCount > 1 ? `${printCount} time(s)` : "once"} • Click Reprint Slip to issue another copy`
+                  : "3 Inch Width × 2 Inch Height • Clean Border, Name, Company & QR Code"}
               </p>
             </div>
           </div>
@@ -607,83 +499,40 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         </div>
 
         {/* Modal Body: Thermal Badge Slip Preview */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1 bg-slate-100/70 dark:bg-slate-950/50">
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 bg-slate-100/70 dark:bg-slate-950/50 flex flex-col items-center">
           {/* Slip Container with Thermal Paper Shadow */}
-          <div className="mx-auto w-[320px] bg-white text-black p-4 rounded-xl shadow-lg border border-slate-300">
-            {/* The printable slip component - Crisp badge card with clear border, labels, and alignment */}
+          <div className="w-[340px] sm:w-[380px] bg-white text-black p-3 rounded-2xl shadow-xl border border-slate-300">
+            {/* The printable slip component - Exact 3" x 2" (Width 3 inch, Height 2 inch) */}
             <div
               ref={slipRef}
-              className="thermal-pass-card w-full border-[3px] border-black rounded-[8px] p-4 text-center bg-white text-black select-none shadow-sm"
-              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
+              className="thermal-pass-card w-full h-[226px] sm:h-[253px] border-[2.5px] border-black rounded-[6px] p-2 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center"
+              style={{
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                aspectRatio: "3 / 2",
+              }}
             >
-              {/* Header: Organization & Pass Title */}
-              <div className="border-b-[2px] border-black pb-2.5 mb-3">
-                <div className="text-[12px] font-black uppercase tracking-[1.5px] text-black">
-                  Executive Talks Media
-                </div>
-                <div className="text-[10px] font-bold text-slate-700 uppercase mt-0.5 line-clamp-1">
-                  {eventTitle}
-                </div>
-                <div className="inline-block mt-1.5 px-2.5 py-0.5 rounded-[4px] border border-black text-[9px] font-black uppercase tracking-wider bg-slate-50">
-                  {isReprint ? `★ REPRINT PASS ${printCount > 1 ? `(#${printCount}) ` : ""}★` : "★ Official Gate Admission Pass ★"}
-                </div>
-              </div>
-
-              {/* 1. Person Name (With Explicit Label) */}
-              <div className="py-1">
-                <div className="text-[9.5px] font-black uppercase tracking-[1.2px] text-slate-600 mb-0.5">
-                  Name of the Person
-                </div>
-                <div className="delegate-name text-[21px] font-black uppercase leading-tight tracking-tight text-black break-words">
+              {/* Attendee Name & Company Name */}
+              <div className="w-full pt-1 px-1">
+                <div className="delegate-name text-[18px] sm:text-[20px] font-black uppercase leading-tight tracking-tight text-black break-words">
                   {delegateName}
                 </div>
-              </div>
-
-              {/* Divider */}
-              <div className="my-2 border-t border-dashed border-slate-400" />
-
-              {/* 2. Company Name (With Explicit Label) */}
-              <div className="py-1">
-                <div className="text-[9.5px] font-black uppercase tracking-[1.2px] text-slate-600 mb-0.5">
-                  Name of the Company
-                </div>
-                <div className="company-name text-[15px] font-black uppercase leading-snug text-black break-words">
+                <div className="company-name text-[12px] sm:text-[13.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
                   {delegateOrg || "Enterprise Delegate"}
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="my-2.5 border-t-[2px] border-black" />
-
-              {/* 3. Scannable QR Code */}
-              <div className="qr-container my-1 flex flex-col justify-center items-center">
-                <div className="p-1.5 border-[1.5px] border-black rounded-[6px] bg-white inline-block">
-                  {qrDataUrl ? (
-                    <img
-                      src={qrDataUrl}
-                      alt="Attendee Verification QR Code"
-                      className="qr-img w-[130px] h-[130px] block"
-                      style={{ imageRendering: "pixelated" }}
-                    />
-                  ) : (
-                    <div className="w-[130px] h-[130px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
-                      Generating QR...
-                    </div>
-                  )}
-                </div>
-                <div className="text-[8.5px] font-black uppercase tracking-wider text-slate-700 mt-1">
-                  Scan to Verify Pass
-                </div>
-              </div>
-
-              {/* Footer Divider & Status */}
-              <div className="mt-2.5 pt-2 border-t-[2px] border-black">
-                <div className="text-[9.5px] font-black uppercase tracking-wide text-black">
-                  ✓ Admission Verified • All-Access
-                </div>
-                {attendee?.checked_in_at && (
-                  <div className="text-[8px] font-bold text-slate-500 mt-0.5">
-                    Checked In: {new Date(attendee.checked_in_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+              {/* Scannable QR Code */}
+              <div className="qr-container my-auto pb-1 flex justify-center items-center">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt="Attendee Verification QR Code"
+                    className="qr-img w-[110px] h-[110px] sm:w-[125px] sm:h-[125px] block"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                ) : (
+                  <div className="w-[110px] h-[110px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
+                    Generating QR...
                   </div>
                 )}
               </div>
@@ -691,10 +540,10 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
           </div>
 
           {/* Quick Notice */}
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2 w-full max-w-[380px]">
             <span className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-              <span>Monochrome vector layout with clear borders & labels</span>
+              <span>3" × 2" Badge • Name, Company &amp; QR Code</span>
             </span>
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
