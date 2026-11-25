@@ -24,85 +24,122 @@ export interface ThermalBadgeAttendee {
   [key: string]: any;
 }
 
+export type ThermalLabelFormat = "50x75" | "75x50" | "2up";
+
 /**
  * Downloads a high-resolution PNG image containing:
- * - 3" Width × 2" Height (900 × 600 @ 300 DPI)
  * - Clean outer border
  * - Attendee Name
  * - Company Name
  * - Centered Scannable QR Code
+ * Formats: 50x75mm (Portrait), 75x50mm (Landscape), 2-UP
  */
 export const downloadBadgeImage = async (
   name: string,
   company: string,
   qrDataUrl: string,
-  _eventTitle?: string
+  formatOrTitle?: ThermalLabelFormat | string
 ): Promise<void> => {
+  const format: ThermalLabelFormat =
+    formatOrTitle === "75x50" || formatOrTitle === "2up" || formatOrTitle === "50x75"
+      ? formatOrTitle
+      : "50x75";
   return new Promise((resolve) => {
     try {
       const canvas = document.createElement("canvas");
-      // 3 inches x 2 inches @ 300 DPI = 900 x 600
-      canvas.width = 900;
-      canvas.height = 600;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         toast.error("Canvas context not available");
         return resolve();
       }
 
-      // 1. Crisp White Background
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // 2. Outer Border (2px scaled at 300dpi is ~6px)
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(18, 18, 864, 564);
-
-      // 3. Attendee Name (Bold, Prominent, Centered)
-      ctx.fillStyle = "#000000";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = "900 46px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
       const upperName = (name || "DELEGATE").toUpperCase();
-      ctx.fillText(upperName, 450, 85, 820);
-
-      // 4. Company Name (Bold, Centered)
-      ctx.fillStyle = "#1E293B";
-      ctx.font = "800 30px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
       const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
-      ctx.fillText(upperCompany, 450, 145, 820);
 
-      // 5. Scannable QR Code (Centered)
-      if (qrDataUrl) {
-        const qrImg = new Image();
-        qrImg.crossOrigin = "anonymous";
-        qrImg.onload = () => {
-          // QR Code size 370x370 centered
-          const qrSize = 370;
-          const qrX = (900 - qrSize) / 2;
-          const qrY = 195;
-          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      if (format === "75x50") {
+        // 75mm x 50mm (3" x 2" Landscape) @ 300 DPI: 900 x 600
+        canvas.width = 900;
+        canvas.height = 600;
 
-          const a = document.createElement("a");
-          const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-          a.download = `Badge_3x2_${safeName || "Pass"}.png`;
-          a.href = canvas.toDataURL("image/png");
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          toast.success("3\" × 2\" Badge Image (PNG) downloaded successfully!");
-          resolve();
-        };
-        qrImg.onerror = () => {
-          toast.error("Failed to load QR code image.");
-          resolve();
-        };
-        qrImg.src = qrDataUrl;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 900, 600);
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(18, 18, 864, 564);
+
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "900 46px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(upperName, 450, 85, 820);
+
+        ctx.fillStyle = "#1E293B";
+        ctx.font = "800 30px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(upperCompany, 450, 145, 820);
+
+        if (qrDataUrl) {
+          const qrImg = new Image();
+          qrImg.onload = () => {
+            const qrSize = 370;
+            ctx.drawImage(qrImg, (900 - qrSize) / 2, 195, qrSize, qrSize);
+            const a = document.createElement("a");
+            const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+            a.download = `Badge_75x50_${safeName || "Pass"}.png`;
+            a.href = canvas.toDataURL("image/png");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast.success("75 × 50 mm Badge Image (PNG) downloaded!");
+            resolve();
+          };
+          qrImg.onerror = () => resolve();
+          qrImg.src = qrDataUrl;
+          return;
+        }
       } else {
-        toast.error("QR Code not ready yet.");
-        resolve();
+        // 50mm x 75mm (2" x 3" Portrait - True-Ally DT standard) @ 300 DPI: 600 x 900
+        canvas.width = 600;
+        canvas.height = 900;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 600, 900);
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(18, 18, 564, 864);
+
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "900 44px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(upperName, 300, 95, 530);
+
+        ctx.fillStyle = "#1E293B";
+        ctx.font = "800 28px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(upperCompany, 300, 160, 530);
+
+        if (qrDataUrl) {
+          const qrImg = new Image();
+          qrImg.onload = () => {
+            const qrSize = 460;
+            ctx.drawImage(qrImg, (600 - qrSize) / 2, 230, qrSize, qrSize);
+            const a = document.createElement("a");
+            const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+            a.download = `Badge_50x75_${safeName || "Pass"}.png`;
+            a.href = canvas.toDataURL("image/png");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast.success("50 × 75 mm Badge Image (PNG) downloaded!");
+            resolve();
+          };
+          qrImg.onerror = () => resolve();
+          qrImg.src = qrDataUrl;
+          return;
+        }
       }
+      resolve();
     } catch (err) {
       console.error("Download image error:", err);
       toast.error("Failed to generate image.");
@@ -112,24 +149,28 @@ export const downloadBadgeImage = async (
 };
 
 /**
- * Downloads a clean PDF formatted for 3" x 2" (76.2mm x 50.8mm) thermal badge sticker printing
+ * Downloads a clean PDF formatted for thermal badge sticker printing
  */
 export const downloadBadgePdf = async (
   name: string,
   company: string,
   qrDataUrl: string,
-  _eventTitle?: string
+  formatOrTitle?: ThermalLabelFormat | string
 ): Promise<void> => {
   try {
-    // 3 inches x 2 inches in mm: 76.2mm x 50.8mm
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: [50.8, 76.2],
-    });
+    const format: ThermalLabelFormat =
+      formatOrTitle === "75x50" || formatOrTitle === "2up" || formatOrTitle === "50x75"
+        ? formatOrTitle
+        : "50x75";
+    const is75x50 = format === "75x50";
+    const W = is75x50 ? 76.2 : 50.8;
+    const H = is75x50 ? 50.8 : 76.2;
 
-    const W = 76.2;
-    const H = 50.8;
+    const doc = new jsPDF({
+      orientation: is75x50 ? "landscape" : "portrait",
+      unit: "mm",
+      format: is75x50 ? [50.8, 76.2] : [50.8, 76.2],
+    });
 
     // White background
     doc.setFillColor(255, 255, 255);
@@ -138,33 +179,52 @@ export const downloadBadgePdf = async (
     // Outer Border
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.6);
-    doc.rect(2, 2, W - 4, H - 4);
+    doc.rect(1.8, 1.8, W - 3.6, H - 3.6);
 
-    // Attendee Name
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
     const upperName = (name || "DELEGATE").toUpperCase();
-    doc.text(upperName, W / 2, 8.5, { align: "center", maxWidth: W - 8 });
-
-    // Company Name
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(30, 41, 59);
     const upperCompany = (company || "ENTERPRISE DELEGATE").toUpperCase();
-    doc.text(upperCompany, W / 2, 14, { align: "center", maxWidth: W - 8 });
 
-    // Scannable QR Code
-    if (qrDataUrl) {
-      const qrSize = 31;
-      const qrX = (W - qrSize) / 2;
-      const qrY = 16.5;
-      doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+    if (is75x50) {
+      // 75x50 Landscape Layout
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(upperName, W / 2, 8.5, { align: "center", maxWidth: W - 8 });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      doc.text(upperCompany, W / 2, 14, { align: "center", maxWidth: W - 8 });
+
+      if (qrDataUrl) {
+        const qrSize = 31;
+        const qrX = (W - qrSize) / 2;
+        const qrY = 16.5;
+        doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+      }
+    } else {
+      // 50x75 Portrait Layout (True-Ally DT 50x75)
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12.5);
+      doc.text(upperName, W / 2, 10, { align: "center", maxWidth: W - 6 });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      doc.text(upperCompany, W / 2, 16.5, { align: "center", maxWidth: W - 6 });
+
+      if (qrDataUrl) {
+        const qrSize = 38;
+        const qrX = (W - qrSize) / 2;
+        const qrY = 22;
+        doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+      }
     }
 
     const safeName = upperName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
-    doc.save(`Badge_3x2_${safeName || "Pass"}.pdf`);
-    toast.success("3\" × 2\" Badge PDF downloaded successfully!");
+    doc.save(`Badge_${format}_${safeName || "Pass"}.pdf`);
+    toast.success(`Badge PDF (${format}) downloaded successfully!`);
   } catch (err) {
     console.error("Download PDF error:", err);
     toast.error("Failed to generate PDF.");
@@ -193,6 +253,13 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
   const [printCount, setPrintCount] = useState<number>(0);
+  const [labelFormat, setLabelFormat] = useState<ThermalLabelFormat>(() => {
+    try {
+      return (localStorage.getItem("etmedia_label_format") as ThermalLabelFormat) || "50x75";
+    } catch {
+      return "50x75";
+    }
+  });
   const [autoPrint, setAutoPrint] = useState<boolean>(() => {
     try {
       return localStorage.getItem("etmedia_gate_autoprint") === "true";
@@ -202,6 +269,13 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   });
 
   const slipRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSelectFormat = (fmt: ThermalLabelFormat) => {
+    setLabelFormat(fmt);
+    try {
+      localStorage.setItem("etmedia_label_format", fmt);
+    } catch {}
+  };
 
   useEffect(() => {
     if (attendee) {
@@ -244,7 +318,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
       });
   }, [attendee?.id]);
 
-  // Handle printing
+  // Handle printing calibrated for POSIFLOW PSF423 & True-Ally 50x75 DT Roll
   const handlePrint = () => {
     if (!slipRef.current) return;
     setIsPrinting(true);
@@ -280,15 +354,18 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
     // Instantly increment local count so the UI updates to 'Reprint' without waiting for network
     setPrintCount((prev) => (prev > 0 ? prev + 1 : 1));
 
-    // Use outerHTML so the .thermal-pass-card wrapper and its border are 100% PRESERVED
+    // Dynamic dimensions based on True-Ally 50x75 / 75x50 / 2-UP
+    const W_MM = labelFormat === "75x50" ? "75mm" : labelFormat === "2up" ? "104mm" : "50mm";
+    const H_MM = labelFormat === "75x50" ? "50mm" : "75mm";
+
     const printContent = slipRef.current.outerHTML;
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
+    iframe.style.top = "-9999px";
+    iframe.style.left = "-9999px";
+    iframe.style.width = W_MM;
+    iframe.style.height = H_MM;
+    iframe.style.border = "none";
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
@@ -298,42 +375,50 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Gate Badge - ${delegateName}</title>
+            <title>Badge - ${delegateName}</title>
             <style>
               @page {
-                size: 3in 2in;
-                margin: 0;
+                size: ${W_MM} ${H_MM};
+                margin: 0mm !important;
               }
               * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
                 color: #000000 !important;
                 background: #ffffff !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
               html, body {
-                width: 3in;
-                height: 2in;
-                margin: 0;
-                padding: 0;
+                width: ${W_MM} !important;
+                height: ${H_MM} !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 background: #ffffff !important;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                overflow: hidden;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                overflow: hidden !important;
+              }
+              .thermal-2up-wrapper {
+                width: 104mm !important;
+                height: 75mm !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                padding: 0 1mm !important;
               }
               .thermal-pass-card {
-                width: 3in !important;
-                height: 2in !important;
-                max-width: 3in !important;
-                max-height: 2in !important;
+                width: ${labelFormat === "75x50" ? "75mm" : "50mm"} !important;
+                height: ${labelFormat === "75x50" ? "50mm" : "75mm"} !important;
+                max-width: ${labelFormat === "75x50" ? "75mm" : "50mm"} !important;
+                max-height: ${labelFormat === "75x50" ? "50mm" : "75mm"} !important;
                 box-sizing: border-box !important;
                 border: 2px solid #000000 !important;
                 border-radius: 4px !important;
-                padding: 2mm 3mm !important;
+                padding: ${labelFormat === "75x50" ? "2mm 2.5mm" : "2.5mm 2mm"} !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: space-between !important;
@@ -345,7 +430,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 overflow: hidden !important;
               }
               .delegate-name {
-                font-size: 15pt !important;
+                font-size: ${labelFormat === "75x50" ? "15pt" : "13.5pt"} !important;
                 font-weight: 900 !important;
                 text-transform: uppercase !important;
                 line-height: 1.15 !important;
@@ -353,11 +438,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 word-break: break-word !important;
               }
               .company-name {
-                font-size: 10.5pt !important;
+                font-size: ${labelFormat === "75x50" ? "10.5pt" : "9.5pt"} !important;
                 font-weight: 700 !important;
                 text-transform: uppercase !important;
                 line-height: 1.15 !important;
-                margin-top: 1mm !important;
+                margin-top: 1.2mm !important;
                 word-break: break-word !important;
               }
               .qr-container {
@@ -367,8 +452,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 align-items: center !important;
               }
               .qr-img {
-                width: 28mm !important;
-                height: 28mm !important;
+                width: ${labelFormat === "75x50" ? "28mm" : "38mm"} !important;
+                height: ${labelFormat === "75x50" ? "28mm" : "38mm"} !important;
                 display: block !important;
                 margin: 0 auto !important;
                 image-rendering: pixelated !important;
@@ -376,7 +461,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
             </style>
           </head>
           <body>
-            ${printContent}
+            ${
+              labelFormat === "2up"
+                ? `<div class="thermal-2up-wrapper">${printContent}${printContent}</div>`
+                : printContent
+            }
           </body>
         </html>
       `);
@@ -397,7 +486,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
             }
           }, 1500);
         }
-      }, 300);
+      }, 350);
     } else {
       window.print();
       setIsPrinting(false);
@@ -408,7 +497,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const handleDownloadImg = async () => {
     if (!qrDataUrl) return;
     setIsDownloadingImage(true);
-    await downloadBadgeImage(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, eventTitle);
+    await downloadBadgeImage(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, labelFormat);
     setIsDownloadingImage(false);
   };
 
@@ -416,7 +505,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
   const handleDownloadPdf = async () => {
     if (!qrDataUrl) return;
     setIsDownloadingPdf(true);
-    await downloadBadgePdf(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, eventTitle);
+    await downloadBadgePdf(delegateName, delegateOrg || "Enterprise Delegate", qrDataUrl, labelFormat);
     setIsDownloadingPdf(false);
   };
 
@@ -467,7 +556,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-display">
-                  {isReprint ? "Gate Badge (Reprint)" : "Gate Admission Badge (3\" × 2\")"}
+                  {isReprint ? "Gate Badge (Reprint)" : "Thermal Badge (POSIFLOW / True-Ally)"}
                 </h3>
                 {isReprint ? (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300/40 flex items-center gap-1">
@@ -476,14 +565,12 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                    3" × 2" Thermal
+                    POSIFLOW Ready
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                {isReprint
-                  ? `Badge previously printed ${printCount > 1 ? `${printCount} time(s)` : "once"} • Click Reprint Slip to issue another copy`
-                  : "3 Inch Width × 2 Inch Height • Clean Border, Name, Company & QR Code"}
+                Calibrated for POSIFLOW PSF423 &amp; True-Ally 50×75mm DT Roll
               </p>
             </div>
           </div>
@@ -498,52 +585,204 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Body: Thermal Badge Slip Preview */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1 bg-slate-100/70 dark:bg-slate-950/50 flex flex-col items-center">
-          {/* Slip Container with Thermal Paper Shadow */}
-          <div className="w-[340px] sm:w-[380px] bg-white text-black p-3 rounded-2xl shadow-xl border border-slate-300">
-            {/* The printable slip component - Exact 3" x 2" (Width 3 inch, Height 2 inch) */}
-            <div
-              ref={slipRef}
-              className="thermal-pass-card w-full h-[226px] sm:h-[253px] border-[2.5px] border-black rounded-[6px] p-2 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center"
-              style={{
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-                aspectRatio: "3 / 2",
-              }}
+        {/* Modal Body: Controls, Printer Tips & Thermal Badge Preview */}
+        <div className="p-5 overflow-y-auto space-y-4 flex-1 bg-slate-100/70 dark:bg-slate-950/50 flex flex-col items-center">
+          
+          {/* Label Size / Roll Format Switcher */}
+          <div className="w-full max-w-[400px] flex items-center p-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-xl border border-slate-300/80 dark:border-slate-700 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => handleSelectFormat("50x75")}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
+                labelFormat === "50x75"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
             >
-              {/* Attendee Name & Company Name */}
-              <div className="w-full pt-1 px-1">
-                <div className="delegate-name text-[18px] sm:text-[20px] font-black uppercase leading-tight tracking-tight text-black break-words">
-                  {delegateName}
-                </div>
-                <div className="company-name text-[12px] sm:text-[13.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
-                  {delegateOrg || "Enterprise Delegate"}
-                </div>
-              </div>
+              50 × 75 mm (Vertical)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectFormat("75x50")}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
+                labelFormat === "75x50"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              75 × 50 mm (Horizontal)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectFormat("2up")}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer ${
+                labelFormat === "2up"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              2-UP (Dual)
+            </button>
+          </div>
 
-              {/* Scannable QR Code */}
-              <div className="qr-container my-auto pb-1 flex justify-center items-center">
-                {qrDataUrl ? (
-                  <img
-                    src={qrDataUrl}
-                    alt="Attendee Verification QR Code"
-                    className="qr-img w-[110px] h-[110px] sm:w-[125px] sm:h-[125px] block"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                ) : (
-                  <div className="w-[110px] h-[110px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
-                    Generating QR...
-                  </div>
-                )}
-              </div>
+          {/* POSIFLOW PSF423 Direct Setup Tips Box */}
+          <div className="w-full max-w-[400px] bg-cyan-50/80 dark:bg-cyan-950/30 border border-cyan-300/80 dark:border-cyan-800/60 rounded-xl p-2.5 text-[11px] text-cyan-950 dark:text-cyan-200">
+            <div className="font-black flex items-center gap-1.5 text-cyan-900 dark:text-cyan-300 mb-1">
+              <Printer className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
+              <span>POSIFLOW PSF423 Print Dialog Settings:</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px] pl-1 font-medium">
+              <div>• Margins: <strong>None</strong></div>
+              <div>• Headers/Footers: <strong>OFF</strong></div>
+              <div>• Paper: <strong>{labelFormat === "75x50" ? "75×50 mm" : labelFormat === "2up" ? "104×75 mm" : "50×75 mm"}</strong></div>
+              <div>• Scale: <strong>100% / Fit</strong></div>
             </div>
           </div>
 
-          {/* Quick Notice */}
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2 w-full max-w-[380px]">
+          {/* Slip Container with Thermal Paper Shadow */}
+          <div className="bg-white text-black p-3 rounded-2xl shadow-xl border border-slate-300 flex justify-center items-center">
+            {/* The printable slip component */}
+            {labelFormat === "2up" ? (
+              <div className="flex items-center gap-2">
+                {/* Left Sticker */}
+                <div
+                  ref={slipRef}
+                  className="thermal-pass-card w-[150px] h-[225px] border-[2px] border-black rounded-[4px] p-2 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center"
+                  style={{
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                    aspectRatio: "50 / 75",
+                  }}
+                >
+                  <div className="w-full pt-0.5 px-0.5">
+                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                      {delegateName}
+                    </div>
+                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                      {delegateOrg || "Enterprise Delegate"}
+                    </div>
+                  </div>
+                  <div className="qr-container my-auto pb-0.5 flex justify-center items-center">
+                    {qrDataUrl ? (
+                      <img
+                        src={qrDataUrl}
+                        alt="QR Code"
+                        className="qr-img w-[90px] h-[90px] block"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    ) : (
+                      <div className="w-[90px] h-[90px] flex items-center justify-center bg-slate-100 text-[9px] font-mono">
+                        QR...
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Sticker (Twin copy on 2-UP roll) */}
+                <div
+                  className="thermal-pass-card w-[150px] h-[225px] border-[2px] border-black rounded-[4px] p-2 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center opacity-85"
+                  style={{
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                    aspectRatio: "50 / 75",
+                  }}
+                >
+                  <div className="w-full pt-0.5 px-0.5">
+                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                      {delegateName}
+                    </div>
+                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                      {delegateOrg || "Enterprise Delegate"}
+                    </div>
+                  </div>
+                  <div className="qr-container my-auto pb-0.5 flex justify-center items-center">
+                    {qrDataUrl ? (
+                      <img
+                        src={qrDataUrl}
+                        alt="QR Code"
+                        className="qr-img w-[90px] h-[90px] block"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    ) : (
+                      <div className="w-[90px] h-[90px] flex items-center justify-center bg-slate-100 text-[9px] font-mono">
+                        QR...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : labelFormat === "75x50" ? (
+              <div
+                ref={slipRef}
+                className="thermal-pass-card w-[310px] h-[207px] sm:w-[340px] sm:h-[227px] border-[2.5px] border-black rounded-[6px] p-2.5 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center"
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                  aspectRatio: "75 / 50",
+                }}
+              >
+                <div className="w-full pt-1 px-1">
+                  <div className="delegate-name text-[18px] sm:text-[20px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                    {delegateName}
+                  </div>
+                  <div className="company-name text-[12px] sm:text-[13.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                    {delegateOrg || "Enterprise Delegate"}
+                  </div>
+                </div>
+                <div className="qr-container my-auto pb-1 flex justify-center items-center">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="Attendee Verification QR Code"
+                      className="qr-img w-[110px] h-[110px] sm:w-[125px] sm:h-[125px] block"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                  ) : (
+                    <div className="w-[110px] h-[110px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
+                      Generating QR...
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Default 50x75mm Vertical - Exact True-Ally 50x75 roll size */
+              <div
+                ref={slipRef}
+                className="thermal-pass-card w-[210px] h-[315px] sm:w-[230px] sm:h-[345px] border-[2.5px] border-black rounded-[6px] p-3 text-center bg-white text-black select-none shadow-xs flex flex-col justify-between items-center"
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+                  aspectRatio: "50 / 75",
+                }}
+              >
+                <div className="w-full pt-1 px-1">
+                  <div className="delegate-name text-[16px] sm:text-[18px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                    {delegateName}
+                  </div>
+                  <div className="company-name text-[11px] sm:text-[12.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1.5">
+                    {delegateOrg || "Enterprise Delegate"}
+                  </div>
+                </div>
+
+                <div className="qr-container my-auto pb-1 flex justify-center items-center">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="Attendee Verification QR Code"
+                      className="qr-img w-[135px] h-[135px] sm:w-[150px] sm:h-[150px] block"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                  ) : (
+                    <div className="w-[135px] h-[135px] flex items-center justify-center bg-slate-100 text-[10px] font-mono">
+                      Generating QR...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Auto-Print Toggle */}
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2 w-full max-w-[400px]">
             <span className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-              <span>3" × 2" Badge • Name, Company &amp; QR Code</span>
+              <span>Border • Name • Company • QR</span>
             </span>
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
