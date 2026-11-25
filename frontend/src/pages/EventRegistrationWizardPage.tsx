@@ -1225,6 +1225,7 @@ export default function EventRegistrationWizardPage() {
           amount: paymentBreakdown.finalAmount,
           currency: "INR",
           receipt: `rcpt_${registrationId || Date.now()}`,
+          registrationId,
         }),
       });
       const data = await res.json();
@@ -1317,13 +1318,18 @@ export default function EventRegistrationWizardPage() {
               photo_url: formData.photoUrl,
             }),
           });
-          const verifyData = await verifyRes.json();
-          if (verifyData.success || true) {
+          const verifyData = await verifyRes.json().catch(() => ({}));
+          if (verifyData.success) {
             toast.success("Payment Verified! Confirmation and tax invoice sent to your email.");
             navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+          } else if (verifyData.pending) {
+            toast.info(verifyData.message || "Payment received. Your confirmation will be emailed shortly.");
+            navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+          } else {
+            toast.error(verifyData.message || "We could not verify your payment. Please contact support with your payment ID.");
           }
         } catch (err) {
-          toast.success("Payment Received & Confirmed!");
+          toast.info("Payment received. Your confirmation will be emailed shortly once verified.");
           navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
         } finally {
           setIsProcessingPayment(false);
@@ -1345,12 +1351,9 @@ export default function EventRegistrationWizardPage() {
       });
       rzp1.open();
     } catch (err) {
-      console.warn("Razorpay fallback triggered:", err);
-      setTimeout(() => {
-        setIsProcessingPayment(false);
-        toast.success("Simulated Payment Success!");
-        navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
-      }, 1200);
+      console.warn("Razorpay checkout could not be opened:", err);
+      setIsProcessingPayment(false);
+      toast.error("Could not open the payment window. Please refresh the page and try again.");
     }
   };
 
@@ -1388,12 +1391,16 @@ export default function EventRegistrationWizardPage() {
           attendingPoster: attendingPosterChoice,
         }),
       });
-      const data = await res.json();
-      toast.success("Test Payment Verified! Confirmation ticket and invoice sent to your email.");
-      navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        toast.success("Test Payment Verified! Confirmation ticket and invoice sent to your email.");
+        navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+      } else {
+        // Simulated payments are rejected by the server: use Razorpay test mode for real test transactions
+        toast.error(data.message || "Simulated payments are disabled. Please use the Razorpay checkout.");
+      }
     } catch (err) {
-      toast.success("Test Payment Confirmed!");
-      navigate(`/events/${eventData?.slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(registrationId || `REG-${Date.now()}`)}`);
+      toast.error("Could not verify the test payment.");
     } finally {
       setIsProcessingPayment(false);
     }

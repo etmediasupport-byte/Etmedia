@@ -375,11 +375,14 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Badge - ${delegateName}</title>
+            <!-- Empty title: if the browser's "Headers and footers" option is on, nothing extra is printed -->
+            <title>&nbsp;</title>
             <style>
+              /* No !important inside @page: Chrome drops such declarations, which brought back
+                 default margins plus the date / title / URL header and footer on the slip. */
               @page {
                 size: ${W_MM} ${H_MM};
-                margin: 0mm !important;
+                margin: 0;
               }
               * {
                 box-sizing: border-box !important;
@@ -392,8 +395,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 print-color-adjust: exact !important;
               }
               html, body {
-                width: 100% !important;
-                height: 100% !important;
+                width: ${W_MM} !important;
+                height: ${H_MM} !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: #ffffff !important;
@@ -403,8 +406,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 overflow: hidden !important;
               }
               .thermal-2up-wrapper {
-                width: 100% !important;
-                height: 100% !important;
+                width: 104mm !important;
+                height: 75mm !important;
                 display: flex !important;
                 justify-content: space-between !important;
                 align-items: center !important;
@@ -416,6 +419,7 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 height: 100% !important;
               }
               .thermal-pass-card {
+                /* Card fills the whole label (body is exactly the label size) */
                 width: 100% !important;
                 height: 100% !important;
                 max-width: 100% !important;

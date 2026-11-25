@@ -293,7 +293,7 @@ export default function VerifyPassPage() {
                   if (passData?.id) {
                     fetch("/api/admin/checkin/record-print", {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
                       body: JSON.stringify({ regId: passData.id }),
                     }).catch(() => {});
                   }

@@ -1973,6 +1973,14 @@ export default function AdminDashboardPage() {
       fetchDashboardData();
     };
 
+    // Personal-data events (new registrations, enquiries...) are only sent to authenticated admin sockets
+    const joinAdminRoom = () => {
+      const adminSocketToken = localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token");
+      if (adminSocketToken) socket.emit("admin_auth", adminSocketToken);
+    };
+    joinAdminRoom();
+    socket.on("connect", joinAdminRoom);
+
     socket.on("live_users_update", onLiveUsers);
     socket.on("new_registration", onNewRegistration);
     socket.on("new_contact_enquiry", onNewEnquiry);
@@ -2039,6 +2047,7 @@ export default function AdminDashboardPage() {
     socket.on("event_registration_visibility_changed", onRegVisibility);
 
     return () => {
+      socket.off("connect", joinAdminRoom);
       socket.off("live_users_update", onLiveUsers);
       socket.off("new_registration", onNewRegistration);
       socket.off("new_contact_enquiry", onNewEnquiry);

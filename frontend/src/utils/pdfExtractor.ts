@@ -27,7 +27,13 @@ export async function extractPdfPagesToDataUrls(
       pdfData = { url: source };
     }
 
-    const loadingTask = pdfjsLib.getDocument(pdfData);
+    // isEvalSupported: false is the official mitigation for GHSA-wgrm-67xf-hhpq
+    // (a malicious PDF could otherwise run JavaScript through font compilation).
+    const loadingTask = pdfjsLib.getDocument(
+      pdfData instanceof ArrayBuffer
+        ? { data: pdfData, isEvalSupported: false }
+        : { ...pdfData, isEvalSupported: false }
+    );
     const pdfDoc = await loadingTask.promise;
     const totalPages = pdfDoc.numPages;
     const pageDataUrls: string[] = [];

@@ -14,7 +14,9 @@
     "ip-address": "^10.7.4",
     "body-parser": "^1.20.9",
     "qs": "^6.16.1",
-    "follow-redirects": "^1.16.1"
+    "follow-redirects": "^1.16.3",
+    "axios": "^1.21.1",
+    "engine.io": "^6.6.13"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
@@ -31,7 +33,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "express-rate-limit": "^8.7.0",
+    "express-rate-limit": "^8.7.5",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.4",

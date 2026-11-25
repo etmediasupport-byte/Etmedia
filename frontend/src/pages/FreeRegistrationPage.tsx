@@ -881,6 +881,7 @@ export default function FreeRegistrationPage() {
           amount: totalAmount,
           currency: "INR",
           receipt: `rcpt_${activeRegId}`,
+          registrationId: activeRegId,
         }),
       });
 
@@ -953,13 +954,18 @@ export default function FreeRegistrationPage() {
                 photo_url: formData.photoUrl,
               }),
             });
-            const verifyData = await verifyRes.json();
-            if (verifyData.success || true) {
+            const verifyData = await verifyRes.json().catch(() => ({}));
+            if (verifyData.success) {
               toast.success("🎉 Payment Verified! Your Registration Pass & Tax Invoice have been emailed.");
               navigate(`/events/${eventData?.slug || slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(activeRegId)}`);
+            } else if (verifyData.pending) {
+              toast.info(verifyData.message || "Payment received. Your confirmation will be emailed shortly.");
+              navigate(`/events/${eventData?.slug || slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(activeRegId)}`);
+            } else {
+              toast.error(verifyData.message || "We could not verify your payment. Please contact support with your payment ID.");
             }
           } catch (err) {
-            toast.success("Payment Received & Confirmed!");
+            toast.info("Payment received. Your confirmation will be emailed shortly once verified.");
             navigate(`/events/${eventData?.slug || slug || "hr-recall-2k26"}/registration-success?regId=${encodeURIComponent(activeRegId)}`);
           } finally {
             setIsProcessingPayment(false);

@@ -20,20 +20,41 @@ import { Resvg } from "@resvg/resvg-js";
 
 dotenv.config();
 
-// Razorpay SDK Credentials & Instance Initialization
-const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || "rzp_live_Tll7hRUGZhgorS").trim();
-const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || "FE503YbnPxv1PuTIiepcD8o0").trim();
+// SECURITY: All secrets are read ONLY from environment variables (.env / hosting panel).
+// Never hardcode credentials in source code — this repository is public.
+function warnMissingEnv(name: string, impact: string) {
+  console.error(`[Config] ⚠️ Missing required environment variable ${name}. ${impact}`);
+}
 
-const razorpayClient = new Razorpay({
-  key_id: razorpayKeyId,
-  key_secret: razorpayKeySecret,
-});
+function unescapeHtmlText(value: any): any {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+// Razorpay SDK Credentials & Instance Initialization
+const razorpayKeyId = (process.env.RAZORPAY_KEY_ID || "").trim();
+const razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+if (!razorpayKeyId || !razorpayKeySecret) {
+  warnMissingEnv("RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET", "Online payments are disabled until it is set.");
+}
+
+const razorpayClient: any = razorpayKeyId && razorpayKeySecret
+  ? new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret })
+  : null;
 
 // Hostinger SMTP Mailer Credentials & Nodemailer Setup
 const smtpHost = process.env.SMTP_HOST || "smtp.hostinger.com";
 const smtpPort = Number(process.env.SMTP_PORT) || 465;
 const smtpUser = (process.env.SMTP_USER || "registration@executivetalksmedia.in").trim();
-const smtpPass = (process.env.SMTP_PASS || "Revansh@201709").trim();
+const smtpPass = (process.env.SMTP_PASS || "").trim();
+if (!smtpPass) {
+  warnMissingEnv("SMTP_PASS", "Outgoing emails will fail until it is set.");
+}
 const smtpFrom = process.env.SMTP_FROM || `"Executive Talks Media Business Intelligence" <${smtpUser}>`;
 const replyToEmail = (process.env.REPLY_TO || "registration@executivetalksmedia.in").trim();
 const adminEmail = (process.env.ADMIN_EMAIL || "registration@executivetalksmedia.in, srikanth@executivetalksmedia.in").trim();
@@ -362,7 +383,8 @@ export async function getDynamicEmailSubject(
   fallbackSubject?: string
 ): Promise<string> {
   const content = await getDynamicEmailContent(configId, variables, { subject: fallbackSubject });
-  return content.subject;
+  // Subjects are plain text: undo HTML escaping applied to user-supplied values
+  return unescapeHtmlText(content.subject);
 }
 
 export async function getEventTerms(eventIdOrSlug?: string): Promise<{
@@ -439,6 +461,7 @@ export async function getEventTerms(eventIdOrSlug?: string): Promise<{
 }
 
 async function sendRegistrationConfirmationEmail(data: RegistrationEmailPayload) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const regId = data.registrationId || `REG-${Date.now()}`;
   const effectiveFirstName = data.firstName || "Delegate";
   const effectiveFullName = data.fullName || `${effectiveFirstName} ${data.lastName || ""}`.trim();
@@ -960,6 +983,7 @@ async function sendFreeApplicationNotificationEmails(data: {
   orgAwardFee?: number;
   attendingPoster?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const regId = data.registrationId;
   const userEmail = data.email.trim();
   const eventName = data.eventTitle;
@@ -1199,6 +1223,7 @@ async function sendPartnerConfirmationEmail(data: {
   email: string;
   companyName: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const dynamicSubject = await getDynamicEmailSubject("partner_inquiry_ack", {
     company: data.companyName,
     delegate_name: data.contactPerson,
@@ -1269,6 +1294,7 @@ async function sendPartnerAdminNotificationEmail(data: {
   partnership_type: string;
   message?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const dynamicSubject = await getDynamicEmailSubject("admin_partner_alert", {
     company: data.company_name,
     delegate_name: data.contact_person,
@@ -1339,6 +1365,7 @@ async function sendContactAdminNotificationEmail(data: {
   message: string;
   submittedAt?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const dynamicSubject = await getDynamicEmailSubject("admin_contact_enquiry", {
     delegate_name: data.name,
     category: data.enquiryType || "General",
@@ -1399,6 +1426,7 @@ async function sendContactUserConfirmationEmail(data: {
   message: string;
   submittedAt?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const dynamicSubject = `Thank You for Contacting Executive Talks Media Business Intelligence [Ref: ${data.id}]`;
 
   const mailOptions = {
@@ -1481,10 +1509,11 @@ async function sendJobApplicationAdminNotificationEmail(data: {
   portfolio_url?: string;
   created_at?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
-    subject: `💼 New Candidate Job Application: ${data.name} for ${data.job_title}`,
+    subject: unescapeHtmlText(`💼 New Candidate Job Application: ${data.name} for ${data.job_title}`),
     text: `New Candidate Job Application Received:
     
 - Application ID: ${data.id}
@@ -1545,10 +1574,11 @@ async function sendMembershipAdminNotificationEmail(data: {
   notes?: string;
   created_at?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
-    subject: `👑 New Executive Membership Application: ${data.full_name} (${data.company || "C-Suite"})`,
+    subject: unescapeHtmlText(`👑 New Executive Membership Application: ${data.full_name} (${data.company || "C-Suite"})`),
     text: `New Executive Membership Application Received:
     
 - Application Ref ID: ${data.id}
@@ -1607,6 +1637,7 @@ async function sendNewsletterAdminNotificationEmail(data: {
   email: string;
   source?: string;
 }) {
+  data = escapeHtmlFields(data as any) as any; // user-supplied text is placed into HTML
   const mailOptions = {
     from: `"Executive Talks Media Business Intelligence" <${smtpUser.trim()}>`,
     to: adminEmail,
@@ -1639,12 +1670,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// Enable Trust Proxy for Hostinger / Nginx / Cloudflare reverse proxy support
-app.set("trust proxy", true);
+// Trust only the configured number of reverse-proxy hops (Hostinger / Nginx).
+// `true` would trust a client-supplied X-Forwarded-For header, letting bots
+// spoof their IP and bypass rate limits. Override with TRUST_PROXY if needed.
+const trustProxySetting = (() => {
+  const raw = (process.env.TRUST_PROXY || "1").trim();
+  if (/^\d+$/.test(raw)) return Number(raw);
+  if (raw === "false") return false;
+  return raw; // e.g. "loopback, linklocal, uniquelocal" or a specific IP/CIDR list
+})();
+app.set("trust proxy", trustProxySetting);
 
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || "et_media_super_secret_jwt_key_2026";
+const JWT_SECRET = (() => {
+  const fromEnv = (process.env.JWT_SECRET || "").trim();
+  if (fromEnv.length >= 16) return fromEnv;
+  warnMissingEnv("JWT_SECRET (min 16 chars)", "Using a random per-process secret: admins must log in again after every restart.");
+  return crypto.randomBytes(48).toString("hex");
+})();
 
 // Enable High-Performance Gzip/Deflate Compression (Instant loading on 2G/3G/4G/5G)
 app.use(
@@ -1690,31 +1734,89 @@ function invalidateFastCache(prefix?: string): void {
   }
 }
 
-// Enable CORS & Body Parser
+// --- CORS: only our own domains (plus any extra listed in CORS_ORIGINS) ---
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://www.executivetalksmedia.in",
+  "https://executivetalksmedia.in",
+  "http://localhost:5173",
+  "http://localhost:5000",
+  "http://localhost:8080",
+  "http://127.0.0.1:5173",
+];
+const allowedOrigins = new Set(
+  [
+    ...DEFAULT_ALLOWED_ORIGINS,
+    ...(process.env.CORS_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean),
+  ].map((o) => o.replace(/\/$/, "").toLowerCase())
+);
+
+function isOriginAllowed(origin: string | undefined, host?: string): boolean {
+  if (!origin) return true; // same-origin navigations, server-to-server, curl
+  const normalized = origin.replace(/\/$/, "").toLowerCase();
+  if (allowedOrigins.has(normalized)) return true;
+  // Always allow the site's own origin, whatever domain it is served on
+  if (host) {
+    try {
+      return new URL(normalized).host === host.toLowerCase();
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  cors((req, callback) => {
+    const origin = req.headers.origin;
+    callback(null, {
+      origin: isOriginAllowed(origin, req.headers.host) ? origin || false : false,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    });
   })
 );
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// --- Body size limits: large uploads only for authenticated admin tools ---
+const LARGE_BODY_PATHS = ["/api/admin/", "/api/promotion-templates"];
+const jsonLarge = express.json({ limit: "50mb" });
+const jsonPublic = express.json({ limit: "15mb" }); // public forms may carry a photo / resume
+const urlencodedPublic = express.urlencoded({ limit: "2mb", extended: true });
+const urlencodedLarge = express.urlencoded({ limit: "50mb", extended: true });
+app.use((req, res, next) => {
+  const isLarge = LARGE_BODY_PATHS.some((p) => req.path.startsWith(p)) && req.path !== "/api/admin/login";
+  (isLarge ? jsonLarge : jsonPublic)(req, res, (err?: any) => {
+    if (err) return next(err);
+    (isLarge ? urlencodedLarge : urlencodedPublic)(req, res, next);
+  });
+});
 
 // Security Middleware: Helmet HTTP Security Headers
+// CSP keeps script/img/frame sources open (YouTube, Instagram, Razorpay, Google, Unsplash)
+// but blocks plugins, <base> hijacking, clickjacking and mixed content.
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disable CSP to allow external image/embed sources (Unsplash, YouTube, Google Fonts)
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        frameAncestors: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
 // Rate Limiting Middlewares
+const FORM_LIMIT_PER_HOUR = Number(process.env.FORM_RATE_LIMIT) || 60;
+
 const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Increased limit for responsive client interactions
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." },
 });
 
@@ -1723,12 +1825,338 @@ const authRateLimiter = rateLimit({
   max: 20, // Limit each IP to 20 auth attempts per 15 min
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
   message: { success: false, message: "Too many authentication attempts. Please try again after 15 minutes." },
 });
 
+// Per-account login limiter: stops distributed brute force against one admin email
+const authEmailRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => `login:${String(req.body?.email || "").toLowerCase().trim()}`,
+  skip: (req: any) => !req.body?.email,
+  validate: false,
+  message: { success: false, message: "Too many login attempts for this account. Please try again after 15 minutes." },
+});
+
+// Public form submissions (contact, registration, newsletter, careers...) — anti-bot / anti-spam
+const formSubmitRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: FORM_LIMIT_PER_HOUR,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many submissions from your network. Please try again later." },
+});
+
+// Auto-save drafts fire on every wizard step, so they get a higher allowance
+const formDraftRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: FORM_LIMIT_PER_HOUR * 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests from your network. Please try again later." },
+});
+
+// Registration lookups by ID — prevents bots enumerating registration IDs
+const registrationLookupRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many lookups. Please try again after 15 minutes." },
+});
+
 app.use("/api/", apiRateLimiter);
-app.use("/api/admin/login", authRateLimiter);
+app.use("/api/admin/login", authRateLimiter, authEmailRateLimiter);
+app.use(
+  [
+    "/api/contact",
+    "/api/newsletter/subscribe",
+    "/api/memberships",
+    "/api/jobs/apply",
+    "/api/upload-resume",
+    "/api/partners/submit",
+    "/api/events/register",
+    "/api/delegate-registrations",
+    "/api/registrations/start",
+    "/api/registrations/free-start",
+    "/api/registrations/complete-free",
+    "/api/payments/create-order",
+  ],
+  (req, res, next) => (req.method === "POST" ? formSubmitRateLimiter(req, res, next) : next())
+);
+app.use(["/api/registrations/free-draft", "/api/partners/draft"], formDraftRateLimiter);
+app.use(["/api/registrations/", "/api/certificate/", "/api/verify-pass/"], (req, res, next) =>
+  req.method === "GET" ? registrationLookupRateLimiter(req, res, next) : next()
+);
+
+// Hide internal error details from clients on server errors (issue: err.message leaks)
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  (res as any).json = (body: any) => {
+    // Admin routes are behind authenticateAdmin, so admins still see real error details
+    const isAdminRoute = req.path.startsWith("/api/admin/") && req.path !== "/api/admin/login";
+    if (res.statusCode >= 500 && !isAdminRoute && body && typeof body === "object" && process.env.NODE_ENV !== "development") {
+      if (typeof body.message === "string") {
+        console.error(`[API ${res.statusCode}] ${req.method} ${req.path}: ${body.message}`);
+        body = { ...body, message: "Something went wrong on our side. Please try again shortly." };
+      }
+      if ("error" in body) {
+        body = { ...body };
+        delete body.error;
+      }
+    }
+    return originalJson(body);
+  };
+  next();
+});
+
+// --- Security helpers ---
+function escapeHtml(value: any): any {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Escapes every top-level string field (user-supplied data placed into HTML emails)
+function escapeHtmlFields<T extends Record<string, any>>(obj: T): T {
+  if (!obj || typeof obj !== "object") return obj;
+  const out: any = Array.isArray(obj) ? [...obj] : { ...obj };
+  for (const key of Object.keys(out)) {
+    const v = out[key];
+    // data: URIs (QR codes, photos) are not user-visible text and must stay intact
+    // email addresses are validated separately and must stay deliverable
+    if (typeof v === "string" && !v.startsWith("data:") && !/email/i.test(key)) out[key] = escapeHtml(v);
+  }
+  return out;
+}
+
+// Google reCAPTCHA. A token that is sent is always verified (fail-closed).
+// A missing token is rejected only when RECAPTCHA_ENFORCE=true — enable that once the
+// frontend renders the real Google widget (the current checkbox does not produce a token).
+const recaptchaSecretKey = (process.env.RECAPTCHA_SECRET_KEY || "").trim();
+const recaptchaEnforced = process.env.RECAPTCHA_ENFORCE === "true" && !!recaptchaSecretKey;
+async function verifyRecaptcha(token: any, remoteIp?: string): Promise<{ ok: boolean; message: string }> {
+  const hasToken = typeof token === "string" && token.trim().length > 0;
+  if (!hasToken) {
+    return recaptchaEnforced
+      ? { ok: false, message: "Please complete the reCAPTCHA verification." }
+      : { ok: true, message: "" };
+  }
+  if (!recaptchaSecretKey) return { ok: true, message: "" };
+  try {
+    const body = new URLSearchParams({ secret: recaptchaSecretKey, response: token });
+    if (remoteIp) body.set("remoteip", remoteIp);
+    const verifyRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    const data: any = await verifyRes.json();
+    if (data && data.success) return { ok: true, message: "" };
+    console.warn("[reCAPTCHA] Verification failed:", data?.["error-codes"]);
+    return { ok: false, message: "reCAPTCHA verification failed. Please try again." };
+  } catch (err) {
+    console.error("[reCAPTCHA] Server verification error:", err);
+    return { ok: false, message: "Could not verify reCAPTCHA right now. Please try again." };
+  }
+}
+
+// Restricts an uploaded/served file name to a single safe path segment
+function safeFileName(name: any): string | null {
+  if (typeof name !== "string" || !name) return null;
+  const base = path.basename(name.replace(/\\/g, "/"));
+  if (!base || base === "." || base === ".." || base.startsWith(".")) return null;
+  if (!/^[A-Za-z0-9._\-]+$/.test(base)) return null;
+  return base;
+}
+
+function isPaidOrConfirmed(reg: any): boolean {
+  if (!reg) return false;
+  const ps = String(reg.payment_status || "").toLowerCase();
+  const st = String(reg.status || "").toLowerCase();
+  return ps === "paid" || ps.startsWith("approved") || st === "confirmed" || st === "checked in" || st === "checked-in";
+}
+
+async function getRegistrationById(id: any): Promise<any | null> {
+  if (!pool || !id) return null;
+  const [rows]: any = await pool.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [String(id)]);
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+// Fields never returned to public (unauthenticated) callers
+const PRIVATE_REGISTRATION_FIELDS = ["payment_signature", "razorpay_signature", "admin_notes", "internal_notes"];
+function toPublicRegistration(reg: any): any {
+  if (!reg) return reg;
+  const copy = { ...reg };
+  for (const f of PRIVATE_REGISTRATION_FIELDS) delete copy[f];
+  return copy;
+}
+
+// --- Server-side pricing guard (prevents tampered / ₹1 payments and fake free passes) ---
+// Mirrors the coupon rules used by the registration wizard (/api/registrations/calculate-payment)
+// and the admin-defined coupons stored in event_payment_settings.coupons.
+const MAX_PERCENT_DISCOUNT = 0.2;
+
+async function getEventPaymentSettings(eventId: any): Promise<any | null> {
+  if (!pool || !eventId) return null;
+  const id = String(eventId);
+  const cleanId = id.replace(/-\d+$/, "");
+  try {
+    const [rows]: any = await pool.query(
+      "SELECT * FROM event_payment_settings WHERE event_id = ? OR event_slug = ? OR event_id = ? OR event_slug = ? LIMIT 1",
+      [id, id, cleanId, cleanId]
+    );
+    return rows && rows.length > 0 ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+function parsePricingPlans(raw: any): any[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function lowestPlanBase(plan: any): number {
+  const regular = Number(plan?.price) || 0;
+  const early = Number(plan?.early_bird_price) || 0;
+  return early > 0 ? Math.min(regular || early, early) : regular;
+}
+
+function findPlan(plans: any[], passName: any): any | null {
+  const name = String(passName || "").trim().toLowerCase();
+  if (!name) return null;
+  return (
+    plans.find((p) => String(p?.name || "").trim().toLowerCase() === name) ||
+    plans.find((p) => String(p?.id || "").trim().toLowerCase() === name) ||
+    null
+  );
+}
+
+/** Largest discount (INR) the given coupon code can legitimately give on `base`. */
+function couponDiscountFor(code: any, base: number, settings: any): number {
+  const c = String(code || "").trim().toUpperCase();
+  if (!c || c === "FREE PASS") return 0;
+  const options: number[] = [];
+  if (c === "EARLYBIRD10" || c === "EARLYBIRD") options.push(base * 0.1);
+  else if (c === "EXECUTIVE20" || c === "VIP20") options.push(base * 0.2);
+  else if (c === "ETMEDIA500" || c === "EXECUTIVETALKS500") options.push(500);
+  else if (c === "WELCOME1000") options.push(1000);
+  else options.push(Math.min(500, base * 0.05)); // wizard gives 5% (max ₹500) for other codes
+
+  let coupons: any[] = [];
+  try {
+    coupons = Array.isArray(settings?.coupons) ? settings.coupons : JSON.parse(settings?.coupons || "[]");
+  } catch {
+    coupons = [];
+  }
+  const match = Array.isArray(coupons)
+    ? coupons.find((x) => String(x?.code || "").trim().toUpperCase() === c && x?.status !== "Inactive")
+    : null;
+  if (match) {
+    const v = Number(match.value) || 0;
+    options.push(match.type === "percentage" ? (base * v) / 100 : v);
+  }
+  return Math.max(0, ...options);
+}
+
+/**
+ * Returns the lowest amount (INR) a legitimate buyer could pay for this pass with this coupon.
+ * Lenient on purpose (ignores GST and nomination fees) so genuine customers are never blocked.
+ * Returns null when pricing is not configured (nothing to compare against).
+ */
+async function getMinimumLegitAmount(eventId: any, passName: any, couponApplied?: any): Promise<number | null> {
+  const settings = await getEventPaymentSettings(eventId);
+  if (!settings) return null;
+  const plans = parsePricingPlans(settings.pricing_plans);
+  const plan = findPlan(plans, passName);
+  if (plan) {
+    const base = lowestPlanBase(plan);
+    return Math.max(0, base - couponDiscountFor(couponApplied, base, settings));
+  }
+  // Pass not in the plan list (e.g. complimentary pass + paid nomination): use the cheapest configured fee
+  const candidates = [
+    ...plans.map(lowestPlanBase),
+    Number(settings.award_nomination_fee) || 0,
+    Number(settings.free_award_nomination_fee) || 0,
+    Number(settings.team_award_nomination_fee) || 0,
+    Number(settings.free_team_award_nomination_fee) || 0,
+    Number(settings.org_award_nomination_fee) || 0,
+    Number(settings.free_org_award_nomination_fee) || 0,
+  ].filter((n) => n > 0);
+  if (candidates.length === 0) return 0;
+  const cheapest = Math.min(...candidates);
+  return Math.max(
+    0,
+    Math.min(cheapest * (1 - MAX_PERCENT_DISCOUNT), cheapest - couponDiscountFor(couponApplied, cheapest, settings))
+  );
+}
+
+/** A registration may be confirmed for ₹0 only if the event genuinely allows it. */
+async function isFreeRegistrationAllowed(eventId: any, passName: any, couponApplied?: any): Promise<boolean> {
+  const settings = await getEventPaymentSettings(eventId);
+  if (!settings) return true; // no pricing configured for this event → it is a free event
+  const flag = settings.free_registration_allowed;
+  if (flag === 1 || flag === "1" || flag === true) return true;
+  const plans = parsePricingPlans(settings.pricing_plans);
+  if (plans.length === 0) return true;
+  // Same fallback as the registration modal: unknown pass → featured / first plan
+  const plan = findPlan(plans, passName) || plans.find((p) => p?.is_featured) || plans[0];
+  const base = lowestPlanBase(plan);
+  if (base <= 0) return true;
+  return base - couponDiscountFor(couponApplied, base, settings) <= 0;
+}
+
+/**
+ * Confirms with Razorpay that a payment is real and captured/authorized, belongs to the given
+ * order, and has not already been used for another registration. Returns the actual amount paid (INR).
+ */
+async function verifyRazorpayPaymentServerSide(
+  paymentId: any,
+  orderId: any,
+  registrationId: any
+): Promise<{ ok: boolean; amount: number; reason?: string; orderId?: string }> {
+  if (!razorpayClient) return { ok: false, amount: 0, reason: "Payment gateway is not configured." };
+  if (typeof paymentId !== "string" || !paymentId.startsWith("pay_")) {
+    return { ok: false, amount: 0, reason: "Invalid payment reference." };
+  }
+  let payment: any;
+  try {
+    payment = await razorpayClient.payments.fetch(paymentId);
+  } catch (e: any) {
+    return { ok: false, amount: 0, reason: "Could not confirm payment with Razorpay." };
+  }
+  if (!payment || (payment.status !== "captured" && payment.status !== "authorized")) {
+    return { ok: false, amount: 0, reason: "Payment is not completed." };
+  }
+  if (orderId && payment.order_id && String(payment.order_id) !== String(orderId)) {
+    return { ok: false, amount: 0, reason: "Payment does not belong to this order." };
+  }
+  if (pool) {
+    const [used]: any = await pool.query(
+      "SELECT id FROM registrations WHERE payment_id = ? AND id <> ? LIMIT 1",
+      [paymentId, String(registrationId || "")]
+    );
+    if (used && used.length > 0) {
+      return { ok: false, amount: 0, reason: "This payment has already been used for another registration." };
+    }
+  }
+  return { ok: true, amount: (Number(payment.amount) || 0) / 100, orderId: payment.order_id };
+}
 
 // Input Sanitization Helper
 function sanitizeText(input: any): string {
@@ -1750,7 +2178,8 @@ async function saveBase64MediaToDb(dataStr: string, originalFilename?: string): 
 
     const id = `med_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const uniqueFilename = `${id}.${ext}`;
-    const cleanFilename = originalFilename ? sanitizeText(originalFilename) : uniqueFilename;
+    // Only a single safe path segment may ever be written to disk (blocks ../ traversal)
+    const cleanFilename = (originalFilename && safeFileName(sanitizeText(originalFilename))) || uniqueFilename;
     const buffer = Buffer.from(base64Data, "base64");
 
     // 1. Permanently store into MySQL database
@@ -1956,7 +2385,11 @@ const assetsPath = path.join(publicPath, "assets");
 
 // Permanent Database Media Serving Endpoint
 app.get("/api/media/:id", async (req, res) => {
-  const { id } = req.params;
+  const id = safeFileName(req.params.id);
+  if (!id) {
+    return res.status(404).json({ success: false, message: "Media not found." });
+  }
+  setUploadSecurityHeaders(res, id);
   try {
     if (pool) {
       await ensureMediaUploadsTable();
@@ -1972,6 +2405,7 @@ app.get("/api/media/:id", async (req, res) => {
         }
         const imgBuffer = Buffer.from(base64Data, "base64");
         res.setHeader("Content-Type", item.mime_type || "image/png");
+        setUploadSecurityHeaders(res, item.mime_type);
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         res.setHeader("ETag", `"${id}"`);
         return res.send(imgBuffer);
@@ -1998,11 +2432,25 @@ app.get("/api/media/:id", async (req, res) => {
 });
 
 // Robust Uploads Handler with Database Lookup
+// Uploaded files are user/admin supplied: serve them inert (no scripts, even inside SVG)
+// Only script-capable formats (SVG / HTML / XML) get the strict sandbox, so PDFs and images keep working.
+const SCRIPTABLE_UPLOAD_RE = /(svg|html?|xml|xhtml)/i;
+function setUploadSecurityHeaders(res: any, hint?: string) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (hint && SCRIPTABLE_UPLOAD_RE.test(hint)) {
+    res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+  }
+}
+
 const serveUploadsHandler = async (req: any, res: any, next: any) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  const filename = req.params.filename || req.params[0];
-  if (!filename) return next();
+  const rawName = req.params.filename || req.params[0];
+  if (!rawName) return next();
+  // Block path traversal such as ..%2F..%2F.env
+  const filename = safeFileName(rawName);
+  if (!filename) return res.status(404).send("File not found");
+  setUploadSecurityHeaders(res, filename);
 
   // 1. Try disk
   const possiblePaths = [
@@ -2033,6 +2481,7 @@ const serveUploadsHandler = async (req: any, res: any, next: any) => {
         }
         const imgBuffer = Buffer.from(base64Data, "base64");
         res.setHeader("Content-Type", item.mime_type || "image/png");
+        setUploadSecurityHeaders(res, item.mime_type);
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         return res.send(imgBuffer);
       }
@@ -2045,6 +2494,7 @@ const serveUploadsHandler = async (req: any, res: any, next: any) => {
 app.get("/api/uploads/:filename", serveUploadsHandler);
 app.get("/uploads/:filename", serveUploadsHandler);
 
+app.use("/uploads", (req, res, next) => { setUploadSecurityHeaders(res, req.path); next(); });
 app.use("/uploads", express.static(uploadsPath));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "public", "uploads")));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
@@ -2101,10 +2551,66 @@ app.get([
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
     methods: ["GET", "POST"],
   },
+  allowRequest: (req, callback) => callback(null, isOriginAllowed(req.headers.origin, req.headers.host)),
 });
+
+// Sockets that proved admin identity join this room; personal data is only emitted here.
+const ADMIN_ROOM = "admins";
+
+// --- Admin session helpers (token revocation + live account check) ---
+const revokedTokens = new Map<string, number>(); // sha256(token) -> expiry (ms)
+function tokenFingerprint(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+function revokeToken(token: string) {
+  const decoded: any = jwt.decode(token);
+  const exp = decoded?.exp ? decoded.exp * 1000 : Date.now() + 12 * 60 * 60 * 1000;
+  revokedTokens.set(tokenFingerprint(token), exp);
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, exp] of revokedTokens) if (exp < now) revokedTokens.delete(k);
+}, 30 * 60 * 1000).unref();
+
+const adminAccountCache = new Map<string, { at: number; admin: any | null }>();
+async function loadAdminAccount(id: any): Promise<any | null | undefined> {
+  if (!pool || id === undefined || id === null) return undefined; // unknown (DB unavailable)
+  const key = String(id);
+  const cached = adminAccountCache.get(key);
+  if (cached && Date.now() - cached.at < 60 * 1000) return cached.admin;
+  try {
+    const [rows]: any = await pool.query("SELECT id, name, email, role FROM admins WHERE id = ? LIMIT 1", [id]);
+    const admin = rows && rows.length > 0 ? rows[0] : null;
+    adminAccountCache.set(key, { at: Date.now(), admin });
+    return admin;
+  } catch {
+    return undefined;
+  }
+}
+function invalidateAdminAccountCache() {
+  adminAccountCache.clear();
+}
+
+/** Verifies a JWT, rejects revoked tokens and deleted accounts, and refreshes the role from the DB. */
+async function verifyAdminToken(token: string): Promise<any | null> {
+  if (!token || revokedTokens.has(tokenFingerprint(token))) return null;
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+  const account = await loadAdminAccount(decoded.id);
+  if (account === null) return null; // account was deleted
+  if (account) decoded = { ...decoded, role: account.role, email: account.email, name: account.name };
+  return decoded;
+}
+
+const SCANNER_ROLES = new Set(["scanner", "subadmin", "gate_staff"]);
+const FULL_ADMIN_ROLES = ["admin", "super_admin"];
 
 let liveActiveUsers = 0;
 
@@ -2121,7 +2627,19 @@ io.on("connection", (socket) => {
     io.emit("live_users_update", { activeUsers: liveActiveUsers });
   });
 
+  // Admin dashboard proves identity with its JWT to receive personal-data events
+  const joinAdminRoom = async (token: any) => {
+    if (typeof token !== "string" || !token) return;
+    const admin = await verifyAdminToken(token);
+    if (admin) socket.join(ADMIN_ROOM);
+  };
+  joinAdminRoom((socket.handshake.auth as any)?.token);
+  socket.on("admin_auth", (token: any) => {
+    joinAdminRoom(token);
+  });
+
   socket.on("get_initial_data", async () => {
+    if (!socket.rooms.has(ADMIN_ROOM)) return; // registrations are private
     try {
       let totalRegistrations = 0;
       let recentRegistrations: any[] = [];
@@ -2146,20 +2664,33 @@ io.on("connection", (socket) => {
 });
 
 // Middleware: Authenticate Admin Token
-const authenticateAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const authenticateAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "Unauthorized access. No token provided." });
   }
 
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    (req as any).admin = decoded;
-    next();
-  } catch (err) {
+  const token = authHeader.split(" ")[1] || "";
+  const decoded = await verifyAdminToken(token);
+  if (!decoded) {
     return res.status(401).json({ success: false, message: "Invalid or expired session token." });
   }
+  (req as any).admin = decoded;
+  (req as any).adminToken = token;
+
+  // Gate scanner staff: read-only access, plus check-in actions and their own session
+  if (SCANNER_ROLES.has(String(decoded.role))) {
+    const p = req.path;
+    const scannerWriteAllowed =
+      p.startsWith("/api/admin/checkin/") || p === "/api/admin/logout" || p === "/api/admin/refresh";
+    if (req.method !== "GET" && !scannerWriteAllowed) {
+      return res.status(403).json({ success: false, message: "Forbidden: Gate scanner accounts cannot modify data." });
+    }
+    if (p.startsWith("/api/admin/users")) {
+      return res.status(403).json({ success: false, message: "Forbidden: Insufficient administrative privileges." });
+    }
+  }
+  next();
 };
 
 // Middleware: Require Specific Admin Role
@@ -2462,10 +2993,9 @@ app.get("/api/verify-pass/:regId", async (req, res) => {
     });
   }
 
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, JWT_SECRET);
-  } catch (jwtErr) {
+  const token = authHeader.split(" ")[1] || "";
+  // Same checks as authenticateAdmin: signature, expiry, logout revocation, deleted accounts
+  if (!(await verifyAdminToken(token))) {
     return res.status(403).json({
       success: false,
       restricted: true,
@@ -3053,16 +3583,21 @@ app.get("/api/events/:slug", async (req, res) => {
 // 2c. Create Razorpay Order Endpoint
 app.post("/api/payments/create-order", async (req, res) => {
   try {
-    const { amount, currency = "INR", receipt } = req.body;
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+    const { amount, currency = "INR", receipt, registrationId } = req.body;
+    if (!amount || isNaN(Number(amount)) || Number(amount) < 1 || Number(amount) > 1000000) {
       return res.status(400).json({ success: false, message: "Invalid payment amount." });
     }
+    if (!razorpayClient) {
+      return res.status(503).json({ success: false, message: "Online payments are temporarily unavailable. Please try again later." });
+    }
 
+    const regRef = String(registrationId || (typeof receipt === "string" ? receipt.replace(/^rcpt_/, "") : "") || "").slice(0, 60);
     const options = {
       amount: Math.round(Number(amount) * 100), // Amount in paise
-      currency,
-      receipt: receipt || `rcpt_${Date.now()}`,
+      currency: currency === "INR" ? "INR" : "INR",
+      receipt: String(receipt || `rcpt_${Date.now()}`).slice(0, 40),
       payment_capture: 1,
+      notes: regRef ? { registration_id: regRef } : undefined,
     };
 
     const order = await razorpayClient.orders.create(options);
@@ -3099,6 +3634,27 @@ async function handlePaymentVerification(req: any, res: any) {
     // Handle Free / ₹0 passes cleanly
     if (numAmount <= 0) {
       if (pool && registrationId) {
+        const existingReg = await getRegistrationById(registrationId);
+        if (!existingReg) {
+          return res.status(404).json({ success: false, message: "Registration not found." });
+        }
+        if (isPaidOrConfirmed(existingReg)) {
+          return res.json({
+            success: true,
+            message: "This registration is already confirmed.",
+            paymentId: existingReg.payment_id,
+            registration: toPublicRegistration(existingReg),
+          });
+        }
+        const freeAllowed = await isFreeRegistrationAllowed(
+          existingReg.event_id,
+          passName || existingReg.pass_name,
+          couponApplied || existingReg.coupon_applied
+        );
+        if (!freeAllowed) {
+          console.warn(`[Security] Blocked ₹0 confirmation for paid pass on registration ${registrationId}`);
+          return res.status(400).json({ success: false, message: "This pass requires payment. Please complete the payment to confirm your registration." });
+        }
         await pool.query(
           `UPDATE registrations SET 
             payment_status = 'Approved (Free Pass)',
@@ -3158,8 +3714,8 @@ async function handlePaymentVerification(req: any, res: any) {
           });
 
           if (io) {
-            io.emit("new_registration", {
-              registration: reg,
+            io.to(ADMIN_ROOM).emit("new_registration", {
+              registration: toPublicRegistration(reg),
               message: `🎉 Free Delegate pass confirmed for ${reg.name} - ${reg.event_title}! Pass emailed automatically.`,
             });
             io.emit("event_payment_updated", {
@@ -3174,7 +3730,7 @@ async function handlePaymentVerification(req: any, res: any) {
             message: "Free pass verified and confirmation ticket emailed.",
             paymentId: "FREE-PASS",
             emailSent,
-            registration: reg,
+            registration: toPublicRegistration(reg),
           });
         }
       }
@@ -3184,50 +3740,80 @@ async function handlePaymentVerification(req: any, res: any) {
       return res.status(400).json({ success: false, message: "Missing Razorpay verification parameters." });
     }
 
+    // SECURITY: no "simulated" / test bypass — every payment is verified with Razorpay itself.
     let isSignatureValid = false;
-    if (razorpay_order_id && razorpay_payment_id && razorpayKeySecret) {
+    if (razorpayKeySecret && typeof razorpay_signature === "string") {
       try {
         const generatedSignature = crypto
           .createHmac("sha256", razorpayKeySecret)
           .update(`${razorpay_order_id}|${razorpay_payment_id}`)
           .digest("hex");
-        if (generatedSignature === razorpay_signature) {
-          isSignatureValid = true;
-        }
+        const a = Buffer.from(generatedSignature);
+        const b = Buffer.from(razorpay_signature);
+        isSignatureValid = a.length === b.length && crypto.timingSafeEqual(a, b);
       } catch (sigErr) {
         console.warn("[Razorpay] Signature calculation error:", sigErr);
       }
     }
 
-    const isSimulated =
-      req.body.isSimulated === true ||
-      razorpay_signature === "simulated_test_signature" ||
-      (typeof razorpay_signature === "string" && razorpay_signature.startsWith("simulated_")) ||
-      (typeof razorpay_payment_id === "string" && razorpay_payment_id.startsWith("pay_test_"));
+    // Always confirm with Razorpay: real status, correct order, actual amount, not reused
+    const apiCheck = await verifyRazorpayPaymentServerSide(razorpay_payment_id, razorpay_order_id, registrationId);
+    const existingReg = registrationId ? await getRegistrationById(registrationId) : null;
 
-    let isApiVerified = false;
-    if (!isSignatureValid && !isSimulated && razorpayClient && razorpay_payment_id && razorpay_payment_id.startsWith("pay_")) {
-      try {
-        const pData = await razorpayClient.payments.fetch(razorpay_payment_id);
-        if (pData && (pData.status === "captured" || pData.status === "authorized")) {
-          isApiVerified = true;
-          console.log(`[Razorpay] Payment ${razorpay_payment_id} verified via Razorpay API fetch! (Status: ${pData.status})`);
+    if (!apiCheck.ok && apiCheck.reason === "This payment has already been used for another registration.") {
+      console.warn(`[Security] Payment ${razorpay_payment_id} replay attempt for registration ${registrationId}`);
+      return res.status(400).json({ success: false, message: apiCheck.reason });
+    }
+
+    // Genuine signature but Razorpay API unreachable: keep the payment on record for admin review
+    if (isSignatureValid && !apiCheck.ok) {
+      if (pool && registrationId && existingReg && !isPaidOrConfirmed(existingReg)) {
+        await pool.query(
+          "UPDATE registrations SET payment_status = 'Paid (Verification Pending)', status = 'Pending', payment_id = ?, razorpay_order_id = ?, payment_signature = ? WHERE id = ?",
+          [razorpay_payment_id, razorpay_order_id, razorpay_signature, registrationId]
+        );
+      }
+      console.warn(`[Razorpay] Signature OK but API check failed for ${razorpay_payment_id}: ${apiCheck.reason}`);
+      return res.status(202).json({
+        success: false,
+        pending: true,
+        message: "Payment received. Your confirmation is being verified and will be emailed shortly.",
+      });
+    }
+
+    const isVerified = apiCheck.ok;
+    const verifiedAmount = apiCheck.amount;
+
+    // Underpayment guard: amount actually paid must cover the cheapest legitimate price for this pass
+    if (isVerified && existingReg) {
+      const minimum = await getMinimumLegitAmount(
+        existingReg.event_id,
+        passName || existingReg.pass_name,
+        couponApplied || existingReg.coupon_applied
+      );
+      if (minimum !== null && verifiedAmount + 1 < minimum) {
+        console.warn(`[Security] Underpayment on ${registrationId}: paid ₹${verifiedAmount}, minimum ₹${minimum}`);
+        if (pool && !isPaidOrConfirmed(existingReg)) {
+          await pool.query(
+            "UPDATE registrations SET payment_status = 'Paid (Amount Mismatch - Review)', status = 'Pending', payment_id = ?, razorpay_order_id = ?, payment_signature = ?, payment_amount = ? WHERE id = ?",
+            [razorpay_payment_id, razorpay_order_id, razorpay_signature || null, verifiedAmount, registrationId]
+          );
         }
-      } catch (pErr: any) {
-        console.warn(`[Razorpay] API fetch for ${razorpay_payment_id}:`, pErr.message);
+        return res.status(400).json({
+          success: false,
+          message: "The amount paid does not match the selected pass. Our team will contact you to resolve this.",
+        });
       }
     }
 
-    const isVerified = isSignatureValid || isSimulated || isApiVerified;
-
     if (isVerified) {
-      console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id}${isSimulated ? " (Test Simulation)" : isApiVerified ? " (API Verified)" : " (HMAC Verified)"}`);
+      console.log(`[Razorpay] Payment verified successfully! Payment ID: ${razorpay_payment_id} (₹${verifiedAmount}${isSignatureValid ? ", HMAC + API" : ", API"})`);
 
       let emailSent = false;
       let reg: any = null;
 
       if (pool && registrationId) {
-        const finalPaid = Number(paymentAmount) || 0;
+        const finalPaid = verifiedAmount; // actual amount received by Razorpay, never the client's figure
         await pool.query(
           `UPDATE registrations SET 
             payment_status = 'Paid', 
@@ -3312,8 +3898,8 @@ async function handlePaymentVerification(req: any, res: any) {
           });
 
           if (io) {
-            io.emit("new_registration", {
-              registration: reg,
+            io.to(ADMIN_ROOM).emit("new_registration", {
+              registration: toPublicRegistration(reg),
               message: `🎉 Payment Confirmed! ${reg.name} registered for ${reg.event_title}! Pass emailed automatically.`,
             });
             io.emit("event_payment_updated", {
@@ -3330,7 +3916,7 @@ async function handlePaymentVerification(req: any, res: any) {
         message: "Payment verified successfully! Registration pass and tax receipt sent to email.",
         paymentId: razorpay_payment_id,
         emailSent,
-        registration: reg,
+        registration: toPublicRegistration(reg),
       });
     } else {
       console.warn(`[Razorpay] Verification failed for payment ${razorpay_payment_id}`);
@@ -3453,6 +4039,10 @@ app.put("/api/registrations/:registrationId/pass", async (req, res) => {
       photoUrl
     } = req.body;
     const userPhoto = photo_url || photoUrl || null;
+    const lockedReg = await getRegistrationById(registrationId);
+    if (lockedReg && isPaidOrConfirmed(lockedReg)) {
+      return res.status(409).json({ success: false, message: "This registration is already confirmed and cannot be changed." });
+    }
     const numPassPrice = Number(passPrice) || 0;
     const numPaymentAmount = Number(paymentAmount) || (numPassPrice > 0 ? Math.round(numPassPrice * 1.18) : 0);
     const numGstAmount = Number(gstAmount) || (numPaymentAmount - numPassPrice);
@@ -3584,7 +4174,7 @@ app.get("/api/registrations/:registrationId", async (req, res) => {
           reg.global_show_invoice = 1;
         }
 
-        return res.json({ success: true, registration: reg });
+        return res.json({ success: true, registration: toPublicRegistration(reg) });
       }
     }
     return res.status(404).json({ success: false, message: "Registration record not found." });
@@ -3681,6 +4271,30 @@ app.post("/api/registrations/complete-free", async (req, res) => {
       return res.status(400).json({ success: false, message: "Registration ID is required." });
     }
 
+    if (pool) {
+      const existingReg = await getRegistrationById(registrationId);
+      if (!existingReg) {
+        return res.status(404).json({ success: false, message: "Registration not found." });
+      }
+      if (isPaidOrConfirmed(existingReg)) {
+        return res.json({
+          success: true,
+          message: "This registration is already confirmed.",
+          registrationId: existingReg.id,
+          emailSent: false,
+        });
+      }
+      const freeAllowed = await isFreeRegistrationAllowed(
+        existingReg.event_id || eventId,
+        passName || existingReg.pass_name,
+        couponApplied || existingReg.coupon_applied
+      );
+      if (!freeAllowed) {
+        console.warn(`[Security] Blocked complete-free on paid pass for registration ${registrationId}`);
+        return res.status(400).json({ success: false, message: "This pass requires payment. Please complete the payment to confirm your registration." });
+      }
+    }
+
     let reg: any = null;
     if (pool) {
       await pool.query(
@@ -3764,7 +4378,7 @@ app.post("/api/registrations/complete-free", async (req, res) => {
     });
 
     if (io) {
-      io.emit("new_registration", {
+      io.to(ADMIN_ROOM).emit("new_registration", {
         registration: reg,
         message: `🎉 Free Delegate pass confirmed for ${reg.name} (${reg.organization}) - ${reg.event_title || eventTitle}! Pass emailed automatically.`,
       });
@@ -3773,7 +4387,7 @@ app.post("/api/registrations/complete-free", async (req, res) => {
         registrationId: reg.id,
         paymentStatus: "Approved (Free Pass)",
       });
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "free_registration_confirmed",
         id: reg.id,
         name: reg.name,
@@ -3830,6 +4444,12 @@ app.post("/api/registrations/free-draft", async (req, res) => {
     } = req.body;
 
     const regId = registrationId || `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (registrationId) {
+      const lockedReg = await getRegistrationById(registrationId);
+      if (lockedReg && isPaidOrConfirmed(lockedReg)) {
+        return res.status(409).json({ success: false, message: "This registration is already confirmed and cannot be changed." });
+      }
+    }
     const fullName = `${firstName} ${lastName}`.trim() || firstName || "Interested Delegate";
     const effectiveEventSlug = eventSlug || eventId;
     const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
@@ -3976,6 +4596,12 @@ app.post("/api/registrations/free-start", async (req, res) => {
     }
 
     const regId = registrationId || `ETM-FREE-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (registrationId) {
+      const lockedReg = await getRegistrationById(registrationId);
+      if (lockedReg && isPaidOrConfirmed(lockedReg)) {
+        return res.status(409).json({ success: false, message: "This registration is already confirmed and cannot be changed." });
+      }
+    }
     const fullName = `${firstName} ${lastName}`.trim();
     const effectiveEventSlug = eventSlug || eventId;
     const tracksStr = Array.isArray(interestTracks) ? interestTracks.join(", ") : (interestTracks || "");
@@ -4062,7 +4688,7 @@ app.post("/api/registrations/free-start", async (req, res) => {
 
     // Realtime broadcast to Admin Dashboard
     if (io) {
-      io.emit("new_registration", {
+      io.to(ADMIN_ROOM).emit("new_registration", {
         registration: newRegistration,
         message: `📋 New Free Delegate Application received from ${fullName} (${companyName}) for ${eventTitle}! Status: Pending Approval.`,
       });
@@ -4245,7 +4871,7 @@ app.post("/api/admin/registrations/bulk-grant-free", authenticateAdmin, async (r
 
     // Emit live socket event for real-time dashboard updates
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "bulk_free_pass_granted",
         count: records.length,
         timestamp: new Date().toISOString(),
@@ -4359,7 +4985,7 @@ app.post("/api/admin/registrations/bulk-import-offline", authenticateAdmin, asyn
     }
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "offline_delegates_imported",
         count: insertedDelegates.length,
         timestamp: new Date().toISOString(),
@@ -4476,7 +5102,7 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
 
     // Broadcast live check-in event to all connected admin dashboards & scanners
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "delegate_checked_in",
         regId: reg.id,
         name: delegateName,
@@ -4507,7 +5133,7 @@ app.post("/api/admin/checkin/scan", authenticateAdmin, async (req, res) => {
 });
 
 // 1b. Record Badge Slip Print / Increment Reprint Count
-app.post("/api/admin/checkin/record-print", async (req, res) => {
+app.post("/api/admin/checkin/record-print", authenticateAdmin, async (req, res) => {
   const { regId, passId } = req.body;
   const targetId = String(regId || passId || "").trim();
   if (!targetId) {
@@ -4559,7 +5185,7 @@ app.post("/api/admin/checkin/record-print", async (req, res) => {
 
     // Broadcast print activity
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: isReprint ? "badge_reprinted" : "badge_printed",
         regId: targetId,
         name: delegateName,
@@ -4602,7 +5228,7 @@ app.post("/api/admin/checkin/undo", authenticateAdmin, async (req, res) => {
     }
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "delegate_checkin_undone",
         regId,
         timestamp: new Date().toISOString(),
@@ -4833,6 +5459,7 @@ function buildECertificateEmailHtml(candidate: {
   certId: string;
   certUrl: string;
 }) {
+  candidate = escapeHtmlFields(candidate as any) as any;
   const { name, organization, eventTitle, eventDate, eventCity, certId, certUrl } = candidate;
 
   return `
@@ -5020,7 +5647,7 @@ app.post("/api/admin/certificate/send", authenticateAdmin, async (req, res) => {
     }
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "certificate_sent",
         regId: reg.id,
         email: candidateEmail,
@@ -5181,7 +5808,7 @@ async function sendEventAlertEmail(params: {
   if (!regRows || regRows.length === 0) {
     throw new Error(`Delegate registration #${params.registrationId} not found.`);
   }
-  const reg = regRows[0];
+  const reg = escapeHtmlFields(regRows[0]); // delegate-entered text goes into HTML
   const candidateEmail = (reg.email || "").trim();
   if (!candidateEmail) {
     throw new Error(`Delegate #${params.registrationId} does not have a registered email.`);
@@ -5411,7 +6038,7 @@ app.post("/api/admin/remember/send", authenticateAdmin, async (req, res) => {
     });
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "event_alert_sent",
         registrationId,
         email: result.email,
@@ -5467,7 +6094,7 @@ app.post("/api/admin/remember/bulk-send", authenticateAdmin, async (req, res) =>
   }
 
   if (io && sentCount > 0) {
-    io.emit("admin_activity", {
+    io.to(ADMIN_ROOM).emit("admin_activity", {
       type: "event_bulk_alerts_sent",
       count: sentCount,
       timestamp: new Date().toISOString(),
@@ -5605,7 +6232,7 @@ app.post("/api/admin/certificates/auto-generate-ids", authenticateAdmin, async (
     }
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "certificates_generated",
         updatedCount,
         eventId,
@@ -5646,7 +6273,7 @@ app.put("/api/admin/certificates/assign-id", authenticateAdmin, async (req, res)
     await pool.query("UPDATE delegate_registrations SET certificate_id = ? WHERE id = ?", [cleanCertId, regId]);
 
     if (io) {
-      io.emit("admin_activity", {
+      io.to(ADMIN_ROOM).emit("admin_activity", {
         type: "certificate_id_assigned",
         regId,
         certificateId: cleanCertId,
@@ -5800,27 +6427,21 @@ app.post("/api/events/register", async (req, res) => {
     });
   }
 
-  // Server-side Google reCAPTCHA verification
-  const recaptchaToken = req.body.recaptchaToken;
-  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LfeDbgtAAAAALb87t1p3iLvdYbrfwPKSu-UzTgh";
-
-  if (recaptchaToken) {
-    try {
-      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(recaptchaToken)}`;
-      const verifyRes = await fetch(verifyUrl, { method: "POST" });
-      const verifyData: any = await verifyRes.json();
-      if (!verifyData.success) {
-        console.warn("[reCAPTCHA] Google siteverify response:", verifyData);
-      } else {
-        console.log("[reCAPTCHA] Verification successful!");
-      }
-    } catch (reErr) {
-      console.error("[reCAPTCHA] Server verification error:", reErr);
-    }
+  // Server-side Google reCAPTCHA verification (fail-closed whenever a secret is configured)
+  const captcha = await verifyRecaptcha(req.body.recaptchaToken, req.ip);
+  if (!captcha.ok) {
+    return res.status(400).json({ success: false, message: captcha.message });
   }
 
-  const reqRegId = req.body.id;
-  const regId = reqRegId || `REG-${Date.now()}`;
+  // A client-supplied id may only resume the caller's own unfinished registration
+  let reqRegId = typeof req.body.id === "string" ? req.body.id.trim() : "";
+  if (reqRegId) {
+    const existingById = await getRegistrationById(reqRegId);
+    if (existingById && (isPaidOrConfirmed(existingById) || String(existingById.email || "").trim().toLowerCase() !== String(email).trim().toLowerCase())) {
+      reqRegId = "";
+    }
+  }
+  const regId = reqRegId || `REG-${Date.now()}-${crypto.randomInt(1000, 9999)}`;
   let finalRegId = regId;
 
   const newRegistration = {
@@ -5849,9 +6470,34 @@ app.post("/api/events/register", async (req, res) => {
 
   try {
     if (pool) {
-      const isFreeOrPaid = effectivePaymentStatus === "Paid" || effectivePaymentStatus === "Free" || effectivePaymentStatus === "Free Registration" || effectivePaymentStatus === "Approved (Free Pass)" || effectiveAmount === 0 || !!paymentId;
-      const regStatus = isFreeOrPaid ? "Confirmed" : "Pending";
-      const pStatus = paymentId ? "Paid" : (effectiveAmount === 0 ? "Approved (Free Pass)" : effectivePaymentStatus);
+      // SECURITY: the client cannot declare itself "Paid" — paymentId is verified with Razorpay,
+      // and ₹0 registrations are only confirmed for events/passes that are genuinely free.
+      let regStatus = "Pending";
+      let pStatus = "Pending";
+      if (paymentId) {
+        const check = await verifyRazorpayPaymentServerSide(paymentId, razorpayOrderId, regId);
+        if (check.ok) {
+          const minimum = await getMinimumLegitAmount(effectiveEventId, effectiveCategory, couponApplied);
+          if (minimum !== null && check.amount + 1 < minimum) {
+            pStatus = "Paid (Amount Mismatch - Review)";
+          } else {
+            pStatus = "Paid";
+            regStatus = "Confirmed";
+          }
+          newRegistration.payment_amount = check.amount;
+        } else {
+          console.warn(`[Security] /api/events/register payment ${paymentId} not verified: ${check.reason}`);
+          pStatus = "Paid (Verification Pending)";
+        }
+      } else if (effectiveAmount === 0) {
+        if (await isFreeRegistrationAllowed(effectiveEventId, effectiveCategory, couponApplied)) {
+          pStatus = "Approved (Free Pass)";
+          regStatus = "Confirmed";
+        } else {
+          pStatus = "Pending";
+        }
+      }
+      newRegistration.payment_status = pStatus;
       const paymentSignature = req.body.paymentSignature || null;
       const paymentMethod = req.body.paymentMethod || "Razorpay";
 
@@ -5885,7 +6531,7 @@ app.post("/api/events/register", async (req, res) => {
             pStatus,
             paymentId || null,
             razorpayOrderId || null,
-            effectiveAmount,
+            newRegistration.payment_amount,
             couponApplied || null,
             paymentMethod,
             paymentSignature,
@@ -5917,7 +6563,7 @@ app.post("/api/events/register", async (req, res) => {
             pStatus,
             paymentId || null,
             razorpayOrderId || null,
-            effectiveAmount,
+            newRegistration.payment_amount,
             couponApplied || null,
             paymentMethod,
             paymentSignature,
@@ -5935,7 +6581,7 @@ app.post("/api/events/register", async (req, res) => {
     }
 
     // REALTIME BROADCAST
-    io.emit("new_registration", {
+    io.to(ADMIN_ROOM).emit("new_registration", {
       registration: newRegistration,
       totalRegistrations: totalCount,
       message: `🎉 ${effectiveFirstName} (${effectiveCategory}) registered for ${effectiveEventTitle}!`,
@@ -5943,7 +6589,7 @@ app.post("/api/events/register", async (req, res) => {
 
     // AUTOMATED EMAIL CONFIRMATION (Sent for completed payments, free passes, or confirmed registrations)
     let emailSent = false;
-    if (effectivePaymentStatus !== "Pending" || effectiveAmount === 0 || !!paymentId) {
+    if (newRegistration.payment_status === "Paid" || newRegistration.payment_status === "Approved (Free Pass)") {
       emailSent = await sendRegistrationConfirmationEmail({
         registrationId: finalRegId,
         firstName: effectiveFirstName,
@@ -5960,10 +6606,10 @@ app.post("/api/events/register", async (req, res) => {
         referralSource: referralSource || "Direct",
         eventId: effectiveEventId,
         eventTitle: effectiveEventTitle,
-        paymentStatus: effectivePaymentStatus,
+        paymentStatus: newRegistration.payment_status,
         paymentId: paymentId || undefined,
         razorpayOrderId: razorpayOrderId || undefined,
-        paymentAmount: effectiveAmount,
+        paymentAmount: newRegistration.payment_amount,
         couponApplied: couponApplied || undefined,
         createdAt: newRegistration.created_at,
       });
@@ -6081,7 +6727,7 @@ app.post("/api/events/register", async (req, res) => {
       };
 
       // Realtime Broadcast
-      io.emit("new_registration", {
+      io.to(ADMIN_ROOM).emit("new_registration", {
         registration: newRegData,
         message: `🎉 Executive Delegate: ${fullName} (${companyName}) registered!`,
       });
@@ -6188,9 +6834,13 @@ app.post("/api/contact", async (req, res) => {
     }
 
     // REALTIME BROADCAST
-    io.emit("new_contact_enquiry", {
+    io.to(ADMIN_ROOM).emit("new_contact_enquiry", {
       enquiry: newEnquiry,
       notification: `📩 New enquiry received from ${name} (${newEnquiry.enquiryType})`,
+    });
+    // Public visitors only get an anonymous notice (no names / emails / phone numbers)
+    io.except(ADMIN_ROOM).emit("new_contact_enquiry", {
+      notification: `📩 New enquiry received (${newEnquiry.enquiryType})`,
     });
 
     // Send admin email notification to registration@executivetalksmedia.in & srikanth@executivetalksmedia.in
@@ -6267,7 +6917,9 @@ app.get("/api/admin/me", authenticateAdmin, (req, res) => {
 });
 
 // Admin Logout Route
-app.post("/api/admin/logout", authenticateAdmin, (_req, res) => {
+app.post("/api/admin/logout", authenticateAdmin, (req, res) => {
+  const token = (req as any).adminToken;
+  if (token) revokeToken(token);
   res.json({ success: true, message: "Logged out successfully." });
 });
 
@@ -6310,266 +6962,6 @@ app.get("/api/admin/stats", authenticateAdmin, async (_req, res) => {
   } catch (err) {
     console.error("Admin Stats Error:", err);
     res.status(500).json({ success: false, message: "Failed to load dashboard stats." });
-  }
-});
-
-// ==========================================
-// POPUP ADV MANAGEMENT APIs
-// ==========================================
-
-// GET /api/popup/active - Public active popup settings & events for website visitors
-app.get("/api/popup/active", async (_req, res) => {
-  try {
-    if (!pool) {
-      return res.json({ success: true, active: false, settings: null, events: [] });
-    }
-
-    const [settingsRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
-    const settings = settingsRows[0] || null;
-
-    if (!settings || settings.status === "inactive") {
-      return res.json({ success: true, active: false, settings, events: [] });
-    }
-
-    // Get active selected events
-    const [eventRows]: any = await pool.query(`
-      SELECT pe.id as popup_event_id, pe.priority, pe.active, e.*
-      FROM popup_events pe
-      JOIN events e ON pe.event_id = e.id OR pe.event_id = e.slug
-      WHERE pe.active = 1 AND e.status != 'draft' AND e.status != 'archived'
-      ORDER BY pe.priority ASC, pe.id ASC
-    `);
-
-    return res.json({
-      success: true,
-      active: true,
-      settings,
-      events: eventRows,
-    });
-  } catch (err) {
-    console.error("Popup Active Fetch Error:", err);
-    return res.status(500).json({ success: false, message: "Error fetching active popup" });
-  }
-});
-
-// GET /api/popup/settings - Admin/Public settings
-app.get("/api/popup/settings", async (_req, res) => {
-  try {
-    if (!pool) {
-      return res.json({ success: true, settings: {} });
-    }
-    const [rows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
-    return res.json({ success: true, settings: rows[0] || {} });
-  } catch (err) {
-    console.error("Popup Settings Error:", err);
-    return res.status(500).json({ success: false, message: "Error fetching popup settings" });
-  }
-});
-
-// PUT /api/popup/settings - Admin update settings
-app.put("/api/popup/settings", authenticateAdmin, async (req, res) => {
-  try {
-    if (!pool) {
-      return res.status(500).json({ success: false, message: "Database not connected" });
-    }
-
-    const body = req.body || {};
-    const fields = [
-      "popup_title", "popup_subtitle", "theme_color", "button_color", "background_color", "border_color",
-      "popup_logo", "popup_banner", "show_close_button", "enable_maybe_later", "popup_width", "popup_height",
-      "popup_animation", "popup_position", "border_radius", "shadow_style", "blur_background", "overlay_opacity",
-      "show_on_load", "show_after_delay", "delay_seconds", "show_on_scroll", "scroll_percentage", "trigger_rule",
-      "show_every_visit", "once_per_session", "once_per_day", "cookie_duration_days", "priority_level",
-      "start_date", "end_date", "daily_start_time", "daily_end_time", "timezone", "status"
-    ];
-
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    for (const f of fields) {
-      if (body[f] !== undefined) {
-        updates.push(`${f} = ?`);
-        values.push(body[f]);
-      }
-    }
-
-    if (updates.length > 0) {
-      values.push(1); // WHERE id = 1
-      await pool.query(`UPDATE popup_settings SET ${updates.join(", ")} WHERE id = ?`, values);
-    }
-
-    const [updatedRows]: any = await pool.query("SELECT * FROM popup_settings WHERE id = 1");
-    io.emit("popup_settings_updated", updatedRows[0]);
-
-    return res.json({
-      success: true,
-      message: "Popup settings updated successfully!",
-      settings: updatedRows[0],
-    });
-  } catch (err) {
-    console.error("Update Popup Settings Error:", err);
-    return res.status(500).json({ success: false, message: "Error updating popup settings" });
-  }
-});
-
-// GET /api/popup/events - Admin selected popup events
-app.get("/api/popup/events", async (_req, res) => {
-  try {
-    if (!pool) {
-      return res.json({ success: true, events: [] });
-    }
-    const [rows]: any = await pool.query(`
-      SELECT pe.id as popup_event_id, pe.priority, pe.active, e.*
-      FROM popup_events pe
-      JOIN events e ON pe.event_id = e.id OR pe.event_id = e.slug
-      ORDER BY pe.priority ASC, pe.id ASC
-    `);
-    return res.json({ success: true, events: rows });
-  } catch (err) {
-    console.error("Popup Events Error:", err);
-    return res.status(500).json({ success: false, message: "Error fetching popup events" });
-  }
-});
-
-// POST /api/popup/events - Save selected events for popup
-app.post("/api/popup/events", authenticateAdmin, async (req, res) => {
-  try {
-    if (!pool) {
-      return res.status(500).json({ success: false, message: "Database not connected" });
-    }
-    const { eventIds } = req.body;
-    if (!Array.isArray(eventIds)) {
-      return res.status(400).json({ success: false, message: "eventIds must be an array" });
-    }
-
-    // Clear existing and re-insert selected events
-    await pool.query("DELETE FROM popup_events");
-    for (let i = 0; i < eventIds.length; i++) {
-      await pool.query(
-        "INSERT INTO popup_events (event_id, priority, active) VALUES (?, ?, 1)",
-        [eventIds[i], i + 1]
-      );
-    }
-
-    io.emit("popup_events_updated", { count: eventIds.length });
-
-    return res.json({
-      success: true,
-      message: "Popup events saved successfully!",
-    });
-  } catch (err) {
-    console.error("Save Popup Events Error:", err);
-    return res.status(500).json({ success: false, message: "Error saving popup events" });
-  }
-});
-
-// DELETE /api/popup/events/:id - Remove event from popup
-app.delete("/api/popup/events/:id", authenticateAdmin, async (req, res) => {
-  try {
-    if (!pool) {
-      return res.status(500).json({ success: false, message: "Database not connected" });
-    }
-    const { id } = req.params;
-    await pool.query("DELETE FROM popup_events WHERE id = ? OR event_id = ?", [id, id]);
-    io.emit("popup_events_updated", { deleted: id });
-    return res.json({ success: true, message: "Event removed from popup!" });
-  } catch (err) {
-    console.error("Delete Popup Event Error:", err);
-    return res.status(500).json({ success: false, message: "Error removing event from popup" });
-  }
-});
-
-// Analytics APIs: Track View, Click, Close
-app.post("/api/popup/view", async (req, res) => {
-  try {
-    if (pool) {
-      const { eventId, sessionId } = req.body;
-      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
-      await pool.query(
-        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'view', ?, ?)",
-        [eventId || "all", sessionId || "", ip]
-      );
-    }
-    return res.json({ success: true });
-  } catch (e) {
-    return res.json({ success: true });
-  }
-});
-
-app.post("/api/popup/click", async (req, res) => {
-  try {
-    if (pool) {
-      const { eventId, sessionId } = req.body;
-      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
-      await pool.query(
-        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'click', ?, ?)",
-        [eventId || "all", sessionId || "", ip]
-      );
-    }
-    return res.json({ success: true });
-  } catch (e) {
-    return res.json({ success: true });
-  }
-});
-
-app.post("/api/popup/close", async (req, res) => {
-  try {
-    if (pool) {
-      const { eventId, sessionId } = req.body;
-      const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
-      await pool.query(
-        "INSERT INTO popup_analytics (event_id, action_type, session_id, ip_address) VALUES (?, 'close', ?, ?)",
-        [eventId || "all", sessionId || "", ip]
-      );
-    }
-    return res.json({ success: true });
-  } catch (e) {
-    return res.json({ success: true });
-  }
-});
-
-// GET /api/popup/analytics - Aggregated Analytics for Admin Dashboard
-app.get("/api/popup/analytics", authenticateAdmin, async (_req, res) => {
-  try {
-    if (!pool) {
-      return res.json({ success: true, analytics: { totalViews: 0, totalClicks: 0, totalCloses: 0, ctr: 0, eventBreakdown: [] } });
-    }
-
-    const [viewsRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'view'");
-    const [clicksRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'click'");
-    const [closesRow]: any = await pool.query("SELECT COUNT(*) as count FROM popup_analytics WHERE action_type = 'close'");
-
-    const totalViews = viewsRow[0]?.count || 0;
-    const totalClicks = clicksRow[0]?.count || 0;
-    const totalCloses = closesRow[0]?.count || 0;
-    const ctr = totalViews > 0 ? Number(((totalClicks / totalViews) * 100).toFixed(2)) : 0;
-
-    const [eventBreakdown]: any = await pool.query(`
-      SELECT 
-        e.id, e.title, e.category,
-        SUM(CASE WHEN pa.action_type = 'view' THEN 1 ELSE 0 END) as views,
-        SUM(CASE WHEN pa.action_type = 'click' THEN 1 ELSE 0 END) as clicks,
-        SUM(CASE WHEN pa.action_type = 'close' THEN 1 ELSE 0 END) as closes
-      FROM events e
-      LEFT JOIN popup_analytics pa ON pa.event_id = e.id OR pa.event_id = e.slug
-      GROUP BY e.id, e.title, e.category
-      HAVING views > 0 OR clicks > 0
-      ORDER BY clicks DESC, views DESC
-    `);
-
-    return res.json({
-      success: true,
-      analytics: {
-        totalViews,
-        totalClicks,
-        totalCloses,
-        ctr,
-        eventBreakdown,
-      },
-    });
-  } catch (err) {
-    console.error("Popup Analytics Error:", err);
-    return res.status(500).json({ success: false, message: "Error fetching popup analytics" });
   }
 });
 
@@ -6767,7 +7159,7 @@ app.post("/api/admin/grant-access", authenticateAdmin, async (req, res) => {
       totalCount = rows[0]?.count || 1;
     }
 
-    io.emit("new_registration", {
+    io.to(ADMIN_ROOM).emit("new_registration", {
       registration: newRegistration,
       totalRegistrations: totalCount,
       message: `🎟️ Admin granted ${effectiveCategory} to ${name.trim()} for ${effectiveEventTitle}!`,
@@ -6885,7 +7277,7 @@ app.delete("/api/admin/registrations/:id", authenticateAdmin, async (req, res) =
       } catch (ignored) {}
     }
     try {
-      io.emit("registration_deleted", { id });
+      io.to(ADMIN_ROOM).emit("registration_deleted", { id });
     } catch (e) {}
     res.json({ success: true, message: "Registration deleted successfully." });
   } catch (err) {
@@ -6909,7 +7301,7 @@ app.post("/api/admin/registrations/bulk-delete", authenticateAdmin, async (req, 
       } catch (ignored) {}
     }
     try {
-      io.emit("registrations_bulk_deleted", { ids });
+      io.to(ADMIN_ROOM).emit("registrations_bulk_deleted", { ids });
     } catch (e) {}
     res.json({ success: true, message: `Successfully deleted ${ids.length} registration(s).` });
   } catch (err) {
@@ -8368,7 +8760,7 @@ app.post("/api/partners/submit", async (req, res) => {
       }
     }
 
-    io.emit("new_partner_submission", submissionData);
+    io.to(ADMIN_ROOM).emit("new_partner_submission", submissionData);
 
     // Send auto confirmation email to user & notification to admin email registration@etmedia.in
     sendPartnerAdminNotificationEmail(submissionData).catch(err => console.error("Partner admin notification error:", err));
@@ -8992,11 +9384,30 @@ app.post("/api/admin/email-subjects/preview", authenticateAdmin, async (req, res
 // ==========================================
 
 // Public PDF Resume Upload Handler (stores base64 data URI directly to MySQL column)
+const MAX_RESUME_BYTES = 10 * 1024 * 1024; // 10 MB
 app.post("/api/upload-resume", async (req, res) => {
   try {
+    const declared = Number(req.headers["content-length"] || 0);
+    if (declared > MAX_RESUME_BYTES) {
+      return res.status(413).json({ success: false, message: "Resume file is too large (max 10 MB)." });
+    }
     const chunks: Buffer[] = [];
-    req.on("data", (chunk) => chunks.push(chunk));
+    let received = 0;
+    let aborted = false;
+    req.on("data", (chunk: Buffer) => {
+      if (aborted) return;
+      received += chunk.length;
+      if (received > MAX_RESUME_BYTES) {
+        aborted = true;
+        chunks.length = 0;
+        res.status(413).json({ success: false, message: "Resume file is too large (max 10 MB)." });
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on("end", () => {
+      if (aborted) return;
       const buffer = Buffer.concat(chunks);
       const base64Str = buffer.toString("base64");
       const pdfDataUrl = `data:application/pdf;base64,${base64Str}`;
@@ -9174,7 +9585,7 @@ app.post("/api/jobs/apply", async (req, res) => {
         [id, job_id, job_title || "General Application", name, email, phone, experience, resume_url, portfolio_url || ""]
       );
     }
-    io.emit("new_job_application", appData);
+    io.to(ADMIN_ROOM).emit("new_job_application", appData);
 
     // Send admin email notification to registration@etmedia.in
     sendJobApplicationAdminNotificationEmail(appData).catch(err => console.error("Job application admin notification error:", err));
@@ -9222,7 +9633,7 @@ app.patch("/api/admin/job-applications/:id/status", authenticateAdmin, async (re
     if (pool) {
       await pool.query("UPDATE job_applications SET status = ? WHERE id = ?", [status, id]);
     }
-    io.emit("job_application_updated", { id, status });
+    io.to(ADMIN_ROOM).emit("job_application_updated", { id, status });
     return res.json({ success: true, message: `Candidate status updated to '${status}'` });
   } catch (err: any) {
     console.error("Update Candidate Application Status Error:", err);
@@ -9667,7 +10078,7 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
       );
     }
     const newSub = { id, email: email.trim(), source: source || "Website Footer", created_at: new Date() };
-    io.emit("new_newsletter_subscriber", { subscriber: newSub, ...newSub });
+    io.to(ADMIN_ROOM).emit("new_newsletter_subscriber", { subscriber: newSub, ...newSub });
     sendNewsletterAdminNotificationEmail({ id, email: email.trim(), source: source || "Website Footer" }).catch(() => {});
     return res.json({ success: true, message: "Subscribed to Executive Talks newsletter!", subscriber: newSub });
   } catch (err: any) {
@@ -9757,7 +10168,7 @@ app.post("/api/memberships", async (req, res) => {
       );
     }
 
-    io.emit("new_membership_application", membershipData);
+    io.to(ADMIN_ROOM).emit("new_membership_application", membershipData);
 
     // Send admin email notification to registration@etmedia.in
     sendMembershipAdminNotificationEmail(membershipData).catch((err) =>
@@ -10045,7 +10456,14 @@ app.put("/api/admin/seo/:page_key", authenticateAdmin, async (req, res) => {
 // ==========================================
 
 // Admin get list of admin users
-app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
+
+const ALLOWED_ADMIN_ROLES = new Set(["admin", "super_admin", "scanner", "subadmin", "gate_staff"]);
+function normalizeAdminRole(role: any): string | null {
+  const r = String(role || "admin").trim();
+  return ALLOWED_ADMIN_ROLES.has(r) ? r : null;
+}
+
+app.get("/api/admin/users", authenticateAdmin, requireRole(FULL_ADMIN_ROLES), async (req, res) => {
   try {
     if (pool) {
       const [rows]: any = await pool.query("SELECT id, name, email, role, created_at FROM admins ORDER BY created_at DESC");
@@ -10059,8 +10477,12 @@ app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
 });
 
 // Admin create new admin user
-app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
-  const { name, email, password, role } = req.body;
+app.post("/api/admin/users", authenticateAdmin, requireRole(FULL_ADMIN_ROLES), async (req, res) => {
+  const { name, email, password } = req.body;
+  const role = normalizeAdminRole(req.body.role);
+  if (!role) {
+    return res.status(400).json({ success: false, message: "Invalid admin role." });
+  }
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, message: "Name, email, and password are required" });
   }
@@ -10073,8 +10495,8 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
     return res.status(400).json({ success: false, message: "Please enter a valid Admin Name." });
   }
 
-  if (typeof password !== "string" || password.length < 6) {
-    return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+  if (typeof password !== "string" || password.length < 8) {
+    return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
   }
 
   try {
@@ -10082,7 +10504,7 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       await pool.query(
         "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)",
-        [name, email, hashedPassword, role || "admin"]
+        [name, String(email).toLowerCase().trim(), hashedPassword, role]
       );
     }
     return res.json({ success: true, message: `Admin user '${name}' created successfully!` });
@@ -10093,9 +10515,13 @@ app.post("/api/admin/users", authenticateAdmin, async (req, res) => {
 });
 
 // Admin update admin user
-app.put("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
+app.put("/api/admin/users/:id", authenticateAdmin, requireRole(FULL_ADMIN_ROLES), async (req, res) => {
   const { id } = req.params;
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
+  const role = normalizeAdminRole(req.body.role);
+  if (!role) {
+    return res.status(400).json({ success: false, message: "Invalid admin role." });
+  }
   if (!name || !email) {
     return res.status(400).json({ success: false, message: "Name and email are required" });
   }
@@ -10111,20 +10537,21 @@ app.put("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
   try {
     if (pool) {
       if (password && typeof password === "string" && password.trim().length > 0) {
-        if (password.length < 6) {
-          return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
+        if (password.length < 8) {
+          return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         await pool.query(
           "UPDATE admins SET name = ?, email = ?, password = ?, role = ? WHERE id = ?",
-          [name, email, hashedPassword, role || "admin", id]
+          [name, email, hashedPassword, role, id]
         );
       } else {
         await pool.query(
           "UPDATE admins SET name = ?, email = ?, role = ? WHERE id = ?",
-          [name, email, role || "admin", id]
+          [name, email, role, id]
         );
       }
+      invalidateAdminAccountCache();
     }
     return res.json({ success: true, message: `Admin account '${name}' updated successfully!` });
   } catch (err: any) {
@@ -10134,11 +10561,15 @@ app.put("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
 });
 
 // Admin delete admin user
-app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
+app.delete("/api/admin/users/:id", authenticateAdmin, requireRole(FULL_ADMIN_ROLES), async (req, res) => {
   const { id } = req.params;
+  if (String((req as any).admin?.id) === String(id)) {
+    return res.status(400).json({ success: false, message: "You cannot delete your own admin account." });
+  }
   try {
     if (pool) {
       await pool.query("DELETE FROM admins WHERE id = ?", [id]);
+      invalidateAdminAccountCache();
     }
     return res.json({ success: true, message: "Admin user deleted" });
   } catch (err: any) {
@@ -10440,7 +10871,7 @@ app.get("/api/promotion-templates/active", async (req, res) => {
 });
 
 // 3. Create or save promotion template
-app.post("/api/promotion-templates", async (req, res) => {
+app.post("/api/promotion-templates", authenticateAdmin, async (req, res) => {
   try {
     const data = req.body || {};
     const id = data.id || `tmpl-${Date.now()}`;
@@ -10522,7 +10953,7 @@ app.post("/api/promotion-templates", async (req, res) => {
 });
 
 // 4. Update promotion template
-app.put("/api/promotion-templates/:id", async (req, res) => {
+app.put("/api/promotion-templates/:id", authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body || {};
@@ -10596,7 +11027,7 @@ app.put("/api/promotion-templates/:id", async (req, res) => {
 });
 
 // 5. One-click activate promotion template
-app.put("/api/promotion-templates/:id/activate", async (req, res) => {
+app.put("/api/promotion-templates/:id/activate", authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     if (!pool) return res.json({ success: true, message: "Activated" });
@@ -10621,7 +11052,7 @@ app.put("/api/promotion-templates/:id/activate", async (req, res) => {
 });
 
 // 6. Delete promotion template
-app.delete("/api/promotion-templates/:id", async (req, res) => {
+app.delete("/api/promotion-templates/:id", authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     if (!pool) return res.json({ success: true, message: "Deleted" });
@@ -10639,6 +11070,14 @@ app.post("/api/registrations/:id/photo", async (req, res) => {
     const { id } = req.params;
     const { photo_url } = req.body;
     if (!photo_url) return res.status(400).json({ success: false, message: "Photo URL is required" });
+    const isImageData = typeof photo_url === "string" && /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(photo_url);
+    const isSafeUrl = typeof photo_url === "string" && /^(https:\/\/|\/api\/media\/|\/uploads\/)/i.test(photo_url);
+    if ((!isImageData && !isSafeUrl) || photo_url.length > 12 * 1024 * 1024) {
+      return res.status(400).json({ success: false, message: "Please upload a valid photo (PNG, JPG or WEBP)." });
+    }
+    if (!(await getRegistrationById(id))) {
+      return res.status(404).json({ success: false, message: "Registration not found." });
+    }
 
     if (pool) {
       try {

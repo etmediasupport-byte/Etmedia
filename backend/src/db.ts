@@ -4,10 +4,14 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Hostinger MySQL credentials provided by user
+// MySQL credentials come ONLY from environment variables (.env / hosting panel).
+// Both DB_PASSWORD and DB_PASS are accepted. Never hardcode the password here: this repo is public.
 const DB_HOST = process.env.DB_HOST || "auth-db1743.hstgr.io";
 const DB_USER = process.env.DB_USER || "u409108324_ETMedia";
-const DB_PASSWORD = process.env.DB_PASSWORD || "ETMedia@2026";
+const DB_PASSWORD = process.env.DB_PASSWORD ?? process.env.DB_PASS ?? "";
+if (process.env.DB_PASSWORD === undefined && process.env.DB_PASS === undefined) {
+  console.error("[Config] ⚠️ Missing DB_PASSWORD (or DB_PASS) environment variable. The database connection will fail until it is set.");
+}
 const DB_NAME = process.env.DB_NAME || "u409108324_ETMedia";
 const DB_PORT = Number(process.env.DB_PORT) || 3306;
 
@@ -322,26 +326,22 @@ export async function initDatabase() {
       console.log("[MySQL] Seeded default events into events table!");
     }
 
-    // Seed admin user: srikanth@executivetalksmedia.in / Executivetalksmedia@2026
-    const adminEmail = "srikanth@executivetalksmedia.in";
-    const hashedPassword = await bcrypt.hash("Executivetalksmedia@2026", 10);
-
-    // Update any legacy etmediaworld@gmail.com account
-    try {
-      await pool.query("UPDATE admins SET email = ?, password = ? WHERE email = 'etmediaworld@gmail.com'", [adminEmail, hashedPassword]);
-    } catch (e) {}
-
-    const [existingAdmins]: any = await pool.query("SELECT * FROM admins WHERE email = ?", [adminEmail]);
-
-    if (existingAdmins.length === 0) {
-      await pool.query(
-        "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)",
-        ["Executive Talks Media Admin", adminEmail, hashedPassword, "super_admin"]
-      );
-      console.log(`[MySQL] Admin account created: ${adminEmail}`);
-    } else {
-      await pool.query("UPDATE admins SET password = ? WHERE email = ?", [hashedPassword, adminEmail]);
-      console.log(`[MySQL] Admin password verified for: ${adminEmail}`);
+    // First-run admin bootstrap ONLY: creates an admin when the admins table is empty.
+    // Existing admin passwords are never overwritten (they are managed from the Admin Dashboard).
+    const [adminCountRows]: any = await pool.query("SELECT COUNT(*) AS count FROM admins");
+    if (Number(adminCountRows?.[0]?.count || 0) === 0) {
+      const seedEmail = (process.env.ADMIN_SEED_EMAIL || "srikanth@executivetalksmedia.in").toLowerCase().trim();
+      const seedPassword = process.env.ADMIN_SEED_PASSWORD || "";
+      if (seedPassword.length >= 8) {
+        const hashedPassword = await bcrypt.hash(seedPassword, 10);
+        await pool.query(
+          "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)",
+          ["Executive Talks Media Admin", seedEmail, hashedPassword, "super_admin"]
+        );
+        console.log(`[MySQL] Initial admin account created: ${seedEmail}`);
+      } else {
+        console.warn("[MySQL] No admin accounts exist. Set ADMIN_SEED_PASSWORD (min 8 chars) to create the first admin.");
+      }
     }
 
     await ensurePopupTables();

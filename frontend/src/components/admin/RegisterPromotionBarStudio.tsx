@@ -37,6 +37,15 @@ import PromotionBadgeCard, {
   AttendeeBadgeData,
 } from "@/components/site/PromotionBadgeCard";
 
+// Template create / activate / delete require an admin session on the server
+function adminAuthHeaders(): Record<string, string> {
+  const token =
+    (typeof window !== "undefined" &&
+      (localStorage.getItem("etmedia_admin_token") || localStorage.getItem("et_admin_token"))) ||
+    "";
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 interface RegisterPromotionBarStudioProps {
   registrations: any[];
   events: any[];
@@ -386,6 +395,7 @@ export default function RegisterPromotionBarStudio({
       setActivating(true);
       const res = await fetch(`/api/promotion-templates/${encodeURIComponent(templateId)}/activate`, {
         method: "PUT",
+        headers: adminAuthHeaders(),
       });
       if (res.ok) {
         toast.success("This design is now ACTIVE globally & for this event's attendees!");
@@ -424,7 +434,7 @@ export default function RegisterPromotionBarStudio({
 
       const res = await fetch(`/api/promotion-templates`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminAuthHeaders() },
         body: JSON.stringify(payload),
       });
 
@@ -454,6 +464,7 @@ export default function RegisterPromotionBarStudio({
       setDeleting(true);
       const res = await fetch(`/api/promotion-templates/${encodeURIComponent(templateId)}`, {
         method: "DELETE",
+        headers: adminAuthHeaders(),
       });
       if (res.ok) {
         toast.success("Template deleted.");
