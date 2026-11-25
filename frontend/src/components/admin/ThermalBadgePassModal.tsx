@@ -392,8 +392,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 print-color-adjust: exact !important;
               }
               html, body {
-                width: ${W_MM} !important;
-                height: ${H_MM} !important;
+                width: 100% !important;
+                height: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: #ffffff !important;
@@ -403,18 +403,23 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 overflow: hidden !important;
               }
               .thermal-2up-wrapper {
-                width: 104mm !important;
-                height: 75mm !important;
+                width: 100% !important;
+                height: 100% !important;
                 display: flex !important;
                 justify-content: space-between !important;
                 align-items: center !important;
                 padding: 0 1mm !important;
+                box-sizing: border-box !important;
+              }
+              .thermal-2up-wrapper .thermal-pass-card {
+                width: 49% !important;
+                height: 100% !important;
               }
               .thermal-pass-card {
-                width: ${labelFormat === "75x50" ? "75mm" : "50mm"} !important;
-                height: ${labelFormat === "75x50" ? "50mm" : "75mm"} !important;
-                max-width: ${labelFormat === "75x50" ? "75mm" : "50mm"} !important;
-                max-height: ${labelFormat === "75x50" ? "50mm" : "75mm"} !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
                 box-sizing: border-box !important;
                 border: 2px solid #000000 !important;
                 border-radius: 4px !important;
