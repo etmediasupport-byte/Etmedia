@@ -434,8 +434,10 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 font-weight: 900 !important;
                 text-transform: uppercase !important;
                 line-height: 1.15 !important;
-                margin: 0 !important;
+                margin: 0 auto !important;
                 word-break: break-word !important;
+                text-align: center !important;
+                width: 100% !important;
               }
               .company-name {
                 font-size: ${labelFormat === "75x50" ? "10.5pt" : "9.5pt"} !important;
@@ -444,6 +446,8 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                 line-height: 1.15 !important;
                 margin-top: 1.2mm !important;
                 word-break: break-word !important;
+                text-align: center !important;
+                width: 100% !important;
               }
               .qr-container {
                 margin: auto 0 0.5mm 0 !important;
@@ -653,11 +657,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                     aspectRatio: "50 / 75",
                   }}
                 >
-                  <div className="w-full pt-0.5 px-0.5">
-                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                  <div className="w-full pt-0.5 px-0.5 text-center flex flex-col items-center justify-center">
+                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black text-center break-words w-full">
                       {delegateName}
                     </div>
-                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 text-center break-words mt-1 w-full">
                       {delegateOrg || "Enterprise Delegate"}
                     </div>
                   </div>
@@ -685,11 +689,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                     aspectRatio: "50 / 75",
                   }}
                 >
-                  <div className="w-full pt-0.5 px-0.5">
-                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                  <div className="w-full pt-0.5 px-0.5 text-center flex flex-col items-center justify-center">
+                    <div className="delegate-name text-[13px] font-black uppercase leading-tight tracking-tight text-black text-center break-words w-full">
                       {delegateName}
                     </div>
-                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                    <div className="company-name text-[9.5px] font-bold uppercase leading-snug text-slate-800 text-center break-words mt-1 w-full">
                       {delegateOrg || "Enterprise Delegate"}
                     </div>
                   </div>
@@ -718,11 +722,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                   aspectRatio: "75 / 50",
                 }}
               >
-                <div className="w-full pt-1 px-1">
-                  <div className="delegate-name text-[18px] sm:text-[20px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                <div className="w-full pt-1 px-1 text-center flex flex-col items-center justify-center">
+                  <div className="delegate-name text-[18px] sm:text-[20px] font-black uppercase leading-tight tracking-tight text-black text-center break-words w-full">
                     {delegateName}
                   </div>
-                  <div className="company-name text-[12px] sm:text-[13.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1">
+                  <div className="company-name text-[12px] sm:text-[13.5px] font-bold uppercase leading-snug text-slate-800 text-center break-words mt-1 w-full">
                     {delegateOrg || "Enterprise Delegate"}
                   </div>
                 </div>
@@ -751,11 +755,11 @@ export const ThermalBadgePassModal: React.FC<ThermalBadgePassModalProps> = ({
                   aspectRatio: "50 / 75",
                 }}
               >
-                <div className="w-full pt-1 px-1">
-                  <div className="delegate-name text-[16px] sm:text-[18px] font-black uppercase leading-tight tracking-tight text-black break-words">
+                <div className="w-full pt-1 px-1 text-center flex flex-col items-center justify-center">
+                  <div className="delegate-name text-[16px] sm:text-[18px] font-black uppercase leading-tight tracking-tight text-black text-center break-words w-full">
                     {delegateName}
                   </div>
-                  <div className="company-name text-[11px] sm:text-[12.5px] font-bold uppercase leading-snug text-slate-800 break-words mt-1.5">
+                  <div className="company-name text-[11px] sm:text-[12.5px] font-bold uppercase leading-snug text-slate-800 text-center break-words mt-1.5 w-full">
                     {delegateOrg || "Enterprise Delegate"}
                   </div>
                 </div>

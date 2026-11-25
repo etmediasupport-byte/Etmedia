@@ -1216,6 +1216,8 @@ export default function AdminDashboardPage() {
   const [bulkPassCategory, setBulkPassCategory] = useState("Complimentary VIP Pass");
   const [resendingEmailId, setResendingEmailId] = useState<string | null>(null);
   const [actionLoadingRegId, setActionLoadingRegId] = useState<string | null>(null);
+  const [bulkDeletingRegs, setBulkDeletingRegs] = useState<boolean>(false);
+  const [deletingRegId, setDeletingRegId] = useState<string | null>(null);
 
   // --- OFFLINE REGISTRATIONS & EXCEL IMPORT STATE ---
   const [showOfflineUploadModal, setShowOfflineUploadModal] = useState(false);
@@ -2927,22 +2929,17 @@ export default function AdminDashboardPage() {
   };
 
   const handleToggleSelectAllRegistrations = () => {
-    const eligibleIds = eligibleRegistrationsInFilter.map((r) => r.id);
-    if (eligibleIds.length === 0) return;
-    const allEligibleSelected = eligibleIds.every((id) => selectedRegIds.includes(id));
-    if (allEligibleSelected) {
-      setSelectedRegIds((prev) => prev.filter((id) => !eligibleIds.includes(id)));
+    const allVisibleIds = filteredRegistrations.map((r) => r.id);
+    if (allVisibleIds.length === 0) return;
+    const allSelected = allVisibleIds.every((id) => selectedRegIds.includes(id));
+    if (allSelected) {
+      setSelectedRegIds((prev) => prev.filter((id) => !allVisibleIds.includes(id)));
     } else {
-      setSelectedRegIds((prev) => Array.from(new Set([...prev, ...eligibleIds])));
+      setSelectedRegIds((prev) => Array.from(new Set([...prev, ...allVisibleIds])));
     }
   };
 
   const handleToggleSelectRegistration = (id: string) => {
-    const reg = eventRegistrationsList.find((r) => r.id === id);
-    if (reg && !isDelegateEligibleForGrant(reg)) {
-      toast.info("This delegate has already been granted a pass or confirmed paid.");
-      return;
-    }
     setSelectedRegIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
@@ -2953,8 +2950,127 @@ export default function AdminDashboardPage() {
       toast.error("Please select at least one delegate from the table.");
       return;
     }
+    const eligibleCount = selectedRegIds.filter((id) => {
+      const reg = eventRegistrationsList.find((r) => r.id === id);
+      return reg && isDelegateEligibleForGrant(reg);
+    }).length;
+    if (eligibleCount === 0) {
+      toast.info("None of the selected delegates are eligible for a new free pass (they may already be confirmed paid or granted).");
+      return;
+    }
     setBulkPassCategory(category);
     setShowBulkGrantModal(true);
+  };
+
+  const handleDeleteRegistration = async (id: string, name?: string) => {
+    const displayName = name ? `"${name}"` : "this delegate registration";
+    if (!window.confirm(`Are you sure you want to delete ${displayName}? This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingRegId(id);
+    try {
+      const res = await fetch(`/api/admin/registrations/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Registration deleted successfully.");
+        setRegistrations((prev) => prev.filter((r) => r.id !== id));
+        setSelectedRegIds((prev) => prev.filter((item) => item !== id));
+        setSelectedOfflineRegIds((prev) => prev.filter((item) => item !== id));
+        if (selectedRegDetail?.id === id) {
+          setSelectedRegDetail(null);
+        }
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to delete registration.");
+      }
+    } catch (err) {
+      toast.error("Network error while deleting registration.");
+    } finally {
+      setDeletingRegId(null);
+    }
+  };
+
+  const handleBulkDeleteRegistrations = async () => {
+    if (selectedRegIds.length === 0) {
+      toast.error("Please select at least one delegate to delete.");
+      return;
+    }
+    const count = selectedRegIds.length;
+    if (!window.confirm(`Are you sure you want to permanently delete ${count} selected delegate registration(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setBulkDeletingRegs(true);
+    try {
+      const res = await fetch("/api/admin/registrations/bulk-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: selectedRegIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `Deleted ${count} delegate registration(s).`);
+        const idSet = new Set(selectedRegIds);
+        setRegistrations((prev) => prev.filter((r) => !idSet.has(r.id)));
+        setSelectedRegIds([]);
+        if (selectedRegDetail && idSet.has(selectedRegDetail.id)) {
+          setSelectedRegDetail(null);
+        }
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to bulk delete registrations.");
+      }
+    } catch (err) {
+      toast.error("Network error while deleting registrations.");
+    } finally {
+      setBulkDeletingRegs(false);
+    }
+  };
+
+  const handleBulkDeleteOfflineRegistrations = async () => {
+    if (selectedOfflineRegIds.length === 0) {
+      toast.error("Please select at least one offline delegate to delete.");
+      return;
+    }
+    const count = selectedOfflineRegIds.length;
+    if (!window.confirm(`Are you sure you want to permanently delete ${count} selected offline registration(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setBulkDeletingRegs(true);
+    try {
+      const res = await fetch("/api/admin/registrations/bulk-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: selectedOfflineRegIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || `Deleted ${count} offline registration(s).`);
+        const idSet = new Set(selectedOfflineRegIds);
+        setRegistrations((prev) => prev.filter((r) => !idSet.has(r.id)));
+        setSelectedOfflineRegIds([]);
+        if (selectedRegDetail && idSet.has(selectedRegDetail.id)) {
+          setSelectedRegDetail(null);
+        }
+        fetchDashboardData();
+      } else {
+        toast.error(data.message || "Failed to bulk delete offline registrations.");
+      }
+    } catch (err) {
+      toast.error("Network error while deleting offline registrations.");
+    } finally {
+      setBulkDeletingRegs(false);
+    }
   };
 
   const handleConfirmBulkGrant = async () => {
@@ -10112,7 +10228,7 @@ export default function AdminDashboardPage() {
 
                         <button
                           type="button"
-                          disabled={bulkGrantingFree}
+                          disabled={bulkGrantingFree || bulkDeletingRegs}
                           onClick={() => handleBulkGrantFreePasses()}
                           className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-black text-white hover:bg-purple-700 transition-all cursor-pointer shadow-md shadow-purple-500/25 disabled:opacity-50"
                           title="Grant Free Event Pass to all selected delegates and send confirmation QR tickets"
@@ -10123,6 +10239,21 @@ export default function AdminDashboardPage() {
                             <Ticket className="h-3.5 w-3.5" />
                           )}
                           <span>Grant Free Pass & Email ({selectedRegIds.length})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={bulkDeletingRegs || bulkGrantingFree}
+                          onClick={handleBulkDeleteRegistrations}
+                          className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-black text-white hover:bg-rose-700 transition-all cursor-pointer shadow-md shadow-rose-500/25 disabled:opacity-50"
+                          title="Permanently delete all selected registrations"
+                        >
+                          {bulkDeletingRegs ? (
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                          <span>Delete Selected ({selectedRegIds.length})</span>
                         </button>
 
                         <button
@@ -10199,15 +10330,15 @@ export default function AdminDashboardPage() {
                         <input
                           type="checkbox"
                           checked={
-                            eligibleRegistrationsInFilter.length > 0 &&
-                            eligibleRegistrationsInFilter.every((r) => selectedRegIds.includes(r.id))
+                            filteredRegistrations.length > 0 &&
+                            filteredRegistrations.every((r) => selectedRegIds.includes(r.id))
                           }
-                          disabled={eligibleRegistrationsInFilter.length === 0}
+                          disabled={filteredRegistrations.length === 0}
                           onChange={handleToggleSelectAllRegistrations}
                           title={
-                            eligibleRegistrationsInFilter.length === 0
-                              ? "No eligible ungranted delegates in this view"
-                              : "Select / Deselect All Eligible Delegates"
+                            filteredRegistrations.length === 0
+                              ? "No delegates in this view"
+                              : "Select / Deselect All Delegates"
                           }
                           className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         />
@@ -10216,7 +10347,7 @@ export default function AdminDashboardPage() {
                       <th className="py-2.5 px-3">Organization & City</th>
                       <th className="py-2.5 px-3">Event & Pass</th>
                       <th className="py-2.5 px-3">Payment & Status</th>
-                      <th className="py-2.5 px-3 text-right w-24">Actions</th>
+                      <th className="py-2.5 px-3 text-right w-28">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 font-medium">
@@ -10391,6 +10522,20 @@ export default function AdminDashboardPage() {
                               >
                                 <Eye className="h-3.5 w-3.5 text-cyan-600" />
                                 <span>View</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={deletingRegId === reg.id}
+                                onClick={() => handleDeleteRegistration(reg.id, reg.name)}
+                                title={`Delete ${reg.name}`}
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100 hover:border-rose-300 dark:hover:bg-rose-900/60 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                              >
+                                {deletingRegId === reg.id ? (
+                                  <RefreshCw className="h-3 w-3 text-rose-600 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
                               </button>
                             </div>
                           </td>
@@ -11318,6 +11463,20 @@ export default function AdminDashboardPage() {
                       </button>
                       <button
                         type="button"
+                        disabled={bulkDeletingRegs}
+                        onClick={handleBulkDeleteOfflineRegistrations}
+                        className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-black text-white hover:bg-rose-700 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                        title="Delete selected offline registrations"
+                      >
+                        {bulkDeletingRegs ? (
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                        <span>Delete Selected ({selectedOfflineRegIds.length})</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setSelectedOfflineRegIds([])}
                         className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Deselect All"
@@ -11473,6 +11632,20 @@ export default function AdminDashboardPage() {
                               >
                                 <Eye className="h-3 w-3 text-blue-600" />
                                 <span>View</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={deletingRegId === reg.id}
+                                onClick={() => handleDeleteRegistration(reg.id, reg.name)}
+                                title={`Delete ${reg.name}`}
+                                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100 hover:border-rose-300 dark:hover:bg-rose-900/60 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                              >
+                                {deletingRegId === reg.id ? (
+                                  <RefreshCw className="h-3 w-3 text-rose-600 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
                               </button>
                             </div>
                           </td>
@@ -16256,6 +16429,18 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedRegDetail) {
+                        handleDeleteRegistration(selectedRegDetail.id, selectedRegDetail.name);
+                      }
+                    }}
+                    className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 className="h-4 w-4 text-rose-600" />
+                    <span>Delete</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -24841,6 +25026,18 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedRegDetail) {
+                    handleDeleteRegistration(selectedRegDetail.id, selectedRegDetail.name);
+                  }
+                }}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="h-4 w-4 text-rose-600" />
+                <span>Delete Registration</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setSelectedRegDetail(null)}

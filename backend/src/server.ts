@@ -6871,6 +6871,53 @@ async function handleAdminResendEmail(req: any, res: any) {
 app.post("/api/admin/registrations/:id/send-email", authenticateAdmin, handleAdminResendEmail);
 app.post("/api/admin/registrations/:id/resend-email", authenticateAdmin, handleAdminResendEmail);
 
+// Admin Delete Single Event Registration
+app.delete("/api/admin/registrations/:id", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Registration ID is required." });
+    }
+    if (pool) {
+      await pool.query("DELETE FROM registrations WHERE id = ?", [id]);
+      try {
+        await pool.query("DELETE FROM delegate_registrations WHERE id = ?", [id]);
+      } catch (ignored) {}
+    }
+    try {
+      io.emit("registration_deleted", { id });
+    } catch (e) {}
+    res.json({ success: true, message: "Registration deleted successfully." });
+  } catch (err) {
+    console.error("Delete Registration Error:", err);
+    res.status(500).json({ success: false, message: "Failed to delete registration." });
+  }
+});
+
+// Admin Bulk Delete Event Registrations
+app.post("/api/admin/registrations/bulk-delete", authenticateAdmin, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "Please provide an array of registration IDs to delete." });
+    }
+    if (pool) {
+      const placeholders = ids.map(() => "?").join(",");
+      await pool.query(`DELETE FROM registrations WHERE id IN (${placeholders})`, ids);
+      try {
+        await pool.query(`DELETE FROM delegate_registrations WHERE id IN (${placeholders})`, ids);
+      } catch (ignored) {}
+    }
+    try {
+      io.emit("registrations_bulk_deleted", { ids });
+    } catch (e) {}
+    res.json({ success: true, message: `Successfully deleted ${ids.length} registration(s).` });
+  } catch (err) {
+    console.error("Bulk Delete Registrations Error:", err);
+    res.status(500).json({ success: false, message: "Failed to bulk delete registrations." });
+  }
+});
+
 // Admin Get All Contacts
 app.get("/api/admin/contacts", authenticateAdmin, async (_req, res) => {
   try {
